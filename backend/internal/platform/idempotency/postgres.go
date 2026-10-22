@@ -11,7 +11,7 @@ import (
 )
 
 // PostgresStore implementa Store sobre a tabela idempotency_keys
-// (migration 000009). Como o restante do estado compartilhado da
+// (tabela idempotency_keys). Como o restante do estado compartilhado da
 // plataforma (rate limiting, tickets de WebSocket), é compartilhado por
 // toda réplica da API via o mesmo Postgres — a plataforma não usa Redis
 // por design (§7).

@@ -1,8 +1,8 @@
--- Administradores da plataforma pelo AD (via Keycloak, realm rondonopolis) — SISMARQ.
+-- Administradores da plataforma pelo AD (via Keycloak, realm rondonopolis).
 --
 -- Decisão da gestão (2026-10-19): o grupo "Departamento de Tecnologia da
 -- Informação" recebe o perfil "Administrador da Plataforma" (permissão *),
--- sem escopo, ou seja, acesso a tudo, inclusive acervo restrito e a
+-- sem escopo, ou seja, acesso a tudo, inclusive processos sigilosos e a
 -- trilha de auditoria. Revise a composição do grupo no AD: quem entra
 -- nele passa a ver esses dados.
 --

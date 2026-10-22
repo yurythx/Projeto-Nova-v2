@@ -86,7 +86,7 @@ histórico) ficou guardada como `/root/Projetos/SISMARQ.antigo-<data>`.
 - **HTTPS:** `https://192.168.1.52`, com o Caddy como única entrada.
 - **SSO:** client `sismarq` no realm `rondonopolis`.
 - **Administradores e equipes pelo AD:** `make iam-administradores` e
-  `make iam-arquivo-protocolo` (`deploy/iam/`).
+  `make iam-protocolo` (`deploy/iam/`).
 - **Backup diário:** às 02:30, em `/root/backups/nexus` (7 dias; log em
   `/var/log/nexus-backup.log`). Fica no mesmo disco: copie para fora.
 

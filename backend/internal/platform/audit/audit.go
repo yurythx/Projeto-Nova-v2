@@ -6,7 +6,7 @@
 // diff_before, diff_after e o carimbo de tempo UTC do servidor de banco. A
 // tabela é append-only (gatilhos bloqueiam UPDATE/DELETE/TRUNCATE) e cada
 // linha é encadeada à anterior por SHA-256 — o hash é calculado pelo
-// próprio Postgres (migration 000101), então nenhuma escrita escapa da
+// próprio Postgres (gatilhos do esquema base), então nenhuma escrita escapa da
 // cadeia. Quem chama nunca deve colocar senha, token ou segredo em
 // Metadata/Before/After: a imutabilidade protege contra alteração
 // posterior, não contra um segredo indevidamente gravado.

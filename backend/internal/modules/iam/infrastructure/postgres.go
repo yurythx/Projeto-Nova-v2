@@ -39,7 +39,7 @@ func wrap(op string, err error) error {
 }
 
 // wrapDelete: numa exclusão, violação de FK significa "ainda em uso"
-// (ON DELETE RESTRICT — migration 000121), não escopo inválido.
+// (ON DELETE RESTRICT), não escopo inválido.
 func wrapDelete(op string, err error) error {
 	if err != nil && database.IsForeignKeyViolation(err) {
 		return domain.ErrInUse

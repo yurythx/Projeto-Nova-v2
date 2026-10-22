@@ -49,4 +49,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [043](043-fase0-decisoes-institucionais.md) | Fase 0: SEMAD piloto; IAM Keycloak/LDAP; lei municipal + federal sem decreto regulamentador; CONARQ meio (art. 26); Superintendência e DIORONDON-e | Parcialmente superado (046) |
 | [044](044-ingresso-scan-nato-digital.md) | Ingresso SCAN (papel, Decreto 10.278, PDF/TIFF e DPI) versus NATO_DIGITAL (PDF já eletrônico, sem DPI de scanner); mesma guarda PDF/A | Superado (046) |
 | [045](045-linha-de-base-arquivistica.md) | Linha de base do domínio (Acervo, TTDD, procedimentos) e mapa e-ARQ/RDC-Arq para PRs futuros; SIGAD antes de RDC certificado | Superado (046) |
-| [046](046-saida-do-atlas-e-do-acervo.md) | Saída do Atlas e do Acervo; gestão de serviços no lugar; o que sobrevive (classificação do Trâmite, conexões de IA, índice da busca) | Aceito e implementado |
+| [046](046-saida-do-atlas-e-do-acervo.md) | Saída do Atlas e do Acervo; migrations consolidadas num esquema base para banco novo; Trâmite sem classificação; variáveis IA_* | Aceito e implementado |

@@ -8,7 +8,7 @@
 # Quem usa a IA é configurado na tela Configurações > Inteligência
 # artificial (conexões, chave, modelo, principal e reserva). Sem nada
 # configurado lá, a API usa a IA local (IA_* abaixo). Sem este
-# overlay e sem conexão, o assistente responde com a síntese canônica.
+# overlay e sem conexão, a plataforma segue sem IA.
 volumes:
   ia_local_modelos: null
 

@@ -64,7 +64,7 @@ func TestWriter_Record(t *testing.T) {
 }
 
 // Prova em cima do banco real (não apenas documentado em comentário) que
-// a migration 000008 realmente bloqueia UPDATE/DELETE/TRUNCATE em
+// o esquema base realmente bloqueia UPDATE/DELETE/TRUNCATE em
 // audit_logs — uma trilha de auditoria que pode ser editada não prova
 // nada.
 func TestAuditLogs_AreImmutable(t *testing.T) {

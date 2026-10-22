@@ -8,9 +8,8 @@
 // senha, aplicar o bloqueio de conta e emitir o token.
 //
 // Só existe uma tabela de usuários — a mesma que já espelha contas do
-// Keycloak (migration 000011 tornou keycloak_subject opcional e adicionou
-// password_hash/roles; migration 000012 adicionou o bloqueio por
-// tentativas). Uma conta local é só uma linha de "users" sem
+// Keycloak (keycloak_subject é opcional; password_hash, roles e o bloqueio
+// por tentativas ficam na mesma linha). Uma conta local é só uma linha de "users" sem
 // keycloak_subject e com password_hash preenchido.
 package localauth
 

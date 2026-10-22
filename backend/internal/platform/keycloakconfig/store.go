@@ -83,7 +83,7 @@ type Store interface {
 }
 
 // PostgresStore implementa Store sobre a tabela keycloak_settings
-// (migration 000004), cifrando/decifrando os campos de segredo com
+// (tabela keycloak_settings), cifrando/decifrando os campos de segredo com
 // cipher (ver internal/platform/secretcrypto).
 type PostgresStore struct {
 	db     database.DBTX // o pool, em produção

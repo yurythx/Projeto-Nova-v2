@@ -134,7 +134,7 @@ saúde, filial, sede.
   - o Diretório e as telas do Trâmite deixam de oferecer o que está
     desativado.
 
-  A regra do escopo ativo é única, `nexus_scope_active` (migration 000126),
+  A regra do escopo ativo é única, `nexus_scope_active` (função do banco),
   usada tanto pelo cálculo de permissões por requisição quanto pela tela de
   usuários.
 - Toda alteração é auditada com o antes e o depois.

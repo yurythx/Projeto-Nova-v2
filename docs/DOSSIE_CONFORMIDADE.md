@@ -15,7 +15,7 @@ homologação junto à Secretaria de Governo Digital.
 | Norma | Evidência no repositório |
 |---|---|
 | e-MAG 2.0 / WCAG 2.1 AA (Lei 13.146/2015) | `/acessibilidade` (com Declaração de Acessibilidade), `docs/VPAT.md`, `components/layout/EMagAccessibilityBar.tsx`, `eslint-plugin-jsx-a11y` no CI |
-| LGPD (Lei 13.709/2018) | `/privacidade`, `internal/platform/lgpd/*`, migrations 000002/000005/000006, `docs/RIPD_MODELO.md` |
+| LGPD (Lei 13.709/2018) | `/privacidade`, `internal/platform/lgpd/*`, tabelas user_consents, data_subject_requests e anonymous_consents, `docs/RIPD_MODELO.md` |
 | LAI (Lei 12.527/2011) + LC 131/2009 | `audit_logs` append-only + cópia WORM, `GET /api/v1/audit/export` (CSV/JSON/XML, filtros), `internal/platform/transparency/*` |
 | Portaria SGD/SEDGG 2.154 | `internal/platform/auth/*` (OIDC/JWKS, níveis Bronze/Prata/Ouro) |
 | DSGov / GovBR-DS | `frontend/src/components/ui/*`, `globals.css`, `Footer.tsx` |

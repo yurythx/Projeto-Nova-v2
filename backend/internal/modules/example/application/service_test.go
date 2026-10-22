@@ -27,7 +27,7 @@ import (
 // rodar CreateItem contra um banco real (em vez de um repositório falso
 // em memória, como users/application faz) foi exatamente o que expôs que
 // a tabela example_items nunca tinha sido criada em migration nenhuma —
-// ver migrations/000003_example_items.sql.
+// ver a tabela example_items em migrations/000001_base.sql.
 func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
@@ -60,7 +60,7 @@ func TestCreateItem_PersistsItemAndWritesOutboxEventInSameTransaction(t *testing
 	t.Cleanup(func() {
 		_, _ = pool.Exec(context.Background(), `DELETE FROM example_items WHERE id = $1`, item.ID)
 		_, _ = pool.Exec(context.Background(), `DELETE FROM outbox_events WHERE aggregate_id = $1`, item.ID.String())
-		// audit_logs é append-only (trigger da migration 000001) — não dá
+		// audit_logs é append-only (gatilho do esquema base) — não dá
 		// para limpar a linha de auditoria; ela fica no banco de teste.
 	})
 

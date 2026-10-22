@@ -5,9 +5,9 @@
 //
 // Achado de auditoria de segurança (revisão pedida pelo usuário — "aplique
 // todas as melhores práticas"): antes deste comando, o único jeito de ter
-// um usuário local pronto pra uso era a migration 000011, que semeava
+// um usuário local pronto pra uso era uma migration que semeava
 // admin/Admin123! — uma senha conhecida PUBLICAMENTE (documentada no
-// README), removida pela migration 000027 justamente porque um aviso de
+// README), removida depois justamente porque um aviso de
 // "troque antes de produção" é disciplina humana, não um controle
 // técnico. Este comando é a forma correta de repor esse acesso: uma senha
 // que só existe na memória de quem rodou o comando, nunca versionada.
@@ -134,7 +134,7 @@ func seedAdmin(ctx context.Context, pool *pgxpool.Pool, username, email, display
 
 	roles := splitRoles(rolesCSV)
 
-	// ON CONFLICT (username): idx_users_username (migration 000002) é
+	// ON CONFLICT (username): idx_users_username é
 	// UNIQUE — rodar este comando de novo contra um username já existente
 	// (sem keycloak_subject, checado acima) RESETA a senha e o bloqueio de
 	// conta em vez de falhar, o caso de uso mais comum de rodar isto uma

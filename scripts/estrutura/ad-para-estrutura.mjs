@@ -16,10 +16,9 @@
 //     Ciência, Tecnologia e Inovação;
 //   - turnos estendidos ("(3º Turno)") viram departamento da unidade-base;
 //   - órgão sem detalhe no AD ganha uma unidade "Sede";
-//   - a sede de cada órgão leva a sigla do órgão (não "SEDE"): os avisos do
-//     Atlas chegam à unidade pela sigla da etapa ("SEGEP/RH" → SEGEP). As
-//     siglas abaixo são provisórias até a confirmação nas entrevistas
-//     (docs/atlas/PLANO_DE_VALIDACAO.md §7).
+//   - a sede de cada órgão leva a sigla do órgão (não "SEDE"), para que a
+//     unidade seja achada pela sigla ("SEGEP/RH" → SEGEP). As siglas abaixo
+//     são provisórias até a confirmação com cada secretaria.
 //   - repetições dentro da Saúde ficam uma vez só (unidade, não setor).
 import crypto from "node:crypto";
 import fs from "node:fs";

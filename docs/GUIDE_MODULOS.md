@@ -52,7 +52,7 @@ make new-module NAME=financeiro
 
 O script copia o blueprint `internal/modules/example` (código que roda em produção, portanto o esqueleto já nasce compilando) e:
 1. Gera `internal/modules/<nome>/` com `module.go` (Manifest do Kernel) e as camadas `domain`, `application`, `infrastructure`, `transport`.
-2. Cria a migration sequencial `backend/migrations/0001NN_<nome>.sql` (goose).
+2. Cria a migration sequencial `backend/migrations/0000NN_<nome>.sql` (goose), depois da base.
 3. Registra o plug-in no Kernel (`internal/app/modules.go` → `Kernel.MustRegister`).
 4. Cria a página `frontend/src/app/(protected)/<nome>/page.tsx` sobre o kit (`DataState`, `useAction`, `useSismarq`) e protege a rota em `src/proxy.ts`.
 

@@ -236,7 +236,7 @@ func (s *Service) handleRequestErasure(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// O trigger da migration 000005 grava a linha em audit_logs.
+	// Um gatilho do banco grava a linha em audit_logs.
 	var newID string
 	err = s.db.QueryRow(r.Context(), `
 		INSERT INTO data_subject_requests (user_id, kind, status, requested_ip)

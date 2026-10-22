@@ -33,7 +33,7 @@ func (h *apiHarness) relogin(id uuid.UUID) string {
 	return out.Data.AccessToken
 }
 
-// Estrutura desativada deixa de conceder (migration 000126,
+// Estrutura desativada deixa de conceder (nexus_scope_active,
 // docs/REGRAS_DE_NEGOCIO.md §2): lotações e mapeamentos de grupo num
 // escopo com entidade, unidade ou departamento desativado não valem — e a
 // mudança é imediata (salvar a estrutura invalida o cache do IAM).

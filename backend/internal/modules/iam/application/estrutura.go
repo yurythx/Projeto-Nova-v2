@@ -60,7 +60,7 @@ func (s *Service) ListEntidades(ctx context.Context) ([]domain.Entidade, error) 
 // SaveEntidade cria (ID nil) ou atualiza uma entidade.
 // SaveEntidade/SaveUnidade/SaveDepartamento invalidam o cache do IAM: o
 // "ativo" de cada nível liga ou desliga as lotações e mapeamentos nele
-// (nexus_scope_active, migration 000126).
+// (função nexus_scope_active do banco).
 func (s *Service) SaveEntidade(ctx context.Context, in domain.Entidade) (domain.Entidade, error) {
 	if err := soGlobal(ctx); err != nil {
 		return domain.Entidade{}, err

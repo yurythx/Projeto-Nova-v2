@@ -185,8 +185,7 @@ feita **pela tela**, em **Configurações → Inteligência artificial**
   mascarados na pergunta antes de sair da rede.
 
 Enquanto nada for salvo na tela, valem `IA_ENDPOINT`,
-`IA_API_KEY`, `IA_MODELO` e `IA_TIMEOUT` do `.env` (o
-prefixo `ATLAS_` ficou do módulo que criou a configuração).
+`IA_API_KEY`, `IA_MODELO` e `IA_TIMEOUT` do `.env`.
 
 **IA local (serviço `ia-local`, Ollama).** Overlay opcional:
 

@@ -130,8 +130,10 @@ permissão**, não só o 200 com ela.
 aplica limite de corpo nem rejeita campo desconhecido.
 
 ### Migrations
-Toda migration tem `-- +goose Down`. Exercite antes de abrir o PR:
-`make migrate-redo` (up → down-to 0 → up). O CI roda o mesmo.
+`000001_base.sql` é o esquema de partida (ADR 046) e não se edita: toda
+mudança entra numa migration nova, numerada em sequência. Toda migration
+tem `-- +goose Down`. Exercite antes de abrir o PR: `make migrate-redo`
+(up → down-to 0 → up). O CI roda o mesmo.
 
 ### SAST local
 `make backend-sec` roda `govulncheck` + `staticcheck` + `gosec` — o mesmo
@@ -153,7 +155,7 @@ proxy de borda confiável ele é forjável.
 
 ### Busca full-text
 Filtros de texto nos repositórios usam
-`search @@ nexus_search_tsquery('<config>', $n)` (migration 000125), nunca
+`search @@ nexus_search_tsquery('<config>', $n)` (função do banco), nunca
 `websearch_to_tsquery` direto: a função soma a busca por prefixo ("vacina"
 acha "vacinação") e mantém a sintaxe de operadores (aspas, `-termo`, `or`).
 

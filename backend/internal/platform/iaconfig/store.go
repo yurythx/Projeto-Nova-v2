@@ -13,8 +13,7 @@ import (
 	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
 )
 
-// Store persiste conexões e usos (tabelas ia_conexoes e ia_uso, migration
-// 000136). Handlers e o Roteador dependem da interface (fakes nos testes).
+// Store persiste conexões e usos (tabelas ia_conexoes e ia_uso). Handlers e o Roteador dependem da interface (fakes nos testes).
 type Store interface {
 	Listar(ctx context.Context) ([]Conexao, error)
 	Obter(ctx context.Context, id uuid.UUID) (Conexao, error)

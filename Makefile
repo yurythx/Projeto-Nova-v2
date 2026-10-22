@@ -38,8 +38,8 @@ deploy: ## git pull + gera .env/chave na 1ª vez + build + sobe e espera healthy
 iam-administradores: ## Mapeia o grupo do AD de administradores da plataforma (acesso total)
 	$(COMPOSE_PROD) exec -T postgres sh -c 'psql -q -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' < deploy/iam/administradores-ad.sql
 
-iam-arquivo-protocolo: ## Perfil Arquivo Público e mapeamentos do Arquivo e do Protocolo (grupos do AD)
-	$(COMPOSE_PROD) exec -T postgres sh -c 'psql -q -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' < deploy/iam/arquivo-protocolo-ad.sql
+iam-protocolo: ## Mapeia os grupos do AD do Protocolo ao perfil Protocolo
+	$(COMPOSE_PROD) exec -T postgres sh -c 'psql -q -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' < deploy/iam/protocolo-ad.sql
 
 prod-seed-admin: ## Cria/reseta o admin local dentro do container (sem Go no host)
 	$(COMPOSE_PROD) run --rm --no-deps --entrypoint ./seedadmin backend-api

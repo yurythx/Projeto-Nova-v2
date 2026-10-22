@@ -90,14 +90,12 @@ services:
         mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" &&
         mc mb local/$${MINIO_BUCKET:-nexus} 2>/dev/null || true;
         mc mb --with-lock local/${AUDIT_WORM_BUCKET:-nexus-audit-worm} 2>/dev/null || true;
-        mc mb --with-lock local/${ACERVO_DIGITAL_BUCKET:-sismarq-acervo-digital} 2>/dev/null || true;
         exit 0;
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
       MINIO_BUCKET: ${MINIO_BUCKET:-nexus}
       AUDIT_WORM_BUCKET: ${AUDIT_WORM_BUCKET:-nexus-audit-worm}
-      ACERVO_DIGITAL_BUCKET: ${ACERVO_DIGITAL_BUCKET:-sismarq-acervo-digital}
   redis:
     # Cache do resolvedor de permissões (IAM), rate limiting, lockout
     # progressivo de login e idempotência — REDIS_URL é obrigatório no
