@@ -1,0 +1,10 @@
+---
+# ==============================================================================
+# PLAYBOOK PARA INSTALAÇÃO DO GITHUB ACTIONS RUNNER NO LXC DEDICADO
+# ==============================================================================
+- name: Preparação e Instalação do GitHub Actions Runner
+  hosts: github_runners
+  become: yes
+  roles:
+    - common
+    - github_runner

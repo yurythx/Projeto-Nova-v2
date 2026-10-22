@@ -1,0 +1,45 @@
+// Helpers de cookie no cliente para preferências de dispositivo que
+// precisam chegar ao servidor — e, portanto, ao PRIMEIRO paint. É o mesmo
+// motivo pelo qual o tema usa cookie e não localStorage: um Server
+// Component (os layouts) lê o cookie e já renderiza o HTML no estado certo,
+// sem o flash de "valor padrão → valor salvo" que localStorage + hidratação
+// sempre causam. Ver components/ui/ThemeToggle.tsx.
+//
+// Todos os nomes de cookie usados aqui são constantes internas (`[\w-]+`),
+// nunca entrada de usuário — daí o RegExp montado por interpolação ser
+// seguro.
+
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+
+export const THEME_COOKIE = "sismarq-theme";
+export const THEME_COOKIE_LEGACY = "nexus-theme";
+export const SIDEBAR_COOKIE = "sismarq-sidebar-collapsed";
+export const SIDEBAR_COOKIE_LEGACY = "nexus-sidebar-collapsed";
+export const BRANDING_PREFS_COOKIE = "sismarq-branding";
+export const BRANDING_PREFS_COOKIE_LEGACY = "nexus-branding";
+
+type CookieBag = { get(name: string): { value: string } | undefined };
+
+export function pickCookie(store: CookieBag, name: string, legacy: string): string | undefined {
+  return store.get(name)?.value ?? store.get(legacy)?.value;
+}
+
+export function readCookiePrefer(name: string, legacy: string): string | null {
+  return readCookie(name) ?? readCookie(legacy);
+}
+
+export function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1] ?? "") : null;
+}
+
+export function writeCookie(name: string, value: string, maxAgeSeconds = ONE_YEAR_SECONDS): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; samesite=lax`;
+}
+
+export function deleteCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
+}

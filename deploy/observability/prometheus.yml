@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "nexus-backend-api"
+    metrics_path: "/metrics"
+    authorization:
+      type: Bearer
+      credentials: "6bd2efc30b99a90cf2ab884911c349e2db0679941d3d75e5dc39387c5480e2c4"
+    static_configs:
+      - targets: ["backend-api:8010"]
+        labels:
+          service: "backend-api"
+          env: "production"
+
+  - job_name: "nexus-backend-worker"
+    metrics_path: "/metrics"
+    authorization:
+      type: Bearer
+      credentials: "6bd2efc30b99a90cf2ab884911c349e2db0679941d3d75e5dc39387c5480e2c4"
+    static_configs:
+      - targets: ["backend-worker:9102"]
+        labels:
+          service: "backend-worker"
+          env: "production"

@@ -1,0 +1,106 @@
+// Selo circular — o elemento de assinatura do SISMARQ (§ redesenho
+// 2026-08). Um carimbo de repartição: anéis concêntricos, borda pontilhada,
+// dizeres curvos e um miolo com o monograma da marca sobre os dizeres de
+// documento oficial. Aparece como marca d'água discreta no painel de login
+// e na home pública — nunca como enfeite repetido pela interface toda.
+//
+// Usa `currentColor` em todos os traços/textos: quem chama controla a cor
+// (branco sobre o painel institucional, tinta de carimbo sobre fundo claro)
+// e a opacidade.
+export function Seal({
+  size = 220,
+  className = "",
+  topText = "PROJETO-NOVA-V2",
+  bottomText = "MICROKERNEL",
+  decorative = false,
+}: {
+  size?: number;
+  className?: string;
+  topText?: string;
+  bottomText?: string;
+  /** Marca d'água puramente visual — sai da árvore de acessibilidade. */
+  decorative?: boolean;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 200 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : "Selo do Projeto-nova-v2"}
+      aria-hidden={decorative || undefined}
+      focusable="false"
+      className={`shrink-0 ${className}`}
+      style={{ color: "currentColor" }}
+    >
+      <defs>
+        <path id="sismarq-seal-top" d="M 26 100 A 74 74 0 0 1 174 100" />
+        <path id="sismarq-seal-bottom" d="M 32 100 A 68 68 0 0 0 168 100" />
+      </defs>
+
+      <circle cx="100" cy="100" r="96" stroke="currentColor" strokeWidth="2" />
+      <circle cx="100" cy="100" r="88" stroke="currentColor" strokeWidth="1" strokeOpacity="0.7" />
+      <circle
+        cx="100"
+        cy="100"
+        r="82"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeDasharray="1.5 6"
+        strokeOpacity="0.85"
+      />
+      <circle cx="100" cy="100" r="58" stroke="currentColor" strokeWidth="1" strokeOpacity="0.55" />
+
+      <text
+        fontSize="12.5"
+        fontWeight="700"
+        letterSpacing="3.2"
+        fill="currentColor"
+        style={{ fontFamily: "var(--font-mono, monospace)" }}
+      >
+        <textPath href="#sismarq-seal-top" startOffset="50%" textAnchor="middle">
+          {topText}
+        </textPath>
+      </text>
+      <text
+        fontSize="12.5"
+        fontWeight="700"
+        letterSpacing="3.2"
+        fill="currentColor"
+        style={{ fontFamily: "var(--font-mono, monospace)" }}
+      >
+        <textPath href="#sismarq-seal-bottom" startOffset="50%" textAnchor="middle">
+          {bottomText}
+        </textPath>
+      </text>
+
+      {/* Miolo: monograma do SISMARQ sobre os dizeres de documento oficial. */}
+      <text
+        x="100"
+        y="99"
+        textAnchor="middle"
+        fill="currentColor"
+        fontSize="32"
+        fontWeight="900"
+        style={{ fontFamily: "var(--font-sans, sans-serif)" }}
+      >
+        S
+      </text>
+      <path d="M 74 118 H 126" stroke="currentColor" strokeWidth="1.5" />
+      <text
+        x="100"
+        y="132"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="600"
+        letterSpacing="2"
+        fill="currentColor"
+        style={{ fontFamily: "var(--font-mono, monospace)" }}
+      >
+        DOCUMENTO OFICIAL
+      </text>
+    </svg>
+  );
+}

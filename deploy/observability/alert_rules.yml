@@ -1,0 +1,38 @@
+groups:
+  - name: nexus_alerts
+    rules:
+      - alert: NexusServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instância de serviço do SISMARQ inativa ({{ $labels.service }})"
+          description: "O serviço {{ $labels.service }} no alvo {{ $labels.instance }} não responde há mais de 1 minuto."
+
+      - alert: NexusOutboxLagHigh
+        expr: nexus_outbox_queue_depth > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fila de eventos do Outbox acumulada"
+          description: "Existem mais de 50 eventos pendentes no Outbox transacional há mais de 2 minutos (atual: {{ $value }})."
+
+      - alert: NexusHttp5xxErrorRateHigh
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taxa elevada de erros HTTP 5xx no SISMARQ"
+          description: "A taxa de erros 5xx está acima de 1% nos últimos 5 minutos (atual: {{ $value | printf \"%.2f\" }}%)."
+
+      - alert: NexusLatencyP95High
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.3
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latência P95 do SISMARQ acima de 300ms"
+          description: "O percentil 95 de tempo de resposta da API está acima de 300ms por mais de 3 minutos (atual: {{ $value | printf \"%.3f\" }}s)."

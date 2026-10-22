@@ -1,0 +1,51 @@
+- name: Priorizar IPv4 na resolução de nomes do sistema (/etc/gai.conf)
+  ansible.builtin.lineinfile:
+    path: /etc/gai.conf
+    line: "precedence ::ffff:0:0/96 100"
+    state: present
+    create: yes
+
+- name: Garantir timezone correto
+  community.general.timezone:
+    name: America/Cuiaba
+
+- name: Atualizar cache do APT
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Instalar pacotes essenciais do sistema
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - git
+      - htop
+      - iotop
+      - net-tools
+      - ufw
+      - fail2ban
+      - ca-certificates
+      - gnupg
+    state: present
+
+- name: Instalar e iniciar QEMU Guest Agent se for VM KVM
+  when: ansible_virtualization_type != "lxc"
+  block:
+    - name: Instalar qemu-guest-agent
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+
+    - name: Habilitar e iniciar qemu-guest-agent
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: yes
+        state: started
+
+- name: Configurar regras básicas de firewall (UFW)
+  community.general.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+    comment: "Acesso SSH Administrativo"

@@ -1,0 +1,10 @@
+[all:vars]
+ansible_user=root
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[docker_hosts]
+sismarq-prod-app ansible_host=192.168.1.52 proxmox_vmid=220
+
+[sismarq_apps]
+sismarq-prod-app

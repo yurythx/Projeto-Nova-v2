@@ -1,0 +1,99 @@
+---
+- name: Criar pasta raiz de projetos
+  ansible.builtin.file:
+    path: "{{ sismarq_app_dir | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Verificar se o checkout do SISMARQ já existe
+  ansible.builtin.stat:
+    path: "{{ sismarq_app_dir }}/.git"
+  register: sismarq_checkout
+
+- name: Clonar o repositório só na primeira vez (depois: sincronizar-vm, sem force)
+  ansible.builtin.git:
+    repo: "{{ sismarq_git_repo }}"
+    dest: "{{ sismarq_app_dir }}"
+    version: "{{ sismarq_git_version }}"
+    force: false
+    update: false
+  when: not sismarq_checkout.stat.exists
+
+- name: Liberar portas no UFW (SSH, HTTP/S e stack)
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+    comment: Trafego SISMARQ
+  loop:
+    - "22"
+    - "80"
+    - "443"
+    - "3010"
+    - "8010"
+    - "8443"
+    - "9010"
+    - "9011"
+    - "9443"
+
+- name: Garantir execução dos scripts de deploy
+  ansible.builtin.file:
+    path: "{{ sismarq_app_dir }}/{{ item }}"
+    mode: "0755"
+  loop:
+    - scripts/deploy.sh
+    - scripts/enable-https.sh
+
+- name: Subir a stack (gera .env e chave RSA na primeira vez)
+  ansible.builtin.command:
+    cmd: "bash scripts/deploy.sh --no-pull {{ ansible_host }}"
+    chdir: "{{ sismarq_app_dir }}"
+  register: deploy_result
+  changed_when: true
+
+- name: Gravar o SSO oficial no .env (sem Keycloak de teste)
+  ansible.builtin.lineinfile:
+    path: "{{ sismarq_app_dir }}/.env"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  loop:
+    - { key: KEYCLOAK_ISSUER_URL, value: "{{ keycloak_issuer_url }}" }
+    - { key: KEYCLOAK_REALM, value: "{{ keycloak_realm }}" }
+    - { key: KEYCLOAK_CLIENT_ID, value: "{{ keycloak_client_id }}" }
+    - { key: KEYCLOAK_AUDIENCE, value: "{{ keycloak_audience }}" }
+    - { key: KEYCLOAK_FRONTEND_CLIENT_ID, value: "{{ keycloak_frontend_client_id }}" }
+  no_log: true
+
+- name: Gravar Client Secret do SSO no .env
+  ansible.builtin.lineinfile:
+    path: "{{ sismarq_app_dir }}/.env"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  loop:
+    - { key: KEYCLOAK_CLIENT_SECRET, value: "{{ keycloak_client_secret }}" }
+    - { key: KEYCLOAK_FRONTEND_CLIENT_SECRET, value: "{{ keycloak_frontend_client_secret | default(keycloak_client_secret) }}" }
+  when: keycloak_client_secret | length > 0
+  no_log: true
+
+- name: Garantir COMPOSE_FILE só da stack (sem Keycloak de teste)
+  ansible.builtin.lineinfile:
+    path: "{{ sismarq_app_dir }}/.env"
+    regexp: "^COMPOSE_FILE="
+    line: "COMPOSE_FILE=docker-compose.yml"
+    state: present
+
+- name: Recriar frontend e API com o issuer do SSO
+  ansible.builtin.command:
+    cmd: docker compose up -d --build frontend backend-api backend-worker
+    chdir: "{{ sismarq_app_dir }}"
+  when: keycloak_issuer_url | length > 0
+
+- name: Ativar HTTPS local (Caddy) se pedido
+  ansible.builtin.command:
+    cmd: "bash scripts/enable-https.sh {{ ansible_host }}"
+    chdir: "{{ sismarq_app_dir }}"
+  when: enable_https | bool
+
+- name: Status do deploy
+  ansible.builtin.debug:
+    msg: "{{ deploy_result.stdout_lines | default([]) }}"

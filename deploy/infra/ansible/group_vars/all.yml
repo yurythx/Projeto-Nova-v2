@@ -1,0 +1,20 @@
+---
+# Valores públicos. Segredo do client Keycloak: secrets.yml (gitignore).
+
+# Primeira clonagem só se a pasta ainda não existir. Atualizações pelo git
+# (deploy/homolog/sincronizar-vm publica o main do GitHub).
+sismarq_git_repo: "https://github.com/yurythx/SISMARQ.git"
+sismarq_git_version: main
+sismarq_app_dir: /opt/sismarq
+
+keycloak_issuer_url: "https://sso.rondonopolis.mt.gov.br/realms/rondonopolis"
+keycloak_realm: rondonopolis
+keycloak_client_id: sismarq
+keycloak_audience: sismarq
+keycloak_frontend_client_id: sismarq
+
+# Preencha em secrets.yml (não versionado).
+keycloak_client_secret: ""
+keycloak_frontend_client_secret: ""
+
+enable_https: false

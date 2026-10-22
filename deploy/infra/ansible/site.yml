@@ -1,0 +1,20 @@
+---
+# SISMARQ no Proxmox: hardening → Docker → stack (SSO oficial, sem Keycloak de teste).
+
+- name: Hardening e configuração de base
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Docker Engine
+  hosts: docker_hosts
+  become: true
+  roles:
+    - docker
+
+- name: Deploy da stack SISMARQ
+  hosts: sismarq_apps
+  become: true
+  roles:
+    - nexus_deploy

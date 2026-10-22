@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1
+
+# ---- builder ----
+FROM golang:1.26.9-bookworm AS builder
+WORKDIR /src
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/worker ./cmd/worker
+
+# ---- runtime ----
+FROM debian:bookworm-slim AS runtime
+
+# O pipeline da digitalização (ADR 037; Decreto 10.278/2020) chama:
+#   ocrmypdf (OCR com deskew e limpeza, saída PDF/A) + tesseract em
+#   português + unpaper (--clean) + ghostscript (PDF/A);
+#   poppler-utils (pdfinfo, pdfimages, pdftotext);
+#   libtiff-tools (tiffinfo, TIFF multipágina);
+#   python3-pikepdf (metadados do Decreto no XMP).
+# Nenhum outro programa externo é invocado pelo worker.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget \
+        ocrmypdf tesseract-ocr tesseract-ocr-por unpaper ghostscript poppler-utils libtiff-tools python3-pikepdf && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -r nix && useradd -r -g nix -m nix
+
+USER nix
+WORKDIR /app
+COPY --from=builder --chown=nix:nix /out/worker ./worker
+
+ENTRYPOINT ["./worker"]

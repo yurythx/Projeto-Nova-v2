@@ -1,0 +1,26 @@
+# Copie para terraform.tfvars (gitignore). 192.168.1.13 é o Proxmox, não a VM.
+
+proxmox_endpoint         = "https://192.168.1.13:8006/"
+proxmox_insecure         = true
+proxmox_api_token_id     = "terraform-prov@pve!tf-token"
+proxmox_api_token_secret = "SEU-TOKEN-AQUI"
+proxmox_node_name        = "pve1"
+
+storage_disk_pool     = "zfs"
+storage_template_pool = "local"
+network_bridge        = "vmbr0"
+default_gateway       = "192.168.1.1"
+
+# Template já existente (ubuntu-2404-cloud). Não rode create-cloudinit-template.sh.
+vm_template_id    = 9000
+# VM nova. No pve1: 201=nexus-prod-app, 210=projeto-assistencia (ocupados).
+vm_id             = 220
+vm_name           = "sismarq-prod-app"
+app_ipv4          = "192.168.1.52/24"
+vm_cores          = 4
+vm_memory         = 4096
+vm_disk_size      = 60
+vm_admin_password = "TroqueEstaSenhaDoConsole"
+
+# Chave do operador que vai rodar o Ansible (máquina com make infra-deploy).
+admin_ssh_public_key = "ssh-ed25519 AAAA... admin@infra"

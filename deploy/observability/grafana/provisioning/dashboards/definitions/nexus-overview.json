@@ -1,0 +1,127 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "⚡ Desempenho e Vazão de Tráfego (API & Borda)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 2,
+      "title": "Throughput / Vazão por Rota (Req/s)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (route) (rate(nexus_http_requests_total[1m]))",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 3,
+      "title": "Latência da API Go (Percentis P50, P95, P99)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(nexus_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "P50 (Mediana)"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(nexus_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(nexus_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "P99"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 4,
+      "title": "🛡️ Distribuição de Códigos HTTP & Defesa de Rate Limit",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 10 },
+      "id": 5,
+      "title": "Distribuição de Status (2xx / 429 / 5xx)",
+      "type": "piechart",
+      "targets": [
+        {
+          "expr": "sum by (status) (increase(nexus_http_requests_total[5m]))",
+          "legendFormat": "HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 16, "x": 8, "y": 10 },
+      "id": 6,
+      "title": "PostgreSQL 16 — Pool de Conexões (pgxpool)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "nexus_postgres_pool_acquired_connections",
+          "legendFormat": "Conexões em Uso (Acquired)"
+        },
+        {
+          "expr": "nexus_postgres_pool_idle_connections",
+          "legendFormat": "Conexões Ociosas (Idle)"
+        },
+        {
+          "expr": "nexus_postgres_pool_max_connections",
+          "legendFormat": "Teto Máximo do Pool"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["nexus", "production", "monitoring"],
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SISMARQ — Painel Executivo de Telemetria",
+  "uid": "nexus-overview-live"
+}

@@ -1,0 +1,121 @@
+---
+- name: Instalar sudo e pacotes essenciais de desenvolvimento
+  ansible.builtin.apt:
+    name:
+      - sudo
+      - git
+      - curl
+      - jq
+      - build-essential
+      - ca-certificates
+    state: present
+    update_cache: yes
+
+- name: Criar grupo dedicado para o runner
+  ansible.builtin.group:
+    name: runner
+    state: present
+
+- name: Criar usuário de sistema dedicado para o runner
+  ansible.builtin.user:
+    name: runner
+    group: runner
+    home: /home/runner
+    shell: /bin/bash
+    comment: "GitHub Actions Runner Service User"
+    state: present
+
+- name: Permitir que o usuário runner execute sudo sem senha
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/github-runner
+    content: "runner ALL=(ALL) NOPASSWD:ALL\n"
+    mode: '0440'
+    validate: 'visudo -cf %s'
+
+- name: Criar diretório para o GitHub Actions Runner
+  ansible.builtin.file:
+    path: /opt/actions-runner
+    state: directory
+    owner: runner
+    group: runner
+    mode: '0755'
+
+- name: Baixar o pacote oficial do GitHub Actions Runner
+  ansible.builtin.get_url:
+    url: https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-x64-2.322.0.tar.gz
+    dest: /opt/actions-runner/actions-runner.tar.gz
+    owner: runner
+    group: runner
+    mode: '0644'
+
+- name: Extrair o runner
+  ansible.builtin.unarchive:
+    src: /opt/actions-runner/actions-runner.tar.gz
+    dest: /opt/actions-runner
+    remote_src: yes
+    owner: runner
+    group: runner
+
+- name: Instalar dependências do runner (.NET e bibliotecas C)
+  ansible.builtin.command:
+    cmd: ./bin/installdependencies.sh
+    chdir: /opt/actions-runner
+  changed_when: false
+
+- name: Garantir que todo o conteúdo de /opt/actions-runner pertence ao usuário runner
+  ansible.builtin.file:
+    path: /opt/actions-runner
+    owner: runner
+    group: runner
+    recurse: yes
+
+- name: Criar script helper de registro e ativação do serviço
+  ansible.builtin.copy:
+    dest: /opt/actions-runner/register-runner.sh
+    owner: runner
+    group: runner
+    mode: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -e
+
+      REG_TOKEN="$1"
+      RUNNER_NAME="${2:-nexus-pve1-lxc200}"
+
+      if [ -z "$REG_TOKEN" ]; then
+        echo "=========================================================="
+        echo " USO: ./register-runner.sh <GITHUB_RUNNER_TOKEN> [RUNNER_NAME]"
+        echo "=========================================================="
+        echo " Obtenha o token em: https://github.com/yurythx/SISMARQ/settings/actions/runners/new"
+        exit 1
+      fi
+
+      echo "--> Configurando GitHub Actions Runner ($RUNNER_NAME)..."
+      cd /opt/actions-runner
+      sudo -u runner ./config.sh \
+        --url "https://github.com/yurythx/SISMARQ" \
+        --token "$REG_TOKEN" \
+        --name "$RUNNER_NAME" \
+        --labels "self-hosted,linux,x64,proxmox,pve1,lxc" \
+        --work "_work" \
+        --unattended \
+        --replace
+
+      echo "--> Instalando serviço systemd do runner..."
+      ./svc.sh install runner
+
+      echo "--> Iniciando serviço do runner..."
+      ./svc.sh start
+
+      echo "--> Status do serviço:"
+      ./svc.sh status
+      echo "=== Runner Ativo e Conectado com Sucesso! ==="
+
+- name: Instruções de registro pós-instalação
+  ansible.builtin.debug:
+    msg: |
+      O ambiente do Runner está 100% configurado no LXC 200 (192.168.1.45)!
+      Para vincular ao GitHub:
+      1. Obtenha o token temporário em: https://github.com/yurythx/SISMARQ/settings/actions/runners/new
+      2. Execute no container (ou via Ansible ad-hoc):
+         /opt/actions-runner/register-runner.sh <TOKEN_OBTIDO>
