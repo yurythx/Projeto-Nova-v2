@@ -116,7 +116,7 @@ frontend-build:
 
 test: backend-test frontend-test ## Roda as suítes de teste do backend e do frontend
 
-TEST_PG_CONTAINER ?= sismarq-test-pg
+TEST_PG_CONTAINER ?= projeto-nova-test-pg
 TEST_DB_NAME ?= nexus_test
 TEST_DB_USER ?= nexus
 TEST_DB_PASSWORD ?= nexus_ci_password
@@ -204,6 +204,6 @@ infra-apply: ## Provisiona a VM KVM no Proxmox (192.168.1.13) e gera o inventár
 infra-destroy: ## Destroi a infraestrutura no Proxmox
 	cd deploy/infra/terraform && terraform destroy
 
-infra-deploy: ## Docker + stack SISMARQ na VM (SSO oficial se secrets.yml existir)
+infra-deploy: ## Docker + stack Projeto-nova-v2 na VM (SSO oficial se secrets.yml existir)
 	cd deploy/infra/ansible && ansible-galaxy collection install -r requirements.yml --force && \
 		if [ -f secrets.yml ]; then ansible-playbook site.yml -e @secrets.yml; else ansible-playbook site.yml; fi

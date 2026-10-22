@@ -6,17 +6,17 @@ import { History, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { PublicoBadge } from "@/components/iam/PublicoAlvo";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { Markdown } from "@/components/sismarq/Markdown";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { Markdown } from "@/components/plataforma/Markdown";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { WikiEditor } from "@/components/wiki/WikiEditor";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { WikiPage, WikiRevision } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { WikiPage, WikiRevision } from "@/lib/plataforma/types";
 
 function Revisions({ page, onRestored }: { page: WikiPage; onRestored: () => void }) {
   const revs = useApiQuery<WikiRevision[]>(`v1/wiki/pages/${page.id}/revisions`);
@@ -74,7 +74,7 @@ function Revisions({ page, onRestored }: { page: WikiPage; onRestored: () => voi
 export default function WikiPageView() {
   const { ref } = useParams<{ ref: string }>();
   const router = useRouter();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const page = useApiQuery<WikiPage>(`v1/wiki/pages/${encodeURIComponent(ref)}`);
   const tree = useApiQuery<WikiPage[]>("v1/wiki/tree");
   const { run } = useAction();

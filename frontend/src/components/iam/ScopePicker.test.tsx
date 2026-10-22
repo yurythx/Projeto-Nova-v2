@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Me, OrgTree, ScopeRef } from "@/lib/sismarq/types";
+import type { Me, OrgTree, ScopeRef } from "@/lib/plataforma/types";
 
 const un = (id: string, deps: string[]) => ({
   id, entidade_id: "e1", nome: `Unidade ${id}`, sigla: "", slug: "", ad_group: "", email: "", telefone: "", endereco: "", ativo: true,
@@ -21,7 +21,7 @@ const tree: OrgTree[] = [
 ];
 let me: Pick<Me, "roles" | "scopes"> | undefined;
 vi.mock("@/lib/api/swr", () => ({ useApiQuery: () => ({ data: tree }) }));
-vi.mock("@/lib/sismarq/SismarqProvider", () => ({ useSismarq: () => ({ me }) }));
+vi.mock("@/lib/plataforma/PlataformaProvider", () => ({ usePlataforma: () => ({ me }) }));
 
 import { ScopePicker } from "./ScopePicker";
 

@@ -10,11 +10,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/atendimento/application"
-	"github.com/yurythx/sismarq/internal/modules/atendimento/domain"
-	"github.com/yurythx/sismarq/internal/modules/atendimento/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 func TestHandlersListamComFalha(t *testing.T) {

@@ -4,12 +4,12 @@ import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import "./globals.css";
 
-import { BRANDING_COOKIE, BRANDING_COOKIE_LEGACY, mergeServerBranding, parseBrandingCookie, tokensToCss } from "@/components/branding/brandingConfig";
-import { pickCookie, THEME_COOKIE, THEME_COOKIE_LEGACY } from "@/lib/prefs/cookies";
+import { BRANDING_COOKIE, mergeServerBranding, parseBrandingCookie, tokensToCss } from "@/components/branding/brandingConfig";
+import { THEME_COOKIE } from "@/lib/prefs/cookies";
 import { publicGetOr } from "@/lib/api/publicServer";
 import { BRANDING_TAG } from "@/lib/branding/tag";
 import { APP_URL } from "@/lib/env";
-import type { Branding } from "@/lib/sismarq/types";
+import type { Branding } from "@/lib/plataforma/types";
 import { Providers } from "./providers";
 
 export const viewport: Viewport = {
@@ -81,13 +81,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
-  const theme = pickCookie(cookieStore, THEME_COOKIE, THEME_COOKIE_LEGACY);
+  const theme = cookieStore.get(THEME_COOKIE)?.value;
   const dataTheme = theme === "dark" || theme === "light" ? theme : undefined;
 
   // Identidade da organização (API, cache de 60s) + preferências e-MAG do
   // visitante (cookie) — aplicadas em <html> ANTES do 1º paint.
   const api = await publicGetOr<Branding | null>("branding", null, 60, [BRANDING_TAG]);
-  const branding = mergeServerBranding(api, parseBrandingCookie(pickCookie(cookieStore, BRANDING_COOKIE, BRANDING_COOKIE_LEGACY)));
+  const branding = mergeServerBranding(api, parseBrandingCookie(cookieStore.get(BRANDING_COOKIE)?.value));
   const tokenCss = tokensToCss(branding.tokens);
 
   return (
@@ -102,7 +102,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           vazio dentro de <head>, a hidratação falhava (React #418) e a
           navegação seguinte quebrava (removeChild em null) — o login não
           chegava ao dashboard numa instalação sem tokens de cor. */}
-      <head>{tokenCss ? <style id="sismarq-white-label">{tokenCss}</style> : null}</head>
+      <head>{tokenCss ? <style id="projeto-nova-white-label">{tokenCss}</style> : null}</head>
       <body className="flex min-h-full flex-col">
         <Providers initialBranding={branding}>{children}</Providers>
       </body>

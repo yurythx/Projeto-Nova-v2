@@ -1,5 +1,5 @@
 ---
-# SISMARQ no Proxmox: hardening → Docker → stack (SSO oficial, sem Keycloak de teste).
+# Projeto-nova-v2 no Proxmox: hardening → Docker → stack (SSO oficial, sem Keycloak de teste).
 
 - name: Hardening e configuração de base
   hosts: all
@@ -13,8 +13,8 @@
   roles:
     - docker
 
-- name: Deploy da stack SISMARQ
-  hosts: sismarq_apps
+- name: Deploy da stack Projeto-nova-v2
+  hosts: app_servers
   become: true
   roles:
     - nexus_deploy

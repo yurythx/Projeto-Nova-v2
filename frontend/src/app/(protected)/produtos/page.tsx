@@ -4,9 +4,9 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +14,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 const ESTAGIOS = [
   { value: "descoberta", label: "Descoberta" },
@@ -46,7 +46,7 @@ function texto(fd: FormData, nome: string) {
 }
 
 export default function ProdutosPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const list = useApiQuery<Produto[]>("v1/produtos");
   const { run, pending } = useAction();
   const [edit, setEdit] = useState<Produto | null>(null);

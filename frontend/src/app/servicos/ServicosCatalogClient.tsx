@@ -6,7 +6,7 @@ import { ArrowRight, Search, X } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ServiceIcon, getCategoryIconStyles } from "@/lib/catalog/icons";
-import type { CatalogService } from "@/lib/sismarq/types";
+import type { CatalogService } from "@/lib/plataforma/types";
 
 interface ServicosCatalogClientProps {
   initialServices: CatalogService[];

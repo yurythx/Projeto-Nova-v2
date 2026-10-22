@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 )
 
 // O discovery com issuer fora do ar: tentativas mínimas, contexto já

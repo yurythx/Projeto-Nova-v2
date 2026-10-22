@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/platform/httpserver"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // Consentimento de visitante NÃO autenticado (gap G-11).

@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/yurythx/sismarq/internal/modules/produtos/application"
-	"github.com/yurythx/sismarq/internal/modules/produtos/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
 func TestHandlerListaComFalha(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/contact/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/contact/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 // Repository implementa domain.Repository.

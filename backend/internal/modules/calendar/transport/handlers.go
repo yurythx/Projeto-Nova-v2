@@ -9,11 +9,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/modules/calendar/application"
-	"github.com/yurythx/sismarq/internal/modules/calendar/domain"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/calendar/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/calendar/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // Handlers da API da Agenda.

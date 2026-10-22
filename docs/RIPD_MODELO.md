@@ -1,12 +1,12 @@
 # RIPD — Relatório de Impacto à Proteção de Dados Pessoais
 
 > **Modelo / minuta técnica.** Este documento consolida o que a engenharia
-> sabe sobre os fluxos de dados pessoais do SISMARQ. O RIPD
+> sabe sobre os fluxos de dados pessoais do Projeto-nova-v2. O RIPD
 > **oficial** é elaborado e assinado pelo Encarregado de Dados (DPO) do
 > órgão, que valida bases legais, necessidade e proporcionalidade. As
 > seções abaixo são o insumo técnico (art. 5º, XVII e art. 38 da LGPD).
 
-- **Sistema:** SISMARQ — base tecnológica dos sistemas municipais
+- **Sistema:** Projeto-nova-v2 — base tecnológica dos sistemas municipais
 - **Controlador:** Prefeitura Municipal de Rondonópolis/MT
 - **Operadores:** provedores de hospedagem contratados; Login Único Gov.br / Keycloak (autenticação)
 - **Versão dos termos vigente:** `v1.0.0-2026`
@@ -35,7 +35,7 @@
 | Notificações | destinatário, título/mensagem do aviso, link interno, lido em; preferência por módulo (ADR 027) | art. 7º III (execução de política pública) e art. 7º IX (interesse legítimo na comunicação de mudanças) | aviso lido: até 180 dias; apagados com a conta; o titular desliga os avisos por módulo |
 | Solicitações de atendimento | quem abriu, título, descrição livre (pode citar terceiros), comentários e notas internas, responsável, histórico de estados | art. 7º III (execução de política pública — prestação do serviço) | registro do serviço: permanece, ligado à conta anonimizada na eliminação |
 | Localização na visita de campo | latitude, longitude e precisão no check-in e no check-out do técnico; distância ao destino | art. 7º III e art. 23 (comprovar a prestação do serviço no local) | **coordenadas: 1 ano** da última leitura (apagadas por worker); apagadas já na eliminação a pedido; distância e "fora da área" permanecem |
-| Evidências da visita | fotos do local e assinatura de quem recebeu o atendimento, com o nome informado | art. 7º III (execução de política pública) | registro do serviço (a definir pelo DPO junto com a tabela de temporalidade) |
+| Evidências da visita | fotos do local e assinatura de quem recebeu o atendimento, com o nome informado | art. 7º III (execução de política pública) | registro do serviço (a definir pelo DPO) |
 
 **Dados sensíveis (art. 11):** nenhum tratado pela base. Sistemas
 derivados que tratem dados sensíveis fazem seu próprio RIPD.

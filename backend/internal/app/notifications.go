@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 // RunAPIBackground roda, no processo da API, tudo que vive ao lado do

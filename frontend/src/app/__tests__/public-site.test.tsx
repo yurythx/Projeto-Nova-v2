@@ -12,7 +12,7 @@ vi.mock("@/components/layout/AccessibilityBar", () => ({ AccessibilityBar: () =>
 vi.mock("@/components/auth/LoginCard", () => ({ LoginCard: () => <p>cartão de login</p> }));
 vi.mock("@/components/contact/ContactForm", () => ({ ContactForm: ({ defaultServiceSlug }: { defaultServiceSlug?: string }) => <p>formulário ({defaultServiceSlug ?? "—"})</p> }));
 vi.mock("next/server", () => ({ connection: async () => {} }));
-vi.mock("next/headers", () => ({ cookies: async () => ({ get: (n: string) => (n === "sismarq-theme" ? { value: "dark" } : undefined) }) }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (n: string) => (n === "projeto-nova-theme" ? { value: "dark" } : undefined) }) }));
 
 class NotFound extends Error {}
 class Redirect extends Error {}

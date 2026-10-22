@@ -207,7 +207,7 @@ Rodando localmente (os testes de integração pulam sem banco):
 
 ```bash
 # Banco de teste vazio (obrigatório se o Postgres for reutilizado: listas globais
-# acumulam unidades). Docker: container sismarq-test-pg; senão, psql local.
+# acumulam unidades). Docker: container projeto-nova-test-pg; senão, psql local.
 make test-db-reset
 
 # Ou à mão:
@@ -233,7 +233,7 @@ UPDATE_OPENAPI=1 TEST_DATABASE_URL=... go test ./internal/app -run TestOpenAPIMa
 cd ../frontend && npm test
 
 # Depois de regenerar o OpenAPI, atualize os tipos do contrato no frontend.
-# O tsc confere cada tipo de src/lib/sismarq/types.ts contra o que o backend envia:
+# O tsc confere cada tipo de src/lib/plataforma/types.ts contra o que o backend envia:
 npm run gen:api && npx tsc --noEmit
 ```
 

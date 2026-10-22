@@ -7,7 +7,7 @@ import { forwardedFor } from "@/lib/api/clientIp";
 import { RENEW_WINDOW_MS } from "@/lib/auth/sessionTiming";
 import { BACKEND_INTERNAL_URL } from "@/lib/env";
 
-// Autenticação do SISMARQ (skill §2):
+// Autenticação do Projeto-nova-v2 (skill §2):
 //  1. Padrão ouro — Keycloak DEDICADO (OIDC Authorization Code + PKCE),
 //     com usuários federados do Active Directory via LDAP/LDAPS;
 //  2. Fallback local — POST /api/v1/auth/login no backend Go, que emite

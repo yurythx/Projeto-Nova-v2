@@ -214,7 +214,7 @@ describe("Dashboard (Server Component)", () => {
     expect(screen.getByRole("heading", { name: "Visão geral" })).toBeInTheDocument();
     expect(screen.getByText("Indisponível")).toBeInTheDocument();
     expect(screen.getByText("Backend não respondeu")).toBeInTheDocument();
-    // sem SismarqProvider por perto: sem módulos, sem esqueleto
+    // sem PlataformaProvider por perto: sem módulos, sem esqueleto
     expect(screen.queryByText(/Desativados/)).not.toBeInTheDocument();
   });
 });

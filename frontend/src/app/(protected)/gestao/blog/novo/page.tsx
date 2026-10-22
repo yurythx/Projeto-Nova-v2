@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { PostEditor } from "@/components/blog/PostEditor";
-import { PageHeader } from "@/components/sismarq/PageHeader";
+import { PageHeader } from "@/components/plataforma/PageHeader";
 import { Card } from "@/components/ui/Card";
 
 export default function NovoPostPage() {

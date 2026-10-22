@@ -13,11 +13,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/egress/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
-	"github.com/yurythx/sismarq/internal/platform/netguard"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/egress/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/netguard"
 )
 
 // O webhook sai assinado (HMAC com timestamp), com cabeçalhos de rastreio
@@ -44,9 +44,9 @@ func TestDeliverer(t *testing.T) {
 	if err != nil || code != http.StatusOK {
 		t.Fatalf("entrega: %d %v", code, err)
 	}
-	sig := got.Header.Get("X-SISMARQ-Signature")
-	if got.Header.Get("X-SISMARQ-Event") != del.EventType || got.Header.Get("X-Idempotency-Key") != del.EventID.String() ||
-		got.Header.Get("X-SISMARQ-Delivery") != del.ID.String() || !strings.HasPrefix(sig, "t=") {
+	sig := got.Header.Get("X-Projeto-Nova-Signature")
+	if got.Header.Get("X-Projeto-Nova-Event") != del.EventType || got.Header.Get("X-Idempotency-Key") != del.EventID.String() ||
+		got.Header.Get("X-Projeto-Nova-Delivery") != del.ID.String() || !strings.HasPrefix(sig, "t=") {
 		t.Fatalf("cabeçalhos do webhook: %v", got.Header)
 	}
 	var ts int64
@@ -62,7 +62,7 @@ func TestDeliverer(t *testing.T) {
 	if _, err := d.Deliver(context.Background(), domain.Target{Kind: "zabbix", URL: srv.URL}, del); err != nil {
 		t.Fatal(err)
 	}
-	if got.Header.Get("X-SISMARQ-Signature") != "" || !strings.Contains(string(body), `"title":"SISMARQ: blog.post.published"`) {
+	if got.Header.Get("X-Projeto-Nova-Signature") != "" || !strings.Contains(string(body), `"title":"Projeto-nova-v2: blog.post.published"`) {
 		t.Fatalf("alerta do Zabbix sem assinatura: %v %s", got.Header, body)
 	}
 	status = http.StatusBadGateway

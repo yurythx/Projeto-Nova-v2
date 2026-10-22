@@ -3,13 +3,13 @@
 package egress
 
 import (
-	"github.com/yurythx/sismarq/internal/modules/egress/application"
-	"github.com/yurythx/sismarq/internal/modules/egress/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/egress/transport"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/internal/platform/netguard"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/egress/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/egress/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/egress/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/netguard"
 )
 
 // Key é a chave do módulo.

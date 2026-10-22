@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/logging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/logging"
 )
 
 // capturingExecer satisfaz a interface (não exportada) que audit.NewWriter

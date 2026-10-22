@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Backup do SISMARQ (stack docker compose deste diretório):
-#   db.dump        pg_dump -Fc do banco do SISMARQ (restaurável com restore.sh)
+# Backup do Projeto-nova-v2 (stack docker compose deste diretório):
+#   db.dump        pg_dump -Fc do banco do Projeto-nova-v2 (restaurável com restore.sh)
 #   minio/         espelho de todos os buckets (arquivos, anexos, WORM)
 #   caddy.tgz      CA interna do HTTPS, se existir (chave privada inclusive)
 #   keycloak.tgz   volume do Keycloak de teste, se existir (melhor esforço:
@@ -24,7 +24,7 @@ KEEP_DAYS="${BACKUP_KEEP_DAYS:-7}"
 
 if [ "${1:-}" = "--install-cron" ]; then
   cat >/etc/cron.d/nexus-backup <<EOF
-# Backup diário do SISMARQ (scripts/backup.sh --install-cron)
+# Backup diário do Projeto-nova-v2 (scripts/backup.sh --install-cron)
 SHELL=/bin/bash
 30 2 * * * root cd $ROOT && BACKUP_DIR=$BACKUP_DIR BACKUP_KEEP_DAYS=$KEEP_DAYS ./scripts/backup.sh >>/var/log/nexus-backup.log 2>&1
 EOF

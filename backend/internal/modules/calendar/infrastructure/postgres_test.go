@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/calendar/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/calendar/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {

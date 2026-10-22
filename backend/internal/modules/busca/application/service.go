@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/metrics"
-	"github.com/yurythx/sismarq/internal/platform/search"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/metrics"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
 )
 
 // ProviderSource devolve os providers dos módulos ativos neste instante.

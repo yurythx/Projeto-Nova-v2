@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 )
 
 // newFakeOIDCIssuer sobe um servidor HTTP local que responde ao

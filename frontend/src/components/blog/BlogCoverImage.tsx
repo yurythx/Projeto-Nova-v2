@@ -9,18 +9,18 @@ interface BlogCoverImageProps {
 
 // Ícone da capa padrão pelo tema da publicação (palavra no slug).
 const TEMA_ICONE: [string, string][] = [
-  ["temporalidade", "calendar-clock"],
-  ["eliminacao", "file-x"],
-  ["digitalizacao", "scan-line"],
-  ["recolhimento", "archive"],
-  ["comiss", "users"],
-  ["classificacao", "list-tree"],
-  ["privad", "landmark"],
-  ["acesso", "book-open"],
+  ["atendimento", "headset"],
+  ["manutencao", "wrench"],
+  ["mudanca", "git-pull-request"],
+  ["seguranca", "shield-check"],
+  ["rede", "network"],
+  ["sistema", "monitor"],
+  ["capacitacao", "graduation-cap"],
+  ["comunicado", "megaphone"],
 ];
 
 export function BlogCoverImage({ coverUrl, title, slug, aspect = "card" }: BlogCoverImageProps) {
-  const iconName = TEMA_ICONE.find(([tema]) => slug.includes(tema))?.[1] ?? "archive";
+  const iconName = TEMA_ICONE.find(([tema]) => slug.includes(tema))?.[1] ?? "megaphone";
 
   const aspectClass =
     aspect === "hero"

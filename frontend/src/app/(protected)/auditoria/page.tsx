@@ -3,10 +3,10 @@
 import { Download, Eye, Link2, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/Input";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { AuditRecord, VerifyResult } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { AuditRecord, VerifyResult } from "@/lib/plataforma/types";
 
 function hasKeys(v: unknown): boolean {
   return typeof v === "object" && v !== null && Object.keys(v).length > 0;
@@ -59,7 +59,7 @@ function RecordDetail({ r }: { r: AuditRecord }) {
 }
 
 export default function AuditoriaPage() {
-  const { can, canGlobal } = useSismarq();
+  const { can, canGlobal } = usePlataforma();
   const { run, pending } = useAction();
   const [filters, setFilters] = useState({ action: "", resource_type: "", from: "", to: "" });
   const [applied, setApplied] = useState(filters);

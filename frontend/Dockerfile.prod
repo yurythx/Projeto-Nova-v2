@@ -1,5 +1,5 @@
 # ==============================================================================
-# Dockerfile de Produção — Frontend Next.js App Router (SISMARQ)
+# Dockerfile de Produção — Frontend Next.js App Router (Projeto-nova-v2)
 # Imagem multi-stage utilizando a funcionalidade 'standalone' do Next.js.
 # ==============================================================================
 

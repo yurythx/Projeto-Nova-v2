@@ -1,4 +1,4 @@
-// Package redisx configura o cliente Redis compartilhado do SISMARQ. O Redis
+// Package redisx configura o cliente Redis compartilhado do Projeto-nova-v2. O Redis
 // sustenta três responsabilidades de plataforma que precisam de estado
 // comum entre réplicas: o backplane do WebSocket (pub/sub), o rate
 // limiting adaptativo / lockout progressivo (A07) e a invalidação do cache
@@ -41,7 +41,7 @@ func Ping(client *redis.Client) func(ctx context.Context) error {
 	}
 }
 
-// Key monta uma chave namespaced do SISMARQ ("nexus:<partes>").
+// Key monta uma chave namespaced do Projeto-nova-v2 ("nexus:<partes>").
 func Key(parts ...string) string {
 	k := "nexus"
 	for _, p := range parts {

@@ -2,7 +2,7 @@
 
 import { type FormEvent } from "react";
 
-import { fmtDateTime } from "@/components/sismarq/useAction";
+import { fmtDateTime } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";

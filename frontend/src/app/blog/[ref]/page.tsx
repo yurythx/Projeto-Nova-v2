@@ -9,7 +9,7 @@ import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { SocialShareBar } from "@/components/blog/SocialShareBar";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { PublicShell } from "@/components/layout/PublicShell";
-import { Markdown } from "@/components/sismarq/Markdown";
+import { Markdown } from "@/components/plataforma/Markdown";
 import { getPublicPost, listPublicPosts } from "@/lib/blog/publicBlog";
 import { APP_URL } from "@/lib/env";
 
@@ -143,11 +143,7 @@ export default async function PublicPostPage({ params }: Props) {
             {post.title}
           </h1>
 
-          {post.summary && (
-            <p className="text-lg leading-relaxed text-muted">
-              {post.summary}
-            </p>
-          )}
+          {post.summary && <p className="text-lg leading-relaxed text-muted">{post.summary}</p>}
 
           {/* Imagem de Capa do Artigo (MinIO ou Fallback Editorial) */}
           <div className="mt-2 overflow-hidden rounded-xl">
@@ -180,7 +176,9 @@ export default async function PublicPostPage({ params }: Props) {
             <div className="mt-12 rounded-xl border border-accent/20 bg-accent/5 p-6 sm:p-8">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent">Projeto-nova-v2</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-accent">
+                    Projeto-nova-v2
+                  </span>
                   <h3 className="text-lg font-bold text-foreground">Precisa de um serviço?</h3>
                   <p className="text-sm text-muted">Veja a carta de serviços publicada no site.</p>
                 </div>

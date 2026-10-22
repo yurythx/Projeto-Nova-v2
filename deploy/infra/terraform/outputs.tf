@@ -1,15 +1,15 @@
-output "sismarq_app_vm_id" {
+output "app_vm_id" {
   description = "VMID da aplicação no Proxmox"
-  value       = module.vm_sismarq_app.id
+  value       = module.vm_app.id
 }
 
-output "sismarq_app_vm_ip" {
+output "app_vm_ip" {
   description = "IPv4 da VM de aplicação"
-  value       = module.vm_sismarq_app.ipv4_address
+  value       = module.vm_app.ipv4_address
 }
 
 output "proxmox_api" {
-  description = "API do hypervisor (não é a URL do SISMARQ)"
+  description = "API do hypervisor (não é a URL do Projeto-nova-v2)"
   value       = var.proxmox_endpoint
 }
 

@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/yurythx/sismarq/internal/platform/logging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/logging"
 )
 
 func testLogger() *slog.Logger {

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ToastProvider } from "@/components/notifications/ToastProvider";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 const patch = vi.fn();
 vi.mock("@/lib/api/client", async (orig) => ({
@@ -13,8 +13,8 @@ vi.mock("@/lib/api/client", async (orig) => ({
 
 let modules: ModuleStatus[] = [];
 const refreshModules = vi.fn();
-vi.mock("@/lib/sismarq/SismarqProvider", () => ({
-  useSismarq: () => ({ modules, loading: false, can: () => true, refreshModules }),
+vi.mock("@/lib/plataforma/PlataformaProvider", () => ({
+  usePlataforma: () => ({ modules, loading: false, can: () => true, refreshModules }),
 }));
 
 import ModulosPage from "./page";

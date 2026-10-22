@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 )
 
 func testConfig(t *testing.T) config.DatabaseConfig {

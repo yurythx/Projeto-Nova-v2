@@ -9,14 +9,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/httpserver"
-	"github.com/yurythx/sismarq/internal/platform/idempotency"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/outbox"
-	"github.com/yurythx/sismarq/internal/platform/searchindex"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/idempotency"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/searchindex"
 )
 
 // Worker roda os processadores de segundo plano: os do núcleo (Relay do

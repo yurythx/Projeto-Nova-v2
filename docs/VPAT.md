@@ -6,12 +6,12 @@
 > humano com tecnologia assistiva (F5.2 do roadmap — pendente). Enquanto
 > isso, "Suporta parcialmente" e "Não avaliado" refletem essa limitação.
 
-- **Produto:** SISMARQ — base tecnológica dos sistemas municipais e Arquivo Público
-- **Versão:** 2026-10-16 (avaliada com `/arquivo` e o Acervo, que depois saíram do produto; as telas de atendimento, ativos, problemas e mudanças ainda não foram avaliadas)
+- **Produto:** Projeto-nova-v2 — microkernel de plug-ins com a gestão de serviços
+- **Versão:** 2026-10-16 (o casco, os componentes e as telas da plataforma; as telas de atendimento, ativos, problemas e mudanças ainda não foram avaliadas)
 - **Padrões avaliados:** WCAG 2.1 níveis A e AA; e-MAG 2.0 (Governo Federal / SGD-MGI)
 - **Método:** `eslint-plugin-jsx-a11y` (regras e-MAG) no CI; revisão manual
   de contraste, foco e semântica; navegação só-teclado nos fluxos
-  principais (login, painel, configuração, páginas públicas e `/arquivo`)
+  principais (login, painel, configuração e páginas públicas)
 - **Legenda de conformidade:** Suporta · Suporta parcialmente · Não suporta · Não avaliado · Não se aplica
 
 ---

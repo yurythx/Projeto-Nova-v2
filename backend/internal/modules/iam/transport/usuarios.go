@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/modules/iam/application"
-	"github.com/yurythx/sismarq/internal/modules/iam/domain"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/domain"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // ----------------------------------------------------------------- usuários

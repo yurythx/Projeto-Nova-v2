@@ -1,4 +1,4 @@
-import type { UploadTicket } from "@/lib/sismarq/types";
+import type { UploadTicket } from "@/lib/plataforma/types";
 
 /** Envia o arquivo direto ao object storage (MinIO) pela URL pré-assinada
  * emitida pelo backend — o binário nunca passa pela API nem pelo BFF. */

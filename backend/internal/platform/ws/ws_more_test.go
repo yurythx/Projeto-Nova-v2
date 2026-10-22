@@ -15,7 +15,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/yurythx/sismarq/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
 func TestReadPumpHandlesEveryFrameKind(t *testing.T) {

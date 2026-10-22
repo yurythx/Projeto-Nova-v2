@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { OrgTree, Publico } from "@/lib/sismarq/types";
+import type { OrgTree, Publico } from "@/lib/plataforma/types";
 
 const tree = [
   {

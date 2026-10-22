@@ -24,7 +24,7 @@ import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { useConnectionState } from "@/components/layout/ConnectionStateContext";
 import { CONNECTION_LABEL, CONNECTION_TONE } from "@/lib/websocket/connectionCopy";
 import { apiClient } from "@/lib/api/client";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 import { OutboxRequeueButton } from "./OutboxRequeueButton";
 import { LoadTestTab } from "./LoadTestTab";
@@ -89,7 +89,7 @@ export function PlatformMonitoringDashboard() {
     }
   );
 
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const { data: outboxStats, mutate: refreshOutbox } = useSWR<OutboxStatsResponse>(
     "v1/monitoring/outbox-stats",
     (path: string) => apiClient.get<OutboxStatsResponse>(path).then((res) => res.data),

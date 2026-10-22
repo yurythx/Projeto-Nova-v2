@@ -5,9 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -24,7 +24,7 @@ import {
   type EstadoAtivo,
   type TipoAtivo,
 } from "@/lib/servicos/servicos";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 interface Produto {
   id: string;
@@ -42,7 +42,7 @@ export default function AtivosPage() {
 /** Ativos (itens de configuração): o que sustenta cada produto digital.
  * Com ?produto=, mostra só os ativos daquele produto. */
 function Ativos() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const gere = can("ativos:manage");
   const produto = useSearchParams().get("produto") ?? undefined;
   const ativos = useApiQuery<Ativo[]>(

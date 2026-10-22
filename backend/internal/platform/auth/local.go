@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 )
 
 // LocalIssuer é a identidade em nome da qual o backend assina seus

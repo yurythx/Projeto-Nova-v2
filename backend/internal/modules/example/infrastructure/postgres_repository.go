@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/example/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 const cols = `id, title, description, status, created_at, updated_at`

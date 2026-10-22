@@ -1,5 +1,5 @@
 // Package integration exercita, contra um PostgreSQL real com todas as
-// migrations aplicadas, o fluxo principal de cada plugin do SISMARQ na
+// migrations aplicadas, o fluxo principal de cada plugin do Projeto-nova-v2 na
 // camada de aplicação (SQL de verdade; storage/reautenticação simulados).
 //
 // Pulado sem TEST_DATABASE_URL, como os demais testes de integração.
@@ -21,49 +21,49 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	blogApp "github.com/yurythx/sismarq/internal/modules/blog/application"
-	blogDomain "github.com/yurythx/sismarq/internal/modules/blog/domain"
-	blogInfra "github.com/yurythx/sismarq/internal/modules/blog/infrastructure"
-	calApp "github.com/yurythx/sismarq/internal/modules/calendar/application"
-	calDomain "github.com/yurythx/sismarq/internal/modules/calendar/domain"
-	calInfra "github.com/yurythx/sismarq/internal/modules/calendar/infrastructure"
-	catApp "github.com/yurythx/sismarq/internal/modules/catalog/application"
-	catDomain "github.com/yurythx/sismarq/internal/modules/catalog/domain"
-	catInfra "github.com/yurythx/sismarq/internal/modules/catalog/infrastructure"
-	contactApp "github.com/yurythx/sismarq/internal/modules/contact/application"
-	contactDomain "github.com/yurythx/sismarq/internal/modules/contact/domain"
-	contactInfra "github.com/yurythx/sismarq/internal/modules/contact/infrastructure"
-	dirApp "github.com/yurythx/sismarq/internal/modules/directory/application"
-	dirDomain "github.com/yurythx/sismarq/internal/modules/directory/domain"
-	dirInfra "github.com/yurythx/sismarq/internal/modules/directory/infrastructure"
-	egressApp "github.com/yurythx/sismarq/internal/modules/egress/application"
-	egressInfra "github.com/yurythx/sismarq/internal/modules/egress/infrastructure"
-	filesApp "github.com/yurythx/sismarq/internal/modules/files/application"
-	filesDomain "github.com/yurythx/sismarq/internal/modules/files/domain"
-	filesInfra "github.com/yurythx/sismarq/internal/modules/files/infrastructure"
-	iamApp "github.com/yurythx/sismarq/internal/modules/iam/application"
-	iamDomain "github.com/yurythx/sismarq/internal/modules/iam/domain"
-	iamInfra "github.com/yurythx/sismarq/internal/modules/iam/infrastructure"
-	mercApp "github.com/yurythx/sismarq/internal/modules/mercurio/application"
-	mercInfra "github.com/yurythx/sismarq/internal/modules/mercurio/infrastructure"
-	signumApp "github.com/yurythx/sismarq/internal/modules/signum/application"
-	signumDomain "github.com/yurythx/sismarq/internal/modules/signum/domain"
-	signumInfra "github.com/yurythx/sismarq/internal/modules/signum/infrastructure"
-	tramiteApp "github.com/yurythx/sismarq/internal/modules/tramite/application"
-	tramiteDomain "github.com/yurythx/sismarq/internal/modules/tramite/domain"
-	tramiteInfra "github.com/yurythx/sismarq/internal/modules/tramite/infrastructure"
-	wikiApp "github.com/yurythx/sismarq/internal/modules/wiki/application"
-	wikiInfra "github.com/yurythx/sismarq/internal/modules/wiki/infrastructure"
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/iam"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/netguard"
-	"github.com/yurythx/sismarq/internal/platform/outbox"
-	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	blogApp "github.com/yurythx/projeto-nova-v2/internal/modules/blog/application"
+	blogDomain "github.com/yurythx/projeto-nova-v2/internal/modules/blog/domain"
+	blogInfra "github.com/yurythx/projeto-nova-v2/internal/modules/blog/infrastructure"
+	calApp "github.com/yurythx/projeto-nova-v2/internal/modules/calendar/application"
+	calDomain "github.com/yurythx/projeto-nova-v2/internal/modules/calendar/domain"
+	calInfra "github.com/yurythx/projeto-nova-v2/internal/modules/calendar/infrastructure"
+	catApp "github.com/yurythx/projeto-nova-v2/internal/modules/catalog/application"
+	catDomain "github.com/yurythx/projeto-nova-v2/internal/modules/catalog/domain"
+	catInfra "github.com/yurythx/projeto-nova-v2/internal/modules/catalog/infrastructure"
+	contactApp "github.com/yurythx/projeto-nova-v2/internal/modules/contact/application"
+	contactDomain "github.com/yurythx/projeto-nova-v2/internal/modules/contact/domain"
+	contactInfra "github.com/yurythx/projeto-nova-v2/internal/modules/contact/infrastructure"
+	dirApp "github.com/yurythx/projeto-nova-v2/internal/modules/directory/application"
+	dirDomain "github.com/yurythx/projeto-nova-v2/internal/modules/directory/domain"
+	dirInfra "github.com/yurythx/projeto-nova-v2/internal/modules/directory/infrastructure"
+	egressApp "github.com/yurythx/projeto-nova-v2/internal/modules/egress/application"
+	egressInfra "github.com/yurythx/projeto-nova-v2/internal/modules/egress/infrastructure"
+	filesApp "github.com/yurythx/projeto-nova-v2/internal/modules/files/application"
+	filesDomain "github.com/yurythx/projeto-nova-v2/internal/modules/files/domain"
+	filesInfra "github.com/yurythx/projeto-nova-v2/internal/modules/files/infrastructure"
+	iamApp "github.com/yurythx/projeto-nova-v2/internal/modules/iam/application"
+	iamDomain "github.com/yurythx/projeto-nova-v2/internal/modules/iam/domain"
+	iamInfra "github.com/yurythx/projeto-nova-v2/internal/modules/iam/infrastructure"
+	mercApp "github.com/yurythx/projeto-nova-v2/internal/modules/mercurio/application"
+	mercInfra "github.com/yurythx/projeto-nova-v2/internal/modules/mercurio/infrastructure"
+	signumApp "github.com/yurythx/projeto-nova-v2/internal/modules/signum/application"
+	signumDomain "github.com/yurythx/projeto-nova-v2/internal/modules/signum/domain"
+	signumInfra "github.com/yurythx/projeto-nova-v2/internal/modules/signum/infrastructure"
+	tramiteApp "github.com/yurythx/projeto-nova-v2/internal/modules/tramite/application"
+	tramiteDomain "github.com/yurythx/projeto-nova-v2/internal/modules/tramite/domain"
+	tramiteInfra "github.com/yurythx/projeto-nova-v2/internal/modules/tramite/infrastructure"
+	wikiApp "github.com/yurythx/projeto-nova-v2/internal/modules/wiki/application"
+	wikiInfra "github.com/yurythx/projeto-nova-v2/internal/modules/wiki/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/iam"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/netguard"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/secretcrypto"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 var errReauth = signumDomain.ErrReauth
@@ -517,7 +517,7 @@ func TestPluginsEndToEnd(t *testing.T) {
 			sig, event string
 		}
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			received.sig, received.event = r.Header.Get("X-SISMARQ-Signature"), r.Header.Get("X-SISMARQ-Event")
+			received.sig, received.event = r.Header.Get("X-Projeto-Nova-Signature"), r.Header.Get("X-Projeto-Nova-Event")
 			w.WriteHeader(http.StatusNoContent)
 		}))
 		defer srv.Close()

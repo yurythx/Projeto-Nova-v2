@@ -5,7 +5,7 @@ import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { VerifyDocument } from "@/components/public/VerifyDocument";
 import { PublicApiError, publicGet } from "@/lib/api/publicServer";
-import type { Verification } from "@/lib/sismarq/types";
+import type { Verification } from "@/lib/plataforma/types";
 
 import { CertificateActions } from "@/components/public/CertificateActions";
 

@@ -3,9 +3,9 @@
 import { type FormEvent, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { rotuloTipo, type Oferta, type Pessoa } from "@/lib/atendimento/atendimento";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 interface Produto {
   id: string;
@@ -46,7 +46,7 @@ const opcoesTipo = [
 ];
 
 export default function AtendimentoCadastroPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const gerencia = can("atendimento:manage");
   const ofertas = useApiQuery<Oferta[]>("v1/atendimento/ofertas");
   const equipes = useApiQuery<Equipe[]>("v1/atendimento/equipes");

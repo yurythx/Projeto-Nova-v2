@@ -7,22 +7,22 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/branding"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/httpserver"
-	"github.com/yurythx/sismarq/internal/platform/iaconfig"
-	"github.com/yurythx/sismarq/internal/platform/idempotency"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/keycloakconfig"
-	"github.com/yurythx/sismarq/internal/platform/lgpd"
-	"github.com/yurythx/sismarq/internal/platform/localauth"
-	"github.com/yurythx/sismarq/internal/platform/notificacoes"
-	"github.com/yurythx/sismarq/internal/platform/outbox"
-	"github.com/yurythx/sismarq/internal/platform/redisx"
-	"github.com/yurythx/sismarq/internal/platform/transparency"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/branding"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/iaconfig"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/idempotency"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/keycloakconfig"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/lgpd"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/localauth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/redisx"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/transparency"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 // NewRouter monta o router HTTP da API: base de plataforma (request id,
@@ -139,7 +139,7 @@ func swaggerUI(w http.ResponseWriter, _ *http.Request) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SISMARQ — API (OpenAPI 3)</title>
+  <title>Projeto-nova-v2 — API (OpenAPI 3)</title>
   <link rel="stylesheet" href="/docs/assets/swagger-ui.css" />
 </head>
 <body>

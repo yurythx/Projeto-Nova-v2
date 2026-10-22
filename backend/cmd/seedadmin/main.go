@@ -38,10 +38,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 
-	"github.com/yurythx/sismarq/internal/platform/passwords"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/passwords"
 )
 
 // passwordBytes: 18 bytes aleatórios (144 bits de entropia) codificados em
@@ -55,7 +55,7 @@ const passwordBytes = 18
 
 func main() {
 	username := flag.String("username", "admin", "username da conta local a criar/resetar")
-	email := flag.String("email", "admin@sismarq.local", "email da conta")
+	email := flag.String("email", "admin@projeto-nova.local", "email da conta")
 	displayName := flag.String("display-name", "Administrador (local)", "nome de exibição")
 	rolesCSV := flag.String("roles", "nexus-admin,nexus-user", "roles, separadas por vírgula")
 	// password: SÓ para automação (CI de E2E, ver .github/workflows/ci.yml)

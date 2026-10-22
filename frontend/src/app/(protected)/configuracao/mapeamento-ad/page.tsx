@@ -4,9 +4,9 @@ import { Network, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { ScopePicker } from "@/components/iam/ScopePicker";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +14,7 @@ import { Select } from "@/components/ui/Select";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import type { ADMapping, Perfil, ScopeRef } from "@/lib/sismarq/types";
+import type { ADMapping, Perfil, ScopeRef } from "@/lib/plataforma/types";
 
 /**
  * Correlação grupo do AD → Perfil + escopo organizacional (skill §2.3).

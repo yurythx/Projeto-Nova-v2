@@ -25,13 +25,13 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/platform/config"
-	"github.com/yurythx/sismarq/internal/platform/keycloakconfig"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/redisx"
-	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/keycloakconfig"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/redisx"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/secretcrypto"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 const testConfigKey = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
@@ -52,7 +52,7 @@ func infraConfig(t *testing.T) *config.Config {
 	pemKey := string(pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}))
 	limit := config.RateLimitConfig{WindowSeconds: 60, MaxRequests: 1000}
 	return &config.Config{
-		App: config.AppConfig{Env: "test", Name: "sismarq-test", LogLevel: "error", LogFormat: "json"},
+		App: config.AppConfig{Env: "test", Name: "projeto-nova-test", LogLevel: "error", LogFormat: "json"},
 		Database: config.DatabaseConfig{Host: pg.Host, Port: int(pg.Port), Name: pg.Database, User: pg.User, Password: pg.Password,
 			SSLMode: "disable", MaxConns: 5, MinConns: 0, MaxConnLifetime: time.Hour, MaxConnIdleTime: time.Minute, ConnectTimeout: 3 * time.Second},
 		Redis:     config.RedisConfig{URL: "redis://" + miniredis.RunT(t).Addr()},

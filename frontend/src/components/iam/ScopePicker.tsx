@@ -4,9 +4,9 @@ import { useMemo } from "react";
 
 import { Select } from "@/components/ui/Select";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import { departamentosGeridos, hasPermission, unidadesGeridas } from "@/lib/sismarq/permissions";
-import type { OrgTree, ScopeRef } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { departamentosGeridos, hasPermission, unidadesGeridas } from "@/lib/plataforma/permissions";
+import type { OrgTree, ScopeRef } from "@/lib/plataforma/types";
 
 /** Escopo organizacional em cascata (Entidade → Unidade → Departamento)
  * a partir de GET /iam/org-tree. Campo vazio = escopo mais amplo.
@@ -29,7 +29,7 @@ export function ScopePicker({
   required?: boolean;
   permission?: string;
 }) {
-  const { me } = useSismarq();
+  const { me } = usePlataforma();
   const { data: tree } = useApiQuery<OrgTree[]>("v1/iam/org-tree");
 
   const alcance = useMemo(() => {

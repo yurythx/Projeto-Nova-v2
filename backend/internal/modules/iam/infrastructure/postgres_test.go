@@ -9,10 +9,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/iam/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {

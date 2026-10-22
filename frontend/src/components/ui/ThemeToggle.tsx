@@ -3,7 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { deleteCookie, THEME_COOKIE, THEME_COOKIE_LEGACY } from "@/lib/prefs/cookies";
+import { THEME_COOKIE } from "@/lib/prefs/cookies";
 import { usePrefersDark } from "@/lib/theme/usePrefersDark";
 
 const COOKIE_NAME = THEME_COOKIE;
@@ -18,9 +18,7 @@ export function ThemeToggle({ initialTheme }: { initialTheme?: "light" | "dark" 
     if (typeof document !== "undefined") {
       const fromAttr = document.documentElement.getAttribute("data-theme");
       if (fromAttr === "dark" || fromAttr === "light") return fromAttr;
-      const match =
-        document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`)) ??
-        document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE_LEGACY}=([^;]*)`));
+      const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
       if (match && (match[1] === "dark" || match[1] === "light")) return match[1] as "light" | "dark";
     }
     return null;
@@ -41,7 +39,6 @@ export function ThemeToggle({ initialTheme }: { initialTheme?: "light" | "dark" 
     document.documentElement.classList.toggle("dark", next === "dark");
     // 1 ano, path=/ — persistência lida em Server Components e no próximo reload
     document.cookie = `${COOKIE_NAME}=${next}; path=/; max-age=31536000; samesite=lax`;
-    deleteCookie(THEME_COOKIE_LEGACY);
     try {
       localStorage.setItem(COOKIE_NAME, next);
     } catch {

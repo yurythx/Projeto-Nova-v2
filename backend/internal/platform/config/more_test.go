@@ -131,7 +131,7 @@ func TestIAEndpoint(t *testing.T) {
 func TestTypesense(t *testing.T) {
 	setRequiredEnv(t)
 	cfg, err := Load()
-	if err != nil || cfg.Typesense.Enabled() || cfg.Typesense.Collection != "sismarq_busca_v1" {
+	if err != nil || cfg.Typesense.Enabled() || cfg.Typesense.Collection != "nexus_busca_v1" {
 		t.Fatalf("sem TYPESENSE_URL o índice fica desligado: %+v %v", cfg.Typesense, err)
 	}
 	casos := map[string]map[string]string{

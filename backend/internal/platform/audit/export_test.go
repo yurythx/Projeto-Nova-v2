@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 func TestExportPaginatesWithCursor(t *testing.T) {

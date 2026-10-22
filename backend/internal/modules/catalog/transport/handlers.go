@@ -8,10 +8,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/catalog/application"
-	"github.com/yurythx/sismarq/internal/modules/catalog/domain"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/catalog/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/catalog/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // Handlers da API do Catálogo.

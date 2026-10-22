@@ -33,8 +33,8 @@ vi.mock("@/components/monitoring/PlatformMonitoringDashboard", () => ({ Platform
 vi.mock("@/components/settings/BrandingSettingsForm", () => ({ BrandingSettingsForm: () => <p>branding</p> }));
 
 import { BrandingProvider } from "@/components/branding/BrandingContext";
-import { SectionTabsInline } from "@/components/sismarq/SectionTabsInline";
-import { Pagination } from "@/components/sismarq/Pagination";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { Pagination } from "@/components/plataforma/Pagination";
 import { Spinner } from "@/components/ui/Spinner";
 import { getServerBranding } from "@/lib/branding/server";
 import { identityRoutes, mockBackend, moduleStatus, renderApp } from "@/test/backend";
@@ -65,7 +65,7 @@ describe("layouts de servidor", () => {
   it("raiz: metadados e tokens white-label a partir do branding da API", async () => {
     publicGetOr.mockResolvedValue({ app_name: "Portal X", app_description: "Serviços", org_name: "M", logo_url: "", favicon_url: "", support_email: "", support_phone: "", support_hours: "", tokens: { primary: "#003366" } });
     expect(await generateMetadata()).toMatchObject({ title: { default: "Portal X", template: "%s — Portal X" }, description: "Serviços" });
-    cookieJar.values = { "sismarq-theme": "dark", "sismarq-branding": JSON.stringify({ highContrast: true, fontSizeScale: 120 }) };
+    cookieJar.values = { "projeto-nova-theme": "dark", "projeto-nova-branding": JSON.stringify({ highContrast: true, fontSizeScale: 120 }) };
     const el = await RootLayout({ children: <p>filho</p> });
     const html = el as unknown as { props: { "data-theme"?: string; "data-high-contrast"?: string; "data-font-scale": string; children: unknown[] } };
     expect(html.props["data-theme"]).toBe("dark");
@@ -75,7 +75,7 @@ describe("layouts de servidor", () => {
 
     publicGetOr.mockResolvedValue(null);
     expect(await generateMetadata()).toMatchObject({ title: { default: "Projeto-nova-v2" } });
-    cookieJar.values = { "sismarq-theme": "roxo" };
+    cookieJar.values = { "projeto-nova-theme": "roxo" };
     const plain = (await RootLayout({ children: null })) as unknown as { props: Record<string, unknown> };
     expect(plain.props["data-theme"]).toBeUndefined();
     expect(plain.props["data-high-contrast"]).toBeUndefined();
@@ -92,7 +92,7 @@ describe("layouts de servidor", () => {
     await expect(ProtectedLayout({ children: null })).rejects.toThrow("/login");
 
     getServerSession.mockResolvedValueOnce({ user: { email: "maria@x.gov.br" } });
-    cookieJar.values = { "sismarq-theme": "light", "sismarq-sidebar-collapsed": "true" };
+    cookieJar.values = { "projeto-nova-theme": "light", "projeto-nova-sidebar-collapsed": "true" };
     render(await ProtectedLayout({ children: <p>tela</p> }));
     const shell = screen.getByTestId("shell");
     expect(shell).toHaveAttribute("data-user", "maria@x.gov.br");

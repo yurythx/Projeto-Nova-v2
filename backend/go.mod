@@ -1,4 +1,4 @@
-module github.com/yurythx/sismarq
+module github.com/yurythx/projeto-nova-v2
 
 go 1.26.0
 

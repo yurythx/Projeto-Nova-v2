@@ -1,4 +1,4 @@
-# Roadmap de Conformidade Governamental — SISMARQ
+# Roadmap de Conformidade Governamental — Projeto-nova-v2
 
 Origem: auditoria de conformidade de **2026-09-09** (e-MAG 2.0 / WCAG 2.1
 AA, LGPD 13.709/2018, LAI 12.527/2011 + LC 131/2009, OWASP ASVS, SGD/MGI,
@@ -107,7 +107,7 @@ Legenda: ✅ feito · 🟡 parcial / scaffold · ⬜ pendente · 🔒 depende de
 | F8.8 | OpenAPI com schemas de corpo, resposta e query gerados dos tipos Go, verificados no CI | ✅ `internal/app/openapi_schemas_test.go` |
 | F8.9 | Grafo visual de dependências na tela de Módulos | ✅ |
 | F8.10 | Testes E2E (Playwright) dos fluxos críticos contra a stack completa, no CI | ✅ `frontend/e2e`, `docs/e2e.md` |
-| F8.11 | Contrato frontend × backend verificado pelo compilador (tipos gerados do OpenAPI) | ✅ `frontend/src/lib/sismarq/contract.types.ts` |
+| F8.11 | Contrato frontend × backend verificado pelo compilador (tipos gerados do OpenAPI) | ✅ `frontend/src/lib/plataforma/contract.types.ts` |
 | F8.12 | `npm audit` bloqueante no CI; Next 16.3.6 (RCE crítica GHSA-2xp9-vwfh-vxw4) | ✅ |
 
 ---

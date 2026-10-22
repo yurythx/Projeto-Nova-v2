@@ -6,7 +6,7 @@ import { PublicShell } from "@/components/layout/PublicShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { getServerBranding } from "@/lib/branding/server";
 import { APP_URL } from "@/lib/env";
-import { PILARES, PRODUTO } from "@/lib/sismarq/conteudo";
+import { PILARES, PRODUTO } from "@/lib/plataforma/conteudo";
 
 export const dynamic = "force-dynamic";
 

@@ -38,16 +38,16 @@ import { PublicBlogListClient } from "../PublicBlogListClient";
 import BlogPublicPage from "../page";
 import PublicPostPage, { generateMetadata } from "../[ref]/page";
 import { GET as getRss } from "../rss.xml/route";
-import type { Post } from "@/lib/sismarq/types";
+import type { Post } from "@/lib/plataforma/types";
 
 describe("PublicBlogListClient", () => {
   const samplePosts: Post[] = [
     {
       id: "1",
       slug: "post-infraestrutura",
-      title: "Tabela de Temporalidade publicada",
-      summary: "Prazos de guarda das secretarias.",
-      body: "## Tópico 1\nConteúdo sobre a TTDD e o DIORONDON-e.",
+      title: "Nova central de atendimento",
+      summary: "Como abrir uma solicitação.",
+      body: "## Tópico 1\nConteúdo sobre a fila e os prazos.",
       kind: "noticia",
       status: "published",
       pinned: true,
@@ -58,9 +58,9 @@ describe("PublicBlogListClient", () => {
     {
       id: "2",
       slug: "post-seguranca",
-      title: "Rito de Eliminação de Documentos",
-      summary: "Relação, ata, edital e termo.",
-      body: "Conteúdo sobre a eliminação e a amostragem.",
+      title: "Manutenção programada da rede",
+      summary: "Janela de sábado, das 8h às 12h.",
+      body: "Conteúdo sobre a troca do roteador.",
       kind: "comunicado",
       status: "published",
       pinned: false,
@@ -74,35 +74,41 @@ describe("PublicBlogListClient", () => {
     render(<PublicBlogListClient initialPosts={samplePosts} />);
 
     expect(screen.getByText(/destaque editorial/i)).toBeInTheDocument();
-    expect(screen.getAllByText("Tabela de Temporalidade publicada").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Rito de Eliminação de Documentos").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Nova central de atendimento").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Manutenção programada da rede").length).toBeGreaterThan(0);
   });
 
   it("filtra posts por termo de busca no input", () => {
     render(<PublicBlogListClient initialPosts={samplePosts} />);
 
     const searchInput = screen.getByPlaceholderText(/buscar por assunto/i);
-    fireEvent.change(searchInput, { target: { value: "amostragem" } });
+    fireEvent.change(searchInput, { target: { value: "roteador" } });
 
-    expect(screen.getAllByText("Rito de Eliminação de Documentos").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("heading", { name: "Tabela de Temporalidade publicada" })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Manutenção programada da rede").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("heading", { name: "Nova central de atendimento" }),
+    ).not.toBeInTheDocument();
 
     // Limpa a busca
     const clearBtn = screen.getByLabelText("Limpar busca");
     fireEvent.click(clearBtn);
 
-    expect(screen.getAllByText("Tabela de Temporalidade publicada").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Nova central de atendimento").length).toBeGreaterThan(0);
   });
 
-  it("filtra posts por tag de categoria", () => {
+  it("filtra posts pelo tipo", () => {
     render(<PublicBlogListClient initialPosts={samplePosts} />);
 
-    // Clica na tag de Eliminação
-    const segurancaTag = screen.getByRole("tab", { name: "Eliminação" });
-    fireEvent.click(segurancaTag);
+    fireEvent.click(screen.getByRole("tab", { name: "Comunicados" }));
+    expect(screen.getByRole("tab", { name: "Comunicados" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
 
-    expect(screen.getAllByText("Rito de Eliminação de Documentos").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("heading", { name: "Tabela de Temporalidade publicada" })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Manutenção programada da rede").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("heading", { name: "Nova central de atendimento" }),
+    ).not.toBeInTheDocument();
   });
 
   it("exibe estado vazio quando nenhum post corresponde ao filtro", () => {
@@ -116,7 +122,7 @@ describe("PublicBlogListClient", () => {
     const resetBtn = screen.getByRole("button", { name: "Limpar filtros" });
     fireEvent.click(resetBtn);
 
-    expect(screen.getAllByText("Tabela de Temporalidade publicada").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Nova central de atendimento").length).toBeGreaterThan(0);
   });
 });
 
@@ -171,7 +177,9 @@ describe("Páginas Públicas do Blog (Server Components)", () => {
     const page = await PublicPostPage({ params: Promise.resolve({ ref: "post-detalhado" }) });
     render(page);
 
-    expect(screen.getByRole("heading", { name: "Artigo Detalhado da Plataforma", level: 1 })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Artigo Detalhado da Plataforma", level: 1 }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Resumo do artigo detalhado.")).toBeInTheDocument();
   });
 
@@ -237,7 +245,7 @@ describe("RSS 2.0 Feed Route (app/blog/rss.xml/route.ts)", () => {
     expect(res.headers.get("Content-Type")).toContain("application/xml");
 
     const xml = await res.text();
-    expect(xml).toContain("<rss version=\"2.0\"");
+    expect(xml).toContain('<rss version="2.0"');
     expect(xml).toContain("<title><![CDATA[Artigo no Feed RSS]]></title>");
     expect(xml).toContain("/blog/post-rss</link>");
   });

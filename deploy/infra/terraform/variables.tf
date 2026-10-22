@@ -65,7 +65,7 @@ variable "vm_template_id" {
 }
 
 variable "vm_id" {
-  description = "VMID exclusivo desta instância SISMARQ (não reutilize 201 nem o LXC de teste)"
+  description = "VMID exclusivo desta instância Projeto-nova-v2 (não reutilize 201 nem o LXC de teste)"
   type        = number
   default     = 220
 }
@@ -73,7 +73,7 @@ variable "vm_id" {
 variable "vm_name" {
   description = "Nome da VM de aplicação"
   type        = string
-  default     = "sismarq-prod-app"
+  default     = "projeto-nova-prod-app"
 }
 
 variable "app_ipv4" {

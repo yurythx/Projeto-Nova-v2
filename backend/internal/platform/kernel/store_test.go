@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 func TestPostgresStoreRoundTripAndNotify(t *testing.T) {

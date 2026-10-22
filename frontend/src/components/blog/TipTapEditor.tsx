@@ -27,8 +27,8 @@ import {
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/client";
-import type { UploadTicket } from "@/lib/sismarq/types";
-import { mimeOf, putToTicket } from "@/lib/sismarq/upload";
+import type { UploadTicket } from "@/lib/plataforma/types";
+import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 
 interface TipTapEditorProps {
   value: string;

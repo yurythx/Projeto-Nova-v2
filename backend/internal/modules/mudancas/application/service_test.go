@@ -12,13 +12,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/modules/mudancas/application"
-	"github.com/yurythx/sismarq/internal/modules/mudancas/domain"
-	"github.com/yurythx/sismarq/internal/modules/mudancas/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/mudancas/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/mudancas/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/mudancas/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 var errFalha = errors.New("falha")

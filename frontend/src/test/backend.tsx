@@ -1,5 +1,5 @@
 // Harness dos testes de tela: um backend falso no nível do fetch (o
-// apiClient, o SWR, o SismarqProvider e o ToastProvider reais rodam por
+// apiClient, o SWR, o PlataformaProvider e o ToastProvider reais rodam por
 // cima) — o teste enxerga as mesmas requisições que o proxy BFF receberia.
 import { render } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
@@ -8,8 +8,8 @@ import { vi } from "vitest";
 
 import { ToastProvider } from "@/components/notifications/ToastProvider";
 import { RealtimeProvider } from "@/components/realtime/RealtimeProvider";
-import { SismarqProvider } from "@/lib/sismarq/SismarqProvider";
-import type { Me, ModuleStatus } from "@/lib/sismarq/types";
+import { PlataformaProvider } from "@/lib/plataforma/PlataformaProvider";
+import type { Me, ModuleStatus } from "@/lib/plataforma/types";
 
 export interface BackendRequest {
   method: string;
@@ -109,7 +109,7 @@ export function moduleStatus(key: string, extra: Partial<ModuleStatus> = {}): Mo
   };
 }
 
-/** Rotas do SismarqProvider (identidade e módulos). */
+/** Rotas do PlataformaProvider (identidade e módulos). */
 export function identityRoutes(me: Partial<Me> = {}, modules: ModuleStatus[] = []): Record<string, Route> {
   return {
     "GET v1/me": { data: { ...ME, ...me } },
@@ -121,7 +121,7 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false }}>
       <ToastProvider>
-        <SismarqProvider>{children}</SismarqProvider>
+        <PlataformaProvider>{children}</PlataformaProvider>
       </ToastProvider>
     </SWRConfig>
   );

@@ -7,7 +7,7 @@ import (
 )
 
 // ExchangeEvents é o único exchange topic do barramento de eventos do
-// SISMARQ. O Relay do Outbox publica aqui com routing key = tipo do evento.
+// Projeto-nova-v2. O Relay do Outbox publica aqui com routing key = tipo do evento.
 const ExchangeEvents = "nexus.events"
 
 // QueueSpec descreve uma fila durável com sua DLQ e seus bindings.

@@ -1,4 +1,4 @@
-import type { Me, OrgTree } from "@/lib/sismarq/types";
+import type { Me, OrgTree } from "@/lib/plataforma/types";
 
 // Mesma regra de curingas do backend (internal/platform/auth/rbac.go):
 // "*" concede tudo, "recurso:*" concede toda ação do recurso. No frontend

@@ -10,7 +10,7 @@ import { AccessibilityBar } from "@/components/layout/AccessibilityBar";
 import { Logo } from "@/components/ui/Logo";
 import { Seal } from "@/components/ui/Seal";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { pickCookie, THEME_COOKIE, THEME_COOKIE_LEGACY } from "@/lib/prefs/cookies";
+import { THEME_COOKIE } from "@/lib/prefs/cookies";
 
 // O painel de marca descreve exatamente o que a plataforma faz para um
 // fiscal de contrato — sem linguagem de vendedor ("enterprise", "a
@@ -28,7 +28,7 @@ export default async function LoginPage() {
   const brand = await getServerBranding();
 
   const cookieStore = await cookies();
-  const themeCookie = pickCookie(cookieStore, THEME_COOKIE, THEME_COOKIE_LEGACY);
+  const themeCookie = cookieStore.get(THEME_COOKIE)?.value;
   const initialTheme = themeCookie === "dark" || themeCookie === "light" ? themeCookie : undefined;
 
   return (

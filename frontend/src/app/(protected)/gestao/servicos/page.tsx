@@ -4,11 +4,11 @@ import Link from "next/link";
 import { Archive, ExternalLink, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -19,9 +19,9 @@ import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import { SERVICE_ICON_NAMES } from "@/lib/catalog/icons";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import { unidadesGeridas } from "@/lib/sismarq/permissions";
-import type { CatalogService, OrgTree, ServiceChannel } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { unidadesGeridas } from "@/lib/plataforma/permissions";
+import type { CatalogService, OrgTree, ServiceChannel } from "@/lib/plataforma/types";
 
 const STATUS: Record<CatalogService["status"], { label: string; tone: "neutral" | "success" | "warning" }> = {
   draft: { label: "Rascunho", tone: "neutral" },
@@ -35,7 +35,7 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
   const { run, pending } = useAction();
   const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const [channels, setChannels] = useState<ServiceChannel[]>(service?.channels ?? []);
-  const { me } = useSismarq();
+  const { me } = usePlataforma();
   // Só as unidades que a pessoa gerencia; sem unidade (institucional) só
   // para a gestão global (ADR 013 — a API confere de novo).
   const geridas = unidadesGeridas(me, tree.data, "catalog:manage");

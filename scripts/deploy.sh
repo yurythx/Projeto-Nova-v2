@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy do SISMARQ num servidor com Docker (modo produção, só o
+# Deploy do Projeto-nova-v2 num servidor com Docker (modo produção, só o
 # docker-compose.yml). Idempotente: pode rodar a cada atualização.
 #
 #   scripts/deploy.sh                 # usa o 1º IP da máquina como host público

@@ -81,13 +81,13 @@ describe("Markdown — imagens, tabelas e avisos", () => {
   it("avisos [!TIPO], tipo desconhecido e citação comum", () => {
     render(
       <Markdown
-        source={"> [!WARNING] Prazo de 30 dias\n> conta da publicação\n\n> [!TIP]\n> Use a TTDD\n\n> [!OUTRO] x\n\n> [!CAUTION] a\n\n> [!IMPORTANT] b\n\n> [!INFO] c\n\n> [!NOTE] d\n\n> citação simples\n> continua"}
+        source={"> [!WARNING] Prazo de 30 dias\n> conta da publicação\n\n> [!TIP]\n> Use o modelo\n\n> [!OUTRO] x\n\n> [!CAUTION] a\n\n> [!IMPORTANT] b\n\n> [!INFO] c\n\n> [!NOTE] d\n\n> citação simples\n> continua"}
       />,
     );
     const notas = screen.getAllByRole("note");
     expect(notas).toHaveLength(7);
     expect(notas[0]).toHaveTextContent("AtençãoPrazo de 30 dias conta da publicação");
-    expect(notas[1]).toHaveTextContent("DicaUse a TTDD");
+    expect(notas[1]).toHaveTextContent("DicaUse o modelo");
     expect(notas[2]).toHaveTextContent("Notax");
     expect(screen.getByText("citação simples continua").closest("blockquote")).not.toBeNull();
   });

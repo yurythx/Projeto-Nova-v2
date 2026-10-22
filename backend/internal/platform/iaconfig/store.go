@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/secretcrypto"
 )
 
 // Store persiste conexões e usos (tabelas ia_conexoes e ia_uso). Handlers e o Roteador dependem da interface (fakes nos testes).

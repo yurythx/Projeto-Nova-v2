@@ -3,7 +3,7 @@ package keycloakconfig
 import (
 	"testing"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 )
 
 func TestSettings_ToKeycloakConfig(t *testing.T) {

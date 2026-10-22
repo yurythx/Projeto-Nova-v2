@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 )
 
 type solicitacaoResp struct {

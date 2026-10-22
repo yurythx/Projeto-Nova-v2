@@ -3,10 +3,10 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 
 import { useApiQuery } from "@/lib/api/swr";
-import { hasPermission, unidadesGeridas } from "@/lib/sismarq/permissions";
-import type { Me, ModuleStatus } from "@/lib/sismarq/types";
+import { hasPermission, unidadesGeridas } from "@/lib/plataforma/permissions";
+import type { Me, ModuleStatus } from "@/lib/plataforma/types";
 
-interface SismarqContextValue {
+interface PlataformaContextValue {
   me: Me | undefined;
   modules: ModuleStatus[];
   loading: boolean;
@@ -20,12 +20,12 @@ interface SismarqContextValue {
   refreshModules: () => void;
 }
 
-const SismarqContext = createContext<SismarqContextValue | null>(null);
+const PlataformaContext = createContext<PlataformaContextValue | null>(null);
 
 /** Identidade efetiva (GET /me, resolvida pelo IAM) e estado dos módulos
  * (GET /system/modules). Os módulos revalidam a cada 30s: um plugin
  * desativado por outro administrador some do menu sem recarregar. */
-export function SismarqProvider({ children }: { children: ReactNode }) {
+export function PlataformaProvider({ children }: { children: ReactNode }) {
   const me = useApiQuery<Me>("v1/me", { revalidateOnFocus: true });
   const modules = useApiQuery<ModuleStatus[]>("v1/system/modules", { refreshInterval: 30_000 });
 
@@ -36,7 +36,7 @@ export function SismarqProvider({ children }: { children: ReactNode }) {
     [modules.data],
   );
 
-  const value = useMemo<SismarqContextValue>(
+  const value = useMemo<PlataformaContextValue>(
     () => ({
       me: me.data,
       modules: modules.data ?? [],
@@ -48,11 +48,11 @@ export function SismarqProvider({ children }: { children: ReactNode }) {
     }),
     [me.data, me.isLoading, modules, can, canGlobal, enabled],
   );
-  return <SismarqContext.Provider value={value}>{children}</SismarqContext.Provider>;
+  return <PlataformaContext.Provider value={value}>{children}</PlataformaContext.Provider>;
 }
 
-export function useSismarq(): SismarqContextValue {
-  const ctx = useContext(SismarqContext);
+export function usePlataforma(): PlataformaContextValue {
+  const ctx = useContext(PlataformaContext);
   if (!ctx) {
     // Fora do provider (testes/telas públicas): nada permitido, nada ativo.
     return { me: undefined, modules: [], loading: false, can: () => false, canGlobal: () => false, enabled: () => false, refreshModules: () => {} };

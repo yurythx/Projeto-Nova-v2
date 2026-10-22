@@ -10,12 +10,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/example/application"
-	"github.com/yurythx/sismarq/internal/modules/example/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/example/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
 )
 
 // Matriz de falhas: cada chamada ao repositório falha (ou envenena a

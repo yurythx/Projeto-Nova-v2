@@ -122,6 +122,6 @@
   "time": { "from": "now-15m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "SISMARQ — Painel Executivo de Telemetria",
+  "title": "Projeto-nova-v2 — Painel Executivo de Telemetria",
   "uid": "nexus-overview-live"
 }

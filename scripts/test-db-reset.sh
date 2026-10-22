@@ -5,11 +5,11 @@
 #
 #   make test-db-reset
 #
-# Docker (padrão desta máquina): container sismarq-test-pg na rede sismarq-test.
+# Docker (padrão desta máquina): container projeto-nova-test-pg na rede projeto-nova-test.
 # Sem container: usa psql em DB_HOST (localhost) com as variáveis DB_*.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-NAME="${TEST_PG_CONTAINER:-sismarq-test-pg}"
+NAME="${TEST_PG_CONTAINER:-projeto-nova-test-pg}"
 DB="${TEST_DB_NAME:-nexus_test}"
 USER="${TEST_DB_USER:-nexus}"
 PASS="${TEST_DB_PASSWORD:-nexus_ci_password}"
@@ -25,8 +25,8 @@ if docker inspect "$NAME" >/dev/null 2>&1; then
   recreate "docker exec -e PGPASSWORD=${PASS} ${NAME} psql -U ${USER}"
   NET=container:${NAME}
   HOST=127.0.0.1
-  if docker network inspect sismarq-test >/dev/null 2>&1; then
-    NET=sismarq-test
+  if docker network inspect projeto-nova-test >/dev/null 2>&1; then
+    NET=projeto-nova-test
     HOST="${NAME}"
   fi
   docker run --rm --network "${NET}" \

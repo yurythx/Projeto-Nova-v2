@@ -8,9 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/modules/example/application"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/application"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // CreateItemRequest — as tags validate:"..." são conferidas por

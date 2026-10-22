@@ -89,7 +89,7 @@ POSTS = [
     ("Período de matrículas da rede municipal", "comunicado", "As matrículas para o próximo ano letivo ficam abertas por 15 dias."),
     ("Mutirão do CadÚnico nos CRAS", "noticia", "Atendimento estendido para inscrição e atualização cadastral."),
     ("Recesso administrativo", "comunicado", "Expediente reduzido na sede administrativa na próxima sexta-feira."),
-    ("Nova plataforma SISMARQ entra em operação", "comunicado", "Processos, assinaturas e comunicação interna em um só lugar."),
+    ("Nova plataforma Projeto-nova-v2 entra em operação", "comunicado", "Processos, assinaturas e comunicação interna em um só lugar."),
 ]
 for title, kind, body in POSTS:
     d = ok(f"post {title}", *call(EDITOR, "POST", "blog/posts", {"title": title, "summary": body, "body": body + "\n\nMais informações na unidade mais próxima.", "kind": kind}))
@@ -100,7 +100,7 @@ print(f"   {len(POSTS)} publicados + 1 rascunho")
 
 print("== Wiki (manuais por área)")
 WIKI = {
-    "Manual do servidor": ["Primeiro acesso ao SISMARQ", "Como abrir um processo", "Como assinar documentos", "Compartilhando arquivos"],
+    "Manual do servidor": ["Primeiro acesso ao Projeto-nova-v2", "Como abrir um processo", "Como assinar documentos", "Compartilhando arquivos"],
     "Saúde: rotinas das unidades": ["Classificação de risco na UPA", "Sala de vacina: conservação", "Agenda do PSF"],
     "Educação: secretaria escolar": ["Matrícula e rematrícula", "Transferência de alunos", "Transporte escolar"],
     "Assistência social: atendimento": ["Acolhida no CRAS", "Encaminhamento ao CREAS", "Atendimento no Centro POP"],
@@ -128,7 +128,7 @@ EVENTOS = [
     (first("SEMSA-UPA-DIR"), "Reunião de coordenadores da saúde", 2, 14, 16, "Sala de reuniões da SEMSA", "internal", ""),
     (first("SEMED-ESCOLA-SILVESTRE-DIR"), "Conselho de diretores escolares", 4, 9, 11, "Sala de reuniões da SEMED", "internal", ""),
     (first("SEMPRAS-SEDE-DIR"), "Estudo de caso CRAS/CREAS", 5, 14, 17, "Sala de reuniões da SEMPRAS", "internal", ""),
-    (first("PREF-SEDE-TI"), "Treinamento SISMARQ: tramitação", 7, 9, 12, "Auditório da Prefeitura", "internal", ""),
+    (first("PREF-SEDE-TI"), "Treinamento Projeto-nova-v2: tramitação", 7, 9, 12, "Auditório da Prefeitura", "internal", ""),
     (first("PREF-SEDE-RH"), "Integração de novos servidores", 8, 8, 12, "Auditório da Prefeitura", "internal", ""),
     (first("PREF-SEDE-CONT"), "Fechamento contábil", 12, 9, 12, None, "private", ""),
 ]
@@ -150,7 +150,7 @@ for grupo, nome in (("SEMSA-UPA-ADM", "Administração da UPA"), ("SEMED-ESCOLA-
         for i, msg in enumerate(["Bom dia, equipe!", "Escala da semana publicada na pasta da unidade.", "Alguém pode cobrir o plantão de sexta?", "Eu cubro."]):
             ok(f"msg {nome}", *call(membros[i % len(membros)], "POST", f"mercurio/rooms/{d['id']}/messages", {"body": msg}))
 geral = next(r["id"] for r in call(ADMIN, "GET", "mercurio/rooms")[1]["data"] if r["kind"] == "global")
-for u, msg in ((first("PREF-SEDE-GOV"), "Sejam bem-vindos ao SISMARQ! Dúvidas, falem com a TI."), (first("PREF-SEDE-TI"), "Manual do servidor já está na Wiki."),
+for u, msg in ((first("PREF-SEDE-GOV"), "Sejam bem-vindos ao Projeto-nova-v2! Dúvidas, falem com a TI."), (first("PREF-SEDE-TI"), "Manual do servidor já está na Wiki."),
                (first("SEMSA-UPA-DIR"), "UPA com movimento alto hoje, priorizem os chamados urgentes.")):
     ok("msg geral", *call(u, "POST", f"mercurio/rooms/{geral}/messages", {"body": msg}))
 a, b = first("SEMSA-PSF-SAGRADA-FAMILIA-DIR"), first("SEMSA-UPA-DIR")

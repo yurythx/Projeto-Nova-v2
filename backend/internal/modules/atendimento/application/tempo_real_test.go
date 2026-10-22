@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/modules/atendimento/application"
-	"github.com/yurythx/sismarq/internal/modules/atendimento/domain"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 type publicado struct{ topico, tipo string }

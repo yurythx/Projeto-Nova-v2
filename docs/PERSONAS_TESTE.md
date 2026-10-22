@@ -1,4 +1,4 @@
-# Personas Corporativas de Teste — SISMARQ (Rondonópolis - MT)
+# Personas Corporativas de Teste — Projeto-nova-v2 (Rondonópolis - MT)
 
 > **Ambiente:** Servidor de Teste (`https://192.168.1.42`)  
 > **Método de Autenticação:** Login Local (NextAuth Credentials via `POST /api/v1/auth/login`)  

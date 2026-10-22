@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -24,11 +24,11 @@ import {
   type Mudanca,
   type Problema,
 } from "@/lib/servicos/servicos";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 export default function ProblemaPage() {
   const { id } = useParams<{ id: string }>();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const problema = useApiQuery<Problema>(id ? `v1/problemas/${id}` : null);
   const p = problema.data;
   const editavel = can("problemas:manage") && p?.estado !== "encerrado";

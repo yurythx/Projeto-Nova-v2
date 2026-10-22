@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 let pathname = "/configuracao";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 let perms: string[] = [];
-vi.mock("@/lib/sismarq/SismarqProvider", () => ({
-  useSismarq: () => ({ can: (p: string) => perms.includes(p), canGlobal: (p: string) => perms.includes(p), enabled: () => true }),
+vi.mock("@/lib/plataforma/PlataformaProvider", () => ({
+  usePlataforma: () => ({ can: (p: string) => perms.includes(p), canGlobal: (p: string) => perms.includes(p), enabled: () => true }),
 }));
 
 import { ModuleTabs } from "./ModuleTabs";

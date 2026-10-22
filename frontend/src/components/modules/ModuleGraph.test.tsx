@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { ModuleGraph } from "./ModuleGraph";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 function mod(key: string, name: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {

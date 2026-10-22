@@ -1,4 +1,4 @@
-// Package audit grava e consulta a trilha de auditoria imutável do SISMARQ
+// Package audit grava e consulta a trilha de auditoria imutável do Projeto-nova-v2
 // (Core — nunca desativável).
 //
 // Cada registro carrega a proveniência completa exigida pela skill (§5):

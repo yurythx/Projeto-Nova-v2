@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/search"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
 )
 
 var (

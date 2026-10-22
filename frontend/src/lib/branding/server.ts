@@ -3,7 +3,7 @@ import "server-only";
 import { DEFAULT_BRANDING } from "@/components/branding/brandingConfig";
 import { publicGetOr } from "@/lib/api/publicServer";
 import { BRANDING_TAG } from "@/lib/branding/tag";
-import type { Branding } from "@/lib/sismarq/types";
+import type { Branding } from "@/lib/plataforma/types";
 
 export interface ServerBranding {
   appName: string;

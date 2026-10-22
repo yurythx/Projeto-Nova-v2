@@ -22,22 +22,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/branding"
-	"github.com/yurythx/sismarq/internal/platform/config"
-	"github.com/yurythx/sismarq/internal/platform/iam"
-	"github.com/yurythx/sismarq/internal/platform/idempotency"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/keycloakconfig"
-	"github.com/yurythx/sismarq/internal/platform/lgpd"
-	"github.com/yurythx/sismarq/internal/platform/notificacoes"
-	"github.com/yurythx/sismarq/internal/platform/outbox"
-	"github.com/yurythx/sismarq/internal/platform/passwords"
-	"github.com/yurythx/sismarq/internal/platform/ratelimit"
-	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
-	"github.com/yurythx/sismarq/internal/platform/storage/storagetest"
-	"github.com/yurythx/sismarq/internal/platform/transparency"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/branding"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/iam"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/idempotency"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/keycloakconfig"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/lgpd"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/passwords"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ratelimit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/secretcrypto"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/storage/storagetest"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/transparency"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 // testDeps monta um Dependencies real (Postgres de teste + Redis em
@@ -59,7 +59,7 @@ func testDeps(t *testing.T) *Dependencies {
 	key, _ := rsa.GenerateKey(rand.Reader, 2048)
 	pemKey := string(pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}))
 	cfg := &config.Config{
-		App:         config.AppConfig{Env: "test", Name: "sismarq-test"},
+		App:         config.AppConfig{Env: "test", Name: "projeto-nova-test"},
 		LocalAuth:   config.LocalAuthConfig{Enabled: true, PrivateKeyPEM: pemKey, TokenTTL: time.Hour},
 		MinIO:       config.MinIOConfig{Bucket: "nexus-test"},
 		Upload:      config.UploadConfig{MaxFileBytes: 10 << 20, URLExpiry: time.Minute},

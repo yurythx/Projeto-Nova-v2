@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 )
 
 // testRSAKeyPEM generates a throwaway RSA private key (PKCS1 PEM) of the
@@ -39,7 +39,7 @@ func testSigner(t *testing.T, ttl time.Duration) *LocalSigner {
 
 func TestIssueToken_ThenVerifyToken_RoundTrips(t *testing.T) {
 	signer := testSigner(t, time.Hour)
-	account := LocalAccount{ID: "user-1", Username: "admin", Email: "admin@sismarq.local", Roles: []string{"nexus-admin", "nexus-user"}}
+	account := LocalAccount{ID: "user-1", Username: "admin", Email: "admin@projeto-nova.local", Roles: []string{"nexus-admin", "nexus-user"}}
 
 	token, expiresAt, err := signer.IssueToken(account)
 	if err != nil {

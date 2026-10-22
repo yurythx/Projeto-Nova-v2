@@ -33,7 +33,7 @@ export function BrandingProvider({
   initialBranding,
 }: {
   children: React.ReactNode;
-  /** Branding lido do cookie `sismarq-branding` no layout do servidor. Vira o
+  /** Branding lido do cookie `projeto-nova-branding` no layout do servidor. Vira o
    * server snapshot do useSyncExternalStore: como o cliente lê o MESMO
    * cookie, o snapshot de SSR e o do cliente coincidem e o nome não pisca
    * do valor antigo para o novo depois da hidratação. Ausente (fora do
@@ -68,7 +68,7 @@ export function BrandingProvider({
 
   // Favicon white-label: branding.faviconUrl era um campo declarado desde
   // sempre (tipo + default + persistido no cookie), mas nada o lia — o
-  // <link rel="icon"> ficava sempre no favicon padrão do SISMARQ
+  // <link rel="icon"> ficava sempre no favicon padrão do Projeto-nova-v2
   // (achado de auditoria original). safeResourceUrl (S-03) aplica a mesma
   // allowlist de esquema que a logo já usa: só https:// vira href de
   // verdade.

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 
 import { BlogCoverImage } from "@/components/blog/BlogCoverImage";
-import type { Post } from "@/lib/sismarq/types";
+import type { Post } from "@/lib/plataforma/types";
 
 interface RelatedPostsProps {
   currentSlug: string;

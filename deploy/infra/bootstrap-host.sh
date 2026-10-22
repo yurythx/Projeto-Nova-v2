@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Bootstrap da VM SISMARQ quando o Ansible não roda no Windows.
+# Bootstrap da VM Projeto-nova-v2 quando o Ansible não roda no Windows.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 PUBLIC_HOST="${1:-192.168.1.52}"
-APP_DIR=/opt/sismarq
+APP_DIR=/opt/projeto-nova
 
 apt-get update
 apt-get install -y curl wget git ca-certificates gnupg ufw fail2ban
@@ -24,7 +24,7 @@ ufw --force enable || true
 
 mkdir -p "$(dirname "$APP_DIR")"
 if [ ! -d "$APP_DIR/.git" ]; then
-  git clone https://github.com/yurythx/SISMARQ.git "$APP_DIR"
+  git clone https://github.com/yurythx/Projeto-Nova-v2.git "$APP_DIR"
 else
   git -C "$APP_DIR" fetch --all
   git -C "$APP_DIR" checkout main

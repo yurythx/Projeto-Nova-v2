@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
@@ -17,13 +17,13 @@ import {
 } from "@/components/ui/Table";
 import { useApiQuery } from "@/lib/api/swr";
 import { distancia, linkMapa, type VisitaEmCampo } from "@/lib/atendimento/atendimento";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 /** Supervisão: quem está em visita agora, nas unidades que a pessoa
  * atende. A posição aparece só enquanto a visita está aberta; o mapa
  * abre fora do sistema, sem embutir tiles de terceiros. */
 export default function AtendimentoCampoPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const atende = can("atendimento:atender");
   const visitas = useApiQuery<VisitaEmCampo[]>(atende ? "v1/atendimento/visitas/em-campo" : null, {
     refreshInterval: 60_000,

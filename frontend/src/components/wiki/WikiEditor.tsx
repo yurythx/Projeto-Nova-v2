@@ -4,14 +4,14 @@ import { useState, type FormEvent } from "react";
 
 import { PublicoAlvoPicker, TODOS } from "@/components/iam/PublicoAlvo";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { Markdown } from "@/components/sismarq/Markdown";
-import { useAction } from "@/components/sismarq/useAction";
+import { Markdown } from "@/components/plataforma/Markdown";
+import { useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
-import type { WikiPage } from "@/lib/sismarq/types";
+import type { WikiPage } from "@/lib/plataforma/types";
 
 /** Criação/edição de página. Na edição envia a versão aberta: se outra
  * pessoa salvou antes, o backend responde 409 WIKI_STALE_VERSION. */

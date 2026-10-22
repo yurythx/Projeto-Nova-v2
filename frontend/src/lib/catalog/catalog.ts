@@ -1,7 +1,7 @@
 import "server-only";
 
 import { PublicApiError, publicGet } from "@/lib/api/publicServer";
-import type { CatalogService } from "@/lib/sismarq/types";
+import type { CatalogService } from "@/lib/plataforma/types";
 
 // Leitura do Catálogo de Serviços (plugin "catalog") para o site público.
 // Rotas anônimas do backend; um 404 significa módulo desativado no Kernel

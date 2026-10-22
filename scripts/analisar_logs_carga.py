@@ -9,7 +9,7 @@ print("=" * 70)
 
 # 1. Análise Caddy (Proxy HTTPS / Terminação de Conexão)
 cmd_caddy = ["docker", "compose", "logs", "caddy", "--since", "30m"]
-out_caddy = subprocess.check_output(cmd_caddy, cwd="/opt/sismarq").decode("utf-8", errors="ignore")
+out_caddy = subprocess.check_output(cmd_caddy, cwd="/opt/projeto-nova").decode("utf-8", errors="ignore")
 
 caddy_logs = []
 for line in out_caddy.splitlines():
@@ -59,7 +59,7 @@ if caddy_durations:
 
 # 2. Análise Backend-API (Go Runtime / PostgreSQL / Redis)
 cmd_api = ["docker", "compose", "logs", "backend-api", "--since", "30m"]
-out_api = subprocess.check_output(cmd_api, cwd="/opt/sismarq").decode("utf-8", errors="ignore")
+out_api = subprocess.check_output(cmd_api, cwd="/opt/projeto-nova").decode("utf-8", errors="ignore")
 
 api_logs = []
 for line in out_api.splitlines():
@@ -97,7 +97,7 @@ if api_durations:
 # 3. Análise dos Recursos de Hardware dos Containers (Docker Stats)
 print(f"\n[3] CONSUMO DE RECURSOS DOS CONTAINERS (docker stats):")
 cmd_stats = ["docker", "stats", "--no-stream", "--format", "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"]
-out_stats = subprocess.check_output(cmd_stats, cwd="/opt/sismarq").decode("utf-8", errors="ignore")
+out_stats = subprocess.check_output(cmd_stats, cwd="/opt/projeto-nova").decode("utf-8", errors="ignore")
 print(out_stats)
 
 print("=" * 70)

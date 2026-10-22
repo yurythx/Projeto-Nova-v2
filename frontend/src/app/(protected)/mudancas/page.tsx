@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -15,12 +15,12 @@ import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
 import { ESTADO_MUDANCA, RISCO, type EstadoMudanca, type Mudanca } from "@/lib/servicos/servicos";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 /** Mudanças: o que vai mudar no que está em operação, quando, com que
  * risco e como desfazer — e quem aprovou. */
 export default function MudancasPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const router = useRouter();
   const gere = can("mudancas:manage");
   const ve = gere || can("mudancas:aprovar");

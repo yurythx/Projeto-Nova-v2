@@ -18,7 +18,7 @@
 import useSWR, { type SWRConfiguration } from "swr";
 
 import { apiClient, ApiError } from "@/lib/api/client";
-import type { PageMeta } from "@/lib/sismarq/types";
+import type { PageMeta } from "@/lib/plataforma/types";
 
 // swrFetcher: a MESMA forma de erro que apiClient já lança (ApiError) —
 // nenhum componente que já tratava ApiError (ver ProjectFindingHistoryPanel

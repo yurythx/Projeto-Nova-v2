@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { ModuleIcon } from "@/components/layout/ModuleIcon";
 import { ModuleGraph } from "@/components/modules/ModuleGraph";
-import { DataState } from "@/components/sismarq/DataState";
+import { DataState } from "@/components/plataforma/DataState";
 import { useToast } from "@/components/notifications/ToastProvider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -14,8 +14,8 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Toggle } from "@/components/ui/Toggle";
 import { ApiError, apiClient } from "@/lib/api/client";
 import { moduleNames, planToggle, type ToggleStep } from "@/lib/modules/plan";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 interface Pending {
   target: ModuleStatus;
@@ -32,7 +32,7 @@ interface Pending {
  * com 409 qualquer ordem inválida). Duas visões: cartões e grafo.
  */
 export default function ModulosPage() {
-  const { modules, loading, can, refreshModules } = useSismarq();
+  const { modules, loading, can, refreshModules } = usePlataforma();
   const { showToast } = useToast();
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);

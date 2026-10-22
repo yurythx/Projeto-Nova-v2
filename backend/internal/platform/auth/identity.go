@@ -1,5 +1,5 @@
 // Package auth valida os access tokens emitidos pelo Keycloak dedicado do
-// SISMARQ (OIDC, JWKS em cache local com rotação automática) e os tokens do
+// Projeto-nova-v2 (OIDC, JWKS em cache local com rotação automática) e os tokens do
 // fallback local RS256, e fornece os middlewares chi de autenticação e de
 // autorização granular por escopo ("recurso:ação" — A01).
 package auth

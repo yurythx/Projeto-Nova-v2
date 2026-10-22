@@ -1,15 +1,15 @@
-// Package example é o módulo-modelo (blueprint) de um plugin do SISMARQ:
+// Package example é o módulo-modelo (blueprint) de um plugin do Projeto-nova-v2:
 // Clean Architecture (domain/application/infrastructure/transport),
 // Transactional Outbox, auditoria na mesma transação e autorização por
 // escopo. Use `make new-module NAME=...` para gerar um novo a partir dele.
 package example
 
 import (
-	"github.com/yurythx/sismarq/internal/modules/example/application"
-	"github.com/yurythx/sismarq/internal/modules/example/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/example/transport"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/example/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
 
 // Key é a chave do módulo no Kernel.

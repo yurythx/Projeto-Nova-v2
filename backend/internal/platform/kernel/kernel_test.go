@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/yurythx/sismarq/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
 )
 
 type memStore struct {

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/search"
-	"github.com/yurythx/sismarq/internal/platform/typesense"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/typesense"
 )
 
 // backend é um Typesense em memória: guarda os lotes, os filtros de
@@ -230,17 +230,17 @@ func TestTriggerComFilaCheia(t *testing.T) {
 func TestSearch(t *testing.T) {
 	ctx := context.Background()
 	b := &backend{hits: []typesense.Hit{
-		{TextMatch: 50, Document: map[string]any{"module": "wiki", "type": "serie_ttdd", "ref": "01.03", "title": "Série", "body": strings.Repeat("a ", 200), "url": "/wiki/ttdd/01.03", "updated_at": float64(1700000000)}},
+		{TextMatch: 50, Document: map[string]any{"module": "wiki", "type": "pagina", "ref": "01.03", "title": "Página", "body": strings.Repeat("a ", 200), "url": "/wiki/01.03", "updated_at": float64(1700000000)}},
 		{TextMatch: 100, Document: map[string]any{"module": "wiki", "type": "modelo", "ref": "m1", "title": "Modelo"}},
 	}}
-	res, err := engine(b).Search(ctx, "série", []string{"wiki"}, 5)
+	res, err := engine(b).Search(ctx, "página", []string{"wiki"}, 5)
 	if err != nil || len(res) != 2 {
 		t.Fatalf("res=%v err=%v", res, err)
 	}
 	if b.search.FilterBy != "module:[`wiki`]" || b.search.PerPage != 5 || b.search.QueryBy != "title,body" {
 		t.Fatalf("parâmetros: %+v", b.search)
 	}
-	if res[0].Score != 0.5 || res[1].Score != 1 || res[0].ID != "01.03" || res[0].URL != "/wiki/ttdd/01.03" {
+	if res[0].Score != 0.5 || res[1].Score != 1 || res[0].ID != "01.03" || res[0].URL != "/wiki/01.03" {
 		t.Fatalf("pontuação normalizada e campos: %+v", res)
 	}
 	if res[0].UpdatedAt == nil || res[0].UpdatedAt.Unix() != 1700000000 || res[1].UpdatedAt != nil {

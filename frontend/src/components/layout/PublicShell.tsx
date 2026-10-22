@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 import { PublicShellClient } from "@/components/layout/PublicShellClient";
 import { getFeatures } from "@/lib/features/getFeatures";
-import { pickCookie, THEME_COOKIE, THEME_COOKIE_LEGACY } from "@/lib/prefs/cookies";
+import { THEME_COOKIE } from "@/lib/prefs/cookies";
 
 /** Shell do site institucional. Server Component: resolve o estado dos
  * módulos no servidor e o tema persistido em cookie para o menu e ícones
@@ -18,7 +18,7 @@ export async function PublicShell({
   let initialTheme: "light" | "dark" | undefined;
   try {
     const cookieStore = await cookies();
-    const theme = pickCookie(cookieStore, THEME_COOKIE, THEME_COOKIE_LEGACY);
+    const theme = cookieStore.get(THEME_COOKIE)?.value;
     if (theme === "dark" || theme === "light") {
       initialTheme = theme;
     }

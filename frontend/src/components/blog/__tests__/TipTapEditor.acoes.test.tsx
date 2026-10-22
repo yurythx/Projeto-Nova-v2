@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const post = vi.fn();
 const putToTicket = vi.fn();
 vi.mock("@/lib/api/client", () => ({ apiClient: { post: (...a: unknown[]) => post(...a) } }));
-vi.mock("@/lib/sismarq/upload", () => ({ mimeOf: (f: File) => f.type, putToTicket: (...a: unknown[]) => putToTicket(...a) }));
+vi.mock("@/lib/plataforma/upload", () => ({ mimeOf: (f: File) => f.type, putToTicket: (...a: unknown[]) => putToTicket(...a) }));
 
 import { TipTapEditor } from "../TipTapEditor";
 

@@ -13,13 +13,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/yurythx/sismarq/internal/platform/config"
-	"github.com/yurythx/sismarq/internal/platform/httpserver"
-	"github.com/yurythx/sismarq/internal/platform/notificacoes"
-	"github.com/yurythx/sismarq/internal/platform/outbox"
-	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
-	"github.com/yurythx/sismarq/internal/platform/storage"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/secretcrypto"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/storage"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 // Deps são os recursos compartilhados disponíveis a todo plugin.

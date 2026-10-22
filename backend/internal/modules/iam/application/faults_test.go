@@ -14,14 +14,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/iam/application"
-	"github.com/yurythx/sismarq/internal/modules/iam/domain"
-	"github.com/yurythx/sismarq/internal/modules/iam/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/iam/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 type env struct {

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { publicFetch } from "@/lib/api/publicClient";
 import { DoorOpen, X } from "lucide-react";
-import type { PublicModule } from "@/lib/sismarq/types";
+import type { PublicModule } from "@/lib/plataforma/types";
 
 const PUBLIC_LINKS: { href: string; label: string; module?: string }[] = [
   { href: "/servicos", label: "Serviços", module: "catalog" },

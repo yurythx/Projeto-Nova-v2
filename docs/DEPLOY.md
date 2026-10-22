@@ -12,8 +12,6 @@ opcionais, ligadas pelo `COMPOSE_FILE` do `.env`:
 | `docker-compose.cloudflare.yml` | Cloudflare Tunnel (Zero Trust Ingress sem portas expostas no firewall) | `COMPOSE_FILE` no `.env` |
 | `docker-compose.ia.yml` | (opcional) IA local (Ollama, serviço `ia-local`) | acrescentar ao `COMPOSE_FILE` (ver "Inteligência artificial" abaixo) |
 
-O servidor de teste (192.168.1.42) — máquina, endereços, verificação pós-deploy, CI e incidentes já resolvidos — está em [SERVIDOR_TESTE.md](SERVIDOR_TESTE.md).
-
 ## Pré-requisitos
 
 - Docker Engine + Docker Compose v2, `git`, `openssl`, `make`, `python3`
@@ -30,7 +28,7 @@ O servidor de teste (192.168.1.42) — máquina, endereços, verificação pós-
 ## Ordem recomendada (servidor novo)
 
 ```bash
-git clone https://github.com/yurythx/SISMARQ.git && cd SISMARQ
+git clone https://github.com/yurythx/Projeto-Nova-v2.git && cd Projeto-nova-v2
 ./scripts/deploy.sh 192.168.1.42        # 1. stack em produção (gera .env e chave)
 make prod-seed-admin                     # 2. admin local (senha impressa UMA vez)
 make demo-keycloak                       # 3. (teste) Keycloak + estrutura e usuários fictícios
@@ -109,7 +107,7 @@ Idempotente. Coloca o Caddy (`docker-compose.https.yml`,
 
 | Serviço | Endereço |
 |---|---|
-| SISMARQ e WebSocket de notificações | `https://<host>` (`wss://<host>/ws`) |
+| Projeto-nova-v2 e WebSocket de notificações | `https://<host>` (`wss://<host>/ws`) |
 | API direta (health, integrações) | `https://<host>:8443` |
 | MinIO (URLs pré-assinadas) | `https://<host>:9443` |
 | Keycloak de teste | `https://<host>:8543` |
@@ -166,8 +164,8 @@ copie-os para fora do servidor.
 ## Inteligência artificial
 
 A plataforma guarda as conexões de IA e a escolha de qual usar, mas
-**nenhum módulo atual consulta a IA** (o assistente que a usava saiu com o
-Atlas). A configuração fica pronta para o próximo módulo que precisar. É
+**nenhum módulo atual consulta a IA**. A configuração fica pronta para o
+primeiro módulo que precisar. É
 feita **pela tela**, em **Configurações → Inteligência artificial**
 (permissão `ia:manage`, ADR 020):
 
@@ -251,11 +249,11 @@ organizacional fictícia:
 - Cada departamento é um grupo no Keycloak (ex.: `SEMSA-UPA-ADM`) mapeado
   para o perfil **Servidor** com lotação no departamento; a Administração
   de cada unidade também recebe **Protocolo** na unidade.
-- Os usuários já existem no SISMARQ antes do 1º login (Diretório com cargo e
+- Os usuários já existem no Projeto-nova-v2 antes do 1º login (Diretório com cargo e
   ramal); o login pelo Keycloak só os atualiza.
 - Console: `https://<host>:8543/admin` (sem HTTPS: `http://<host>:8180/admin`),
   usuário `admin` e `KEYCLOAK_ADMIN_PASSWORD` do `.env`. Os usuários do
-  SISMARQ ficam no realm **nexus**.
+  Projeto-nova-v2 ficam no realm **nexus**.
 - `make demo-popular` (uma vez; marca em `.demo-popular`) povoa todos os
   apps com dados criados pelos próprios usuários fictícios: serviços do
   catálogo, notícias, manuais na Wiki, salas e eventos, salas de equipe e

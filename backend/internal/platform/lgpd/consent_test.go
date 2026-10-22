@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/yurythx/sismarq/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
 // Consentimento de usuário FEDERADO (Keycloak -> AD): o subject não é o id

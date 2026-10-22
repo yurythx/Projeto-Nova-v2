@@ -8,12 +8,12 @@ import (
 
 	"github.com/google/uuid"
 
-	atendimento "github.com/yurythx/sismarq/internal/modules/atendimento/domain"
-	ativos "github.com/yurythx/sismarq/internal/modules/ativos/domain"
-	mudancas "github.com/yurythx/sismarq/internal/modules/mudancas/domain"
-	problemas "github.com/yurythx/sismarq/internal/modules/problemas/domain"
-	produtos "github.com/yurythx/sismarq/internal/modules/produtos/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	atendimento "github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
+	ativos "github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
+	mudancas "github.com/yurythx/projeto-nova-v2/internal/modules/mudancas/domain"
+	problemas "github.com/yurythx/projeto-nova-v2/internal/modules/problemas/domain"
+	produtos "github.com/yurythx/projeto-nova-v2/internal/modules/produtos/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 var errBanco = errors.New("banco")

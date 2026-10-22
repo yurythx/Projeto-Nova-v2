@@ -4,12 +4,12 @@
 package mercurio
 
 import (
-	"github.com/yurythx/sismarq/internal/modules/mercurio/application"
-	"github.com/yurythx/sismarq/internal/modules/mercurio/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/mercurio/transport"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/internal/platform/ws"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/mercurio/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/mercurio/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/mercurio/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
 // Key é a chave do módulo (também o prefixo dos tópicos WebSocket).

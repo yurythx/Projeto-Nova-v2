@@ -2,7 +2,7 @@
 
 O **Projeto-nova-v2** é um **microkernel**. O núcleo entrega identidade (IAM), auditoria, mensageria e o ciclo de vida dos plug-ins. Os módulos de negócio existem no código e **nascem desligados**, exceto o que é essencial: IAM e Auditoria, que não se desativam.
 
-Backend em Go e frontend em Next.js. Acervo, Atlas e a finalidade de arquivo municipal saíram deste produto.
+Backend em Go e frontend em Next.js.
 
 ---
 
@@ -132,7 +132,7 @@ make seed-admin
 Estrutura organizacional (entidades, unidades, departamentos), perfis, lotações, onde o escopo vale, o público-alvo e as regras de cada módulo: [`docs/REGRAS_DE_NEGOCIO.md`](docs/REGRAS_DE_NEGOCIO.md). As decisões estão nos ADRs ([`docs/adr/`](docs/adr/README.md)) — em especial o [013](docs/adr/013-permissao-com-escopo-e-heranca.md) (escopo) e o [014](docs/adr/014-publico-alvo.md) (público-alvo).
 
 ### Serviços obrigatórios e opcionais
-A stack mínima (`docker-compose.yml`) é PostgreSQL, RabbitMQ, Redis, MinIO, Typesense, API, worker e frontend. O Typesense é o índice da Busca Global para os módulos que publicam documentos nele; hoje nenhum publica, e todos buscam na full-text do PostgreSQL (o índice fica pronto para quando um módulo passar a indexar). O `.env` precisa de `TYPESENSE_API_KEY` (o `scripts/deploy.sh` gera). São **opcionais**, por overlay no `COMPOSE_FILE`: Keycloak de teste (`docker-compose.keycloak.yml`), HTTPS com Caddy (`docker-compose.https.yml`, recomendado em qualquer rede) e IA local (`docker-compose.ia.yml`, Ollama, serviço `ia-local`). Sem Keycloak vale o login local. A IA do assistente do Atlas é configurada na tela **Configurações → Inteligência artificial** (IA local ou fornecedores como OpenAI, Azure, Gemini, Claude, com a chave cifrada); sem IA, o assistente responde com a síntese canônica dos procedimentos.
+A stack mínima (`docker-compose.yml`) é PostgreSQL, RabbitMQ, Redis, MinIO, Typesense, API, worker e frontend. O Typesense é o índice da Busca Global para os módulos que publicam documentos nele; hoje nenhum publica, e todos buscam na full-text do PostgreSQL (o índice fica pronto para quando um módulo passar a indexar). O `.env` precisa de `TYPESENSE_API_KEY` (o `scripts/deploy.sh` gera). São **opcionais**, por overlay no `COMPOSE_FILE`: Keycloak de teste (`docker-compose.keycloak.yml`), HTTPS com Caddy (`docker-compose.https.yml`, recomendado em qualquer rede) e IA local (`docker-compose.ia.yml`, Ollama, serviço `ia-local`). Sem Keycloak vale o login local. A IA é configurada na tela **Configurações → Inteligência artificial** (IA local ou fornecedores como OpenAI, Azure, Gemini, Claude, com a chave cifrada). Nenhum módulo atual a consulta; ela fica pronta para o primeiro que precisar.
 
 ### Deploy em servidor
 `./scripts/deploy.sh <ip-ou-dns>` gera `.env` com segredos fortes, a chave RSA e sobe a stack em produção; depois `make prod-seed-admin`. HTTPS com o Caddy como única entrada (`scripts/enable-https.sh`), Keycloak de teste com uma prefeitura fictícia (`make demo-keycloak`, `make demo-popular`), cenários ponta a ponta (`make demo-test`) e backup diário (`scripts/backup.sh`): ordem completa em [`docs/DEPLOY.md`](docs/DEPLOY.md). O servidor de teste (limites, verificação e incidentes) está em [`docs/SERVIDOR_TESTE.md`](docs/SERVIDOR_TESTE.md).

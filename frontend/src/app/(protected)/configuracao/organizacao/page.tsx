@@ -3,9 +3,9 @@
 import { Building2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -13,9 +13,9 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import { hasPermission, unidadesGeridas } from "@/lib/sismarq/permissions";
-import type { Departamento, Entidade, OrgTree, Unidade } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { hasPermission, unidadesGeridas } from "@/lib/plataforma/permissions";
+import type { Departamento, Entidade, OrgTree, Unidade } from "@/lib/plataforma/types";
 
 type Kind = "entidade" | "unidade" | "departamento";
 
@@ -94,7 +94,7 @@ export default function OrganizacaoPage() {
   const { data: tree, error, isLoading, mutate } = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const [editing, setEditing] = useState<Editing | null>(null);
   const { run } = useAction();
-  const { me } = useSismarq();
+  const { me } = usePlataforma();
   // Administração delegada (ADR 013): a global faz tudo; a delegada, só o
   // que cobre — entidades só a global. A API confere de novo.
   const geridas = unidadesGeridas(me, tree, "iam:manage");

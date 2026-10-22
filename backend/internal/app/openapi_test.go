@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	yaml "go.yaml.in/yaml/v3"
 
-	"github.com/yurythx/sismarq/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 )
 
 // O contrato OpenAPI (docs/openapi.yaml, servido como backend/docs/openapi.json

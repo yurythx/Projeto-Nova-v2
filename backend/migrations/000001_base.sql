@@ -1,10 +1,8 @@
 -- Esquema base do Projeto-nova-v2.
 --
--- Consolida o histórico de migrations do produto anterior (que tinha os
--- módulos Atlas e Acervo) no esquema atual. A aplicação nasce com banco
--- novo, então não há instalação a migrar (ADR 046). Gerado a partir de um
--- banco migrado (pg_dump --schema-only) e revisado; as regras que as
--- CHECKs e os gatilhos garantem estão em docs/REGRAS_DE_NEGOCIO.md.
+-- O esquema de partida da aplicação, que nasce com banco novo (ADR 046).
+-- Gerado com pg_dump --schema-only e revisado; as regras que as CHECKs e os
+-- gatilhos garantem estão em docs/REGRAS_DE_NEGOCIO.md.
 --
 -- Novas mudanças de esquema entram em migrations seguintes; esta não se
 -- edita.

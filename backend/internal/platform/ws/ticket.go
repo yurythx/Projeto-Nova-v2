@@ -11,7 +11,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/yurythx/sismarq/internal/platform/redisx"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/redisx"
 )
 
 // TicketTTL é a validade de um ticket de conexão: curto, de uso único.

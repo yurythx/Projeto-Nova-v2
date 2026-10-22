@@ -1,4 +1,4 @@
-import { fmtDateTime } from "@/components/sismarq/useAction";
+import { fmtDateTime } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { SITUACAO, relogioEmFoco, type Prazo } from "@/lib/atendimento/atendimento";
 

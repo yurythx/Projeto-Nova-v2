@@ -5,10 +5,10 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { PublicoAlvoPicker, PublicoBadge, TODOS, publicoVazio } from "@/components/iam/PublicoAlvo";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -17,9 +17,9 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import { unidadesGeridas } from "@/lib/sismarq/permissions";
-import type { CalendarEvent, OrgTree, Room } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { unidadesGeridas } from "@/lib/plataforma/permissions";
+import type { CalendarEvent, OrgTree, Room } from "@/lib/plataforma/types";
 
 const VIS_LABEL: Record<CalendarEvent["visibility"], string> = { public: "Pública", internal: "Interna", private: "Privada" };
 
@@ -191,7 +191,7 @@ function RoomsManager({ rooms, gere, onChanged }: { rooms: Room[]; gere: (unidad
 }
 
 export default function AgendaPage() {
-  const { me, can } = useSismarq();
+  const { me, can } = usePlataforma();
   const [month, setMonth] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);

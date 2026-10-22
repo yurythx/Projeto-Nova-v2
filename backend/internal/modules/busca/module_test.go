@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/internal/platform/search"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
 )
 
 type indiceVazio struct{}

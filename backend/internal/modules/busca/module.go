@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/yurythx/sismarq/internal/modules/busca/application"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/busca/application"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // Key é a chave do módulo.

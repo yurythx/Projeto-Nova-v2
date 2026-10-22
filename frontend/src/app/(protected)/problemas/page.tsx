@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -23,12 +23,12 @@ import {
   type Problema,
   type Recorrencia,
 } from "@/lib/servicos/servicos";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 /** Problemas e a base de erros conhecidos. Quem gere registra e
  * investiga; quem atende a fila consulta o contorno. */
 export default function ProblemasPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const router = useRouter();
   const gere = can("problemas:manage");
   const le = gere || can("problemas:read");

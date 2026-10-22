@@ -29,7 +29,7 @@ test.describe("Sem flash de hidratação (branding + Sidebar)", () => {
     await page.getByRole("button", { name: "Alto contraste" }).click();
     await expect
       .poll(async () => (await context.cookies()).map((c) => c.name))
-      .toEqual(expect.arrayContaining(["sismarq-branding", "sismarq-sidebar-collapsed"]));
+      .toEqual(expect.arrayContaining(["projeto-nova-branding", "projeto-nova-sidebar-collapsed"]));
 
     // HTML CRU do servidor: o que chega ANTES do React hidratar.
     const html = await (await context.request.get("/dashboard")).text();
@@ -40,7 +40,7 @@ test.describe("Sem flash de hidratação (branding + Sidebar)", () => {
 
     // devolve o nome original (a suíte roda contra o mesmo banco)
     await page.goto("/configuracao");
-    await page.getByLabel("Nome da Aplicação / Sistema *").fill(previous || "SISMARQ");
+    await page.getByLabel("Nome da Aplicação / Sistema *").fill(previous || "Projeto-nova-v2");
     await page.getByRole("button", { name: /Salvar alterações/ }).click();
     await expect(page.getByText("Configurações salvas")).toBeVisible();
   });

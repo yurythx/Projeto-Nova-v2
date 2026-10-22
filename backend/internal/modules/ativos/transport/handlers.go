@@ -8,10 +8,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/ativos/application"
-	"github.com/yurythx/sismarq/internal/modules/ativos/domain"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // AtivoRequest é o corpo de criação e edição de um ativo.

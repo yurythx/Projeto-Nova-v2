@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yurythx/sismarq/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
 // fakeStore é uma implementação de Store inteiramente em memória, para

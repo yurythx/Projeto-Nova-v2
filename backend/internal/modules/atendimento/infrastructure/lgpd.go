@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/atendimento/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 // DadosDoTitular reúne o que o atendimento guarda sobre a pessoa.

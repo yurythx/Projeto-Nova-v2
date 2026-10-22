@@ -5,7 +5,7 @@ import { ArrowRight, HelpCircle, MessageSquare } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { APP_URL } from "@/lib/env";
-import { FAQ } from "@/lib/sismarq/conteudo";
+import { FAQ } from "@/lib/plataforma/conteudo";
 
 const description = "Perguntas frequentes sobre o Projeto-nova-v2, o microkernel e os plug-ins que nascem desligados.";
 

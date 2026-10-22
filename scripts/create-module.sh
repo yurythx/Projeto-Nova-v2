@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Scaffolding de um novo plug-in do SISMARQ (Microkernel).
+# Scaffolding de um novo plug-in do Projeto-nova-v2 (Microkernel).
 #
 # Gera o módulo a partir do blueprint "example" — o mesmo código que roda em
 # produção, então o esqueleto já nasce compilando e seguindo as regras da
@@ -79,7 +79,7 @@ rename() {
 # 1. Backend: cópia do blueprint com os nomes trocados.
 cp -r "$SRC" "$DST"
 find "$DST" -name '*.go' -print0 | while IFS= read -r -d '' f; do rename "$f"; done
-sed -i -e "s#^// Package example é o módulo-modelo (blueprint) de um plugin do SISMARQ:#// Package ${NAME} é o plug-in ${TITLE} (gerado a partir do blueprint):#" "${DST}/module.go"
+sed -i -e "s#^// Package example é o módulo-modelo (blueprint) de um plugin do Projeto-nova-v2:#// Package ${NAME} é o plug-in ${TITLE} (gerado a partir do blueprint):#" "${DST}/module.go"
 
 # 2. Migration (goose, numeração sequencial).
 LAST=$(ls "$MIGRATIONS" | grep -E '^[0-9]{6}_.*\.sql$' | sort | tail -1 | cut -c1-6)
@@ -104,8 +104,8 @@ DROP TABLE IF EXISTS ${NAME}_items;
 EOF
 
 # 3. Registro no Kernel (internal/app/modules.go): import + MustRegister.
-IMPORT_LINE="	\"github.com/yurythx/sismarq/internal/modules/${NAME}\""
-sed -i "s#^	\"github.com/yurythx/sismarq/internal/modules/example\"\$#&\n${IMPORT_LINE}#" "$MODULES_GO"
+IMPORT_LINE="	\"github.com/yurythx/projeto-nova-v2/internal/modules/${NAME}\""
+sed -i "s#^	\"github.com/yurythx/projeto-nova-v2/internal/modules/example\"\$#&\n${IMPORT_LINE}#" "$MODULES_GO"
 sed -i "s#^		example.New(deps),\$#&\n		${NAME}.New(deps),#" "$MODULES_GO"
 if ! grep -q "${NAME}.New(deps)" "$MODULES_GO"; then
     echo "⚠️  Não consegui registrar no Kernel automaticamente — adicione ${NAME}.New(deps) em ${MODULES_GO}." >&2

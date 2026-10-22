@@ -6,7 +6,7 @@ Guia para criar **plug-ins** sobre o núcleo do **Projeto-nova-v2**. O módulo n
 
 ## 🏗️ Visão Geral da Arquitetura Microkernel
 
-O SISMARQ utiliza o modelo **Microkernel (Plug-in Architecture)** combinado a **Camadas Limpas (Clean Architecture)** e comunicação assíncrona orientada a eventos via **Transactional Outbox**:
+O Projeto-nova-v2 utiliza o modelo **Microkernel (Plug-in Architecture)** combinado a **Camadas Limpas (Clean Architecture)** e comunicação assíncrona orientada a eventos via **Transactional Outbox**:
 
 ```
    Navegador (React / Next.js DSGov Shell)
@@ -54,7 +54,7 @@ O script copia o blueprint `internal/modules/example` (código que roda em produ
 1. Gera `internal/modules/<nome>/` com `module.go` (Manifest do Kernel) e as camadas `domain`, `application`, `infrastructure`, `transport`.
 2. Cria a migration sequencial `backend/migrations/0000NN_<nome>.sql` (goose), depois da base.
 3. Registra o plug-in no Kernel (`internal/app/modules.go` → `Kernel.MustRegister`).
-4. Cria a página `frontend/src/app/(protected)/<nome>/page.tsx` sobre o kit (`DataState`, `useAction`, `useSismarq`) e protege a rota em `src/proxy.ts`.
+4. Cria a página `frontend/src/app/(protected)/<nome>/page.tsx` sobre o kit (`DataState`, `useAction`, `usePlataforma`) e protege a rota em `src/proxy.ts`.
 
 O módulo nasce **desativado** (`DefaultEnabled: false`); ative em **Configurações → Módulos**.
 
@@ -79,7 +79,7 @@ src/
 │   ├── page.tsx
 │   └── [id]/page.tsx
 ├── components/financeiro/        # Componentes específicos do módulo
-└── lib/sismarq/types.ts            # Espelho TypeScript dos DTOs Go do módulo
+└── lib/plataforma/types.ts            # Espelho TypeScript dos DTOs Go do módulo
 ```
 
 ---
@@ -164,7 +164,7 @@ Use `httputil.Bind` (limite de corpo + campos desconhecidos recusados + validaç
 ```tsx
 "use client";
 export default function FinanceiroPage() {
-  const { can } = useSismarq();                                    // permissões efetivas (só exibição)
+  const { can } = usePlataforma();                                    // permissões efetivas (só exibição)
   const list = useApiPage<Titulo>(withQuery("v1/financeiro/titulos", { page }));
   const { run } = useAction();                                   // toast de sucesso/erro
   // …
@@ -178,7 +178,7 @@ export default function FinanceiroPage() {
 
 - O item de menu aparece sozinho a partir do Manifest (`Route`/`Icon`) quando o módulo está ativo — nada a editar no `Sidebar`.
 - Chamadas sempre por `apiClient`/`useApiQuery` (BFF `/api/backend/*`: o token nunca chega ao navegador).
-- Uploads: peça um `UploadTicket` ao backend e envie direto ao MinIO com `putToTicket` (`lib/sismarq/upload.ts`).
+- Uploads: peça um `UploadTicket` ao backend e envie direto ao MinIO com `putToTicket` (`lib/plataforma/upload.ts`).
 - Tempo real: `useTopic("financeiro:…", handler)` assina um tópico autorizado pelo `WSProvider` do plug-in.
 
 ---

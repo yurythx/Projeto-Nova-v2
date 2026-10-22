@@ -8,17 +8,17 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/directory/application"
-	"github.com/yurythx/sismarq/internal/modules/directory/domain"
-	"github.com/yurythx/sismarq/internal/modules/directory/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/directory/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/httpserver"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/internal/platform/search"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
 )
 
 // Key é a chave do módulo.

@@ -4,22 +4,22 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Archive, ArrowLeft, Pencil, Send, Trash2, Undo2 } from "lucide-react";
 
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { Markdown } from "@/components/sismarq/Markdown";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { Markdown } from "@/components/plataforma/Markdown";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { PublicoBadge } from "@/components/iam/PublicoAlvo";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Post } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Post } from "@/lib/plataforma/types";
 
 export default function PostPage() {
   const { ref } = useParams<{ ref: string }>();
   const router = useRouter();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const manage = can("blog:manage");
   const post = useApiQuery<Post>(`v1/blog/admin/posts/${encodeURIComponent(ref)}`);
   const { run, pending } = useAction();

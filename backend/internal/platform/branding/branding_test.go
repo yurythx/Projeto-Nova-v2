@@ -14,13 +14,13 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 func valid() Settings {
-	return Settings{AppName: "SISMARQ", OrgName: "Prefeitura", Tokens: map[string]string{}}
+	return Settings{AppName: "Projeto-nova-v2", OrgName: "Prefeitura", Tokens: map[string]string{}}
 }
 
 func TestValidateRules(t *testing.T) {

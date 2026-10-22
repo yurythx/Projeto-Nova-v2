@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/modules/egress/domain"
-	"github.com/yurythx/sismarq/internal/platform/netguard"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/egress/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/netguard"
 )
 
 // Deliverer faz o POST do webhook pelo cliente HTTP anti-SSRF.
@@ -37,7 +37,7 @@ func Body(kind string, eventID, eventType string, payload json.RawMessage, at ti
 	switch kind {
 	case "zabbix", "grafana":
 		return json.Marshal(map[string]any{
-			"title":       "SISMARQ: " + eventType,
+			"title":       "Projeto-nova-v2: " + eventType,
 			"message":     string(payload),
 			"event_id":    eventID,
 			"event_type":  eventType,
@@ -74,12 +74,12 @@ func (d *Deliverer) Deliver(ctx context.Context, t domain.Target, del domain.Del
 		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "SISMARQ-Egress/1.0")
-	req.Header.Set("X-SISMARQ-Event", del.EventType)
-	req.Header.Set("X-SISMARQ-Delivery", del.ID.String())
+	req.Header.Set("User-Agent", "Projeto-Nova-Egress/1.0")
+	req.Header.Set("X-Projeto-Nova-Event", del.EventType)
+	req.Header.Set("X-Projeto-Nova-Delivery", del.ID.String())
 	req.Header.Set("X-Idempotency-Key", del.EventID.String())
 	if t.Secret != "" {
-		req.Header.Set("X-SISMARQ-Signature", Sign(t.Secret, time.Now().Unix(), body))
+		req.Header.Set("X-Projeto-Nova-Signature", Sign(t.Secret, time.Now().Unix(), body))
 	}
 	resp, err := d.client.Do(req)
 	if err != nil {

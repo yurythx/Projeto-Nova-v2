@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/atendimento/application"
-	"github.com/yurythx/sismarq/internal/modules/atendimento/domain"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // CheckinRequest é o check-in registrado no aparelho. O id é gerado lá:

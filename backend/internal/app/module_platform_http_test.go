@@ -206,7 +206,7 @@ func TestAuditHTTP(t *testing.T) {
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/audit/export", plain, "")
 
 	logs := h.expect(http.StatusOK, http.MethodGet, "/api/v1/audit/logs?resource_type=blog_post&resource_id="+post.ID, admin, "").Body.String()
-	for _, want := range []string{`"action":"blog.post.created"`, `"hash":"`, `"prev_hash":"`, `"ip_address":"203.0.113.10"`, `"user_agent":"sismarq-test/1.0"`, `"correlation_id":"`} {
+	for _, want := range []string{`"action":"blog.post.created"`, `"hash":"`, `"prev_hash":"`, `"ip_address":"203.0.113.10"`, `"user_agent":"projeto-nova-test/1.0"`, `"correlation_id":"`} {
 		if !strings.Contains(logs, want) {
 			t.Fatalf("registro de auditoria deveria ter %s: %s", want, logs)
 		}

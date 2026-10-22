@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Homologação End-to-End de Processos Corporativos - SISMARQ
+Homologação End-to-End de Processos Corporativos - Projeto-nova-v2
 Testa os fluxos operacionais completos:
 1. Formulário Público de Contato -> Protocolo -> Triagem pela Diretoria
 2. Abertura de Processo (Protocolo UNID-POGUBA) -> Tramitação para Complexo Operacional (POLO-IND)

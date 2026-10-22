@@ -12,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/notifications/ToastProvider";
 import { apiClient, ApiError } from "@/lib/api/client";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Branding } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Branding } from "@/lib/plataforma/types";
 import { safeResourceUrl } from "@/lib/security/safe-url";
 
 import { refreshBranding } from "./brandingActions";
@@ -37,7 +37,7 @@ function toApi(c: SystemBrandingConfig): Omit<Branding, "updated_at"> {
 export function BrandingSettingsForm() {
   const { branding, updateBranding } = useBranding();
   const { showToast } = useToast();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const canManage = can("branding:manage");
   const [saving, setSaving] = useState(false);
 

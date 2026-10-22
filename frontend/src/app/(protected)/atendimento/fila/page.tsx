@@ -7,11 +7,11 @@ import { Suspense, useState } from "react";
 import { Kanban } from "@/components/atendimento/Kanban";
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
 import { useRealtimeState, useTopics } from "@/components/realtime/RealtimeProvider";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { SectionTabsInline } from "@/components/sismarq/SectionTabsInline";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -34,7 +34,7 @@ import {
   type Estado,
   type Solicitacao,
 } from "@/lib/atendimento/atendimento";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 type Vista = "lista" | "kanban";
 
@@ -52,7 +52,7 @@ export default function AtendimentoFilaPage() {
  * fila aberta vê as mudanças dos colegas sem recarregar. A vista fica na
  * URL (?vista=quadro): sobrevive ao recarregar e pode ser compartilhada. */
 function FilaDaEquipe() {
-  const { can, me } = useSismarq();
+  const { can, me } = usePlataforma();
   const atende = can("atendimento:atender");
   const params = useSearchParams();
   const router = useRouter();

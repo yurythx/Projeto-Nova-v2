@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 import { moduleNames, planToggle } from "./plan";
 

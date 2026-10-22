@@ -1,4 +1,4 @@
-import type { Envelope, Signer } from "@/lib/sismarq/types";
+import type { Envelope, Signer } from "@/lib/plataforma/types";
 
 export const ENVELOPE_STATUS: Record<Envelope["status"], { label: string; tone: "warning" | "success" | "danger" | "neutral" }> = {
   pending: { label: "Aguardando assinaturas", tone: "warning" },

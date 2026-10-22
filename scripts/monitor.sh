@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Monitor da produção do SISMARQ: roda a cada 5 minutos (scripts/monitor.sh
+# Monitor da produção do Projeto-nova-v2: roda a cada 5 minutos (scripts/monitor.sh
 # --install-cron) e avisa quando algo QUEBRA ou VOLTA — nunca repete o mesmo
 # alerta enquanto o estado não muda.
 #
@@ -9,9 +9,9 @@
 #   disco      uso da partição raiz abaixo de DISK_LIMIT (padrão 80%)
 #   backup     o último backup (scripts/backup.sh) tem menos de BACKUP_MAX_HOURS (padrão 26h)
 #
-# Canal do aviso, em /etc/default/sismarq-monitor (o Ansible grava a partir
+# Canal do aviso, em /etc/default/projeto-nova-monitor (o Ansible grava a partir
 # do inventário). Sem nenhum, o alerta vai só para o syslog (tag
-# sismarq-monitor) — e ninguém é avisado:
+# projeto-nova-monitor) — e ninguém é avisado:
 #   ALERT_WEBHOOK_URL   POST JSON {"text": "..."} — Slack, Google Chat, Teams
 #                       (Incoming Webhook), Discord (/slack), Mattermost
 #   ALERT_TELEGRAM_TOKEN + ALERT_TELEGRAM_CHAT   bot do Telegram
@@ -24,23 +24,23 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
 # shellcheck disable=SC1091
-[ -f /etc/default/sismarq-monitor ] && . /etc/default/sismarq-monitor
+[ -f /etc/default/projeto-nova-monitor ] && . /etc/default/projeto-nova-monitor
 
 API_URL="${API_URL:-http://127.0.0.1:8010/health}"
 DISK_LIMIT="${DISK_LIMIT:-80}"
 BACKUP_DIR="${BACKUP_DIR:-/root/backups/nexus}"
 BACKUP_MAX_HOURS="${BACKUP_MAX_HOURS:-26}"
-STATE_FILE="${STATE_FILE:-/var/lib/sismarq-monitor/estado}"
+STATE_FILE="${STATE_FILE:-/var/lib/plataforma-monitor/estado}"
 HOST_LABEL="${HOST_LABEL:-$(hostname)}"
 
 if [ "${1:-}" = "--install-cron" ]; then
-  cat >/etc/cron.d/sismarq-monitor <<EOF
-# Monitor do SISMARQ (scripts/monitor.sh --install-cron)
+  cat >/etc/cron.d/projeto-nova-monitor <<EOF
+# Monitor do Projeto-nova-v2 (scripts/monitor.sh --install-cron)
 SHELL=/bin/bash
 */5 * * * * root $ROOT/scripts/monitor.sh >/dev/null 2>&1
 EOF
-  chmod 644 /etc/cron.d/sismarq-monitor
-  echo "Agendado: /etc/cron.d/sismarq-monitor (a cada 5 minutos)"
+  chmod 644 /etc/cron.d/projeto-nova-monitor
+  echo "Agendado: /etc/cron.d/projeto-nova-monitor (a cada 5 minutos)"
   exit 0
 fi
 
@@ -79,16 +79,16 @@ check_backup() {
 
 enviar() {
   local texto="$1"
-  logger -t sismarq-monitor "$texto" 2>/dev/null || true
+  logger -t projeto-nova-monitor "$texto" 2>/dev/null || true
   if [ -n "${ALERT_WEBHOOK_URL:-}" ]; then
     curl -s -m 15 -H 'Content-Type: application/json' \
       -d "$(printf '{"text":%s}' "$(printf '%s' "$texto" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))')")" \
-      "$ALERT_WEBHOOK_URL" >/dev/null || logger -t sismarq-monitor "falha ao enviar o webhook"
+      "$ALERT_WEBHOOK_URL" >/dev/null || logger -t projeto-nova-monitor "falha ao enviar o webhook"
   fi
   if [ -n "${ALERT_TELEGRAM_TOKEN:-}" ] && [ -n "${ALERT_TELEGRAM_CHAT:-}" ]; then
     curl -s -m 15 "https://api.telegram.org/bot${ALERT_TELEGRAM_TOKEN}/sendMessage" \
       --data-urlencode "chat_id=${ALERT_TELEGRAM_CHAT}" --data-urlencode "text=${texto}" >/dev/null ||
-      logger -t sismarq-monitor "falha ao enviar para o Telegram"
+      logger -t projeto-nova-monitor "falha ao enviar para o Telegram"
   fi
 }
 

@@ -3,12 +3,12 @@
 package produtos
 
 import (
-	"github.com/yurythx/sismarq/internal/modules/produtos/application"
-	"github.com/yurythx/sismarq/internal/modules/produtos/domain"
-	"github.com/yurythx/sismarq/internal/modules/produtos/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/produtos/transport"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
 
 // Key é a chave do módulo no Kernel.

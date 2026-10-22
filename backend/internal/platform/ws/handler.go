@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/metrics"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/metrics"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // TicketResponse é o corpo de POST /api/v1/ws/ticket.

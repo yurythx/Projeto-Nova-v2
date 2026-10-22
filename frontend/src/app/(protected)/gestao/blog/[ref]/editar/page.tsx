@@ -5,11 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { PostEditor } from "@/components/blog/PostEditor";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { useApiQuery } from "@/lib/api/swr";
-import type { Post } from "@/lib/sismarq/types";
+import type { Post } from "@/lib/plataforma/types";
 
 export default function EditarPostPage() {
   const { ref } = useParams<{ ref: string }>();

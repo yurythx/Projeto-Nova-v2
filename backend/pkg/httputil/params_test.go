@@ -15,7 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
 )
 
 func TestQueryTruncatesByCharacter(t *testing.T) {

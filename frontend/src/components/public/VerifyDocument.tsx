@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { FileHash } from "@/components/signum/FileHash";
 import { publicFetch } from "@/lib/api/publicClient";
-import type { Verification } from "@/lib/sismarq/types";
+import type { Verification } from "@/lib/plataforma/types";
 
 /** Confere, sem enviar o arquivo, se um documento é o que foi assinado. */
 export function VerifyDocument({ envelopeId }: { envelopeId: string }) {

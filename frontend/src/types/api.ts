@@ -1,5 +1,5 @@
 // Tipos compartilhados do núcleo que não pertencem a um plug-in (os
-// contratos dos módulos vivem em lib/sismarq/types.ts, espelho dos DTOs Go).
+// contratos dos módulos vivem em lib/plataforma/types.ts, espelho dos DTOs Go).
 
 export type IntegrationStatus = "unknown" | "online" | "offline" | "degraded" | "disabled";
 

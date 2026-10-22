@@ -9,10 +9,10 @@ import { PrazoCard } from "@/components/atendimento/PrazoCard";
 import { ProblemasDoIncidente } from "@/components/atendimento/ProblemasDoIncidente";
 import { VisitasCard } from "@/components/atendimento/VisitasCard";
 import { useTopic } from "@/components/realtime/RealtimeProvider";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -29,7 +29,7 @@ import {
   type Estado,
   type Pessoa,
 } from "@/lib/atendimento/atendimento";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
@@ -42,7 +42,7 @@ function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
 
 export default function SolicitacaoPage() {
   const { id } = useParams<{ id: string }>();
-  const { me } = useSismarq();
+  const { me } = usePlataforma();
   const detalhe = useApiQuery<Detalhe>(id ? `v1/atendimento/solicitacoes/${id}` : null);
   const d = detalhe.data;
   const tecnico = d?.papeis.includes("tecnico") ?? false;

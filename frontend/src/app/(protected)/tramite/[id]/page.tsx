@@ -20,10 +20,10 @@ import {
 import { useState, type FormEvent } from "react";
 
 import { UserPicker, type PickedUser } from "@/components/iam/UserPicker";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { Markdown } from "@/components/sismarq/Markdown";
-import { fmtBytes, fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { Markdown } from "@/components/plataforma/Markdown";
+import { fmtBytes, fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { DOC_STATUS, PROCESSO_STATUS, SIGILO } from "@/components/tramite/labels";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -34,9 +34,9 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Documento, OrgTree, ProcessoView, UploadTicket } from "@/lib/sismarq/types";
-import { mimeOf, putToTicket } from "@/lib/sismarq/upload";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Documento, OrgTree, ProcessoView, UploadTicket } from "@/lib/plataforma/types";
+import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 
 type Acao = "tramitar" | "concluir" | "arquivar" | "reabrir";
 const ACAO: Record<Acao, { title: string; path: string; ok: string }> = {
@@ -339,7 +339,7 @@ function DocumentoView({ id }: { id: string }) {
 
 export default function ProcessoPage() {
   const { id } = useParams<{ id: string }>();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const proc = useApiQuery<ProcessoView>(`v1/tramite/processos/${id}`);
   const { run, pending } = useAction();
   const [acao, setAcao] = useState<Acao | null>(null);

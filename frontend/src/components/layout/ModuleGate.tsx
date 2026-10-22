@@ -6,8 +6,8 @@ import { PowerOff } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { moduleNames } from "@/lib/modules/plan";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 /** Módulo dono da rota atual: o de rota (Manifest.Route) mais específica
  * que prefixa o caminho. Núcleo e rotas de configuração não são guardadas
@@ -21,11 +21,11 @@ export function moduleForPath(modules: ModuleStatus[], pathname: string): Module
 /**
  * Guarda de página: com o plug-in desativado no Kernel, a tela explica o
  * motivo em vez de exibir erros de API (que respondem 404 MODULE_DISABLED).
- * Reage em runtime: o estado dos módulos é revalidado pelo SismarqProvider.
+ * Reage em runtime: o estado dos módulos é revalidado pelo PlataformaProvider.
  */
 export function ModuleGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { modules, can } = useSismarq();
+  const { modules, can } = usePlataforma();
   const mod = moduleForPath(modules, pathname);
   if (!mod || mod.enabled) return <>{children}</>;
 

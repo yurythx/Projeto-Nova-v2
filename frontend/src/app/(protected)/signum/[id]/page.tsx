@@ -5,9 +5,9 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Ban, CheckCircle2, ExternalLink, PenTool, ShieldCheck, XCircle } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { ENVELOPE_STATUS, SIGNER_STATUS } from "@/components/signum/envelopeStatus";
 import { FileHash } from "@/components/signum/FileHash";
 import { Badge } from "@/components/ui/Badge";
@@ -18,8 +18,8 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient, ApiError } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Challenge, Envelope } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Challenge, Envelope } from "@/lib/plataforma/types";
 
 /**
  * Cerimônia de assinatura (skill §6.2 — Signum):
@@ -112,7 +112,7 @@ function SignCeremony({ envelope, onDone }: { envelope: Envelope; onDone: () => 
 
 export default function EnvelopePage() {
   const { id } = useParams<{ id: string }>();
-  const { me, can } = useSismarq();
+  const { me, can } = usePlataforma();
   const env = useApiQuery<Envelope>(`v1/signum/envelopes/${id}`);
   const { run, pending } = useAction();
   const [mode, setMode] = useState<"sign" | "refuse" | null>(null);

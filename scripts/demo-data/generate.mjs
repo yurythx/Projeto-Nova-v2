@@ -244,7 +244,7 @@ kcGroups.push({
 
 const realm = {
   realm: "nexus",
-  displayName: "SISMARQ (teste)",
+  displayName: "Projeto-nova-v2 (teste)",
   enabled: true,
   // Ambiente de TESTE servido por HTTP na rede interna.
   sslRequired: "none",
@@ -268,7 +268,7 @@ const realm = {
   clients: [
     {
       clientId: "nexus-frontend",
-      name: "SISMARQ — frontend (NextAuth)",
+      name: "Projeto-nova-v2 — frontend (NextAuth)",
       enabled: true,
       publicClient: false,
       clientAuthenticatorType: "client-secret",
@@ -306,7 +306,7 @@ const realm = {
       // (KEYCLOAK_CLIENT_ID/SECRET) — por isso confidencial, com Direct
       // Access Grants e nenhum outro fluxo.
       clientId: "nexus-backend",
-      name: "SISMARQ — API (audience + reautenticação do Signum)",
+      name: "Projeto-nova-v2 — API (audience + reautenticação do Signum)",
       enabled: true,
       publicClient: false,
       clientAuthenticatorType: "client-secret",
@@ -332,7 +332,7 @@ const realm = {
   })),
 };
 
-// --- SQL do SISMARQ -------------------------------------------------------
+// --- SQL do Projeto-nova-v2 -------------------------------------------------------
 
 const sql = [];
 sql.push(`-- GERADO por scripts/demo-data/generate.mjs — não edite à mão.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { layoutModuleGraph, NODE_H, NODE_W, nodeStatus, relatedModules } from "./graph";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 function mod(key: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {

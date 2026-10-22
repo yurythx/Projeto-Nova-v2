@@ -16,13 +16,13 @@ variable "name" {
 variable "description" {
   description = "Anotação explicativa da VM"
   type        = string
-  default     = "VM gerenciada via Terraform — SISMARQ"
+  default     = "VM gerenciada via Terraform — Projeto-nova-v2"
 }
 
 variable "tags" {
   description = "Tags de classificação no Proxmox"
   type        = list(string)
-  default     = ["terraform", "sismarq", "vm"]
+  default     = ["terraform", "projeto-nova", "vm"]
 }
 
 variable "cores" {

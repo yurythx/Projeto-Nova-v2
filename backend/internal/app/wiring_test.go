@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yurythx/sismarq/internal/modules/signum"
-	tramiteDomain "github.com/yurythx/sismarq/internal/modules/tramite/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/signum"
+	tramiteDomain "github.com/yurythx/projeto-nova-v2/internal/modules/tramite/domain"
 )
 
 func TestSignaturePortPropagatesSignumErrors(t *testing.T) {

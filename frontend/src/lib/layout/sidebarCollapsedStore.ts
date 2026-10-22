@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteCookie, readCookiePrefer, SIDEBAR_COOKIE, SIDEBAR_COOKIE_LEGACY, writeCookie } from "@/lib/prefs/cookies";
+import { deleteCookie, readCookie, SIDEBAR_COOKIE, writeCookie } from "@/lib/prefs/cookies";
 
 // "External store" (useSyncExternalStore) do estado "Sidebar recolhida",
 // uma preferência puramente deste dispositivo/navegador (DashboardShell.tsx).
@@ -15,39 +15,16 @@ import { deleteCookie, readCookiePrefer, SIDEBAR_COOKIE, SIDEBAR_COOKIE_LEGACY, 
 // num efeito é o anti-padrão que react-hooks/set-state-in-effect
 // desencoraja; useSyncExternalStore é a primitiva certa para "estado fora
 // do React que precisa re-renderizar quando muda".
-//
-// Migração: cookie e localStorage "nexus-sidebar-collapsed" viram
-// sismarq-sidebar-collapsed na 1ª leitura.
 
 export const SIDEBAR_COLLAPSED_COOKIE = SIDEBAR_COOKIE;
-const LEGACY_STORAGE_KEY = SIDEBAR_COOKIE_LEGACY;
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 let cached: boolean | null = null;
 
-function migrateLegacyStorage(): boolean | null {
-  try {
-    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (raw === null) return null;
-    const value = raw === "true";
-    writeCookie(SIDEBAR_COLLAPSED_COOKIE, String(value));
-    deleteCookie(SIDEBAR_COOKIE_LEGACY);
-    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-    return value;
-  } catch {
-    return null;
-  }
-}
-
 function read(): boolean {
   if (cached !== null) return cached;
-  const fromCookie = readCookiePrefer(SIDEBAR_COLLAPSED_COOKIE, SIDEBAR_COOKIE_LEGACY);
-  if (fromCookie !== null) {
-    cached = fromCookie === "true";
-  } else {
-    cached = migrateLegacyStorage() ?? false;
-  }
+  cached = readCookie(SIDEBAR_COLLAPSED_COOKIE) === "true";
   return cached;
 }
 
@@ -68,10 +45,8 @@ export function setSidebarCollapsed(next: boolean): void {
     // Estado padrão: não deixa cookie sobrando (o layout já assume
     // "expandida" sem cookie).
     deleteCookie(SIDEBAR_COLLAPSED_COOKIE);
-    deleteCookie(SIDEBAR_COOKIE_LEGACY);
   } else {
     writeCookie(SIDEBAR_COLLAPSED_COOKIE, "true");
-    deleteCookie(SIDEBAR_COOKIE_LEGACY);
   }
   listeners.forEach((listener) => listener());
 }

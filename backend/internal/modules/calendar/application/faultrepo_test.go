@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/yurythx/sismarq/internal/modules/calendar/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/calendar/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 type innerRepo = domain.Repository

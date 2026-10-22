@@ -6,10 +6,10 @@ import { FilePlus2, PenTool } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { UserPicker, type PickedUser } from "@/components/iam/UserPicker";
-import { SectionTabsInline } from "@/components/sismarq/SectionTabsInline";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { FileHash } from "@/components/signum/FileHash";
 import { ENVELOPE_STATUS } from "@/components/signum/envelopeStatus";
 import { Badge } from "@/components/ui/Badge";
@@ -19,8 +19,8 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Envelope } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Envelope } from "@/lib/plataforma/types";
 
 
 function OpenEnvelope({ onDone }: { onDone: (e: Envelope) => void }) {
@@ -73,7 +73,7 @@ function OpenEnvelope({ onDone }: { onDone: (e: Envelope) => void }) {
 
 export default function SignumPage() {
   const router = useRouter();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const [role, setRole] = useState<"to_sign" | "created" | "all" | "any">("to_sign");
   const [opening, setOpening] = useState(false);
   const list = useApiQuery<Envelope[]>(withQuery("v1/signum/envelopes", { role }));

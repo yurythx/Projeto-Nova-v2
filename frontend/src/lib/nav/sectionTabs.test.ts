@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hasPermission } from "@/lib/sismarq/permissions";
+import { hasPermission } from "@/lib/plataforma/permissions";
 
 import { CONFIG_TABS, MODULE_CHILDREN, isNavHrefActive, visibleTabs } from "./sectionTabs";
 

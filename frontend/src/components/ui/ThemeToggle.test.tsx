@@ -5,8 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ThemeToggle } from "./ThemeToggle";
 
 function clearThemeCookie() {
-  document.cookie = "sismarq-theme=; path=/; max-age=0";
-  document.cookie = "nexus-theme=; path=/; max-age=0";
+  document.cookie = "projeto-nova-theme=; path=/; max-age=0";
 }
 
 describe("ThemeToggle", () => {
@@ -25,13 +24,13 @@ describe("ThemeToggle", () => {
     expect(screen.getByRole("button", { name: "Ativar tema claro" })).toBeInTheDocument();
   });
 
-  it("ao clicar, grava o cookie sismarq-theme e atualiza data-theme em <html>", async () => {
+  it("ao clicar, grava o cookie projeto-nova-theme e atualiza data-theme em <html>", async () => {
     const user = userEvent.setup();
     render(<ThemeToggle initialTheme="light" />);
 
     await user.click(screen.getByRole("button", { name: "Ativar tema escuro" }));
 
-    expect(document.cookie).toContain("sismarq-theme=dark");
+    expect(document.cookie).toContain("projeto-nova-theme=dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(screen.getByRole("button", { name: "Ativar tema claro" })).toBeInTheDocument();
   });

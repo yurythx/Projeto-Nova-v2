@@ -19,7 +19,7 @@ import { ToastProvider } from "@/components/notifications/ToastProvider";
 import { RealtimeProvider, useRealtimeState } from "@/components/realtime/RealtimeProvider";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { getSidebarCollapsedSnapshot, setSidebarCollapsed, subscribeSidebarCollapsed } from "@/lib/layout/sidebarCollapsedStore";
-import { SismarqProvider } from "@/lib/sismarq/SismarqProvider";
+import { PlataformaProvider } from "@/lib/plataforma/PlataformaProvider";
 import { CONNECTION_LABEL, CONNECTION_TONE } from "@/lib/websocket/connectionCopy";
 
 const MD_BREAKPOINT_QUERY = "(min-width: 768px)";
@@ -100,7 +100,7 @@ function ShellBody({
   );
 }
 
-/** Shell da área autenticada: sessão SISMARQ (/me + módulos), conexão de
+/** Shell da área autenticada: sessão Projeto-nova-v2 (/me + módulos), conexão de
  * tempo real, cabeçalho/rodapé DSGov e menu montado pelo Kernel. */
 export function DashboardShell({
   userLabel,
@@ -114,7 +114,7 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   return (
-    <SismarqProvider>
+    <PlataformaProvider>
       <RealtimeProvider>
         <ToastProvider>
           <NotificationHistoryProvider>
@@ -124,6 +124,6 @@ export function DashboardShell({
           </NotificationHistoryProvider>
         </ToastProvider>
       </RealtimeProvider>
-    </SismarqProvider>
+    </PlataformaProvider>
   );
 }

@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { getServerBranding } from "@/lib/branding/server";
-import { PILARES, PRODUTO } from "@/lib/sismarq/conteudo";
+import { PILARES, PRODUTO } from "@/lib/plataforma/conteudo";
 
 const description = PRODUTO.finalidade;
 

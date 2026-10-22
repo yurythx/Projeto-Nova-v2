@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Building, Mail, Phone } from "lucide-react";
 
-import { DataState } from "@/components/sismarq/DataState";
+import { DataState } from "@/components/plataforma/DataState";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { useApiQuery } from "@/lib/api/swr";
-import type { Person } from "@/lib/sismarq/types";
+import type { Person } from "@/lib/plataforma/types";
 
 export default function PessoaPage() {
   const { id } = useParams<{ id: string }>();

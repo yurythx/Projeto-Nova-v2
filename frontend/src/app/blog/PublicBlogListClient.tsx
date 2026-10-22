@@ -6,7 +6,12 @@ import { ArrowRight, Calendar, Clock, Newspaper, Rss, Search, X } from "lucide-r
 
 import { BlogCoverImage } from "@/components/blog/BlogCoverImage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import type { Post } from "@/lib/sismarq/types";
+import type { Post } from "@/lib/plataforma/types";
+
+// Filtros pelo tipo da publicação.
+const TIPO_DO_FILTRO = { Notícias: "noticia", Comunicados: "comunicado" } as const;
+type Filtro = "Todos" | keyof typeof TIPO_DO_FILTRO;
+const FILTROS: Filtro[] = ["Todos", "Notícias", "Comunicados"];
 
 interface PublicBlogListClientProps {
   initialPosts: Post[];
@@ -14,26 +19,12 @@ interface PublicBlogListClientProps {
 
 export function PublicBlogListClient({ initialPosts }: PublicBlogListClientProps) {
   const [search, setSearch] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string>("Todos");
-
-  const tags = useMemo(() => {
-    return [
-      "Todos",
-      "Temporalidade",
-      "Eliminação",
-      "Comissões",
-      "Digitalização",
-      "Acesso",
-    ];
-  }, []);
+  const [selectedTag, setSelectedTag] = useState<Filtro>("Todos");
 
   const filteredPosts = useMemo(() => {
     const q = search.trim().toLowerCase();
     return initialPosts.filter((post) => {
-      if (selectedTag !== "Todos") {
-        const textToMatch = `${post.title} ${post.summary} ${post.body || ""}`.toLowerCase();
-        if (!textToMatch.includes(selectedTag.toLowerCase())) return false;
-      }
+      if (selectedTag !== "Todos" && post.kind !== TIPO_DO_FILTRO[selectedTag]) return false;
 
       if (!q) return true;
 
@@ -88,7 +79,7 @@ export function PublicBlogListClient({ initialPosts }: PublicBlogListClientProps
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por assunto, artigo da lei ou termo..."
+              placeholder="Buscar por assunto ou termo..."
               className="w-full min-h-[44px] rounded-lg border border-surface-border bg-surface-1 py-2.5 pl-10 pr-9 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-hidden focus:ring-1 focus:ring-accent"
             />
             {search && (
@@ -120,7 +111,7 @@ export function PublicBlogListClient({ initialPosts }: PublicBlogListClientProps
           aria-label="Filtros do blog"
           className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible"
         >
-          {tags.map((tag) => {
+          {FILTROS.map((tag) => {
             const isSelected = selectedTag === tag;
             return (
               <button
@@ -188,7 +179,11 @@ export function PublicBlogListClient({ initialPosts }: PublicBlogListClientProps
 
               <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-accent">
                 <span>Continuar lendo o artigo</span>
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                <ArrowRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-1"
+                  aria-hidden="true"
+                />
               </div>
             </div>
           </Link>
@@ -240,7 +235,10 @@ export function PublicBlogListClient({ initialPosts }: PublicBlogListClientProps
                       {estimateReadTime(post.body, post.summary)}
                     </span>
                   </div>
-                  <CardTitle as="h3" className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-accent">
+                  <CardTitle
+                    as="h3"
+                    className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-accent"
+                  >
                     {post.title}
                   </CardTitle>
                 </CardHeader>

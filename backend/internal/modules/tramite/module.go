@@ -6,15 +6,15 @@ package tramite
 import (
 	"context"
 
-	"github.com/yurythx/sismarq/internal/modules/tramite/application"
-	"github.com/yurythx/sismarq/internal/modules/tramite/domain"
-	"github.com/yurythx/sismarq/internal/modules/tramite/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/tramite/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/internal/platform/search"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
 )
 
 // Key é a chave do módulo.

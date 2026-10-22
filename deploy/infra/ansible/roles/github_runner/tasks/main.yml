@@ -86,14 +86,14 @@
         echo "=========================================================="
         echo " USO: ./register-runner.sh <GITHUB_RUNNER_TOKEN> [RUNNER_NAME]"
         echo "=========================================================="
-        echo " Obtenha o token em: https://github.com/yurythx/SISMARQ/settings/actions/runners/new"
+        echo " Obtenha o token em: https://github.com/yurythx/Projeto-Nova-v2/settings/actions/runners/new"
         exit 1
       fi
 
       echo "--> Configurando GitHub Actions Runner ($RUNNER_NAME)..."
       cd /opt/actions-runner
       sudo -u runner ./config.sh \
-        --url "https://github.com/yurythx/SISMARQ" \
+        --url "https://github.com/yurythx/Projeto-Nova-v2" \
         --token "$REG_TOKEN" \
         --name "$RUNNER_NAME" \
         --labels "self-hosted,linux,x64,proxmox,pve1,lxc" \
@@ -116,6 +116,6 @@
     msg: |
       O ambiente do Runner está 100% configurado no LXC 200 (192.168.1.45)!
       Para vincular ao GitHub:
-      1. Obtenha o token temporário em: https://github.com/yurythx/SISMARQ/settings/actions/runners/new
+      1. Obtenha o token temporário em: https://github.com/yurythx/Projeto-Nova-v2/settings/actions/runners/new
       2. Execute no container (ou via Ansible ad-hoc):
          /opt/actions-runner/register-runner.sh <TOKEN_OBTIDO>

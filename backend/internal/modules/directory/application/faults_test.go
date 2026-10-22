@@ -14,16 +14,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/directory"
-	"github.com/yurythx/sismarq/internal/modules/directory/application"
-	"github.com/yurythx/sismarq/internal/modules/directory/domain"
-	"github.com/yurythx/sismarq/internal/modules/directory/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/directory/transport"
-	"github.com/yurythx/sismarq/internal/platform/auth"
-	"github.com/yurythx/sismarq/internal/platform/config"
-	"github.com/yurythx/sismarq/internal/platform/database/dbtest"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
 
 type env struct {

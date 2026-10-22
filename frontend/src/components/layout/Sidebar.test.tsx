@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildNav } from "./Sidebar";
 import { isNavHrefActive } from "@/lib/nav/sectionTabs";
-import type { ModuleStatus } from "@/lib/sismarq/types";
-import { hasPermission } from "@/lib/sismarq/permissions";
+import type { ModuleStatus } from "@/lib/plataforma/types";
+import { hasPermission } from "@/lib/plataforma/permissions";
 
 function mod(key: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {

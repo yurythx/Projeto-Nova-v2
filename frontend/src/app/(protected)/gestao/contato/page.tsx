@@ -4,10 +4,10 @@ import { Eye } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -16,8 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { ContactMessage, ContactSummary, OrgTree } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { ContactMessage, ContactSummary, OrgTree } from "@/lib/plataforma/types";
 
 const STATUS: Record<ContactSummary["status"], { label: string; tone: "info" | "warning" | "success" | "neutral" }> = {
   new: { label: "Nova", tone: "info" },
@@ -27,7 +27,7 @@ const STATUS: Record<ContactSummary["status"], { label: string; tone: "info" | "
 };
 
 function MessageDetail({ id, onChanged }: { id: string; onChanged: () => void }) {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const msg = useApiQuery<ContactMessage>(`v1/contact/messages/${id}`);
   const { run, pending } = useAction();
   const m = msg.data;

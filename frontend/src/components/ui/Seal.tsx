@@ -1,4 +1,4 @@
-// Selo circular — o elemento de assinatura do SISMARQ (§ redesenho
+// Selo circular — o elemento de assinatura do Projeto-nova-v2 (§ redesenho
 // 2026-08). Um carimbo de repartição: anéis concêntricos, borda pontilhada,
 // dizeres curvos e um miolo com o monograma da marca sobre os dizeres de
 // documento oficial. Aparece como marca d'água discreta no painel de login
@@ -36,8 +36,8 @@ export function Seal({
       style={{ color: "currentColor" }}
     >
       <defs>
-        <path id="sismarq-seal-top" d="M 26 100 A 74 74 0 0 1 174 100" />
-        <path id="sismarq-seal-bottom" d="M 32 100 A 68 68 0 0 0 168 100" />
+        <path id="projeto-nova-seal-top" d="M 26 100 A 74 74 0 0 1 174 100" />
+        <path id="projeto-nova-seal-bottom" d="M 32 100 A 68 68 0 0 0 168 100" />
       </defs>
 
       <circle cx="100" cy="100" r="96" stroke="currentColor" strokeWidth="2" />
@@ -60,7 +60,7 @@ export function Seal({
         fill="currentColor"
         style={{ fontFamily: "var(--font-mono, monospace)" }}
       >
-        <textPath href="#sismarq-seal-top" startOffset="50%" textAnchor="middle">
+        <textPath href="#projeto-nova-seal-top" startOffset="50%" textAnchor="middle">
           {topText}
         </textPath>
       </text>
@@ -71,12 +71,12 @@ export function Seal({
         fill="currentColor"
         style={{ fontFamily: "var(--font-mono, monospace)" }}
       >
-        <textPath href="#sismarq-seal-bottom" startOffset="50%" textAnchor="middle">
+        <textPath href="#projeto-nova-seal-bottom" startOffset="50%" textAnchor="middle">
           {bottomText}
         </textPath>
       </text>
 
-      {/* Miolo: monograma do SISMARQ sobre os dizeres de documento oficial. */}
+      {/* Miolo: monograma do Projeto-nova-v2 sobre os dizeres de documento oficial. */}
       <text
         x="100"
         y="99"

@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/uuid"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/platform/storage"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/storage"
 )
 
 // Tipos de conteúdo aceitos por categoria de upload.

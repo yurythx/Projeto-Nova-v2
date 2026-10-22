@@ -1,14 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 let pathname = "/";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 let modules: ModuleStatus[] = [];
 let perms: string[] = [];
-vi.mock("@/lib/sismarq/SismarqProvider", () => ({
-  useSismarq: () => ({ modules, can: (p: string) => perms.includes(p) }),
+vi.mock("@/lib/plataforma/PlataformaProvider", () => ({
+  usePlataforma: () => ({ modules, can: (p: string) => perms.includes(p) }),
 }));
 
 import { ModuleGate, moduleForPath } from "./ModuleGate";

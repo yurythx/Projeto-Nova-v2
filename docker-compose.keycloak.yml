@@ -3,7 +3,7 @@
 #   COMPOSE_FILE=docker-compose.yml:docker-compose.keycloak.yml
 # no .env (scripts/demo-keycloak.sh faz isso). Substitua por um Keycloak
 # oficial trocando KEYCLOAK_ISSUER_URL e removendo este arquivo do
-# COMPOSE_FILE — nada do SISMARQ depende deste container em si.
+# COMPOSE_FILE — nada do Projeto-nova-v2 depende deste container em si.
 #
 # start-dev: HTTP e banco embutido (H2 em arquivo, no volume
 # keycloak_data). Adequado para teste, NUNCA para produção.

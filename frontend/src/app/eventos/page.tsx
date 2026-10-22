@@ -5,7 +5,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { PublicApiError, publicGet } from "@/lib/api/publicServer";
 import { APP_URL } from "@/lib/env";
-import type { CalendarEvent } from "@/lib/sismarq/types";
+import type { CalendarEvent } from "@/lib/plataforma/types";
 
 const description = "Agenda pública do Projeto-nova-v2. O módulo nasce desligado e só aparece quando a instalação o liga.";
 

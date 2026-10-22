@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/modules/iam/domain"
-	"github.com/yurythx/sismarq/pkg/httputil"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/domain"
+	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // ------------------------------------------------------------------ perfis

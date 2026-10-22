@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 // Filtro restringe a listagem ao escopo de produtos:manage (ADR 013).

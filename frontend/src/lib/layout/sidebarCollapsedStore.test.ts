@@ -35,7 +35,7 @@ describe("sidebarCollapsedStore", () => {
     const store = await freshStore();
     store.setSidebarCollapsed(true);
     expect(store.getSidebarCollapsedSnapshot()).toBe(true);
-    expect(document.cookie).toContain("sismarq-sidebar-collapsed=true");
+    expect(document.cookie).toContain("projeto-nova-sidebar-collapsed=true");
   });
 
   it("voltar para expandida (false) apaga o cookie — layout já assume expandida sem cookie", async () => {
@@ -43,27 +43,13 @@ describe("sidebarCollapsedStore", () => {
     store.setSidebarCollapsed(true);
     store.setSidebarCollapsed(false);
     expect(store.getSidebarCollapsedSnapshot()).toBe(false);
-    expect(document.cookie).not.toContain("sismarq-sidebar-collapsed=true");
+    expect(document.cookie).not.toContain("projeto-nova-sidebar-collapsed=true");
   });
 
   it("lê um cookie pré-existente no primeiro snapshot", async () => {
-    document.cookie = "sismarq-sidebar-collapsed=true; path=/";
+    document.cookie = "projeto-nova-sidebar-collapsed=true; path=/";
     const store = await freshStore();
     expect(store.getSidebarCollapsedSnapshot()).toBe(true);
-  });
-
-  it("lê o cookie legado nexus-sidebar-collapsed", async () => {
-    document.cookie = "nexus-sidebar-collapsed=true; path=/";
-    const store = await freshStore();
-    expect(store.getSidebarCollapsedSnapshot()).toBe(true);
-  });
-
-  it("migra um valor legado do localStorage para cookie na 1ª leitura", async () => {
-    window.localStorage.setItem("nexus-sidebar-collapsed", "true");
-    const store = await freshStore();
-    expect(store.getSidebarCollapsedSnapshot()).toBe(true);
-    expect(document.cookie).toContain("sismarq-sidebar-collapsed=true");
-    expect(window.localStorage.getItem("nexus-sidebar-collapsed")).toBeNull();
   });
 
   it("notifica listeners inscritos quando o valor muda e para após unsubscribe", async () => {

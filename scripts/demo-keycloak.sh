@@ -55,7 +55,7 @@ docker compose exec -T postgres psql -q -v ON_ERROR_STOP=1 \
 
 echo
 echo "==> Keycloak de teste pronto"
-echo "  Login no SISMARQ:    $frontend_url/login  (botão do Keycloak)"
+echo "  Login no Projeto-nova-v2:    $frontend_url/login  (botão do Keycloak)"
 echo "  Usuários:          deploy/demo/usuarios.csv (ex.: teste.admin)"
 echo "  Senha dos usuários: DEMO_USER_PASSWORD no .env"
 echo "  Console Keycloak:  $(env_val KEYCLOAK_PUBLIC_URL)/admin  (admin / KEYCLOAK_ADMIN_PASSWORD no .env)"

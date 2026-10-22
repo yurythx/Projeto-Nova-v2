@@ -4,16 +4,16 @@ import { useState, useEffect, type FormEvent } from "react";
 
 import { PublicoAlvoPicker, TODOS } from "@/components/iam/PublicoAlvo";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { Markdown } from "@/components/sismarq/Markdown";
-import { useAction } from "@/components/sismarq/useAction";
+import { Markdown } from "@/components/plataforma/Markdown";
+import { useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { TipTapEditor } from "@/components/blog/TipTapEditor";
 import { apiClient } from "@/lib/api/client";
-import type { Post, UploadTicket } from "@/lib/sismarq/types";
-import { mimeOf, putToTicket } from "@/lib/sismarq/upload";
+import type { Post, UploadTicket } from "@/lib/plataforma/types";
+import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 
 /** Editor de publicação (rascunho): corpo em Markdown com pré-visualização
  * segura e capa enviada direto ao MinIO por URL pré-assinada. */

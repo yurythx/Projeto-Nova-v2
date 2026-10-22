@@ -4,13 +4,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, Globe, Mail, MapPin, Phone, Wallet } from "lucide-react";
 
 import { PublicShell } from "@/components/layout/PublicShell";
-import { Markdown } from "@/components/sismarq/Markdown";
+import { Markdown } from "@/components/plataforma/Markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { getPublishedService } from "@/lib/catalog/catalog";
 import { ServiceIcon, getCategoryIconStyles } from "@/lib/catalog/icons";
 import { APP_URL } from "@/lib/env";
 import { safeResourceUrl } from "@/lib/security/safe-url";
-import type { ServiceChannel } from "@/lib/sismarq/types";
+import type { ServiceChannel } from "@/lib/plataforma/types";
 
 export const dynamic = "force-dynamic";
 

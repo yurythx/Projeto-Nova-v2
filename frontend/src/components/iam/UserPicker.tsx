@@ -6,8 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useApiPage, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Person } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Person } from "@/lib/plataforma/types";
 
 export interface PickedUser {
   id: string;
@@ -19,7 +19,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** Seleção de pessoas pelo Diretório (qualquer autenticado). Com o
  * plug-in Diretório desativado, degrada para informar o id do usuário. */
 export function UserPicker({ value, onChange, idPrefix, label = "Pessoas" }: { value: PickedUser[]; onChange: (v: PickedUser[]) => void; idPrefix: string; label?: string }) {
-  const { enabled } = useSismarq();
+  const { enabled } = usePlataforma();
   const [q, setQ] = useState("");
   const directory = enabled("directory");
   const results = useApiPage<Person>(directory && q.trim().length >= 2 ? withQuery("v1/directory/people", { q: q.trim(), page_size: 8 }) : null);

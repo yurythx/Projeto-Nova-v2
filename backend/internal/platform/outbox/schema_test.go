@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
 )
 
 func validEnvelopeJSON(t *testing.T) []byte {

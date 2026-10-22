@@ -1,21 +1,22 @@
-# 027 — Notificações persistentes e avisos de nova versão
+# 027 — Notificações persistentes
 
 - **Status:** Aceito e implementado
 - **Data:** 2026-10-04
-- **Relacionado:** [ADR 004](004-outbox-listen-notify-e-rbac-modular.md) (outbox e barramento), [ADR 024](024-biblioteca-de-modelos.md) (modelos), [ADR 026](026-tramite-e-atlas-publico.md) (Trâmite ligado ao Atlas)
+- **Relacionado:** [ADR 004](004-outbox-listen-notify-e-rbac-modular.md) (outbox e barramento)
 
 ## Contexto
 
-Quem acompanha um fluxo precisa saber quando o procedimento ou o modelo
-dele muda. O sino da plataforma só guardava, em memória, os toasts da
-sessão: recarregar a página apagava tudo. Não havia caixa de entrada,
-leitura, preferência nem garantia contra aviso repetido. Avisar "todo
-mundo" a cada mudança geraria ruído e seria ignorado.
+Os módulos precisam avisar pessoas do que muda (hoje, o atendimento avisa
+sobre a solicitação e sobre o prazo perto de vencer). O sino só
+guardaria, em memória, os toasts da sessão: recarregar a página apagaria
+tudo, sem caixa de entrada, leitura, preferência nem garantia contra aviso
+repetido.
 
 ## Decisão
 
 1. **Caixa de notificações da plataforma** (`platform/notificacoes`,
-   migração 000140), disponível a todos os módulos:
+   tabelas `notificacoes` e `notificacoes_preferencias`), disponível a todos
+   os módulos:
    - **Persistência:** cada aviso é gravado para o usuário, com título,
      mensagem, link e lido ou não.
    - **Idempotência:** a chave é única por usuário (`UNIQUE (user_id,
@@ -35,27 +36,6 @@ mundo" a cada mudança geraria ruído e seria ignorado.
      `GET`/`PUT /notificacoes/preferencias`).
    - **Retenção (LGPD, minimização):** um aviso lido há mais de 180 dias é
      apagado quando chega um aviso novo para a mesma pessoa.
-2. **Quem recebe o aviso de nova versão de procedimento** (Atlas):
-   - **Quem segue o fluxo:** o botão "Seguir este fluxo" (opt-in) segue
-     pelo código processual, então vale para as versões seguintes.
-   - **Quem está lotado nas unidades que participam do fluxo:** a lotação
-     manual ou o grupo do AD mapeado, nas unidades ativas cuja sigla é a
-     da etapa ou o primeiro segmento dela (`SEMAD/LIC` → `SEMAD`). Conta
-     a versão antiga e a nova.
-   - **Quem publicou não recebe o próprio aviso.**
-   - A importação em lote avisa cada versão nova que aplicou. A simulação
-     não avisa.
-3. **Nova versão de modelo:** recebe quem segue um procedimento em vigor
-   que usa o modelo, na peça ou pela série.
-4. **Processos do Trâmite:** quando uma versão de procedimento é
-   substituída ou desativada, o Atlas publica `atlas.workflow.deactivated`.
-   Esse evento agora inclui `substituido_por` e `versao_nova`.
-   - O Trâmite consome o evento (fila `nexus.tramite.atlas`, com DLQ e
-     retry do barramento) e avisa **quem abriu** cada processo em
-     andamento (aberto ou em tramitação) que segue aquela versão.
-   - Os módulos continuam independentes: só se falam por evento.
-   - O aviso é idempotente por processo e versão.
-
 ## Consequências
 
 - O sino mostra a caixa persistida e os avisos novos na hora.

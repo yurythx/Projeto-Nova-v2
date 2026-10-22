@@ -32,7 +32,7 @@ describe("UserMenu", () => {
   });
 
   it("com um e-mail, usa a parte antes do @ pra derivar as iniciais", () => {
-    render(<UserMenu userLabel="ana.silva@sismarq.local" />);
+    render(<UserMenu userLabel="ana.silva@projeto-nova.local" />);
     expect(screen.getByRole("button", { name: /Menu do usuário/ })).toHaveTextContent("AS");
   });
 
@@ -43,12 +43,12 @@ describe("UserMenu", () => {
 
   it("clicar no avatar abre o menu com o label completo e o botão Sair", async () => {
     const user = userEvent.setup();
-    render(<UserMenu userLabel="admin@sismarq.local" />);
+    render(<UserMenu userLabel="admin@projeto-nova.local" />);
 
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Menu do usuário/ }));
     expect(screen.getByRole("menu")).toBeInTheDocument();
-    expect(screen.getByText("admin@sismarq.local")).toBeInTheDocument();
+    expect(screen.getByText("admin@projeto-nova.local")).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Sair" })).toBeInTheDocument();
   });
 

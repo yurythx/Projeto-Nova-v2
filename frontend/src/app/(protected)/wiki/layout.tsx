@@ -9,7 +9,7 @@ import { WikiTree } from "@/components/wiki/WikiTree";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { useApiQuery } from "@/lib/api/swr";
-import type { WikiPage } from "@/lib/sismarq/types";
+import type { WikiPage } from "@/lib/plataforma/types";
 
 /** Layout da Wiki: árvore de páginas à esquerda, conteúdo à direita. */
 export default function WikiLayout({ children }: { children: ReactNode }) {

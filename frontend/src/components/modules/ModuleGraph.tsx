@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Toggle } from "@/components/ui/Toggle";
 import { layoutModuleGraph, NODE_H, NODE_W, relatedModules, type NodeStatus } from "@/lib/modules/graph";
 import { moduleNames } from "@/lib/modules/plan";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 const STATUS: Record<NodeStatus, { label: string; tone: "info" | "success" | "warning" | "neutral"; box: string; dot: string }> = {
   core: { label: "Núcleo", tone: "info", box: "fill-primary/10 stroke-primary", dot: "fill-primary" },

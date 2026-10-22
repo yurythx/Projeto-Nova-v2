@@ -4,10 +4,10 @@ import { Pencil, Plus, RotateCcw, Send, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { useToast } from "@/components/notifications/ToastProvider";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
-import type { EgressDelivery, EgressTarget } from "@/lib/sismarq/types";
+import type { EgressDelivery, EgressTarget } from "@/lib/plataforma/types";
 
 const KINDS = [
   { value: "webhook", label: "Webhook genérico" },

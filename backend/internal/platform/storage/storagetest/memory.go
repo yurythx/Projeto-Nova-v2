@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/platform/storage"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/storage"
 )
 
 // ErrInjected é o erro devolvido pelas operações marcadas para falhar.

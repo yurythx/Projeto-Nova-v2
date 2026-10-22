@@ -1,4 +1,4 @@
-// Package config carrega e valida a configuração do SISMARQ a partir
+// Package config carrega e valida a configuração do Projeto-nova-v2 a partir
 // de variáveis de ambiente. Configuração obrigatória ausente faz Load
 // retornar um erro imediatamente (fail fast) em vez de deixar a aplicação
 // subir num estado parcialmente configurado — é preferível o processo nem
@@ -496,7 +496,7 @@ func Load() (*Config, error) {
 		Typesense: TypesenseConfig{
 			URL:          l.str("TYPESENSE_URL", false, ""),
 			APIKey:       l.secret("TYPESENSE_API_KEY", false, ""),
-			Collection:   l.str("TYPESENSE_COLLECTION", false, "sismarq_busca_v1"),
+			Collection:   l.str("TYPESENSE_COLLECTION", false, "nexus_busca_v1"),
 			Timeout:      l.durationVal("TYPESENSE_TIMEOUT", 2*time.Second),
 			SyncInterval: l.durationVal("TYPESENSE_SYNC_INTERVAL", 10*time.Minute),
 		},

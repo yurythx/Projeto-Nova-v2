@@ -6,8 +6,8 @@
 
 import { ApiError, apiClient } from "@/lib/api/client";
 import type { Destino, Ponto } from "@/lib/atendimento/atendimento";
-import type { UploadTicket } from "@/lib/sismarq/types";
-import { putToTicket } from "@/lib/sismarq/upload";
+import type { UploadTicket } from "@/lib/plataforma/types";
+import { putToTicket } from "@/lib/plataforma/upload";
 
 export type Acao =
   | {

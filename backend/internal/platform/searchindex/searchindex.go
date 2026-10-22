@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/platform/messaging"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
-	"github.com/yurythx/sismarq/internal/platform/search"
-	"github.com/yurythx/sismarq/internal/platform/typesense"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/typesense"
 )
 
 // batchSize é o tamanho de cada lote do import.
@@ -88,7 +88,7 @@ func Indexers(providers []search.Provider) []search.Indexer {
 
 // QueueName é a fila dos eventos que disparam a recarga dos módulos
 // indexados.
-const QueueName = "sismarq.search.index"
+const QueueName = "nexus.search.index"
 
 // Queue declara QueueName ligada aos eventos dos módulos indexados.
 func Queue(modules []string) messaging.QueueSpec {

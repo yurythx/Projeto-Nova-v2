@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Converte o export do Active Directory (OUs por secretaria, TSV em
 // ISO-8859-1 "Nome<TAB>Tipo<TAB>Descrição") na estrutura organizacional do
-// SISMARQ: Entidade (órgão) > Unidade (local de trabalho, com unidade-mãe) >
+// Projeto-nova-v2: Entidade (órgão) > Unidade (local de trabalho, com unidade-mãe) >
 // Departamento (setor da unidade) — docs/REGRAS_DE_NEGOCIO.md §6.
 //
 //   node scripts/estrutura/ad-para-estrutura.mjs <pasta-do-export>

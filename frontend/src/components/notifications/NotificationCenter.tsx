@@ -8,7 +8,7 @@ import {
 } from "@/components/notifications/NotificationHistoryProvider";
 import { useToast } from "@/components/notifications/ToastProvider";
 import { useFrames } from "@/components/realtime/RealtimeProvider";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import { eventEnvelopeSchema } from "@/lib/validation/schemas";
 import type { Frame } from "@/lib/websocket/client";
 
@@ -45,7 +45,7 @@ export function describeEvent(
 export function NotificationCenter() {
   const { showToast } = useToast();
   const { push, pushServer } = useNotificationHistory();
-  const { refreshModules } = useSismarq();
+  const { refreshModules } = usePlataforma();
 
   const handle = useCallback(
     (frame: Frame) => {

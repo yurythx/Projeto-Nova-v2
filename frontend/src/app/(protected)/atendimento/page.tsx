@@ -4,11 +4,11 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 import { useFrames } from "@/components/realtime/RealtimeProvider";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { SectionTabsInline } from "@/components/sismarq/SectionTabsInline";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -25,14 +25,14 @@ import {
   type Oferta,
   type Solicitacao,
 } from "@/lib/atendimento/atendimento";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 type Situacao = "abertas" | "todas";
 
 /** Portal do servidor: pede ajuda pela oferta, em linguagem simples, e
  * acompanha o que abriu. A palavra "incidente" não aparece aqui. */
 export default function AtendimentoPortalPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const abre = can("atendimento:abrir");
   const [ofertaId, setOfertaId] = useState("");
   const [situacao, setSituacao] = useState<Situacao>("abertas");

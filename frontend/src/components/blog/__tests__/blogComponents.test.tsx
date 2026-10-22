@@ -8,7 +8,7 @@ import { BlogCoverImage } from "../BlogCoverImage";
 import { RelatedPosts } from "../RelatedPosts";
 import { PostEditor } from "../PostEditor";
 import { ToastProvider } from "@/components/notifications/ToastProvider";
-import type { Post } from "@/lib/sismarq/types";
+import type { Post } from "@/lib/plataforma/types";
 
 // Mock IntersectionObserver
 class MockIntersectionObserver {
@@ -70,7 +70,7 @@ Texto da seção dois.
 
 describe("SocialShareBar", () => {
   it("renderiza os botões de compartilhamento", () => {
-    render(<SocialShareBar title="Novidades SISMARQ" url="https://nexus.local/blog/novidades" />);
+    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nexus.local/blog/novidades" />);
     expect(screen.getByLabelText("Compartilhar no WhatsApp")).toHaveAttribute(
       "href",
       expect.stringContaining("api.whatsapp.com"),
@@ -91,7 +91,7 @@ describe("SocialShareBar", () => {
       clipboard: { writeText },
     });
 
-    render(<SocialShareBar title="Novidades SISMARQ" url="https://nexus.local/blog/novidades" />);
+    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nexus.local/blog/novidades" />);
     const copyBtn = screen.getByLabelText("Copiar link do artigo para a área de transferência");
     fireEvent.click(copyBtn);
 

@@ -1,6 +1,6 @@
 {
   "realm": "nexus",
-  "displayName": "SISMARQ (teste)",
+  "displayName": "Projeto-nova-v2 (teste)",
   "enabled": true,
   "sslRequired": "none",
   "loginWithEmailAllowed": true,
@@ -872,7 +872,7 @@
   "clients": [
     {
       "clientId": "nexus-frontend",
-      "name": "SISMARQ — frontend (NextAuth)",
+      "name": "Projeto-nova-v2 — frontend (NextAuth)",
       "enabled": true,
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",
@@ -917,7 +917,7 @@
     },
     {
       "clientId": "nexus-backend",
-      "name": "SISMARQ — API (audience + reautenticação do Signum)",
+      "name": "Projeto-nova-v2 — API (audience + reautenticação do Signum)",
       "enabled": true,
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",

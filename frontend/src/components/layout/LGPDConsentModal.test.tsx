@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 let sessionStatus: "authenticated" | "unauthenticated" | "loading" = "unauthenticated";
 vi.mock("next-auth/react", () => ({ useSession: () => ({ status: sessionStatus }) }));
-vi.mock("@/components/branding/BrandingContext", () => ({ useBranding: () => ({ branding: { appName: "SISMARQ", orgName: "Órgão" } }) }));
+vi.mock("@/components/branding/BrandingContext", () => ({ useBranding: () => ({ branding: { appName: "Projeto-nova-v2", orgName: "Órgão" } }) }));
 
 const get = vi.fn();
 const post = vi.fn();

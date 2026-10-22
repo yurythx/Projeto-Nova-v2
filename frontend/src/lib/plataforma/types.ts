@@ -1,4 +1,4 @@
-// Tipos da API do SISMARQ (espelho dos DTOs do backend Go).
+// Tipos da API do Projeto-nova-v2 (espelho dos DTOs do backend Go).
 
 export type UUID = string;
 

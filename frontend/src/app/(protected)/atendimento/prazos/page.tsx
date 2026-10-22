@@ -4,10 +4,10 @@ import { type FormEvent, useState } from "react";
 
 import { PoliticaForm, sugestao, type PoliticaCorpo } from "@/components/atendimento/PoliticaForm";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDate, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDate, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -22,13 +22,13 @@ import {
   type Politica,
   type TipoFeriado,
 } from "@/lib/atendimento/atendimento";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 /** Prazos da unidade: quando se trabalha, como impacto e urgência viram
  * prioridade, as metas de cada prioridade e os feriados. A subunidade sem
  * política própria usa a de cima; a institucional vale para todas. */
 export default function AtendimentoPrazosPage() {
-  const { can, canGlobal } = useSismarq();
+  const { can, canGlobal } = usePlataforma();
   const gere = can("atendimento:manage");
   const global = canGlobal("atendimento:manage");
   // Gestão global começa pela institucional; a de unidade escolhe a sua.

@@ -6,10 +6,10 @@ import { Download, File as FileIcon, Folder as FolderIcon, FolderPlus, Pencil, P
 import { Suspense, useRef, useState, type FormEvent } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtBytes, fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtBytes, fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -18,8 +18,8 @@ import { Select } from "@/components/ui/Select";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
-import type { ACLEntry, FileItem, Folder, Listing, OrgTree, Perfil, UploadTicket } from "@/lib/sismarq/types";
-import { mimeOf, putToTicket } from "@/lib/sismarq/upload";
+import type { ACLEntry, FileItem, Folder, Listing, OrgTree, Perfil, UploadTicket } from "@/lib/plataforma/types";
+import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 
 const SUBJECT_LABEL: Record<ACLEntry["subject_type"], string> = {
   everyone: "Todos os autenticados",

@@ -1,6 +1,6 @@
 import { BookOpen } from "lucide-react";
 
-import { PageHeader } from "@/components/sismarq/PageHeader";
+import { PageHeader } from "@/components/plataforma/PageHeader";
 
 export default function WikiHome() {
   return (

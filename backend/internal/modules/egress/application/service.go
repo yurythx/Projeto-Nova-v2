@@ -19,14 +19,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	apperrors "github.com/yurythx/sismarq/internal/domain/errors"
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/egress/domain"
-	"github.com/yurythx/sismarq/internal/platform/audit"
-	"github.com/yurythx/sismarq/internal/platform/database"
-	"github.com/yurythx/sismarq/internal/platform/netguard"
-	"github.com/yurythx/sismarq/internal/platform/secretcrypto"
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/egress/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/netguard"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/secretcrypto"
 )
 
 // Config parametriza o worker de entrega.
@@ -191,7 +191,7 @@ func (s *Service) Test(ctx context.Context, id uuid.UUID) (TestResult, error) {
 	if t, err = s.withSecret(ctx, t); err != nil {
 		return TestResult{}, apperrors.Internal(err)
 	}
-	payload, _ := json.Marshal(map[string]string{"message": "Teste de conectividade do SISMARQ Egress"})
+	payload, _ := json.Marshal(map[string]string{"message": "Teste de conectividade do Projeto-nova-v2 Egress"})
 	start := time.Now()
 	code, derr := s.deliverer.Deliver(ctx, t, domain.Delivery{ID: uuid.New(), EventID: uuid.New(), EventType: "egress.test",
 		Payload: payload, CreatedAt: time.Now()})

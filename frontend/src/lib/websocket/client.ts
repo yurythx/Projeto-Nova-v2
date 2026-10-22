@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api/client";
 
-// Cliente de tempo real do SISMARQ. O servidor trabalha com TÓPICOS
+// Cliente de tempo real do Projeto-nova-v2. O servidor trabalha com TÓPICOS
 // (internal/platform/ws): "broadcast" e "user:<id>" são assinados
 // automaticamente; tópicos de plugin ("mercurio:room:<id>") são assinados
 // sob demanda e revalidados pelo autorizador do módulo. Frames:

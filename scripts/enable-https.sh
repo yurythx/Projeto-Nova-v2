@@ -79,5 +79,5 @@ fi
 
 echo
 echo "==> HTTPS ativo"
-echo "  SISMARQ:       https://$host"
+echo "  Projeto-nova-v2:       https://$host"
 echo "  Instale a CA em cada máquina de teste: http://$host/nexus-ca.crt"

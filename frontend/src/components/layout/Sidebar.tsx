@@ -8,8 +8,8 @@ import { useEffect, useState, type ComponentType } from "react";
 import { useBranding } from "@/components/branding/BrandingContext";
 import { ModuleIcon } from "@/components/layout/ModuleIcon";
 import { CONFIG_TABS, MODULE_CHILDREN, isNavHrefActive, visibleTabs } from "@/lib/nav/sectionTabs";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { ModuleStatus } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { ModuleStatus } from "@/lib/plataforma/types";
 
 export interface NavItem {
   href: string;
@@ -93,7 +93,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { branding } = useBranding();
-  const { modules, can, canGlobal, enabled } = useSismarq();
+  const { modules, can, canGlobal, enabled } = usePlataforma();
   const nav = buildNav(modules, can, canGlobal, enabled);
   const [aberto, setAberto] = useState<Record<string, boolean>>({});
 

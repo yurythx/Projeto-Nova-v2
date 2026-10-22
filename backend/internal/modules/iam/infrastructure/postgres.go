@@ -9,9 +9,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/pagination"
-	"github.com/yurythx/sismarq/internal/modules/iam/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/pagination"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/iam/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 // Repository concentra as queries do IAM. Todo método recebe o DBTX para

@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
 func TestFormatNumero(t *testing.T) {

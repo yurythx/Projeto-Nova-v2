@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/yurythx/sismarq/internal/modules/atendimento/domain"
-	"github.com/yurythx/sismarq/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 var visitaSelect = `SELECT v.id, v.solicitacao_id, v.tecnico_id, COALESCE(` + nomeDe("u") + `, ''), v.estado, v.local, v.base_legal,

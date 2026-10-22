@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
 )
 
 // Estes testes exercitam o protocolo AMQP real do RabbitMQ (declaração de

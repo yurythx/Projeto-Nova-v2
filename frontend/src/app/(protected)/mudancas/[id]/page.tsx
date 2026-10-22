@@ -6,9 +6,9 @@ import { useParams } from "next/navigation";
 import { type FormEvent, type ReactNode, useState } from "react";
 
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -27,7 +27,7 @@ import {
   type Mudanca,
   type Problema,
 } from "@/lib/servicos/servicos";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 type TipoVinculo = "problema" | "incidente" | "ativo";
 
@@ -48,7 +48,7 @@ function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
 
 export default function MudancaPage() {
   const { id } = useParams<{ id: string }>();
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const mudanca = useApiQuery<Mudanca>(id ? `v1/mudancas/${id}` : null);
   const m = mudanca.data;
   const gere = can("mudancas:manage");

@@ -36,10 +36,10 @@ npm run dev
   `/auditoria`, `/configuracao/*`, `/perfil`), o route handler do NextAuth e
   os proxies BFF `/api/backend/*` (autenticado) e `/api/public/*` (allowlist
   anônima).
-- `src/lib/sismarq` — `SismarqProvider` (identidade efetiva via `GET /me` e estado
+- `src/lib/plataforma` — `PlataformaProvider` (identidade efetiva via `GET /me` e estado
   dos módulos via `GET /system/modules`), `types.ts` (espelho dos DTOs Go) e
   `upload.ts` (upload direto ao MinIO por URL pré-assinada, SHA-256 local).
-- `src/components/sismarq` — peças de tela reutilizadas pelos plug-ins
+- `src/components/plataforma` — peças de tela reutilizadas pelos plug-ins
   (`PageHeader`, `DataState`, `Pagination`, `ConfirmButton`, `Markdown`
   seguro, `useAction`).
 - `src/lib/auth` — configuração do NextAuth: login local usuário/senha

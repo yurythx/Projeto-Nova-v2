@@ -29,15 +29,15 @@ import (
 // tipos Go viram components/schemas (tags json, ponteiro = nullable,
 // validate: required/max/min/oneof, constantes do tipo = enum).
 //
-// Tudo o que é gerado leva "x-sismarq-generated": na regeneração é refeito
+// Tudo o que é gerado leva "x-projeto-nova-generated": na regeneração é refeito
 // do zero; o que foi escrito à mão (sem a marca) nunca é tocado. O teste
 // de contrato compara o arquivo com o resultado da geração: mudar um DTO
 // sem regenerar quebra o CI.
 
 const (
-	modulePath  = "github.com/yurythx/sismarq"
+	modulePath  = "github.com/yurythx/projeto-nova-v2"
 	httputilPkg = modulePath + "/pkg/httputil"
-	genMark     = "x-sismarq-generated"
+	genMark     = "x-projeto-nova-generated"
 )
 
 // handlerName devolve o nome em runtime da função que atende a rota

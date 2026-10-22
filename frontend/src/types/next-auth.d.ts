@@ -2,7 +2,7 @@ import type { DefaultSession } from "next-auth";
 import "next-auth";
 import "next-auth/jwt";
 
-// Campos extras da sessão/JWT do SISMARQ (ver lib/auth/options.ts).
+// Campos extras da sessão/JWT do Projeto-nova-v2 (ver lib/auth/options.ts).
 declare module "next-auth" {
   interface Session {
     /** "RefreshAccessTokenError" quando a renovação falha — proxy.ts

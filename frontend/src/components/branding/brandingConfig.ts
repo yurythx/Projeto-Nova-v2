@@ -1,15 +1,15 @@
-// Formato + padrões do branding white-label do SISMARQ.
+// Formato + padrões do branding white-label do Projeto-nova-v2.
 //
 // Duas origens se combinam:
 //  - identidade da organização (nome, órgão, contatos, logo e design
 //    tokens de cor) — vem do backend (GET /api/v1/branding), a mesma para
 //    todos os visitantes;
 //  - preferências de acessibilidade do visitante (Alto Contraste e escala
-//    de fonte e-MAG) — persistidas no cookie `sismarq-branding` deste
-//    navegador (lê o legado `nexus-branding` se ainda existir).
+//    de fonte e-MAG) — persistidas no cookie `projeto-nova-branding` deste
+//    navegador.
 
-import { BRANDING_PREFS_COOKIE, BRANDING_PREFS_COOKIE_LEGACY } from "@/lib/prefs/cookies";
-import type { Branding } from "@/lib/sismarq/types";
+import { BRANDING_PREFS_COOKIE } from "@/lib/prefs/cookies";
+import type { Branding } from "@/lib/plataforma/types";
 
 export interface SystemBrandingConfig {
   appName: string;
@@ -42,7 +42,6 @@ export const DEFAULT_BRANDING: SystemBrandingConfig = {
 };
 
 export const BRANDING_COOKIE = BRANDING_PREFS_COOKIE;
-export const BRANDING_COOKIE_LEGACY = BRANDING_PREFS_COOKIE_LEGACY;
 
 /** Só as preferências do visitante vão para o cookie. */
 type Prefs = Pick<SystemBrandingConfig, "highContrast" | "fontSizeScale">;

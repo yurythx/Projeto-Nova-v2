@@ -5,11 +5,11 @@ import { Building, Building2, Mail, MapPin, MessagesSquare, Phone, Search } from
 import { useMemo, useState } from "react";
 
 import { ScopePicker } from "@/components/iam/ScopePicker";
-import { SectionTabsInline } from "@/components/sismarq/SectionTabsInline";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { useAction } from "@/components/sismarq/useAction";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { ChatRoom, Person, ScopeRef, Sector } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { ChatRoom, Person, ScopeRef, Sector } from "@/lib/plataforma/types";
 
 function initials(name: string) {
   return name
@@ -30,7 +30,7 @@ function initials(name: string) {
 }
 
 function People() {
-  const { enabled, me } = useSismarq();
+  const { enabled, me } = usePlataforma();
   const router = useRouter();
   const { run } = useAction();
   const [q, setQ] = useState("");

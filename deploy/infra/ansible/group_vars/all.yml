@@ -3,15 +3,15 @@
 
 # Primeira clonagem só se a pasta ainda não existir. Atualizações pelo git
 # (deploy/homolog/sincronizar-vm publica o main do GitHub).
-sismarq_git_repo: "https://github.com/yurythx/SISMARQ.git"
-sismarq_git_version: main
-sismarq_app_dir: /opt/sismarq
+app_git_repo: "https://github.com/yurythx/Projeto-Nova-v2.git"
+app_git_version: main
+app_dir: /opt/projeto-nova
 
 keycloak_issuer_url: "https://sso.rondonopolis.mt.gov.br/realms/rondonopolis"
 keycloak_realm: rondonopolis
-keycloak_client_id: sismarq
-keycloak_audience: sismarq
-keycloak_frontend_client_id: sismarq
+keycloak_client_id: projeto-nova
+keycloak_audience: projeto-nova
+keycloak_frontend_client_id: projeto-nova
 
 # Preencha em secrets.yml (não versionado).
 keycloak_client_secret: ""

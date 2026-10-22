@@ -4,10 +4,10 @@ import { KeyRound, Lock, Plus, Search, Trash2, Unlock, UserCog } from "lucide-re
 import { useState, type FormEvent } from "react";
 
 import { ScopePicker } from "@/components/iam/ScopePicker";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -16,8 +16,8 @@ import { Select } from "@/components/ui/Select";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Perfil, ScopeRef, UserAdmin } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Perfil, ScopeRef, UserAdmin } from "@/lib/plataforma/types";
 
 const PASSWORD_HINT = "Mínimo de 12 caracteres, com letras maiúsculas, minúsculas, dígitos e símbolos.";
 
@@ -64,7 +64,7 @@ function CreateUserForm({ onDone }: { onDone: () => void }) {
 }
 
 function UserDetail({ userId, onChanged }: { userId: string; onChanged: () => void }) {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const user = useApiQuery<UserAdmin>(`v1/users/${userId}`);
   const perfis = useApiQuery<Perfil[]>(can("iam:manage") ? "v1/iam/perfis" : null);
   const { run, pending } = useAction();
@@ -204,7 +204,7 @@ function UserDetail({ userId, onChanged }: { userId: string; onChanged: () => vo
 }
 
 export default function UsuariosPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const [q, setQ] = useState("");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState("");

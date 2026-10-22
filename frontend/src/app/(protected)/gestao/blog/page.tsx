@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { Pencil, Pin, Plus } from "lucide-react";
 import { useState } from "react";
-import { DataState } from "@/components/sismarq/DataState";
-import { PageHeader } from "@/components/sismarq/PageHeader";
-import { Pagination } from "@/components/sismarq/Pagination";
-import { fmtDate } from "@/components/sismarq/useAction";
+import { DataState } from "@/components/plataforma/DataState";
+import { PageHeader } from "@/components/plataforma/PageHeader";
+import { Pagination } from "@/components/plataforma/Pagination";
+import { fmtDate } from "@/components/plataforma/useAction";
 import { PublicoBadge } from "@/components/iam/PublicoAlvo";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
@@ -14,13 +14,13 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useApiPage, withQuery } from "@/lib/api/swr";
-import { useSismarq } from "@/lib/sismarq/SismarqProvider";
-import type { Post } from "@/lib/sismarq/types";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Post } from "@/lib/plataforma/types";
 
 const STATUS_LABEL: Record<Post["status"], string> = { draft: "Rascunho", published: "Publicado", archived: "Arquivado" };
 
 export default function BlogPage() {
-  const { can } = useSismarq();
+  const { can } = usePlataforma();
   const manage = can("blog:manage");
   const [q, setQ] = useState("");
   const [query, setQuery] = useState("");

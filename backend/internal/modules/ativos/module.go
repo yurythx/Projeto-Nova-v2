@@ -4,12 +4,12 @@
 package ativos
 
 import (
-	"github.com/yurythx/sismarq/internal/modules/ativos/application"
-	"github.com/yurythx/sismarq/internal/modules/ativos/domain"
-	"github.com/yurythx/sismarq/internal/modules/ativos/infrastructure"
-	"github.com/yurythx/sismarq/internal/modules/ativos/transport"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/infrastructure"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
 
 // Key é a chave do módulo no Kernel.

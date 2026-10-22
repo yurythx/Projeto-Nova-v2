@@ -13,10 +13,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/yurythx/sismarq/internal/domain/events"
-	"github.com/yurythx/sismarq/internal/platform/kernel"
-	"github.com/yurythx/sismarq/internal/platform/passwords"
-	"github.com/yurythx/sismarq/internal/platform/storage/storagetest"
+	"github.com/yurythx/projeto-nova-v2/internal/domain/events"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/passwords"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/storage/storagetest"
 )
 
 // apiHarness é o sistema completo (router real + Postgres de teste) com
@@ -88,7 +88,7 @@ func (h *apiHarness) doFrom(remote, method, path, token, body string) *httptest.
 	req := httptest.NewRequest(method, path, r)
 	req.Header.Set("Content-Type", "application/json")
 	req.RemoteAddr = remote
-	req.Header.Set("User-Agent", "sismarq-test/1.0")
+	req.Header.Set("User-Agent", "projeto-nova-test/1.0")
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}

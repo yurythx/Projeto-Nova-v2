@@ -15,9 +15,9 @@ import {
 import { useState, type FormEvent } from "react";
 
 import { useToast } from "@/components/notifications/ToastProvider";
-import { ConfirmButton } from "@/components/sismarq/ConfirmButton";
-import { DataState } from "@/components/sismarq/DataState";
-import { fmtDateTime, useAction } from "@/components/sismarq/useAction";
+import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
+import { DataState } from "@/components/plataforma/DataState";
+import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import type { ConexaoIA, ModeloProvedorIA, ProvedorIA, TesteIA, UsoIA } from "@/lib/sismarq/types";
+import type { ConexaoIA, ModeloProvedorIA, ProvedorIA, TesteIA, UsoIA } from "@/lib/plataforma/types";
 
 const USO = "v1/ia/uso/plataforma.ia";
 
