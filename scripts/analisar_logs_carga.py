@@ -4,7 +4,7 @@ import subprocess
 from collections import Counter
 
 print("=" * 70)
-print("RELATÓRIO DE ANÁLISE DE LOGS & TESTES DE CARGA - PROJETO NEXUS")
+print("RELATÓRIO DE ANÁLISE DE LOGS & TESTES DE CARGA - PROJETO NOVA")
 print("=" * 70)
 
 # 1. Análise Caddy (Proxy HTTPS / Terminação de Conexão)

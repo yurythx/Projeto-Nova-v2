@@ -30,7 +30,7 @@ func localIdentity(a *Account, authTime time.Time) *auth.Identity {
 // conta e last_seen_at atualizado.
 func TestRefreshRenewsLocalSession(t *testing.T) {
 	a := account(t)
-	a.Roles = []string{"nexus-user", "nexus-admin"}
+	a.Roles = []string{"nova-user", "nova-admin"}
 	store := newFakeStore(a)
 	h := NewHandlers(store, testSigner(t), nil, nil, nil, testLogger())
 

@@ -79,7 +79,7 @@ func TestCanAndCanGlobal(t *testing.T) {
 	}
 	admin := Identity{Roles: []string{RoleAdmin}}
 	if !Can(admin, PermBlogManage, InUnidade(idW)) || !CanGlobal(admin, PermModulesManage) {
-		t.Error("nexus-admin equivale a * global")
+		t.Error("nova-admin equivale a * global")
 	}
 	if Can(Identity{}, PermBlogManage, Target{}) {
 		t.Error("sem concessão, nada")

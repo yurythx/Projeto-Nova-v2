@@ -1,5 +1,5 @@
-# Keycloak de TESTE (realm "nexus" com a estrutura e os usuários fictícios
-# de deploy/keycloak/realm-nexus.json). Opcional: ative com
+# Keycloak de TESTE (realm "nova" com a estrutura e os usuários fictícios
+# de deploy/keycloak/realm-nova.json). Opcional: ative com
 #   COMPOSE_FILE=docker-compose.yml:docker-compose.keycloak.yml
 # no .env (scripts/demo-keycloak.sh faz isso). Substitua por um Keycloak
 # oficial trocando KEYCLOAK_ISSUER_URL e removendo este arquivo do
@@ -28,7 +28,7 @@ services:
       # nada muda.
       KC_PROXY_HEADERS: xforwarded
       JAVA_OPTS_KC_HEAP: "-Xms256m -Xmx768m"
-      # Placeholders do realm-nexus.json, resolvidos no import.
+      # Placeholders do realm-nova.json, resolvidos no import.
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set}
       KEYCLOAK_FRONTEND_CLIENT_SECRET: ${KEYCLOAK_FRONTEND_CLIENT_SECRET:?KEYCLOAK_FRONTEND_CLIENT_SECRET must be set}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:?KEYCLOAK_CLIENT_SECRET must be set}
@@ -39,7 +39,7 @@ services:
     ports:
       - "${HOST_BIND:-0.0.0.0}:${HOST_KEYCLOAK_PORT:-8180}:8080"
     networks:
-      - nexus_internal
+      - nova_internal
     healthcheck:
       # A imagem não traz curl/wget: HTTP cru pelo /dev/tcp do bash na
       # porta de gerenciamento (9000).

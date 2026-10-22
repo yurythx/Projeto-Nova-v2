@@ -80,7 +80,7 @@ O frontend adota o **DSGov/SECOM** e a **Portaria de Acessibilidade Digital (SGD
 * **Auditoria imutável:** append-only com `actor_id`, papéis, IP, user-agent, contexto, ação, recurso, diff, `timestamp_utc` e encadeamento SHA-256.
 * **Dados pessoais dos plug-ins:** quem guarda dado pessoal implementa `lgpd.PersonalData` (exportação e eliminação).
 
-Os identificadores de infraestrutura do microkernel (banco, usuário e vhost, filas, métricas `nexus_*`) são nomes internos; a **marca de produto** é Projeto-nova-v2 (ADR 046).
+Os identificadores de infraestrutura do microkernel (banco, usuário e vhost, filas, métricas `nova_*`) são nomes internos; a **marca de produto** é Projeto-nova-v2 (ADR 046).
 
 ---
 

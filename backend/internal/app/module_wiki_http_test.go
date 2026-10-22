@@ -12,7 +12,7 @@ import (
 // página inexistente e parâmetros malformados.
 func TestWikiTreeRules(t *testing.T) {
 	h := newHarness(t)
-	_, ana := h.user("nexus-user")
+	_, ana := h.user("nova-user")
 	sfx := uuid.NewString()[:6]
 	raiz := data[wikiResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/wiki/pages", ana, `{"title":"Raiz `+sfx+`"}`))
 	filha := data[wikiResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/wiki/pages", ana, `{"title":"Filha `+sfx+`","parent_id":"`+raiz.ID+`"}`))
@@ -65,7 +65,7 @@ func TestWikiGestaoComEscopo(t *testing.T) {
 	o := h.orgEscopo(t)
 	gestorA := h.gestorEm(t, o.a, "wiki:manage")
 	lotadoB := h.gestorEm(t, o.b, "contact:read") // lotado em B, sem wiki:manage
-	_, estranho := h.user("nexus-user")
+	_, estranho := h.user("nova-user")
 	pagina := func(unidade, parent string) string {
 		body := `{"title":"Página ` + uuid.NewString()[:8] + `"`
 		if unidade != "" {
@@ -107,7 +107,7 @@ func TestWikiGestaoComEscopo(t *testing.T) {
 func TestWikiPublicoAlvo(t *testing.T) {
 	h := newHarness(t)
 	o := h.orgEscopo(t)
-	autorID, autor := h.user("nexus-user")
+	autorID, autor := h.user("nova-user")
 	_ = autorID
 	naSub := h.gestorEm(t, o.sub, "contact:read")
 	emB := h.gestorEm(t, o.b, "contact:read")

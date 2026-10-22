@@ -200,7 +200,7 @@ func TestTicketHandler(t *testing.T) {
 	}
 	// Ticket gravado corrompido: inválido.
 	bad := strings.Repeat("a", 64)
-	mr.Set("nexus:ws:ticket:"+bad, "{nao-json")
+	mr.Set("nova:ws:ticket:"+bad, "{nao-json")
 	if _, err := store.Redeem(context.Background(), bad); !errors.Is(err, ErrInvalidTicket) {
 		t.Fatalf("ticket corrompido: %v", err)
 	}

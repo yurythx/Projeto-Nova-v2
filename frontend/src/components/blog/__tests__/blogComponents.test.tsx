@@ -70,7 +70,7 @@ Texto da seção dois.
 
 describe("SocialShareBar", () => {
   it("renderiza os botões de compartilhamento", () => {
-    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nexus.local/blog/novidades" />);
+    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nova.local/blog/novidades" />);
     expect(screen.getByLabelText("Compartilhar no WhatsApp")).toHaveAttribute(
       "href",
       expect.stringContaining("api.whatsapp.com"),
@@ -91,11 +91,11 @@ describe("SocialShareBar", () => {
       clipboard: { writeText },
     });
 
-    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nexus.local/blog/novidades" />);
+    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nova.local/blog/novidades" />);
     const copyBtn = screen.getByLabelText("Copiar link do artigo para a área de transferência");
     fireEvent.click(copyBtn);
 
-    expect(writeText).toHaveBeenCalledWith("https://nexus.local/blog/novidades");
+    expect(writeText).toHaveBeenCalledWith("https://nova.local/blog/novidades");
     await waitFor(() => {
       expect(screen.getByText("Copiado!")).toBeInTheDocument();
     });
@@ -202,14 +202,14 @@ describe("PostEditor Autosave & Draft Management", () => {
       vi.advanceTimersByTime(1100);
     });
 
-    const stored = localStorage.getItem("nexus_blog_draft_new");
+    const stored = localStorage.getItem("nova_blog_draft_new");
     expect(stored).toBeTruthy();
     expect(JSON.parse(stored!).body).toContain("Novo rascunho em markdown de teste.");
   });
 
   it("detecta rascunho anterior e permite restaurar ou descartar", async () => {
     localStorage.setItem(
-      "nexus_blog_draft_new",
+      "nova_blog_draft_new",
       JSON.stringify({ body: "Texto restaurado do rascunho.", savedAt: Date.now() }),
     );
 
@@ -235,7 +235,7 @@ describe("PostEditor Autosave & Draft Management", () => {
 
   it("descarta o rascunho ao clicar em Descartar", async () => {
     localStorage.setItem(
-      "nexus_blog_draft_new",
+      "nova_blog_draft_new",
       JSON.stringify({ body: "Texto a descartar.", savedAt: Date.now() }),
     );
 
@@ -249,7 +249,7 @@ describe("PostEditor Autosave & Draft Management", () => {
     const discardBtn = screen.getByRole("button", { name: "Descartar" });
     fireEvent.click(discardBtn);
 
-    expect(localStorage.getItem("nexus_blog_draft_new")).toBeNull();
+    expect(localStorage.getItem("nova_blog_draft_new")).toBeNull();
     expect(screen.queryByText("Existe um rascunho anterior salvo localmente no seu navegador.")).not.toBeInTheDocument();
   });
 });

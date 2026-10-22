@@ -16,7 +16,7 @@ type idResp struct {
 func TestIAMOrganizationalStructureHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 	sfx := uuid.NewString()[:6]
 
 	// Leitura liberada a qualquer autenticado; escrita exige iam:manage.
@@ -56,7 +56,7 @@ func TestIAMOrganizationalStructureHTTP(t *testing.T) {
 func TestIAMProfilesAndLotacoesGrantAtRuntime(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	userID, tok := h.user("nexus-user")
+	userID, tok := h.user("nova-user")
 	sfx := uuid.NewString()[:6]
 
 	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/iam/perfis", admin, `{"nome":"Ruim","permissoes":["sem formato"]}`)
@@ -112,8 +112,8 @@ func TestIAMADMappingsHTTP(t *testing.T) {
 
 func TestIAMUserManagementHTTP(t *testing.T) {
 	h := newHarness(t)
-	adminID, admin := h.user("nexus-admin")
-	_, plain := h.user("nexus-user")
+	adminID, admin := h.user("nova-admin")
+	_, plain := h.user("nova-user")
 	sfx := strings.ReplaceAll(uuid.NewString()[:8], "-", "")
 
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/users", plain, "")
@@ -149,26 +149,26 @@ func TestIAMUserManagementHTTP(t *testing.T) {
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/me", login.AccessToken, "")
 
 	// Ninguém desativa a própria conta.
-	h.expect(http.StatusConflict, http.MethodPatch, "/api/v1/users/"+adminID.String(), admin, `{"display_name":"Eu","active":false,"roles":["nexus-admin"]}`)
+	h.expect(http.StatusConflict, http.MethodPatch, "/api/v1/users/"+adminID.String(), admin, `{"display_name":"Eu","active":false,"roles":["nova-admin"]}`)
 }
 
 // A01 — escalada de privilégio: um gestor de usuários/IAM sem acesso total
-// não concede o papel nexus-admin nem permissões que não possui.
+// não concede o papel nova-admin nem permissões que não possui.
 func TestIAMPreventsPrivilegeEscalation(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
 	sfx := uuid.NewString()[:6]
 	gestor := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", admin,
 		`{"nome":"Gestor `+sfx+`","permissoes":["users:read","users:manage","iam:manage"]}`))
-	managerID, manager := h.user("nexus-user")
+	managerID, manager := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+managerID.String()+"/lotacoes", admin, `{"perfil_id":"`+gestor.ID+`"}`)
 
-	// Promover a si mesmo a nexus-admin: 403.
+	// Promover a si mesmo a nova-admin: 403.
 	h.expect(http.StatusForbidden, http.MethodPatch, "/api/v1/users/"+managerID.String(), manager,
-		`{"display_name":"Eu","active":true,"roles":["nexus-admin"]}`)
+		`{"display_name":"Eu","active":true,"roles":["nova-admin"]}`)
 	// Criar conta já administradora: 403.
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/users", manager,
-		`{"username":"esc_`+sfx+`","email":"esc`+sfx+`@org.gov.br","password":"Senha-Muito-Forte-1","roles":["nexus-admin"]}`)
+		`{"username":"esc_`+sfx+`","email":"esc`+sfx+`@org.gov.br","password":"Senha-Muito-Forte-1","roles":["nova-admin"]}`)
 	// Criar perfil com permissão que não tem ("*" ou audit:read): 403.
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/iam/perfis", manager, `{"nome":"Tudo `+sfx+`","permissoes":["*"]}`)
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/iam/perfis", manager, `{"nome":"Aud `+sfx+`","permissoes":["audit:read"]}`)
@@ -179,7 +179,7 @@ func TestIAMPreventsPrivilegeEscalation(t *testing.T) {
 	// Dentro do que possui, pode.
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", manager, `{"nome":"Leitor `+sfx+`","permissoes":["users:read"]}`)
 	// O admin (acesso total) pode tudo isso.
-	h.expect(http.StatusOK, http.MethodPatch, "/api/v1/users/"+managerID.String(), admin, `{"display_name":"Gestor","active":true,"roles":["nexus-admin"]}`)
+	h.expect(http.StatusOK, http.MethodPatch, "/api/v1/users/"+managerID.String(), admin, `{"display_name":"Gestor","active":true,"roles":["nova-admin"]}`)
 }
 
 // Desbloqueio administrativo libera o login também no lockout distribuído.

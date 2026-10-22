@@ -5,12 +5,12 @@ import "strings"
 // Roles de realm reconhecidos diretamente no token. O Keycloak é a fonte
 // da verdade para roles; o controle fino é feito por Perfis (permissões
 // "recurso:ação") resolvidos pelo IAM a partir das lotações e do
-// mapeamento de grupos do AD. nexus-admin é o único role com efeito
+// mapeamento de grupos do AD. nova-admin é o único role com efeito
 // próprio (equivale à permissão "*"), para que um administrador nunca
 // fique trancado fora da plataforma por um mapeamento mal configurado.
 const (
-	RoleAdmin RoleName = "nexus-admin"
-	RoleUser  RoleName = "nexus-user"
+	RoleAdmin RoleName = "nova-admin"
+	RoleUser  RoleName = "nova-user"
 )
 
 type RoleName = string
@@ -69,7 +69,7 @@ const (
 
 // HasPermission reporta se identity possui permission, considerando os
 // curingas "*" (tudo) e "recurso:*" (toda ação do recurso). O role
-// nexus-admin equivale a "*".
+// nova-admin equivale a "*".
 func HasPermission(identity Identity, permission Permission) bool {
 	if identity.HasRole(RoleAdmin) {
 		return true

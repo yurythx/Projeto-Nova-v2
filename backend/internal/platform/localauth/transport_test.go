@@ -143,8 +143,8 @@ func doLogin(h *Handlers, username, password string) *httptest.ResponseRecorder 
 func TestLogin_CorrectCredentialsIssuesToken(t *testing.T) {
 	id := uuid.New()
 	store := newFakeStore(&Account{
-		ID: id, Username: "admin", Email: "admin@nexus.local",
-		PasswordHash: mustHash(t, "Admin123!"), Roles: []string{"nexus-admin"}, Active: true,
+		ID: id, Username: "admin", Email: "admin@nova.local",
+		PasswordHash: mustHash(t, "Admin123!"), Roles: []string{"nova-admin"}, Active: true,
 	})
 	h := NewHandlers(store, testSigner(t), nil, nil, nil, testLogger())
 
@@ -297,8 +297,8 @@ func TestLogin_SuccessResetsFailedAttempts(t *testing.T) {
 func TestLogin_RehashesLegacyBcryptToArgon2id(t *testing.T) {
 	id := uuid.New()
 	store := newFakeStore(&Account{
-		ID: id, Username: "legado", Email: "legado@nexus.local",
-		PasswordHash: mustHash(t, "Senha-Legada-123"), Roles: []string{"nexus-user"}, Active: true,
+		ID: id, Username: "legado", Email: "legado@nova.local",
+		PasswordHash: mustHash(t, "Senha-Legada-123"), Roles: []string{"nova-user"}, Active: true,
 	})
 	h := NewHandlers(store, testSigner(t), nil, nil, nil, testLogger())
 	if rec := doLogin(h, "legado", "Senha-Legada-123"); rec.Code != http.StatusOK {

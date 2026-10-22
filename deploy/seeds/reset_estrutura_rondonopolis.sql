@@ -1,11 +1,11 @@
 -- ============================================================================
--- PROJETO NEXUS: RESET E IMPLANTAÇÃO DA ESTRUTURA ORGANIZACIONAL
+-- PROJETO NOVA: RESET E IMPLANTAÇÃO DA ESTRUTURA ORGANIZACIONAL
 -- EXCLUSIVA PARA A CIDADE DE RONDONÓPOLIS - MT
 -- ============================================================================
 -- Este script realiza a Opção 2 solicitada:
 -- 1. Remove com segurança a malha pública desordenada (25 secretarias, 255 postos/escolas).
 -- 2. Implanta a nova estrutura corporativa e de referência focada em Rondonópolis (MT):
---    - 2 Entidades (Nexus Corporation e Nexus AgroTech & Inovação)
+--    - 2 Entidades (Nova Corporation e Nova AgroTech & Inovação)
 --    - 5 Unidades Estratégicas em polos reais de Rondonópolis (Centro, Vila Aurora, Distrito Industrial, Sagrada Família e Complexo Ferroviário)
 --    - 19 Departamentos corporativos completos com ramais, e-mails e siglas
 -- ============================================================================
@@ -37,17 +37,17 @@ INSERT INTO entidades (id, nome, sigla, slug, documento, ativo)
 VALUES
   (
     '10000000-0000-0000-0000-000000000001',
-    'Nexus Corporation Matriz',
-    'NEXUS',
-    'nexus-matriz',
+    'Nova Corporation Matriz',
+    'NOVA',
+    'nova-matriz',
     '12.345.678/0001-90',
     true
   ),
   (
     '10000000-0000-0000-0000-000000000002',
-    'Nexus AgroTech & Soluções Digitais',
+    'Nova AgroTech & Soluções Digitais',
     'AGROTECH',
-    'nexus-agrotech',
+    'nova-agrotech',
     '12.345.678/0002-71',
     true
   );
@@ -63,8 +63,8 @@ VALUES
     'Sede Corporativa Central - Centro',
     'SEDE-CENTRO',
     'sede-centro-rondonopolis',
-    'NEXUS-SEDE',
-    'sede.centro@nexus.corp',
+    'NOVA-SEDE',
+    'sede.centro@nova.corp',
     '(66) 3411-1000',
     'Av. Marechal Rondon, 1250 - Centro, Rondonópolis - MT, CEP 78700-075',
     true
@@ -78,8 +78,8 @@ VALUES
     'Hub de Inovação & P&D - Vila Aurora',
     'HUB-AURORA',
     'hub-vila-aurora',
-    'NEXUS-TECH',
-    'hub.aurora@nexus.corp',
+    'NOVA-TECH',
+    'hub.aurora@nova.corp',
     '(66) 3411-2000',
     'Av. Lions Internacional, 1500 - Vila Aurora, Rondonópolis - MT, CEP 78740-000',
     true
@@ -93,8 +93,8 @@ VALUES
     'Complexo Operacional - Distrito Industrial',
     'POLO-IND',
     'polo-distrito-industrial',
-    'NEXUS-LOG',
-    'operacoes.ind@nexus.corp',
+    'NOVA-LOG',
+    'operacoes.ind@nova.corp',
     '(66) 3411-3000',
     'Rodovia BR-364, km 205 - Distrito Industrial Veterinário, Rondonópolis - MT, CEP 78705-800',
     true
@@ -108,8 +108,8 @@ VALUES
     'Centro Integrado de Atendimento - Sagrada Família',
     'UNID-POGUBA',
     'unidade-sagrada-familia',
-    'NEXUS-ATD',
-    'atendimento.roo@nexus.corp',
+    'NOVA-ATD',
+    'atendimento.roo@nova.corp',
     '(66) 3411-4000',
     'Av. Poguba, 850 - Sagrada Família, Rondonópolis - MT, CEP 78735-000',
     true
@@ -123,8 +123,8 @@ VALUES
     'Terminal Intermodal & Agronegócios - Anel Viário',
     'TERM-AGRO',
     'terminal-intermodal-agro',
-    'NEXUS-AGRO',
-    'terminal.ferrovia@nexus.corp',
+    'NOVA-AGRO',
+    'terminal.ferrovia@nova.corp',
     '(66) 3411-5000',
     'Anel Viário Conrado Sales Brito, s/n - Terminal Ferroviário, Rondonópolis - MT, CEP 78750-000',
     true
@@ -140,8 +140,8 @@ VALUES
     'Diretoria Executiva & Presidência',
     'DIR-EXEC',
     'diretoria-executiva',
-    'NEXUS-DIR',
-    'presidencia@nexus.corp',
+    'NOVA-DIR',
+    'presidencia@nova.corp',
     'Ramal 101',
     true
   ),
@@ -151,8 +151,8 @@ VALUES
     'Gente & Gestão (Recursos Humanos)',
     'RH',
     'recursos-humanos',
-    'NEXUS-RH',
-    'rh@nexus.corp',
+    'NOVA-RH',
+    'rh@nova.corp',
     'Ramal 102',
     true
   ),
@@ -162,8 +162,8 @@ VALUES
     'Financeiro, Fiscal & Controladoria',
     'FIN',
     'financeiro',
-    'NEXUS-FIN',
-    'financeiro@nexus.corp',
+    'NOVA-FIN',
+    'financeiro@nova.corp',
     'Ramal 103',
     true
   ),
@@ -173,8 +173,8 @@ VALUES
     'Jurídico, Compliance & Governança',
     'JUR',
     'juridico',
-    'NEXUS-JUR',
-    'juridico@nexus.corp',
+    'NOVA-JUR',
+    'juridico@nova.corp',
     'Ramal 104',
     true
   ),
@@ -184,8 +184,8 @@ VALUES
     'Comercial & Novos Negócios',
     'COM',
     'comercial',
-    'NEXUS-COM',
-    'comercial@nexus.corp',
+    'NOVA-COM',
+    'comercial@nova.corp',
     'Ramal 105',
     true
   ),
@@ -195,8 +195,8 @@ VALUES
     'Marketing & Comunicação Institucional',
     'MKT',
     'marketing',
-    'NEXUS-MKT',
-    'marketing@nexus.corp',
+    'NOVA-MKT',
+    'marketing@nova.corp',
     'Ramal 106',
     true
   ),
@@ -206,8 +206,8 @@ VALUES
     'Compras, Suprimentos & Facilities',
     'SUP',
     'suprimentos',
-    'NEXUS-SUP',
-    'suprimentos@nexus.corp',
+    'NOVA-SUP',
+    'suprimentos@nova.corp',
     'Ramal 107',
     true
   ),
@@ -220,7 +220,7 @@ VALUES
     'DEV',
     'engenharia-software',
     'TECH-DEV',
-    'dev@nexus.corp',
+    'dev@nova.corp',
     'Ramal 201',
     true
   ),
@@ -231,7 +231,7 @@ VALUES
     'DEVOPS',
     'devops-cloud',
     'TECH-OPS',
-    'cloud@nexus.corp',
+    'cloud@nova.corp',
     'Ramal 202',
     true
   ),
@@ -242,7 +242,7 @@ VALUES
     'SEC',
     'seguranca-informacao',
     'TECH-SEC',
-    'seguranca@nexus.corp',
+    'seguranca@nova.corp',
     'Ramal 203',
     true
   ),
@@ -253,7 +253,7 @@ VALUES
     'SUPORTE',
     'suporte-ti',
     'TECH-SUP',
-    'suporte@nexus.corp',
+    'suporte@nova.corp',
     'Ramal 204',
     true
   ),
@@ -264,7 +264,7 @@ VALUES
     'PED',
     'inovacao-ped',
     'TECH-PED',
-    'inovacao@nexus.corp',
+    'inovacao@nova.corp',
     'Ramal 205',
     true
   ),
@@ -277,7 +277,7 @@ VALUES
     'OPS',
     'operacoes-logistica',
     'LOG-OPS',
-    'operacoes@nexus.corp',
+    'operacoes@nova.corp',
     'Ramal 301',
     true
   ),
@@ -288,7 +288,7 @@ VALUES
     'ALMOX',
     'almoxarifado-central',
     'LOG-ALM',
-    'almoxarifado@nexus.corp',
+    'almoxarifado@nova.corp',
     'Ramal 302',
     true
   ),
@@ -299,7 +299,7 @@ VALUES
     'FROTAS',
     'gestao-frotas',
     'LOG-FROTA',
-    'frotas@nexus.corp',
+    'frotas@nova.corp',
     'Ramal 303',
     true
   ),
@@ -310,7 +310,7 @@ VALUES
     'SMS',
     'seguranca-trabalho',
     'LOG-SMS',
-    'qualidade@nexus.corp',
+    'qualidade@nova.corp',
     'Ramal 304',
     true
   ),
@@ -323,7 +323,7 @@ VALUES
     'CS',
     'customer-success',
     'ATD-CS',
-    'atendimento@nexus.corp',
+    'atendimento@nova.corp',
     'Ramal 401',
     true
   ),
@@ -334,7 +334,7 @@ VALUES
     'PROT',
     'protocolo-central',
     'ATD-PROT',
-    'protocolo@nexus.corp',
+    'protocolo@nova.corp',
     'Ramal 402',
     true
   ),
@@ -347,7 +347,7 @@ VALUES
     'INTERMODAL',
     'operacoes-intermodais',
     'AGRO-OPS',
-    'intermodal@nexus.corp',
+    'intermodal@nova.corp',
     'Ramal 501',
     true
   );
@@ -361,7 +361,7 @@ SELECT
   '201',
   '20000000-0000-0000-0000-000000000001'::uuid,
   '30000000-0000-0000-0000-000000000008'::uuid,
-  'Gestor da infraestrutura tecnológica e sistemas do Projeto Nexus em Rondonópolis.',
+  'Gestor da infraestrutura tecnológica e sistemas do Projeto-nova-v2 em Rondonópolis.',
   true,
   now()
 FROM users

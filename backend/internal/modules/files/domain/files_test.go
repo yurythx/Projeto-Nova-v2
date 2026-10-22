@@ -13,7 +13,7 @@ func TestEvaluateInheritanceAndSubjects(t *testing.T) {
 	dep := uuid.New()
 	identity := auth.Identity{
 		UserID: me,
-		Groups: []string{"/Nexus/Juridico"},
+		Groups: []string{"/Nova/Juridico"},
 		Scopes: []auth.Scope{{Perfil: "protocolo", DepartamentoID: &dep}},
 	}
 	other := uuid.New()

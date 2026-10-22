@@ -13,8 +13,8 @@ import (
 func TestDirectoryHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	aliceID, alice := h.user("nexus-user")
-	_, bob := h.user("nexus-user")
+	aliceID, alice := h.user("nova-user")
+	_, bob := h.user("nova-user")
 
 	// Autoatendimento: a própria ficha.
 	h.expect(http.StatusOK, http.MethodPut, "/api/v1/directory/me", alice,
@@ -52,8 +52,8 @@ type eventResp struct {
 func TestCalendarHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, ana := h.user("nexus-user")
-	_, beto := h.user("nexus-user")
+	_, ana := h.user("nova-user")
+	_, beto := h.user("nova-user")
 	base := time.Now().UTC().Add(48 * time.Hour).Truncate(time.Hour)
 	iso := func(d time.Duration) string { return base.Add(d).Format(time.RFC3339) }
 	window := "from=" + base.Add(-time.Hour).Format(time.RFC3339) + "&to=" + base.Add(24*time.Hour).Format(time.RFC3339)
@@ -113,8 +113,8 @@ type folderResp struct {
 
 func TestFilesHTTP(t *testing.T) {
 	h := newHarness(t)
-	ownerID, owner := h.user("nexus-user")
-	_, other := h.user("nexus-user")
+	ownerID, owner := h.user("nova-user")
+	_, other := h.user("nova-user")
 	_ = ownerID
 
 	root := data[folderResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/files/folders", owner, `{"name":"Equipe `+uuid.NewString()[:5]+`"}`))
@@ -194,8 +194,8 @@ type wikiResp struct {
 func TestWikiHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, ana := h.user("nexus-user")
-	_, beto := h.user("nexus-user")
+	_, ana := h.user("nova-user")
+	_, beto := h.user("nova-user")
 	title := "Manual " + uuid.NewString()[:6]
 
 	p := data[wikiResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/wiki/pages", ana, `{"title":"`+title+`","body":"versão 1"}`))

@@ -33,12 +33,12 @@ export interface paths {
         };
         /**
          * Estado atual da configuração do Keycloak
-         * @description Restrito ao papel nexus-admin (§ Configuração Dinâmica do Keycloak). Nunca devolve um client secret em texto plano — só se um está definido (`client_secret_set`/`frontend_client_secret_set`).
+         * @description Restrito ao papel nova-admin (§ Configuração Dinâmica do Keycloak). Nunca devolve um client secret em texto plano — só se um está definido (`client_secret_set`/`frontend_client_secret_set`).
          */
         get: operations["getKeycloakSettings"];
         /**
          * Salva a configuração do Keycloak
-         * @description Restrito ao papel nexus-admin. SEMPRE testa o discovery OIDC contra `issuer_url` antes de persistir — se o discovery falhar, nada é salvo e a resposta é 422. Depois de salvar com sucesso, o backend recarrega o verificador de tokens (`auth.Verifier.Reload`) na hora, sem reiniciar o processo — a nova configuração já vale para o próximo token verificado. Um `client_secret`/`frontend_client_secret` vazio ou ausente no corpo significa "manter o segredo já salvo", nunca "apagar".
+         * @description Restrito ao papel nova-admin. SEMPRE testa o discovery OIDC contra `issuer_url` antes de persistir — se o discovery falhar, nada é salvo e a resposta é 422. Depois de salvar com sucesso, o backend recarrega o verificador de tokens (`auth.Verifier.Reload`) na hora, sem reiniciar o processo — a nova configuração já vale para o próximo token verificado. Um `client_secret`/`frontend_client_secret` vazio ou ausente no corpo significa "manter o segredo já salvo", nunca "apagar".
          */
         put: operations["saveKeycloakSettings"];
         post?: never;
@@ -59,7 +59,7 @@ export interface paths {
         put?: never;
         /**
          * Testa uma configuração do Keycloak sem salvar
-         * @description Restrito ao papel nexus-admin. Nunca persiste nada — só tenta o discovery OIDC contra `issuer_url` e, se `client_id`/`client_secret` forem informados, uma troca `client_credentials` contra o token_endpoint descoberto (best-effort: falhar aqui não significa credenciais erradas, só que o client pode não ter "Service Accounts" habilitado no Keycloak — ver `KeycloakTestResult`). Um `client_secret` vazio/ausente reutiliza o segredo já salvo, se houver, para não obrigar o admin a redigitá-lo só para testar.
+         * @description Restrito ao papel nova-admin. Nunca persiste nada — só tenta o discovery OIDC contra `issuer_url` e, se `client_id`/`client_secret` forem informados, uma troca `client_credentials` contra o token_endpoint descoberto (best-effort: falhar aqui não significa credenciais erradas, só que o client pode não ter "Service Accounts" habilitado no Keycloak — ver `KeycloakTestResult`). Um `client_secret` vazio/ausente reutiliza o segredo já salvo, se houver, para não obrigar o admin a redigitá-lo só para testar.
          */
         post: operations["testKeycloakSettings"];
         delete?: never;
@@ -4426,7 +4426,7 @@ export interface components {
             /** Format: date-time */
             occurred_at: string;
             payload: Record<string, never>;
-            /** @example nexus.example */
+            /** @example nova.example */
             source: string;
             /** @example example.job.completed */
             type: string;
@@ -4944,7 +4944,7 @@ export interface components {
             frontend_client_id: string;
             /** @description Se um Client Secret do frontend está salvo (nunca devolvido em texto plano). */
             frontend_client_secret_set: boolean;
-            /** @description URL do realm no Keycloak (ex. https://sso.orgao.gov.br/realms/nexus) — de onde o backend baixa o documento de discovery OIDC e as chaves públicas (JWKS) usadas para validar todo token recebido. */
+            /** @description URL do realm no Keycloak (ex. https://sso.orgao.gov.br/realms/nova) — de onde o backend baixa o documento de discovery OIDC e as chaves públicas (JWKS) usadas para validar todo token recebido. */
             issuer_url: string;
             /** @description Nome do realm Keycloak — informativo (o backend descobre tudo que precisa a partir de issuer_url), mas exibido para conferência. */
             realm: string;
@@ -5641,7 +5641,7 @@ export interface components {
                 "application/json": components["schemas"]["Envelope"];
             };
         };
-        /** @description A integração externa está temporariamente indisponível. `CIRCUIT_OPEN` (o circuit breaker interno abriu depois de falhas consecutivas — tende a se resolver sozinho) e `FEATURE_DISABLED` (um nexus-admin desligou a integração via feature flag — só volta quando religada) usam o mesmo status 503, diferenciados pelo `error.code`. */
+        /** @description A integração externa está temporariamente indisponível. `CIRCUIT_OPEN` (o circuit breaker interno abriu depois de falhas consecutivas — tende a se resolver sozinho) e `FEATURE_DISABLED` (um nova-admin desligou a integração via feature flag — só volta quando religada) usam o mesmo status 503, diferenciados pelo `error.code`. */
         IntegrationUnavailable: {
             headers: {
                 [name: string]: unknown;
@@ -5818,13 +5818,13 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "audience": "nexus-backend",
-                 *       "client_id": "nexus-backend",
+                 *       "audience": "nova-backend",
+                 *       "client_id": "nova-backend",
                  *       "client_secret": "s3gr3d0-do-backend",
-                 *       "frontend_client_id": "nexus-frontend",
+                 *       "frontend_client_id": "nova-frontend",
                  *       "frontend_client_secret": "s3gr3d0-do-frontend",
-                 *       "issuer_url": "https://sso.orgao.gov.br/realms/nexus",
-                 *       "realm": "nexus"
+                 *       "issuer_url": "https://sso.orgao.gov.br/realms/nova",
+                 *       "realm": "nova"
                  *     }
                  */
                 "application/json": {
@@ -10670,7 +10670,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description `meus-dados-nexus-<timestamp>.json` (`Content-Disposition: attachment`). */
+            /** @description `meus-dados-nova-<timestamp>.json` (`Content-Disposition: attachment`). */
             200: {
                 headers: {
                     [name: string]: unknown;

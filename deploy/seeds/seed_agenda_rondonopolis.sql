@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — SEMENTE DE SALAS E EVENTOS DA AGENDA (RONDONÓPOLIS - MT)
+-- PROJETO NOVA — SEMENTE DE SALAS E EVENTOS DA AGENDA (RONDONÓPOLIS - MT)
 -- ==============================================================================
 -- Configura salas de reunião corporativas reais distribuídas entre as
 -- 5 unidades de Rondonópolis e agenda eventos/reservas com as personas.
@@ -104,13 +104,13 @@ BEGIN
     SELECT id INTO v_u_marcos  FROM users WHERE username = 'marcos.ops';
     SELECT id INTO v_u_ana     FROM users WHERE username = 'ana.protocolo';
 
-    -- EVENTO 1: Reunião do Comitê Executivo Nexus (Sede Centro)
+    -- EVENTO 1: Reunião do Comitê Executivo Nova (Sede Centro)
     INSERT INTO calendar_events (
         id, title, description, location, room_id,
         starts_at, ends_at, all_day, visibility, status, organizer_id
     ) VALUES (
         v_ev1_id,
-        'Reunião do Comitê Executivo Nexus Corporation',
+        'Reunião do Comitê Executivo Nova Corporation',
         'Alinhamento trimestral de metas, governança corporativa e expansão dos novos polos no Centro-Oeste.',
         'Sede Centro - Sala Executiva Pantanal',
         '50000000-0000-0000-0000-000000000002',
@@ -187,7 +187,7 @@ BEGIN
         starts_at, ends_at, all_day, visibility, status, organizer_id
     ) VALUES (
         v_ev5_id,
-        'Workshop Nexus: O Futuro da Tecnologia no Campo',
+        'Workshop Nova: O Futuro da Tecnologia no Campo',
         'Painel aberto com cooperativas e produtores rurais de Rondonópolis sobre inteligência artificial e conectividade agrícola.',
         'Sede Centro - Auditório Marechal Rondon',
         '50000000-0000-0000-0000-000000000001',

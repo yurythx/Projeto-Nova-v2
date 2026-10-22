@@ -1,9 +1,9 @@
-name: nexus-observability
+name: nova-observability
 
 networks:
-  nexus_internal:
+  nova_internal:
     external: true
-    name: projeto-nexus_nexus_internal
+    name: projeto-nova_nova_internal
 
 volumes:
   prometheus_data: null
@@ -21,7 +21,7 @@ services:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     networks:
-      - nexus_internal
+      - nova_internal
     ports:
       - "9093:9093"
 
@@ -39,7 +39,7 @@ services:
       - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     networks:
-      - nexus_internal
+      - nova_internal
     ports:
       - "9090:9090"
 
@@ -55,7 +55,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     networks:
-      - nexus_internal
+      - nova_internal
     ports:
       - "3005:3000"
     depends_on:

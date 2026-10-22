@@ -6,7 +6,7 @@ func TestHasPermission_AdminRoleHasEverything(t *testing.T) {
 	admin := Identity{Roles: []string{RoleAdmin}}
 	for _, p := range []Permission{PermUsersManage, PermAuditRead, PermModulesManage, PermKeycloakManage, PermTramiteManage} {
 		if !HasPermission(admin, p) {
-			t.Errorf("nexus-admin deveria ter %s", p)
+			t.Errorf("nova-admin deveria ter %s", p)
 		}
 	}
 }
@@ -36,7 +36,7 @@ func TestHasPermission_UserRoleGrantsNothingByItself(t *testing.T) {
 	user := Identity{Roles: []string{RoleUser}}
 	for _, p := range []Permission{PermUsersRead, PermAuditRead, PermModulesManage} {
 		if HasPermission(user, p) {
-			t.Errorf("nexus-user não deveria ter %s sem perfil atribuído", p)
+			t.Errorf("nova-user não deveria ter %s sem perfil atribuído", p)
 		}
 	}
 }

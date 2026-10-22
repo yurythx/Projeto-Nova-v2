@@ -109,7 +109,7 @@ func TestWriteError_ProblemJSON_WhenAccepted(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &p); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if p.Type != "urn:nexus:error:validation_error" {
+	if p.Type != "urn:nova:error:validation_error" {
 		t.Errorf("type = %q", p.Type)
 	}
 	if p.Status != 422 || p.Code != "VALIDATION_ERROR" {

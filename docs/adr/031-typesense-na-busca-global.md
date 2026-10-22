@@ -34,7 +34,7 @@ chave com valor padrão fixo no `docker-compose.yml`.
 - **Indexação no worker** (`internal/platform/searchindex`):
   - carga completa de cada módulo indexado no boot e a cada
     `TYPESENSE_SYNC_INTERVAL` (padrão 10 min);
-  - cada evento do módulo (fila `nexus.search.index`, ligada a
+  - cada evento do módulo (fila `nova.search.index`, ligada a
     `<módulo>.#`) pede nova carga dele, agrupada por 2 s;
   - cada carga grava uma geração nova e apaga a anterior: o que saiu do
     módulo sai do índice.
@@ -43,9 +43,9 @@ chave com valor padrão fixo no `docker-compose.yml`.
     pelos demais;
   - com o índice fora do ar, ou sem resultado (ainda sem carga), esses
     módulos voltam ao Postgres;
-  - a métrica `nexus_search_index_fallback_total{reason}` conta cada volta.
+  - a métrica `nova_search_index_fallback_total{reason}` conta cada volta.
 - **Esquema versionado pelo nome** (`TYPESENSE_COLLECTION`, padrão
-  `nexus_busca_v1`): mudar um campo pede outro nome. A coleção nova nasce
+  `nova_busca_v1`): mudar um campo pede outro nome. A coleção nova nasce
   vazia e recebe a carga completa.
 
 ## Consequências

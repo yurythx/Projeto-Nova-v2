@@ -114,7 +114,7 @@ Os tipos Go viram `components/schemas`:
 Das 172 rotas, só uma continua com schema genérico: a de transparência que
 negocia CSV/XML.
 
-Tudo o que é gerado leva a marca `x-nexus-generated`, e regenerar
+Tudo o que é gerado leva a marca `x-nova-generated`, e regenerar
 (`UPDATE_OPENAPI=1`) refaz o que tem a marca. Onde havia texto escrito à mão,
 vale uma regra única:
 
@@ -147,7 +147,7 @@ Duas regras de fidelidade ao `encoding/json`:
 **Contrato frontend × backend.** O compilador também confere o frontend:
 
 - `npm run gen:api` gera `src/types/openapi.gen.ts` a partir do OpenAPI, com `openapi-typescript`;
-- `src/lib/nexus/contract.types.ts` faz o `tsc` provar que cada tipo escrito à
+- `src/lib/nova/contract.types.ts` faz o `tsc` provar que cada tipo escrito à
   mão em `types.ts` aceita o que o backend envia; a comparação é de forma, e
   um literal como `"noticia"` conta como string;
 - no CI, um passo regenera os tipos e falha se o arquivo estiver defasado.

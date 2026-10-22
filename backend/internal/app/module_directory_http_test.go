@@ -21,8 +21,8 @@ func TestDirectoryProfileRules(t *testing.T) {
 	un1 := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/unidades", admin, `{"entidade_id":"`+ent.ID+`","nome":"Obras `+sfx+`"}`))
 	un2 := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/unidades", admin, `{"entidade_id":"`+ent.ID+`","nome":"Saúde `+sfx+`"}`))
 	dep := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/departamentos", admin, `{"unidade_id":"`+un1.ID+`","nome":"Projetos `+sfx+`"}`))
-	anaID, ana := h.user("nexus-user")
-	_, beto := h.user("nexus-user")
+	anaID, ana := h.user("nova-user")
+	_, beto := h.user("nova-user")
 
 	// Primeiro salvamento da própria ficha: a lotação enviada é ignorada.
 	me := h.expect(http.StatusOK, http.MethodPut, "/api/v1/directory/me", ana,
@@ -90,7 +90,7 @@ func TestDirectoryProfileRules(t *testing.T) {
 func TestDirectoryPersonalDataFollowsLGPDRequests(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	anaID, ana := h.user("nexus-user")
+	anaID, ana := h.user("nova-user")
 	h.expect(http.StatusOK, http.MethodPut, "/api/v1/directory/me", ana, `{"job_title":"Analista","phone":"61 99999-0000","bio":"sobre mim"}`)
 
 	export := h.expect(http.StatusOK, http.MethodGet, "/api/v1/lgpd/meus-dados", ana, "").Body.String()
@@ -133,7 +133,7 @@ func TestDirectoryGestaoComEscopo(t *testing.T) {
 	o := h.orgEscopo(t)
 	gestorA := h.gestorEm(t, o.a, "directory:manage")
 	pessoa := func(unidade string, visivel bool) string {
-		id, _ := h.user("nexus-user")
+		id, _ := h.user("nova-user")
 		if unidade != "" {
 			h.expect(http.StatusOK, http.MethodPut, "/api/v1/directory/people/"+id.String(), admin,
 				`{"job_title":"Servidor","unidade_id":"`+unidade+`","visible":`+map[bool]string{true: "true", false: "false"}[visivel]+`}`)

@@ -20,7 +20,7 @@ import (
 //go:embed envelope.schema.json
 var schemaJSON []byte
 
-const schemaResourceID = "https://projeto-nexus.internal/schemas/event-envelope.json"
+const schemaResourceID = "https://projeto-nova.internal/schemas/event-envelope.json"
 
 var (
 	compileOnce    sync.Once

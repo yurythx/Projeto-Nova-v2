@@ -44,7 +44,7 @@ func newTramiteFixture(t *testing.T) *tramiteFixture {
 		t.Fatal(err)
 	}
 	lotar := func(unidade string) (uuid.UUID, string) {
-		id, tok := h.user("nexus-user")
+		id, tok := h.user("nova-user")
 		h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+id.String()+"/lotacoes", f.admin,
 			`{"perfil_id":"`+protocolo+`","unidade_id":"`+unidade+`"}`)
 		return id, tok
@@ -52,7 +52,7 @@ func newTramiteFixture(t *testing.T) *tramiteFixture {
 	f.anaID, f.anaA = lotar(f.unA)
 	f.carlosID, f.carlosA = lotar(f.unA)
 	f.betoID, f.betoB = lotar(f.unB)
-	f.semLotacID, f.semLotacao = h.user("nexus-user")
+	f.semLotacID, f.semLotacao = h.user("nova-user")
 	return f
 }
 
@@ -476,7 +476,7 @@ func TestTramiteGestaoComEscopo(t *testing.T) {
 	gestorPerfil := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", f.admin,
 		`{"nome":"Gestor de trâmite `+uuid.NewString()[:6]+`","permissoes":["tramite:manage"]}`)).ID
 	lotar := func(perfil, unidade string) string {
-		id, tok := h.user("nexus-user")
+		id, tok := h.user("nova-user")
 		h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+id.String()+"/lotacoes", f.admin,
 			`{"perfil_id":"`+perfil+`","unidade_id":"`+unidade+`"}`)
 		return tok

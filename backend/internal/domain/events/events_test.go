@@ -12,7 +12,7 @@ type samplePayload struct {
 
 func TestNew_BuildsValidEnvelope(t *testing.T) {
 	corr := uuid.New()
-	ev, err := New("example.job.completed", "nexus.example", corr, samplePayload{JobID: "abc"})
+	ev, err := New("example.job.completed", "nova.example", corr, samplePayload{JobID: "abc"})
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
@@ -26,7 +26,7 @@ func TestNew_BuildsValidEnvelope(t *testing.T) {
 	if ev.Version != EnvelopeVersion {
 		t.Errorf("Version = %d, want %d", ev.Version, EnvelopeVersion)
 	}
-	if ev.Source != "nexus.example" {
+	if ev.Source != "nova.example" {
 		t.Errorf("Source = %q", ev.Source)
 	}
 	if ev.OccurredAt.IsZero() {
@@ -46,7 +46,7 @@ func TestNew_BuildsValidEnvelope(t *testing.T) {
 }
 
 func TestNew_GeneratesCorrelationIDWhenNil(t *testing.T) {
-	ev, err := New("user.created", "nexus.users", uuid.Nil, samplePayload{})
+	ev, err := New("user.created", "nova.users", uuid.Nil, samplePayload{})
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}

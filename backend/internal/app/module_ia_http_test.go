@@ -15,7 +15,7 @@ func TestIAConfiguracaoHTTP(t *testing.T) {
 	h := newHarness(t)
 	ctx := context.Background()
 	admin := h.admin()
-	_, comum := h.user("nexus-user")
+	_, comum := h.user("nova-user")
 	t.Cleanup(func() {
 		_, _ = h.d.DB.Exec(ctx, `DELETE FROM ia_uso`)
 		_, _ = h.d.DB.Exec(ctx, `DELETE FROM ia_conexoes`)

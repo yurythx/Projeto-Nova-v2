@@ -19,8 +19,8 @@
 //
 //	make seed-admin
 //	# ou, direto:
-//	DB_HOST=localhost DB_PORT=5432 DB_NAME=nexus DB_USER=nexus DB_PASSWORD=... \
-//	  go run ./cmd/seedadmin --username admin --roles nexus-admin,nexus-user
+//	DB_HOST=localhost DB_PORT=5432 DB_NAME=nova DB_USER=nova DB_PASSWORD=... \
+//	  go run ./cmd/seedadmin --username admin --roles nova-admin,nova-user
 package main
 
 import (
@@ -57,7 +57,7 @@ func main() {
 	username := flag.String("username", "admin", "username da conta local a criar/resetar")
 	email := flag.String("email", "admin@projeto-nova.local", "email da conta")
 	displayName := flag.String("display-name", "Administrador (local)", "nome de exibição")
-	rolesCSV := flag.String("roles", "nexus-admin,nexus-user", "roles, separadas por vírgula")
+	rolesCSV := flag.String("roles", "nova-admin,nova-user", "roles, separadas por vírgula")
 	// password: SÓ para automação (CI de E2E, ver .github/workflows/ci.yml)
 	// que precisa saber a senha de antemão pra digitar num formulário —
 	// deixado vazio (o padrão), uma senha aleatória de verdade é gerada.

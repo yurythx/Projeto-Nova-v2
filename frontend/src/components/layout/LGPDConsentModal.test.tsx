@@ -40,13 +40,13 @@ describe("LGPDConsentModal", () => {
     await userEvent.click(screen.getByRole("button", { name: /Concordar/ }));
     expect(publicPost).toHaveBeenCalledWith("v1/lgpd/accept-anon", expect.objectContaining({ term_version: "v1.0.0-2026" }));
     expect(post).not.toHaveBeenCalled();
-    expect(localStorage.getItem("nexus_lgpd_consent")).toBe("v1.0.0-2026");
+    expect(localStorage.getItem("nova_lgpd_consent")).toBe("v1.0.0-2026");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("logado: o servidor decide — aceite local não dispensa o registro na conta", async () => {
     sessionStatus = "authenticated";
-    localStorage.setItem("nexus_lgpd_consent", "v1.0.0-2026");
+    localStorage.setItem("nova_lgpd_consent", "v1.0.0-2026");
     get.mockResolvedValue({ data: { accepted: false, term_version: "v1.0.0-2026" } });
     render(<LGPDConsentModal />);
     await flush();
@@ -72,6 +72,6 @@ describe("LGPDConsentModal", () => {
     await userEvent.click(screen.getByRole("button", { name: /Concordar/ }));
     expect(await screen.findByRole("alert")).toHaveTextContent("serviço indisponível");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(localStorage.getItem("nexus_lgpd_consent")).toBeNull();
+    expect(localStorage.getItem("nova_lgpd_consent")).toBeNull();
   });
 });

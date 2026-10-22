@@ -36,7 +36,7 @@ func TestSeedAdmin_CreatesUserWithHashedRandomPassword(t *testing.T) {
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE username = $1`, username)
 	})
 
-	password, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nexus-admin,nexus-user", "")
+	password, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nova-admin,nova-user", "")
 	if err != nil {
 		t.Fatalf("seedAdmin: %v", err)
 	}
@@ -55,8 +55,8 @@ func TestSeedAdmin_CreatesUserWithHashedRandomPassword(t *testing.T) {
 	if !active {
 		t.Error("expected the created user to be active")
 	}
-	if len(roles) != 2 || roles[0] != "nexus-admin" || roles[1] != "nexus-user" {
-		t.Errorf("roles = %v, want [nexus-admin nexus-user]", roles)
+	if len(roles) != 2 || roles[0] != "nova-admin" || roles[1] != "nova-user" {
+		t.Errorf("roles = %v, want [nova-admin nova-user]", roles)
 	}
 	if err := passwords.Verify(hash, password); err != nil {
 		t.Errorf("the stored hash does not match the returned password: %v", err)
@@ -71,7 +71,7 @@ func TestSeedAdmin_SecondRun_ResetsPasswordAndLockout(t *testing.T) {
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE username = $1`, username)
 	})
 
-	firstPassword, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nexus-admin", "")
+	firstPassword, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nova-admin", "")
 	if err != nil {
 		t.Fatalf("seedAdmin (primeira vez): %v", err)
 	}
@@ -82,7 +82,7 @@ func TestSeedAdmin_SecondRun_ResetsPasswordAndLockout(t *testing.T) {
 		t.Fatalf("simulate lockout: %v", err)
 	}
 
-	secondPassword, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nexus-admin", "")
+	secondPassword, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nova-admin", "")
 	if err != nil {
 		t.Fatalf("seedAdmin (segunda vez): %v", err)
 	}
@@ -115,7 +115,7 @@ func TestSeedAdmin_PasswordOverride_UsesGivenPasswordInsteadOfRandom(t *testing.
 	})
 
 	const fixedPassword = "e2e-fixed-password-not-random"
-	got, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nexus-admin", fixedPassword)
+	got, err := seedAdmin(ctx, pool, username, "seedadmin-test@projeto-nova.local", "Seedadmin Test", "nova-admin", fixedPassword)
 	if err != nil {
 		t.Fatalf("seedAdmin: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestSeedAdmin_RefusesToOverwriteKeycloakLinkedAccount(t *testing.T) {
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE username = $1`, username)
 	})
 
-	_, err = seedAdmin(ctx, pool, username, "someone-else@projeto-nova.local", "Someone Else", "nexus-admin", "")
+	_, err = seedAdmin(ctx, pool, username, "someone-else@projeto-nova.local", "Someone Else", "nova-admin", "")
 	if err == nil {
 		t.Fatal("expected seedAdmin to refuse overwriting a Keycloak-linked account, got no error")
 	}

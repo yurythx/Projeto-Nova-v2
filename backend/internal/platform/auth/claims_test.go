@@ -11,14 +11,14 @@ func TestToIdentity_MergesRealmAndClientRoles(t *testing.T) {
 		Subject:           "sub-123",
 		PreferredUsername: "jdoe",
 		Email:             "jdoe@example.com",
-		RealmAccess:       roleContainer{Roles: []string{"nexus-user", "offline_access"}},
+		RealmAccess:       roleContainer{Roles: []string{"nova-user", "offline_access"}},
 		ResourceAccess: map[string]roleContainer{
-			"nexus-backend": {Roles: []string{"nexus-integration-manager"}},
-			"other-client":  {Roles: []string{"should-not-appear"}},
+			"nova-backend": {Roles: []string{"nova-integration-manager"}},
+			"other-client": {Roles: []string{"should-not-appear"}},
 		},
 	}
 
-	identity := claims.toIdentity("nexus-backend")
+	identity := claims.toIdentity("nova-backend")
 
 	if identity.Subject != "sub-123" {
 		t.Errorf("Subject = %q", identity.Subject)
@@ -32,7 +32,7 @@ func TestToIdentity_MergesRealmAndClientRoles(t *testing.T) {
 
 	got := append([]string{}, identity.Roles...)
 	sort.Strings(got)
-	want := []string{"nexus-user", "offline_access", "nexus-integration-manager"}
+	want := []string{"nova-user", "offline_access", "nova-integration-manager"}
 	sort.Strings(want)
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Roles = %v, want %v", got, want)
@@ -41,9 +41,9 @@ func TestToIdentity_MergesRealmAndClientRoles(t *testing.T) {
 
 func TestToIdentity_DeduplicatesRoles(t *testing.T) {
 	claims := accessTokenClaims{
-		RealmAccess: roleContainer{Roles: []string{"nexus-user", "nexus-user"}},
+		RealmAccess: roleContainer{Roles: []string{"nova-user", "nova-user"}},
 		ResourceAccess: map[string]roleContainer{
-			"api": {Roles: []string{"nexus-user"}},
+			"api": {Roles: []string{"nova-user"}},
 		},
 	}
 
@@ -56,15 +56,15 @@ func TestToIdentity_DeduplicatesRoles(t *testing.T) {
 
 func TestToIdentity_UnknownClientIDYieldsRealmRolesOnly(t *testing.T) {
 	claims := accessTokenClaims{
-		RealmAccess: roleContainer{Roles: []string{"nexus-user"}},
+		RealmAccess: roleContainer{Roles: []string{"nova-user"}},
 		ResourceAccess: map[string]roleContainer{
-			"some-other-client": {Roles: []string{"nexus-admin"}},
+			"some-other-client": {Roles: []string{"nova-admin"}},
 		},
 	}
 
-	identity := claims.toIdentity("nexus-backend")
+	identity := claims.toIdentity("nova-backend")
 
-	if !reflect.DeepEqual(identity.Roles, []string{"nexus-user"}) {
-		t.Errorf("Roles = %v, want [nexus-user]", identity.Roles)
+	if !reflect.DeepEqual(identity.Roles, []string{"nova-user"}) {
+		t.Errorf("Roles = %v, want [nova-user]", identity.Roles)
 	}
 }

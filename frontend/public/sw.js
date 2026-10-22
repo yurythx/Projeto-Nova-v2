@@ -1,5 +1,5 @@
 // Service Worker para PWA do Projeto-nova-v2
-const CACHE_NAME = "nexus-pwa-v1";
+const CACHE_NAME = "nova-pwa-v1";
 const STATIC_ASSETS = [
   "/",
   "/manifest.webmanifest",

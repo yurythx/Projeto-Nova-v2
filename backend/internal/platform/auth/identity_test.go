@@ -42,8 +42,8 @@ func TestActorUUID(t *testing.T) {
 }
 
 func TestHasGroupIsExactNotSubstring(t *testing.T) {
-	id := Identity{Groups: []string{"/Nexus/TI", "Grupo_Admin_Temporario"}}
-	if !id.HasGroup("ti") || !id.HasGroup("/Nexus/TI") {
+	id := Identity{Groups: []string{"/Nova/TI", "Grupo_Admin_Temporario"}}
+	if !id.HasGroup("ti") || !id.HasGroup("/Nova/TI") {
 		t.Error("grupo em formato de caminho deveria casar pelo nome")
 	}
 	if id.HasGroup("admin") {
@@ -56,7 +56,7 @@ func TestIsAdmin(t *testing.T) {
 		t.Error("nome de grupo com 'admin' não pode conceder administração")
 	}
 	if !(Identity{Roles: []string{RoleAdmin}}).IsAdmin() {
-		t.Error("role nexus-admin deveria ser admin")
+		t.Error("role nova-admin deveria ser admin")
 	}
 	if !(Identity{Permissions: []string{"*"}}).IsAdmin() {
 		t.Error("permissão curinga deveria ser admin")

@@ -1,7 +1,7 @@
 # Seeds desta pasta — só para demonstração
 
 Os arquivos `seed_*_rondonopolis.sql` e `update_destaque_editorial_proxmox.sql`
-são **dados fictícios da “Nexus Corporation”** (personas, wiki de
+são **dados fictícios da “Nova Corporation”** (personas, wiki de
 onboarding, agenda, arquivos, trâmite). Servem só para demonstrar os
 plug-ins em ambiente de teste.
 

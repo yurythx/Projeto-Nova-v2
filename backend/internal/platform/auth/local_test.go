@@ -39,7 +39,7 @@ func testSigner(t *testing.T, ttl time.Duration) *LocalSigner {
 
 func TestIssueToken_ThenVerifyToken_RoundTrips(t *testing.T) {
 	signer := testSigner(t, time.Hour)
-	account := LocalAccount{ID: "user-1", Username: "admin", Email: "admin@projeto-nova.local", Roles: []string{"nexus-admin", "nexus-user"}}
+	account := LocalAccount{ID: "user-1", Username: "admin", Email: "admin@projeto-nova.local", Roles: []string{"nova-admin", "nova-user"}}
 
 	token, expiresAt, err := signer.IssueToken(account)
 	if err != nil {
@@ -65,8 +65,8 @@ func TestIssueToken_ThenVerifyToken_RoundTrips(t *testing.T) {
 	if identity.Source != SourceLocal {
 		t.Errorf("Source = %q, want %q", identity.Source, SourceLocal)
 	}
-	if !identity.HasRole("nexus-admin") || !identity.HasRole("nexus-user") {
-		t.Errorf("Roles = %v, want to include nexus-admin and nexus-user", identity.Roles)
+	if !identity.HasRole("nova-admin") || !identity.HasRole("nova-user") {
+		t.Errorf("Roles = %v, want to include nova-admin and nova-user", identity.Roles)
 	}
 }
 

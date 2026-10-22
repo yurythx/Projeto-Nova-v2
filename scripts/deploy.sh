@@ -103,12 +103,12 @@ if "${COMPOSE[@]}" config --services 2>/dev/null | grep -qx caddy; then
     "${COMPOSE[@]}" cp caddy:/data/caddy/pki/authorities/local/root.crt "$tmp" >/dev/null 2>&1 && [ -s "$tmp" ] && break
     sleep 2
   done
-  if [ -s "$tmp" ] && ! cmp -s "$tmp" secrets/ca/nexus-ca.crt; then
+  if [ -s "$tmp" ] && ! cmp -s "$tmp" secrets/ca/nova-ca.crt; then
     mkdir -p secrets/ca
-    cp "$tmp" secrets/ca/nexus-ca.crt
-    chmod 644 secrets/ca/nexus-ca.crt
+    cp "$tmp" secrets/ca/nova-ca.crt
+    chmod 644 secrets/ca/nova-ca.crt
     ca_changed=1
-    echo "  CA nova em secrets/ca — reinstale nas máquinas de teste (http://<host>/nexus-ca.crt)"
+    echo "  CA nova em secrets/ca — reinstale nas máquinas de teste (http://<host>/nova-ca.crt)"
   fi
   rm -f "$tmp"
 fi

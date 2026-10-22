@@ -50,7 +50,7 @@ func TestNewVerifier_EmptyIssuerWithLocalSignerFallsBackToLocalOnly(t *testing.T
 		t.Fatalf("NewVerifier: %v", err)
 	}
 
-	account := LocalAccount{ID: "user-1", Username: "nexus-user-1", Roles: []string{RoleUser}}
+	account := LocalAccount{ID: "user-1", Username: "nova-user-1", Roles: []string{RoleUser}}
 	token, _, err := signer.IssueToken(account)
 	if err != nil {
 		t.Fatalf("IssueToken: %v", err)
@@ -88,8 +88,8 @@ func TestVerifier_Reload_AppliesNewIssuerWithoutRestart(t *testing.T) {
 
 	if err := v.Reload(t.Context(), config.KeycloakConfig{
 		IssuerURL: srv.URL,
-		ClientID:  "nexus-backend",
-		Audience:  "nexus-backend",
+		ClientID:  "nova-backend",
+		Audience:  "nova-backend",
 	}); err != nil {
 		t.Fatalf("Reload: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestVerifier_Reload_AppliesNewIssuerWithoutRestart(t *testing.T) {
 
 	// O caminho local continua funcionando depois do Reload — ele nunca
 	// muda o localSigner, só o lado Keycloak.
-	account := LocalAccount{ID: "user-2", Username: "nexus-user-2", Roles: []string{RoleUser}}
+	account := LocalAccount{ID: "user-2", Username: "nova-user-2", Roles: []string{RoleUser}}
 	token, _, err := signer.IssueToken(account)
 	if err != nil {
 		t.Fatalf("IssueToken: %v", err)
@@ -124,8 +124,8 @@ func TestVerifier_Reload_FailureLeavesPreviousStateIntact(t *testing.T) {
 
 	v, err := NewVerifier(t.Context(), config.KeycloakConfig{
 		IssuerURL: srv.URL,
-		ClientID:  "nexus-backend",
-		Audience:  "nexus-backend",
+		ClientID:  "nova-backend",
+		Audience:  "nova-backend",
 	}, nil)
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
@@ -134,8 +134,8 @@ func TestVerifier_Reload_FailureLeavesPreviousStateIntact(t *testing.T) {
 
 	err = v.Reload(t.Context(), config.KeycloakConfig{
 		IssuerURL: "http://127.0.0.1:1/realms/nao-existe",
-		ClientID:  "nexus-backend",
-		Audience:  "nexus-backend",
+		ClientID:  "nova-backend",
+		Audience:  "nova-backend",
 	})
 	if err == nil {
 		t.Fatal("esperava erro ao recarregar contra um issuer inalcançável")

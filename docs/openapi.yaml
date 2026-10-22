@@ -78,7 +78,7 @@ components:
                     schema:
                         $ref: '#/components/schemas/Envelope'
             description: |
-                A integração externa está temporariamente indisponível. `CIRCUIT_OPEN` (o circuit breaker interno abriu depois de falhas consecutivas — tende a se resolver sozinho) e `FEATURE_DISABLED` (um nexus-admin desligou a integração via feature flag — só volta quando religada) usam o mesmo status 503, diferenciados pelo `error.code`.
+                A integração externa está temporariamente indisponível. `CIRCUIT_OPEN` (o circuit breaker interno abriu depois de falhas consecutivas — tende a se resolver sozinho) e `FEATURE_DISABLED` (um nova-admin desligou a integração via feature flag — só volta quando religada) usam o mesmo status 503, diferenciados pelo `error.code`.
         ModuleDisabledOrNotFound:
             content:
                 application/json:
@@ -2224,7 +2224,7 @@ components:
                 payload:
                     type: object
                 source:
-                    example: nexus.example
+                    example: nova.example
                     type: string
                 type:
                     example: example.job.completed
@@ -3584,7 +3584,7 @@ components:
                     description: Se um Client Secret do frontend está salvo (nunca devolvido em texto plano).
                     type: boolean
                 issuer_url:
-                    description: URL do realm no Keycloak (ex. https://sso.orgao.gov.br/realms/nexus) — de onde o backend baixa o documento de discovery OIDC e as chaves públicas (JWKS) usadas para validar todo token recebido.
+                    description: URL do realm no Keycloak (ex. https://sso.orgao.gov.br/realms/nova) — de onde o backend baixa o documento de discovery OIDC e as chaves públicas (JWKS) usadas para validar todo token recebido.
                     type: string
                 realm:
                     description: Nome do realm Keycloak — informativo (o backend descobre tudo que precisa a partir de issuer_url), mas exibido para conferência.
@@ -5283,7 +5283,7 @@ info:
 
         **RFC 7807 (Problem Details)**: um cliente que envia
         `Accept: application/problem+json` recebe as respostas de ERRO no
-        formato RFC 7807 (`type` = `urn:nexus:error:<code>`, `title`,
+        formato RFC 7807 (`type` = `urn:nova:error:<code>`, `title`,
         `status`, `detail`, `instance`, mais as extensões `code` e
         `request_id`). Qualquer outro `Accept` mantém o envelope acima.
         Respostas de sucesso não mudam. Ver ADR
@@ -5364,7 +5364,7 @@ paths:
     /api/v1/admin/keycloak:
         get:
             description: |
-                Restrito ao papel nexus-admin (§ Configuração Dinâmica do Keycloak). Nunca devolve um client secret em texto plano — só se um está definido (`client_secret_set`/`frontend_client_secret_set`).
+                Restrito ao papel nova-admin (§ Configuração Dinâmica do Keycloak). Nunca devolve um client secret em texto plano — só se um está definido (`client_secret_set`/`frontend_client_secret_set`).
             operationId: getKeycloakSettings
             responses:
                 "200":
@@ -5391,19 +5391,19 @@ paths:
                 - administracao
         put:
             description: |
-                Restrito ao papel nexus-admin. SEMPRE testa o discovery OIDC contra `issuer_url` antes de persistir — se o discovery falhar, nada é salvo e a resposta é 422. Depois de salvar com sucesso, o backend recarrega o verificador de tokens (`auth.Verifier.Reload`) na hora, sem reiniciar o processo — a nova configuração já vale para o próximo token verificado. Um `client_secret`/`frontend_client_secret` vazio ou ausente no corpo significa "manter o segredo já salvo", nunca "apagar".
+                Restrito ao papel nova-admin. SEMPRE testa o discovery OIDC contra `issuer_url` antes de persistir — se o discovery falhar, nada é salvo e a resposta é 422. Depois de salvar com sucesso, o backend recarrega o verificador de tokens (`auth.Verifier.Reload`) na hora, sem reiniciar o processo — a nova configuração já vale para o próximo token verificado. Um `client_secret`/`frontend_client_secret` vazio ou ausente no corpo significa "manter o segredo já salvo", nunca "apagar".
             operationId: saveKeycloakSettings
             requestBody:
                 content:
                     application/json:
                         example:
-                            audience: nexus-backend
-                            client_id: nexus-backend
+                            audience: nova-backend
+                            client_id: nova-backend
                             client_secret: s3gr3d0-do-backend
-                            frontend_client_id: nexus-frontend
+                            frontend_client_id: nova-frontend
                             frontend_client_secret: s3gr3d0-do-frontend
-                            issuer_url: https://sso.orgao.gov.br/realms/nexus
-                            realm: nexus
+                            issuer_url: https://sso.orgao.gov.br/realms/nova
+                            realm: nova
                         schema:
                             properties:
                                 audience:
@@ -5461,7 +5461,7 @@ paths:
     /api/v1/admin/keycloak/test:
         post:
             description: |
-                Restrito ao papel nexus-admin. Nunca persiste nada — só tenta o discovery OIDC contra `issuer_url` e, se `client_id`/`client_secret` forem informados, uma troca `client_credentials` contra o token_endpoint descoberto (best-effort: falhar aqui não significa credenciais erradas, só que o client pode não ter "Service Accounts" habilitado no Keycloak — ver `KeycloakTestResult`). Um `client_secret` vazio/ausente reutiliza o segredo já salvo, se houver, para não obrigar o admin a redigitá-lo só para testar.
+                Restrito ao papel nova-admin. Nunca persiste nada — só tenta o discovery OIDC contra `issuer_url` e, se `client_id`/`client_secret` forem informados, uma troca `client_credentials` contra o token_endpoint descoberto (best-effort: falhar aqui não significa credenciais erradas, só que o client pode não ter "Service Accounts" habilitado no Keycloak — ver `KeycloakTestResult`). Um `client_secret` vazio/ausente reutiliza o segredo já salvo, se houver, para não obrigar o admin a redigitá-lo só para testar.
             operationId: testKeycloakSettings
             requestBody:
                 content:
@@ -11276,7 +11276,7 @@ paths:
                                             $ref: '#/components/schemas/LgpdMyDataPackage'
                                       type: object
                     description: |
-                        `meus-dados-nexus-<timestamp>.json` (`Content-Disposition: attachment`).
+                        `meus-dados-nova-<timestamp>.json` (`Content-Disposition: attachment`).
                     x-projeto-nova-generated: true
                 "401":
                     $ref: '#/components/responses/Unauthorized'

@@ -58,7 +58,7 @@ type Service struct {
 
 // NewService cria o serviço. secret deriva a chave do selo HMAC.
 func NewService(pool *pgxpool.Pool, repo domain.Repository, reauth domain.Reauthenticator, throttle Throttle, ob *outbox.Writer, secret string, challengeTTL time.Duration, logger *slog.Logger) *Service {
-	key := sha256.Sum256([]byte("nexus-signum-seal:" + secret))
+	key := sha256.Sum256([]byte("nova-signum-seal:" + secret))
 	return &Service{pool: pool, repo: repo, reauth: reauth, throttle: throttle, outbox: ob, sealKey: key[:], challengeTTL: challengeTTL, logger: logger}
 }
 

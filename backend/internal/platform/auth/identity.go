@@ -92,7 +92,7 @@ func (i Identity) IsAdmin() bool {
 }
 
 // NormalizeGroup reduz um nome de grupo à forma comparável: sem o caminho
-// hierárquico do Keycloak ("/Nexus/TI" -> "ti") e em minúsculas.
+// hierárquico do Keycloak ("/Nova/TI" -> "ti") e em minúsculas.
 func NormalizeGroup(g string) string {
 	g = strings.TrimSpace(g)
 	if idx := strings.LastIndex(g, "/"); idx >= 0 {

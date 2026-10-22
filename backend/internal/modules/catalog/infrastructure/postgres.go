@@ -57,7 +57,7 @@ func wrap(err error) error {
 
 func (r *Repository) List(ctx context.Context, db database.DBTX, f domain.Filter, p pagination.Params) ([]domain.Service, int64, error) {
 	const where = `WHERE ($1 = 'all' OR s.status = $1) AND ($2 = '' OR s.category = $2)
-		AND ($3 = '' OR s.search @@ nexus_search_tsquery('portuguese', $3))
+		AND ($3 = '' OR s.search @@ nova_search_tsquery('portuguese', $3))
 		AND (NOT $4 OR s.responsible_unidade_id = ANY($5::uuid[]))`
 	unidades := make([]string, 0, len(f.Unidades))
 	for _, u := range f.Unidades {
@@ -140,7 +140,7 @@ func (r *Repository) Categories(ctx context.Context, db database.DBTX) ([]domain
 }
 
 func (r *Repository) Search(ctx context.Context, db database.DBTX, query string, limit int) ([]domain.Service, []float64, error) {
-	rows, err := db.Query(ctx, `SELECT `+cols+`, ts_rank(s.search, q)`+from+`, nexus_search_tsquery('portuguese', $1) q
+	rows, err := db.Query(ctx, `SELECT `+cols+`, ts_rank(s.search, q)`+from+`, nova_search_tsquery('portuguese', $1) q
 		WHERE s.status = 'published' AND s.search @@ q ORDER BY 21 DESC LIMIT $2`, query, limit)
 	if err != nil {
 		return nil, nil, wrap(err)

@@ -164,7 +164,7 @@ func (s *Service) handleExportMyData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	filename := fmt.Sprintf("meus-dados-nexus-%s.json", time.Now().UTC().Format("20060102_150405"))
+	filename := fmt.Sprintf("meus-dados-nova-%s.json", time.Now().UTC().Format("20060102_150405"))
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	w.Header().Set("Cache-Control", "no-store")

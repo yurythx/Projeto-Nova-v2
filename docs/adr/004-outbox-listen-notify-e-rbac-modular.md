@@ -20,8 +20,8 @@ pontos de arquitetura precisaram de decisão registrada:
 2. **Autorização das rotas de `demands` inexistente.** As rotas do Kanban
    de liquidação só passavam por `RequireAuthentication` — qualquer
    usuário autenticado movia card e anexava documento de compliance. Não
-   havia papel para a persona do fiscal: ela só cabia em `nexus-admin` ou
-   `projeto-nexus-integration-manager`, ambos privilegiados demais.
+   havia papel para a persona do fiscal: ela só cabia em `nova-admin` ou
+   `projeto-nova-integration-manager`, ambos privilegiados demais.
 
 3. **`OutboxEmitter` em transação isolada (dual-write).** O casador
    `contratos.diario_matcher` gravava `contrato_diario_refs` /

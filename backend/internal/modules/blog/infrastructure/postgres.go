@@ -82,7 +82,7 @@ func (r *Repository) List(ctx context.Context, db database.DBTX, f domain.Filter
 	}
 	args := []any{status, f.Kind, f.Query, f.Restrito, unidades}
 	where := `WHERE ($1 = 'all' OR p.status = $1) AND ($2 = '' OR p.kind = $2)
-		AND ($3 = '' OR p.search @@ nexus_search_tsquery('portuguese', $3))
+		AND ($3 = '' OR p.search @@ nova_search_tsquery('portuguese', $3))
 		AND (p.status = 'published' OR NOT $4 OR p.unidade_id = ANY($5::uuid[]))
 		AND ` + tabelaPublico.Condicao("p.id", "p.author_id", "p.unidade_id", f.Leitura, &args)
 	var total int64
@@ -172,7 +172,7 @@ func (r *Repository) Search(ctx context.Context, db database.DBTX, query string,
 	cond := tabelaPublico.Condicao("p.id", "p.author_id", "p.unidade_id", l, &args)
 	rows, err := db.Query(ctx, `
 		SELECT `+cols+`, ts_rank(p.search, q) AS rank`+from+`,
-		       nexus_search_tsquery('portuguese', $1) q
+		       nova_search_tsquery('portuguese', $1) q
 		WHERE p.status = 'published' AND p.search @@ q AND `+cond+`
 		ORDER BY rank DESC LIMIT $2`, args...)
 	if err != nil {

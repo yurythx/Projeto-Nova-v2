@@ -99,10 +99,10 @@ export function BrandingProvider({
     );
 
     iconLinks.forEach((link) => {
-      if (!link.dataset.nexusOriginalHref) {
-        link.dataset.nexusOriginalHref = link.href;
+      if (!link.dataset.novaOriginalHref) {
+        link.dataset.novaOriginalHref = link.href;
       }
-      link.href = safeFavicon || link.dataset.nexusOriginalHref;
+      link.href = safeFavicon || link.dataset.novaOriginalHref;
     });
   }, [branding.faviconUrl]);
 

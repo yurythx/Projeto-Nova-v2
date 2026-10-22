@@ -44,7 +44,7 @@ func TestValidateURL(t *testing.T) {
 		"https://2130706433/",
 		"https://0x7f000001/",
 		"https://127.1/",
-		"https://nexus.intranet/",
+		"https://nova.intranet/",
 		"file:///etc/passwd",
 		"gopher://evil",
 	}

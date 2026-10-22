@@ -66,7 +66,7 @@ describe("Auditoria", () => {
       ...identityRoutes(),
       "GET v1/audit/logs": page([
         rec(7, {
-          actor_subject: "sub-9", actor_roles: ["nexus-admin"], user_agent: "Mozilla", correlation_id: "req-1", resource_type: "perfil", resource_id: "p1",
+          actor_subject: "sub-9", actor_roles: ["nova-admin"], user_agent: "Mozilla", correlation_id: "req-1", resource_type: "perfil", resource_id: "p1",
           diff_before: { nome: "A" }, diff_after: { nome: "B" }, entity_context: { unidade_id: "u1" }, metadata: { motivo: "ajuste" },
         }),
         rec(6),
@@ -75,7 +75,7 @@ describe("Auditoria", () => {
     renderApp(<AuditoriaPage />);
     await userEvent.click(await screen.findByRole("button", { name: "Detalhes do registro 7" }));
     const d = await screen.findByRole("dialog", { name: "Registro #7" });
-    expect(within(d).getByText("nexus-admin")).toBeInTheDocument();
+    expect(within(d).getByText("nova-admin")).toBeInTheDocument();
     expect(within(d).getByText("sub-9")).toBeInTheDocument();
     expect(within(d).getByText(/"nome": "A"/)).toBeInTheDocument();
     expect(within(d).getByText(/"nome": "B"/)).toBeInTheDocument();

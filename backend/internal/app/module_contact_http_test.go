@@ -37,11 +37,11 @@ func TestContactTriageRules(t *testing.T) {
 		t.Fatalf("a leitura da mensagem (PII) é auditada: %d %v", viewed, err)
 	}
 
-	inativoID, _ := h.user("nexus-user")
+	inativoID, _ := h.user("nova-user")
 	if _, err := h.d.DB.Exec(ctx, `UPDATE users SET active = false WHERE id = $1`, inativoID); err != nil {
 		t.Fatal(err)
 	}
-	responsavelID, _ := h.user("nexus-user")
+	responsavelID, _ := h.user("nova-user")
 	triage := func(want int, body string) {
 		h.expect(want, http.MethodPatch, "/api/v1/contact/messages/"+id, admin, body)
 	}

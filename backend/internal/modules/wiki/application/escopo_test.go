@@ -13,7 +13,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
-// gestor é a gestão global (nexus-admin equivale a "*" em todo lugar).
+// gestor é a gestão global (nova-admin equivale a "*" em todo lugar).
 var gestor = auth.Identity{Roles: []string{auth.RoleAdmin}}
 
 func foraDoEscopo(t *testing.T, err error, oque string) {

@@ -1,6 +1,6 @@
-name: projeto-nexus
+name: projeto-nova
 networks:
-  nexus_internal:
+  nova_internal:
     driver: bridge
 volumes:
   postgres_data: null
@@ -13,17 +13,17 @@ services:
     image: postgres:16-bookworm
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-nexus}
-      POSTGRES_USER: ${DB_USER:-nexus}
+      POSTGRES_DB: ${DB_NAME:-nova}
+      POSTGRES_USER: ${DB_USER:-nova}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
     volumes:
     - postgres_data:/var/lib/postgresql/data
     networks:
-    - nexus_internal
+    - nova_internal
     healthcheck:
       test:
       - CMD-SHELL
-      - pg_isready -U ${DB_USER:-nexus} -d ${DB_NAME:-nexus}
+      - pg_isready -U ${DB_USER:-nova} -d ${DB_NAME:-nova}
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,15 +32,15 @@ services:
     image: rabbitmq:3.13-management-alpine
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-nexus}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-nova}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS must be
         set}
-      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-nexus}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-nova}
     volumes:
     - rabbitmq_data:/var/lib/rabbitmq
     - ./deploy/rabbitmq.conf:/etc/rabbitmq/conf.d/consumer_timeout.conf:ro
     networks:
-    - nexus_internal
+    - nova_internal
     healthcheck:
       test:
       - CMD
@@ -67,7 +67,7 @@ services:
       - "${HOST_BIND:-0.0.0.0}:${HOST_MINIO_PORT:-9002}:9000"
       - "${HOST_BIND:-0.0.0.0}:${HOST_MINIO_CONSOLE_PORT:-9003}:9001"
     networks:
-      - nexus_internal
+      - nova_internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -82,20 +82,20 @@ services:
       minio:
         condition: service_healthy
     networks:
-      - nexus_internal
+      - nova_internal
     entrypoint:
       - /bin/sh
       - -c
       - >
         mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" &&
-        mc mb local/$${MINIO_BUCKET:-nexus} 2>/dev/null || true;
-        mc mb --with-lock local/${AUDIT_WORM_BUCKET:-nexus-audit-worm} 2>/dev/null || true;
+        mc mb local/$${MINIO_BUCKET:-nova} 2>/dev/null || true;
+        mc mb --with-lock local/${AUDIT_WORM_BUCKET:-nova-audit-worm} 2>/dev/null || true;
         exit 0;
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
-      MINIO_BUCKET: ${MINIO_BUCKET:-nexus}
-      AUDIT_WORM_BUCKET: ${AUDIT_WORM_BUCKET:-nexus-audit-worm}
+      MINIO_BUCKET: ${MINIO_BUCKET:-nova}
+      AUDIT_WORM_BUCKET: ${AUDIT_WORM_BUCKET:-nova-audit-worm}
   redis:
     # Cache do resolvedor de permissões (IAM), rate limiting, lockout
     # progressivo de login e idempotência — REDIS_URL é obrigatório no
@@ -112,7 +112,7 @@ services:
     volumes:
     - redis_data:/data
     networks:
-    - nexus_internal
+    - nova_internal
     healthcheck:
       test:
       - CMD
@@ -134,7 +134,7 @@ services:
     volumes:
     - typesense_data:/data
     networks:
-    - nexus_internal
+    - nova_internal
     healthcheck:
       # A imagem não tem curl/wget: GET /health pelo /dev/tcp do bash.
       test:
@@ -165,7 +165,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
     networks:
-    - nexus_internal
+    - nova_internal
     depends_on:
       postgres:
         condition: service_healthy
@@ -185,20 +185,20 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3002}
       DB_PORT: 5432
       DB_HOST: postgres
-      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-nexus}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-nexus}
+      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-nova}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-nova}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
-      MINIO_BUCKET: ${MINIO_BUCKET:-nexus}
+      MINIO_BUCKET: ${MINIO_BUCKET:-nova}
       MINIO_USE_SSL: "false"
       TYPESENSE_URL: http://typesense:8108
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?TYPESENSE_API_KEY must be set}
     volumes:
     - ./secrets:/run/secrets:ro
     networks:
-    - nexus_internal
+    - nova_internal
     ports:
     - ${HOST_BIND:-0.0.0.0}:${HTTP_PORT:-8002}:${HTTP_PORT:-8002}
     depends_on:
@@ -238,12 +238,12 @@ services:
       WORKER_METRICS_PORT: ${WORKER_METRICS_PORT:-9102}
       DB_PORT: 5432
       DB_HOST: postgres
-      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-nexus}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-nexus}
+      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-nova}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-nova}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
-      MINIO_BUCKET: ${MINIO_BUCKET:-nexus}
+      MINIO_BUCKET: ${MINIO_BUCKET:-nova}
       MINIO_USE_SSL: "false"
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
       TYPESENSE_URL: http://typesense:8108
@@ -251,7 +251,7 @@ services:
     volumes:
     - ./secrets:/run/secrets:ro
     networks:
-    - nexus_internal
+    - nova_internal
     depends_on:
       postgres:
         condition: service_healthy
@@ -310,7 +310,7 @@ services:
       # frontend").
       NEXTAUTH_URL: ${FRONTEND_URL:-http://localhost:3002}
     networks:
-    - nexus_internal
+    - nova_internal
     ports:
     - ${HOST_BIND:-0.0.0.0}:${FRONTEND_PORT:-3002}:3000
     depends_on:

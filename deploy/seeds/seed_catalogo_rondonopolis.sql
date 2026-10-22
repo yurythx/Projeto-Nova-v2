@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — CATÁLOGO DE SERVIÇOS CORPORATIVOS E TI (RONDONÓPOLIS - MT)
+-- PROJETO NOVA — CATÁLOGO DE SERVIÇOS CORPORATIVOS E TI (RONDONÓPOLIS - MT)
 -- ==============================================================================
 -- Garante o alinhamento estrito com o escopo planejado (26 soluções de TI / Infraestrutura)
 -- e remove serviços departamentais adicionados fora do escopo original.

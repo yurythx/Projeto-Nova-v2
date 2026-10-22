@@ -2,7 +2,7 @@
 
 - **Status:** Aceito — Opção B (negociação de conteúdo), implementada em 2026-09-09
 - **Data:** 2026-09-09
-- **Autores:** Engenharia Projeto Nexus
+- **Autores:** Engenharia Projeto-nova-v2
 
 ## Contexto
 
@@ -47,8 +47,8 @@ Duas opções, a decidir com os consumidores da API:
 
 - `httputil.WriteError` verifica `wantsProblemJSON(r)` — `Accept` contém
   `application/problem+json` — e, se sim, chama `writeProblemDetails`:
-  - `type`: `urn:nexus:error:<code minúsculo>` (URN estável,
-    independente de domínio; ex.: `urn:nexus:error:validation_error`).
+  - `type`: `urn:nova:error:<code minúsculo>` (URN estável,
+    independente de domínio; ex.: `urn:nova:error:validation_error`).
   - `title`: `http.StatusText(status)`.
   - `status`, `detail` (= `appErr.Message`), `instance` (= `r.URL.Path`).
   - Extensões RFC 7807: `code` (o identificador legível por máquina que o

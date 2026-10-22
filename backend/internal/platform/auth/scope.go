@@ -116,7 +116,7 @@ func Can(identity Identity, permission Permission, t Target) bool {
 }
 
 // CanGlobal reporta se identity tem permission por concessão sem escopo
-// (o papel nexus-admin equivale a "*" global).
+// (o papel nova-admin equivale a "*" global).
 func CanGlobal(identity Identity, permission Permission) bool {
 	if identity.HasRole(RoleAdmin) {
 		return true

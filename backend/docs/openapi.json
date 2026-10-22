@@ -108,7 +108,7 @@
             }
           }
         },
-        "description": "A integração externa está temporariamente indisponível. `CIRCUIT_OPEN` (o circuit breaker interno abriu depois de falhas consecutivas — tende a se resolver sozinho) e `FEATURE_DISABLED` (um nexus-admin desligou a integração via feature flag — só volta quando religada) usam o mesmo status 503, diferenciados pelo `error.code`.\n"
+        "description": "A integração externa está temporariamente indisponível. `CIRCUIT_OPEN` (o circuit breaker interno abriu depois de falhas consecutivas — tende a se resolver sozinho) e `FEATURE_DISABLED` (um nova-admin desligou a integração via feature flag — só volta quando religada) usam o mesmo status 503, diferenciados pelo `error.code`.\n"
       },
       "ModuleDisabledOrNotFound": {
         "content": {
@@ -3053,7 +3053,7 @@
             "type": "object"
           },
           "source": {
-            "example": "nexus.example",
+            "example": "nova.example",
             "type": "string"
           },
           "type": {
@@ -4897,7 +4897,7 @@
             "type": "boolean"
           },
           "issuer_url": {
-            "description": "URL do realm no Keycloak (ex. https://sso.orgao.gov.br/realms/nexus) — de onde o backend baixa o documento de discovery OIDC e as chaves públicas (JWKS) usadas para validar todo token recebido.",
+            "description": "URL do realm no Keycloak (ex. https://sso.orgao.gov.br/realms/nova) — de onde o backend baixa o documento de discovery OIDC e as chaves públicas (JWKS) usadas para validar todo token recebido.",
             "type": "string"
           },
           "realm": {
@@ -7182,7 +7182,7 @@
     }
   },
   "info": {
-    "description": "API REST do Projeto-nova-v2 — microkernel em Go: infraestrutura de autenticação, auditoria,\noutbox transacional e mensageria compartilhada por todo módulo de\nnegócio (plug-in) registrado em `internal/modules/`. Todo endpoint\nautenticado espera um access token OIDC emitido pelo Keycloak (ou pelo\nlogin local, um caminho adicional — ver tag `auth`) como Bearer JWT; o\nbackend o valida localmente contra um JWKS em cache (nunca com uma\nchamada por requisição ao Keycloak — ver §29 do documento de\narquitetura).\n\nToda resposta usa o mesmo envelope:\n`{\"data\": \u003cpayload|null\u003e, \"error\": {\"code\",\"message\"}|null, \"meta\": {...}|omitido}`.\nErros nunca incluem stack trace ou outro detalhe interno.\n\n**RFC 7807 (Problem Details)**: um cliente que envia\n`Accept: application/problem+json` recebe as respostas de ERRO no\nformato RFC 7807 (`type` = `urn:nexus:error:\u003ccode\u003e`, `title`,\n`status`, `detail`, `instance`, mais as extensões `code` e\n`request_id`). Qualquer outro `Accept` mantém o envelope acima.\nRespostas de sucesso não mudam. Ver ADR\n006-rfc7807-problem-details.md.\n\n**Idempotência**: qualquer endpoint de escrita (POST/PUT/PATCH) aceita\nopcionalmente o header `X-Idempotency-Key` (legado: `Idempotency-Key`) (ver\n`#/components/parameters/IdempotencyKey`). Reenviar a mesma requisição\n(mesmo método, caminho e corpo) com a mesma chave nunca executa o\nhandler duas vezes — a segunda chamada em diante recebe de volta a\nresposta já produzida pela primeira (`Idempotent-Replay: true` no\nheader da resposta), em vez de criar um segundo job/efeito colateral.\nReusar a mesma chave com um corpo diferente é rejeitado com 409\n(`IDEMPOTENCY_KEY_REUSED`); uma segunda chamada enquanto a primeira\nainda está em andamento recebe 409 (`IDEMPOTENCY_KEY_IN_PROGRESS`). Ver\nADR [002](adr/002-enterprise-resilience-and-governance.md).\n\n**Módulos (Microkernel)**: cada plug-in é ativado/desativado em runtime\n(`PATCH /api/v1/admin/modules/{key}`). Com o módulo desativado, TODA a sua\nsuperfície responde `404` com `error.code = MODULE_DISABLED`. O estado e o\ngrafo de dependências (`depends_on`, `dependents`, `blocked_by`) estão em\n`GET /api/v1/system/modules`; desativar um módulo com dependentes ativos,\nou ativar sem as dependências, responde `409`.\n\n**Autorização**: permissões `recurso:ação` (curingas `recurso:*` e `*`),\nresolvidas pelo IAM a partir das lotações e do mapeamento de grupos do AD,\nvalidadas em middleware antes do handler (`403`). Catálogo completo em\n`GET /api/v1/iam/permissions`.\n\n**Resiliência**: chamadas que dependem de um provedor externo podem\nretornar `503` (`DEPENDENCY_UNAVAILABLE` ou `CIRCUIT_OPEN`).\n",
+    "description": "API REST do Projeto-nova-v2 — microkernel em Go: infraestrutura de autenticação, auditoria,\noutbox transacional e mensageria compartilhada por todo módulo de\nnegócio (plug-in) registrado em `internal/modules/`. Todo endpoint\nautenticado espera um access token OIDC emitido pelo Keycloak (ou pelo\nlogin local, um caminho adicional — ver tag `auth`) como Bearer JWT; o\nbackend o valida localmente contra um JWKS em cache (nunca com uma\nchamada por requisição ao Keycloak — ver §29 do documento de\narquitetura).\n\nToda resposta usa o mesmo envelope:\n`{\"data\": \u003cpayload|null\u003e, \"error\": {\"code\",\"message\"}|null, \"meta\": {...}|omitido}`.\nErros nunca incluem stack trace ou outro detalhe interno.\n\n**RFC 7807 (Problem Details)**: um cliente que envia\n`Accept: application/problem+json` recebe as respostas de ERRO no\nformato RFC 7807 (`type` = `urn:nova:error:\u003ccode\u003e`, `title`,\n`status`, `detail`, `instance`, mais as extensões `code` e\n`request_id`). Qualquer outro `Accept` mantém o envelope acima.\nRespostas de sucesso não mudam. Ver ADR\n006-rfc7807-problem-details.md.\n\n**Idempotência**: qualquer endpoint de escrita (POST/PUT/PATCH) aceita\nopcionalmente o header `X-Idempotency-Key` (legado: `Idempotency-Key`) (ver\n`#/components/parameters/IdempotencyKey`). Reenviar a mesma requisição\n(mesmo método, caminho e corpo) com a mesma chave nunca executa o\nhandler duas vezes — a segunda chamada em diante recebe de volta a\nresposta já produzida pela primeira (`Idempotent-Replay: true` no\nheader da resposta), em vez de criar um segundo job/efeito colateral.\nReusar a mesma chave com um corpo diferente é rejeitado com 409\n(`IDEMPOTENCY_KEY_REUSED`); uma segunda chamada enquanto a primeira\nainda está em andamento recebe 409 (`IDEMPOTENCY_KEY_IN_PROGRESS`). Ver\nADR [002](adr/002-enterprise-resilience-and-governance.md).\n\n**Módulos (Microkernel)**: cada plug-in é ativado/desativado em runtime\n(`PATCH /api/v1/admin/modules/{key}`). Com o módulo desativado, TODA a sua\nsuperfície responde `404` com `error.code = MODULE_DISABLED`. O estado e o\ngrafo de dependências (`depends_on`, `dependents`, `blocked_by`) estão em\n`GET /api/v1/system/modules`; desativar um módulo com dependentes ativos,\nou ativar sem as dependências, responde `409`.\n\n**Autorização**: permissões `recurso:ação` (curingas `recurso:*` e `*`),\nresolvidas pelo IAM a partir das lotações e do mapeamento de grupos do AD,\nvalidadas em middleware antes do handler (`403`). Catálogo completo em\n`GET /api/v1/iam/permissions`.\n\n**Resiliência**: chamadas que dependem de um provedor externo podem\nretornar `503` (`DEPENDENCY_UNAVAILABLE` ou `CIRCUIT_OPEN`).\n",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -7262,7 +7262,7 @@
     },
     "/api/v1/admin/keycloak": {
       "get": {
-        "description": "Restrito ao papel nexus-admin (§ Configuração Dinâmica do Keycloak). Nunca devolve um client secret em texto plano — só se um está definido (`client_secret_set`/`frontend_client_secret_set`).\n",
+        "description": "Restrito ao papel nova-admin (§ Configuração Dinâmica do Keycloak). Nunca devolve um client secret em texto plano — só se um está definido (`client_secret_set`/`frontend_client_secret_set`).\n",
         "operationId": "getKeycloakSettings",
         "responses": {
           "200": {
@@ -7308,19 +7308,19 @@
         ]
       },
       "put": {
-        "description": "Restrito ao papel nexus-admin. SEMPRE testa o discovery OIDC contra `issuer_url` antes de persistir — se o discovery falhar, nada é salvo e a resposta é 422. Depois de salvar com sucesso, o backend recarrega o verificador de tokens (`auth.Verifier.Reload`) na hora, sem reiniciar o processo — a nova configuração já vale para o próximo token verificado. Um `client_secret`/`frontend_client_secret` vazio ou ausente no corpo significa \"manter o segredo já salvo\", nunca \"apagar\".\n",
+        "description": "Restrito ao papel nova-admin. SEMPRE testa o discovery OIDC contra `issuer_url` antes de persistir — se o discovery falhar, nada é salvo e a resposta é 422. Depois de salvar com sucesso, o backend recarrega o verificador de tokens (`auth.Verifier.Reload`) na hora, sem reiniciar o processo — a nova configuração já vale para o próximo token verificado. Um `client_secret`/`frontend_client_secret` vazio ou ausente no corpo significa \"manter o segredo já salvo\", nunca \"apagar\".\n",
         "operationId": "saveKeycloakSettings",
         "requestBody": {
           "content": {
             "application/json": {
               "example": {
-                "audience": "nexus-backend",
-                "client_id": "nexus-backend",
+                "audience": "nova-backend",
+                "client_id": "nova-backend",
                 "client_secret": "s3gr3d0-do-backend",
-                "frontend_client_id": "nexus-frontend",
+                "frontend_client_id": "nova-frontend",
                 "frontend_client_secret": "s3gr3d0-do-frontend",
-                "issuer_url": "https://sso.orgao.gov.br/realms/nexus",
-                "realm": "nexus"
+                "issuer_url": "https://sso.orgao.gov.br/realms/nova",
+                "realm": "nova"
               },
               "schema": {
                 "properties": {
@@ -7416,7 +7416,7 @@
     },
     "/api/v1/admin/keycloak/test": {
       "post": {
-        "description": "Restrito ao papel nexus-admin. Nunca persiste nada — só tenta o discovery OIDC contra `issuer_url` e, se `client_id`/`client_secret` forem informados, uma troca `client_credentials` contra o token_endpoint descoberto (best-effort: falhar aqui não significa credenciais erradas, só que o client pode não ter \"Service Accounts\" habilitado no Keycloak — ver `KeycloakTestResult`). Um `client_secret` vazio/ausente reutiliza o segredo já salvo, se houver, para não obrigar o admin a redigitá-lo só para testar.\n",
+        "description": "Restrito ao papel nova-admin. Nunca persiste nada — só tenta o discovery OIDC contra `issuer_url` e, se `client_id`/`client_secret` forem informados, uma troca `client_credentials` contra o token_endpoint descoberto (best-effort: falhar aqui não significa credenciais erradas, só que o client pode não ter \"Service Accounts\" habilitado no Keycloak — ver `KeycloakTestResult`). Um `client_secret` vazio/ausente reutiliza o segredo já salvo, se houver, para não obrigar o admin a redigitá-lo só para testar.\n",
         "operationId": "testKeycloakSettings",
         "requestBody": {
           "content": {
@@ -17297,7 +17297,7 @@
                 }
               }
             },
-            "description": "`meus-dados-nexus-\u003ctimestamp\u003e.json` (`Content-Disposition: attachment`).\n",
+            "description": "`meus-dados-nova-\u003ctimestamp\u003e.json` (`Content-Disposition: attachment`).\n",
             "x-projeto-nova-generated": true
           },
           "401": {

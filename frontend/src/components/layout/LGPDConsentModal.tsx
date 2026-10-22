@@ -19,10 +19,10 @@ const CURRENT_TERM_VERSION = "v1.0.0-2026";
 // mesmo visitante, ao autenticar depois, ter o aceite reconhecível.
 function getOrCreateDeviceId(): string {
   try {
-    let id = localStorage.getItem("nexus_device_id");
+    let id = localStorage.getItem("nova_device_id");
     if (!id) {
       id = randomUUID();
-      localStorage.setItem("nexus_device_id", id);
+      localStorage.setItem("nova_device_id", id);
     }
     return id;
   } catch {
@@ -59,7 +59,7 @@ export function LGPDConsentModal() {
     } else {
       let accepted = false;
       try {
-        accepted = localStorage.getItem("nexus_lgpd_consent") === CURRENT_TERM_VERSION;
+        accepted = localStorage.getItem("nova_lgpd_consent") === CURRENT_TERM_VERSION;
       } catch {
         // localStorage indisponível — mostra o modal mesmo assim
       }
@@ -84,7 +84,7 @@ export function LGPDConsentModal() {
         await publicPost("v1/lgpd/accept-anon", { device_hash: getOrCreateDeviceId(), term_version: CURRENT_TERM_VERSION });
       }
       try {
-        localStorage.setItem("nexus_lgpd_consent", CURRENT_TERM_VERSION);
+        localStorage.setItem("nova_lgpd_consent", CURRENT_TERM_VERSION);
       } catch {
         /* sem localStorage — o modal reaparece na próxima visita */
       }

@@ -305,7 +305,7 @@ func TestTransacao(t *testing.T) {
 	pessoa := dbtest.User(t, pool)
 	repo := infrastructure.NewRepository()
 	produtosRepo := produtoRepo{id: uuid.New(), unidade: &u}
-	svc := application.NewService(pool, repo, outbox.NewWriter("nexus.atendimento"), produtosRepo)
+	svc := application.NewService(pool, repo, outbox.NewWriter("nova.atendimento"), produtosRepo)
 	quem := gestor(u)
 
 	oferta, err := svc.CriarOferta(ctx, quem, application.OfertaEntrada{Nome: "E-mail " + uuid.NewString()[:6], UnidadeID: &u, ProdutoID: &produtosRepo.id})

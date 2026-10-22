@@ -1,7 +1,7 @@
 groups:
-  - name: nexus_alerts
+  - name: nova_alerts
     rules:
-      - alert: NexusServiceDown
+      - alert: NovaServiceDown
         expr: up == 0
         for: 1m
         labels:
@@ -10,8 +10,8 @@ groups:
           summary: "Instância de serviço do Projeto-nova-v2 inativa ({{ $labels.service }})"
           description: "O serviço {{ $labels.service }} no alvo {{ $labels.instance }} não responde há mais de 1 minuto."
 
-      - alert: NexusOutboxLagHigh
-        expr: nexus_outbox_queue_depth > 50
+      - alert: NovaOutboxLagHigh
+        expr: nova_outbox_queue_depth > 50
         for: 2m
         labels:
           severity: warning
@@ -19,7 +19,7 @@ groups:
           summary: "Fila de eventos do Outbox acumulada"
           description: "Existem mais de 50 eventos pendentes no Outbox transacional há mais de 2 minutos (atual: {{ $value }})."
 
-      - alert: NexusHttp5xxErrorRateHigh
+      - alert: NovaHttp5xxErrorRateHigh
         expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 1
         for: 2m
         labels:
@@ -28,7 +28,7 @@ groups:
           summary: "Taxa elevada de erros HTTP 5xx no Projeto-nova-v2"
           description: "A taxa de erros 5xx está acima de 1% nos últimos 5 minutos (atual: {{ $value | printf \"%.2f\" }}%)."
 
-      - alert: NexusLatencyP95High
+      - alert: NovaLatencyP95High
         expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.3
         for: 3m
         labels:

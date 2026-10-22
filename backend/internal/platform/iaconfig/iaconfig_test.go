@@ -201,12 +201,12 @@ func TestClienteFalhas(t *testing.T) {
 	tls := httptest.NewTLSServer(responde("ok"))
 	t.Cleanup(tls.Close)
 	for endpoint, want := range map[string]string{
-		formato.URL:                       "fora do formato",
-		vazia.URL:                         "resposta vazia",
-		"http://[::1":                     "endereço inválido",
-		"http://127.0.0.1:1":              "não foi possível conectar",
-		"http://nexus-nao-existe.invalid": "DNS",
-		tls.URL:                           "certificado",
+		formato.URL:                      "fora do formato",
+		vazia.URL:                        "resposta vazia",
+		"http://[::1":                    "endereço inválido",
+		"http://127.0.0.1:1":             "não foi possível conectar",
+		"http://nova-nao-existe.invalid": "DNS",
+		tls.URL:                          "certificado",
 	} {
 		if got := conv(endpoint); !strings.Contains(got, want) {
 			t.Errorf("%s: %s", endpoint, got)

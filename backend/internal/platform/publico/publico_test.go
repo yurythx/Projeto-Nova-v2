@@ -80,7 +80,7 @@ func TestTabelaGravaCarregaEFiltra(t *testing.T) {
 	}
 	// Lotado na filha: pertence à mãe (acima) e à entidade.
 	var acima []uuid.UUID
-	if err := pool.QueryRow(ctx, `SELECT nexus_unidades_acima($1)`, filha).Scan(&acima); err != nil || len(acima) != 2 {
+	if err := pool.QueryRow(ctx, `SELECT nova_unidades_acima($1)`, filha).Scan(&acima); err != nil || len(acima) != 2 {
 		t.Fatalf("unidades acima da filha: %v %v", acima, err)
 	}
 	naFilha := LeitorDe(auth.Identity{Scopes: []auth.Scope{{EntidadeID: &ent, UnidadeID: &filha, Acima: acima}}})

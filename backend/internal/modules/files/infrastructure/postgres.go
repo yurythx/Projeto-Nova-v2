@@ -332,7 +332,7 @@ func (r *Repository) StalePending(ctx context.Context, db database.DBTX, olderTh
 
 func (r *Repository) SearchFiles(ctx context.Context, db database.DBTX, query string, limit int) ([]domain.File, error) {
 	return r.listFiles(ctx, db, ` WHERE o.status = 'ready'
-		AND (o.search @@ nexus_search_tsquery('simple', $1)
-		     OR strpos(nexus_unaccent(lower(o.name)), nexus_unaccent(lower($1))) > 0)
+		AND (o.search @@ nova_search_tsquery('simple', $1)
+		     OR strpos(nova_unaccent(lower(o.name)), nova_unaccent(lower($1))) > 0)
 		ORDER BY o.updated_at DESC LIMIT $2`, query, limit)
 }

@@ -22,8 +22,8 @@ const Key = "tramite"
 
 // QueueSignum recebe os eventos de conclusão/recusa do Signum.
 var QueueSignum = messaging.QueueSpec{
-	Name:    "nexus.tramite.signum",
-	DLQName: "nexus.tramite.signum.dlq",
+	Name:    "nova.tramite.signum",
+	DLQName: "nova.tramite.signum.dlq",
 	RoutingKeys: []string{
 		"signum.envelope.completed", "signum.envelope.refused", "signum.envelope.cancelled",
 	},

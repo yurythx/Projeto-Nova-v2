@@ -15,7 +15,7 @@ import type { Frame } from "@/lib/websocket/client";
 type Tone = "success" | "danger" | "info";
 
 /** Texto do toast para cada evento de difusão geral (a fila
- * nexus.notification.websocket só recebe eventos seguros para todos). */
+ * nova.notification.websocket só recebe eventos seguros para todos). */
 export function describeEvent(
   type: string,
   payload: unknown,

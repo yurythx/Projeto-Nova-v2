@@ -19,4 +19,4 @@ services:
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN precisa ser definido no .env}
     networks:
-      - nexus_internal
+      - nova_internal

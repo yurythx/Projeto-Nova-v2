@@ -72,10 +72,10 @@ func auditCount(t *testing.T, h *apiHarness, action, resourceID string) int {
 // Abertura: validação do hash e dos signatários, e quem vê o envelope.
 func TestSignumAberturaEVisibilidade(t *testing.T) {
 	h := newHarness(t)
-	authorID, author := h.user("nexus-user")
-	anaID, ana := h.user("nexus-user")
-	betoID, _ := h.user("nexus-user")
-	_, stranger := h.user("nexus-user")
+	authorID, author := h.user("nova-user")
+	anaID, ana := h.user("nova-user")
+	betoID, _ := h.user("nova-user")
+	_, stranger := h.user("nova-user")
 	admin := h.admin()
 	doc := sha("contrato " + uuid.NewString())
 	ctx := context.Background()
@@ -95,7 +95,7 @@ func TestSignumAberturaEVisibilidade(t *testing.T) {
 	open(http.StatusUnprocessableEntity, `{"title":"x","document_sha256":"`+doc+`","signer_ids":`+signersJSON(many...)+`}`)
 	// Signatário inexistente ou desativado nunca poderia assinar.
 	open(http.StatusUnprocessableEntity, `{"title":"x","document_sha256":"`+doc+`","signer_ids":`+signersJSON(anaID, uuid.New())+`}`)
-	inativoID, _ := h.user("nexus-user")
+	inativoID, _ := h.user("nova-user")
 	if _, err := h.d.DB.Exec(ctx, `UPDATE users SET active = false WHERE id = $1`, inativoID); err != nil {
 		t.Fatal(err)
 	}
@@ -149,10 +149,10 @@ func TestSignumAberturaEVisibilidade(t *testing.T) {
 // tentativas, selo e verificação pública.
 func TestSignumCerimonia(t *testing.T) {
 	h := newHarness(t)
-	_, author := h.user("nexus-user")
-	anaID, ana := h.user("nexus-user")
-	betoID, beto := h.user("nexus-user")
-	_, stranger := h.user("nexus-user")
+	_, author := h.user("nova-user")
+	anaID, ana := h.user("nova-user")
+	betoID, beto := h.user("nova-user")
+	_, stranger := h.user("nova-user")
 	doc := sha("contrato " + uuid.NewString())
 	ctx := context.Background()
 
@@ -254,10 +254,10 @@ func TestSignumCerimonia(t *testing.T) {
 // Assinatura em paralelo, recusa e cancelamento encerram o envelope.
 func TestSignumRecusaECancelamento(t *testing.T) {
 	h := newHarness(t)
-	authorID, author := h.user("nexus-user")
-	anaID, ana := h.user("nexus-user")
-	betoID, beto := h.user("nexus-user")
-	_, stranger := h.user("nexus-user")
+	authorID, author := h.user("nova-user")
+	anaID, ana := h.user("nova-user")
+	betoID, beto := h.user("nova-user")
+	_, stranger := h.user("nova-user")
 	admin := h.admin()
 	doc := sha("aditivo " + uuid.NewString())
 

@@ -19,8 +19,8 @@ import (
 )
 
 // EventItemCreated é emitido (via Outbox) ao criar um item — já roteado em
-// messaging/topology.go para nexus.notification.websocket e
-// nexus.example.worker.
+// messaging/topology.go para nova.notification.websocket e
+// nova.example.worker.
 const EventItemCreated = "example.item.created"
 
 // Service gerencia as regras de negócio para o módulo de exemplo.

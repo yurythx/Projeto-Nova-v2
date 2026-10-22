@@ -67,8 +67,8 @@ func uuidStrings(ids []uuid.UUID) []string {
 func (r *Repository) List(ctx context.Context, db database.DBTX, f domain.Filter, p pagination.Params) ([]domain.Person, int64, error) {
 	const where = ` WHERE u.active AND u.username NOT LIKE 'anon\_%'
 		AND ($1 OR COALESCE(dp.visible, true) OR un.id = ANY($5::uuid[]) OR d.id = ANY($6::uuid[]))
-		AND ($2 = '' OR strpos(nexus_unaccent(lower(u.display_name || ' ' || u.username || ' ' || COALESCE(dp.job_title,''))),
-		                        nexus_unaccent(lower($2))) > 0)
+		AND ($2 = '' OR strpos(nova_unaccent(lower(u.display_name || ' ' || u.username || ' ' || COALESCE(dp.job_title,''))),
+		                        nova_unaccent(lower($2))) > 0)
 		AND ($3::uuid IS NULL OR un.id = $3)
 		AND ($4::uuid IS NULL OR d.id = $4)`
 	args := []any{f.IncludeHidden, f.Query, f.UnidadeID, f.DepartamentoID, uuidStrings(f.HiddenUnidades), uuidStrings(f.HiddenDepartamentos)}
@@ -133,12 +133,12 @@ func (r *Repository) Sectors(ctx context.Context, db database.DBTX, query string
 	rows, err := db.Query(ctx, `
 		SELECT un.id, 'unidade', un.nome, un.sigla, un.email, un.telefone, un.endereco, NULL::uuid, '', e.nome
 		FROM unidades un JOIN entidades e ON e.id = un.entidade_id
-		WHERE un.ativo AND e.ativo AND ($1 = '' OR nexus_unaccent(lower(un.nome || ' ' || un.sigla)) LIKE '%' || nexus_unaccent(lower($1)) || '%')
+		WHERE un.ativo AND e.ativo AND ($1 = '' OR nova_unaccent(lower(un.nome || ' ' || un.sigla)) LIKE '%' || nova_unaccent(lower($1)) || '%')
 		UNION ALL
 		SELECT d.id, 'departamento', d.nome, d.sigla, d.email, d.telefone, '', un.id, un.nome, e.nome
 		FROM departamentos d JOIN unidades un ON un.id = d.unidade_id JOIN entidades e ON e.id = un.entidade_id
 		WHERE d.ativo AND un.ativo AND e.ativo
-		  AND ($1 = '' OR nexus_unaccent(lower(d.nome || ' ' || d.sigla || ' ' || un.nome)) LIKE '%' || nexus_unaccent(lower($1)) || '%')
+		  AND ($1 = '' OR nova_unaccent(lower(d.nome || ' ' || d.sigla || ' ' || un.nome)) LIKE '%' || nova_unaccent(lower($1)) || '%')
 		ORDER BY 10, 9, 3`, query)
 	if err != nil {
 		return nil, wrap(err)

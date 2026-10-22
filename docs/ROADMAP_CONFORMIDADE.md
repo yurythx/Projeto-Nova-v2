@@ -123,7 +123,7 @@ Legenda: ✅ feito · 🟡 parcial / scaffold · ⬜ pendente · 🔒 depende de
 | `LOGIN_LOCKOUT_IP_THRESHOLD` | `30` | Falhas de login local por IP antes do bloqueio progressivo do IP (1 min dobrando até 1 h; a conta bloqueia com 5, até 24 h) |
 | `TRUST_PROXY_HEADERS` (frontend) | *(vazio)* | `true` só atrás de proxy de borda que sobrescreve o `X-Forwarded-For`: o frontend passa a repassar o IP do visitante à API |
 | `HOST_BIND` (compose) | `0.0.0.0` | Interface das portas publicadas; `127.0.0.1` com o proxy HTTPS como única entrada |
-| `AUDIT_WORM_BUCKET` | `nexus-audit-worm` | Bucket dedicado (com Object Lock) da cópia WORM da auditoria |
+| `AUDIT_WORM_BUCKET` | `nova-audit-worm` | Bucket dedicado (com Object Lock) da cópia WORM da auditoria |
 | `AUDIT_WORM_RETENTION_DAYS` | `1825` | Retenção Compliance por objeto WORM (5 anos) |
 
 Todos aceitam o padrão `<VAR>_FILE` (Docker/K8s secrets). Limiters

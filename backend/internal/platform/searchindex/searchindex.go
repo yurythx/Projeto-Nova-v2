@@ -88,7 +88,7 @@ func Indexers(providers []search.Provider) []search.Indexer {
 
 // QueueName é a fila dos eventos que disparam a recarga dos módulos
 // indexados.
-const QueueName = "nexus.search.index"
+const QueueName = "nova.search.index"
 
 // Queue declara QueueName ligada aos eventos dos módulos indexados.
 func Queue(modules []string) messaging.QueueSpec {

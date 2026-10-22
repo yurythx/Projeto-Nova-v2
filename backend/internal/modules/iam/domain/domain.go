@@ -201,7 +201,7 @@ type Repository interface {
 	ListUsers(ctx context.Context, db database.DBTX, f UserFilter, p pagination.Params) ([]User, int64, error)
 	GetUser(ctx context.Context, db database.DBTX, id uuid.UUID) (User, error)
 	// UserPermissions devolve as permissões efetivas de uma conta (lotações,
-	// grupos do AD mapeados e o papel nexus-admin), como o resolvedor faz.
+	// grupos do AD mapeados e o papel nova-admin), como o resolvedor faz.
 	UserPermissions(ctx context.Context, db database.DBTX, id uuid.UUID) ([]string, error)
 	// UserGrants devolve os escopos de todas as lotações da conta (manuais
 	// e por grupo do AD).

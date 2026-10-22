@@ -16,11 +16,11 @@ import urllib.error
 
 BASE_URL = "http://127.0.0.1:8010/api/v1"
 PASSWORDS = {
-    "carlos.diretoria": "Nexus@Rondonopolis2026!",
-    "ana.protocolo": "Nexus@Rondonopolis2026!",
-    "marcos.ops": "Nexus@Rondonopolis2026!",
-    "lucas.tech": "Nexus@Rondonopolis2026!",
-    "mariana.mkt": "Nexus@Rondonopolis2026!",
+    "carlos.diretoria": "Nova@Rondonopolis2026!",
+    "ana.protocolo": "Nova@Rondonopolis2026!",
+    "marcos.ops": "Nova@Rondonopolis2026!",
+    "lucas.tech": "Nova@Rondonopolis2026!",
+    "mariana.mkt": "Nova@Rondonopolis2026!",
 }
 
 tokens = {}
@@ -63,7 +63,7 @@ def login(username):
     return tok
 
 print("=" * 70)
-print("HOMOLOGAÇÃO CORPORATIVA END-TO-END - PROJETO NEXUS")
+print("HOMOLOGAÇÃO CORPORATIVA END-TO-END - PROJETO NOVA")
 print("=" * 70)
 
 # -------------------------------------------------------------
@@ -73,7 +73,7 @@ print("\n--- ETAPA 1: Ouvidoria / Contato Público e Triagem Administrativa ---"
 
 contact_payload = {
     "name": "Audit Homologacao Cidadão",
-    "email": "homologacao.e2e@nexus.gov.br",
+    "email": "homologacao.e2e@nova.gov.br",
     "subject": "Solicitação de Acesso à Informação e Catálogo",
     "category": "duvida",
     "message": "Mensagem gerada pelo script de homologação de conformidade operacional.",

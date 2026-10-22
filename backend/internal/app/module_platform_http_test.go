@@ -12,9 +12,9 @@ import (
 func TestMercurioHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	anaID, ana := h.user("nexus-user")
-	betoID, beto := h.user("nexus-user")
-	_, carla := h.user("nexus-user")
+	anaID, ana := h.user("nova-user")
+	betoID, beto := h.user("nova-user")
+	_, carla := h.user("nova-user")
 
 	// Canal global semeado é visível a todos.
 	var geral string
@@ -76,7 +76,7 @@ func TestMercurioHTTP(t *testing.T) {
 func TestEgressHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/egress/targets", plain, "")
 
@@ -137,7 +137,7 @@ func TestEgressHTTP(t *testing.T) {
 func TestSearchHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, reader := h.user("nexus-user")
+	_, reader := h.user("nova-user")
 	term := "Zircônio" + strings.ReplaceAll(uuid.NewString()[:6], "-", "")
 
 	post := data[postResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/blog/posts", admin, `{"title":"Notícia `+term+`","summary":"s","body":"Texto da notícia"}`))
@@ -166,13 +166,13 @@ func TestSearchHTTP(t *testing.T) {
 	}
 }
 
-// Busca por prefixo (nexus_search_tsquery): quem digita o começo das
+// Busca por prefixo (nova_search_tsquery): quem digita o começo das
 // palavras acha o conteúdo — antes "vacina" não achava "vacinação" —,
 // vários prefixos são E, e consulta com operador mantém o sentido.
 func TestSearchPrefixHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, reader := h.user("nexus-user")
+	_, reader := h.user("nova-user")
 	term := "Zircônio" + strings.ReplaceAll(uuid.NewString()[:6], "-", "")
 
 	post := data[postResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/blog/posts", admin, `{"title":"Campanha de vacinação `+term+`","summary":"s","body":"b"}`))
@@ -197,7 +197,7 @@ func TestSearchPrefixHTTP(t *testing.T) {
 func TestAuditHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 	marker := "audit-" + uuid.NewString()[:8]
 	post := data[postResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/blog/posts", admin, `{"title":"`+marker+`"}`))
 
@@ -233,7 +233,7 @@ func TestAuditHTTP(t *testing.T) {
 
 func TestLGPDAndTransparencyHTTP(t *testing.T) {
 	h := newHarness(t)
-	_, tok := h.user("nexus-user")
+	_, tok := h.user("nova-user")
 
 	status := h.expect(http.StatusOK, http.MethodGet, "/api/v1/lgpd/status", tok, "").Body.String()
 	if !strings.Contains(status, "accepted") {
@@ -273,7 +273,7 @@ func TestLGPDAndTransparencyHTTP(t *testing.T) {
 		t.Fatalf("dados abertos em CSV: %q", csv.Header().Get("Content-Type"))
 	}
 	// Sem PII nos dados abertos.
-	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/transparencia/modulos", "", "").Body.String(); strings.Contains(body, "@nexus.test") {
+	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/transparencia/modulos", "", "").Body.String(); strings.Contains(body, "@nova.test") {
 		t.Fatal("dados abertos não podem conter dados pessoais")
 	}
 }
@@ -281,7 +281,7 @@ func TestLGPDAndTransparencyHTTP(t *testing.T) {
 func TestExampleBlueprintHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 	h.setModule(admin, "example", true)
 
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/examples", plain, `{"title":"x"}`)
@@ -303,7 +303,7 @@ func TestExampleBlueprintHTTP(t *testing.T) {
 func TestOutboxMonitoringHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/monitoring/outbox-stats", plain, "")
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/monitoring/outbox/requeue", plain, "")
 	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/monitoring/outbox-stats", admin, "").Body.String(); !strings.Contains(body, `"pending"`) {

@@ -10,9 +10,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 NAME="${TEST_PG_CONTAINER:-projeto-nova-test-pg}"
-DB="${TEST_DB_NAME:-nexus_test}"
-USER="${TEST_DB_USER:-nexus}"
-PASS="${TEST_DB_PASSWORD:-nexus_ci_password}"
+DB="${TEST_DB_NAME:-nova_test}"
+USER="${TEST_DB_USER:-nova}"
+PASS="${TEST_DB_PASSWORD:-nova_ci_password}"
 
 recreate() {
   local psql_cmd=$1

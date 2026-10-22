@@ -19,7 +19,7 @@ import (
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func TestSetupWithoutEndpointIsNoop(t *testing.T) {
-	shutdown := Setup(context.Background(), "nexus", "test", "", quiet)
+	shutdown := Setup(context.Background(), "nova", "test", "", quiet)
 	if err := shutdown(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestSetupExportsSpansToCollector(t *testing.T) {
 	prev := otel.GetTracerProvider()
 	defer otel.SetTracerProvider(prev)
 
-	shutdown := Setup(context.Background(), "nexus", "test", strings.TrimPrefix(collector.URL, "http://"), quiet)
+	shutdown := Setup(context.Background(), "nova", "test", strings.TrimPrefix(collector.URL, "http://"), quiet)
 	if _, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider); !ok {
 		t.Fatalf("provider global não é o do SDK: %T", otel.GetTracerProvider())
 	}
@@ -65,7 +65,7 @@ func TestSetupExporterFailureKeepsNoop(t *testing.T) {
 	newExporter = func(context.Context, string) (sdktrace.SpanExporter, error) { return nil, errors.New("boom") }
 
 	prev := otel.GetTracerProvider()
-	shutdown := Setup(context.Background(), "nexus", "test", "collector:4318", quiet)
+	shutdown := Setup(context.Background(), "nova", "test", "collector:4318", quiet)
 	if err := shutdown(context.Background()); err != nil {
 		t.Fatal(err)
 	}

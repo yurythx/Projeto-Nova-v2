@@ -214,7 +214,7 @@ type RateLimitConfig struct {
 // trilha de auditoria (F2.6). Bucket DEDICADO (não o de blobs da app):
 // object-lock só pode ser habilitado na criação do bucket.
 type AuditWORMConfig struct {
-	Bucket        string // AUDIT_WORM_BUCKET (default "nexus-audit-worm")
+	Bucket        string // AUDIT_WORM_BUCKET (default "nova-audit-worm")
 	RetentionDays int    // AUDIT_WORM_RETENTION_DAYS (default 1825 = 5 anos)
 }
 
@@ -496,7 +496,7 @@ func Load() (*Config, error) {
 		Typesense: TypesenseConfig{
 			URL:          l.str("TYPESENSE_URL", false, ""),
 			APIKey:       l.secret("TYPESENSE_API_KEY", false, ""),
-			Collection:   l.str("TYPESENSE_COLLECTION", false, "nexus_busca_v1"),
+			Collection:   l.str("TYPESENSE_COLLECTION", false, "nova_busca_v1"),
 			Timeout:      l.durationVal("TYPESENSE_TIMEOUT", 2*time.Second),
 			SyncInterval: l.durationVal("TYPESENSE_SYNC_INTERVAL", 10*time.Minute),
 		},
@@ -508,7 +508,7 @@ func Load() (*Config, error) {
 			URLExpiry:    l.durationVal("UPLOAD_URL_EXPIRY", 15*time.Minute),
 		},
 		AuditWORM: AuditWORMConfig{
-			Bucket:        l.str("AUDIT_WORM_BUCKET", false, "nexus-audit-worm"),
+			Bucket:        l.str("AUDIT_WORM_BUCKET", false, "nova-audit-worm"),
 			RetentionDays: l.intVal("AUDIT_WORM_RETENTION_DAYS", false, 1825),
 		},
 		Worker: WorkerConfig{
@@ -570,7 +570,7 @@ func Load() (*Config, error) {
 	// como está, cujo default `:-` não força nada).
 	//
 	// A mesma checagem cobre também os valores literais de .env.example
-	// (achado de auditoria de segurança): DB_PASSWORD=nexus_pass e
+	// (achado de auditoria de segurança): DB_PASSWORD=nova_pass e
 	// RABBITMQ_DEFAULT_PASS=rabbit_pass não são "defaults" no sentido de
 	// código (são required=true, sem fallback em loader.secret) — mas o
 	// arquivo em si é público (committed no git), então um operador que
@@ -662,7 +662,7 @@ func minioConfig(l *loader) MinIOConfig {
 		Endpoint:  l.str("MINIO_ENDPOINT", false, "minio:9000"),
 		AccessKey: l.str("MINIO_ACCESS_KEY", false, insecureMinioAccessKey),
 		SecretKey: l.secret("MINIO_SECRET_KEY", false, insecureMinioSecretKey),
-		Bucket:    l.str("MINIO_BUCKET", false, "nexus"),
+		Bucket:    l.str("MINIO_BUCKET", false, "nova"),
 		UseSSL:    l.boolVal("MINIO_USE_SSL", false),
 	}
 	c.PublicEndpoint = c.Endpoint

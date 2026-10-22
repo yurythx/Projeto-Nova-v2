@@ -465,7 +465,7 @@ export function LoadTestTab() {
             body: targetUrl.includes("contact/messages")
               ? JSON.stringify({
                   name: `Benchmark Bot ${currentIndex}`,
-                  email: `bench${currentIndex}@nexus.local`,
+                  email: `bench${currentIndex}@nova.local`,
                   subject: "Teste de Carga Automatizado",
                   category: "duvida",
                   message: "Mensagem para teste de estresse de infraestrutura.",
@@ -583,7 +583,7 @@ export function LoadTestTab() {
 
   const handleCopySummary = () => {
     const text = [
-      `RELATÓRIO DE BENCHMARK & TESTE DE CARGA - NEXUS`,
+      `RELATÓRIO DE BENCHMARK & TESTE DE CARGA - NOVA`,
       `=============================================`,
       `Alvo: ${selectedTarget.name} (${selectedTarget.url})`,
       `Concorrência: ${concurrency} workers paralelos`,
@@ -615,7 +615,7 @@ export function LoadTestTab() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(history, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `nexus-benchmark-${Date.now()}.json`);
+    downloadAnchor.setAttribute("download", `nova-benchmark-${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

@@ -2,7 +2,7 @@
 
 - **Status:** Aceito (com revisão trimestral)
 - **Data:** 2026-09-09
-- **Autores:** Engenharia Projeto Nexus
+- **Autores:** Engenharia Projeto-nova-v2
 
 ## Contexto
 

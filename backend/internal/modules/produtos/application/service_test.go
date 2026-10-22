@@ -190,7 +190,7 @@ func TestTransacao(t *testing.T) {
 	ctx := context.Background()
 	u := dbtest.Unidade(t, pool)
 	repo := infrastructure.NewRepository()
-	svc := application.NewService(pool, repo, outbox.NewWriter("nexus.produtos"))
+	svc := application.NewService(pool, repo, outbox.NewWriter("nova.produtos"))
 	quem := gestor(u)
 
 	criado, err := svc.Criar(ctx, quem, application.Entrada{Nome: "Protocolo " + uuid.NewString()[:6], Estagio: "descoberta", UnidadeID: &u, Descricao: "registro"})

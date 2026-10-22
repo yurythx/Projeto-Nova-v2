@@ -212,7 +212,7 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   autoComplete="off"
                   value={form.issuerUrl}
                   onChange={(e) => handleChange("issuerUrl", e.target.value)}
-                  placeholder="https://sso.orgao.gov.br/realms/nexus"
+                  placeholder="https://sso.orgao.gov.br/realms/nova"
                   required
                 />
                 <p className="text-[11px] text-muted">
@@ -229,7 +229,7 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   autoComplete="off"
                   value={form.realm}
                   onChange={(e) => handleChange("realm", e.target.value)}
-                  placeholder="nexus"
+                  placeholder="nova"
                   required
                 />
                 <p className="text-[11px] text-muted">
@@ -245,7 +245,7 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   autoComplete="off"
                   value={form.audience}
                   onChange={(e) => handleChange("audience", e.target.value)}
-                  placeholder="nexus-backend"
+                  placeholder="nova-backend"
                   required
                 />
                 <p className="text-[11px] text-muted">
@@ -261,7 +261,7 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   autoComplete="off"
                   value={form.clientId}
                   onChange={(e) => handleChange("clientId", e.target.value)}
-                  placeholder="nexus-backend"
+                  placeholder="nova-backend"
                   required
                 />
                 <p className="text-[11px] text-muted">
@@ -309,7 +309,7 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   autoComplete="off"
                   value={form.frontendClientId}
                   onChange={(e) => handleChange("frontendClientId", e.target.value)}
-                  placeholder="nexus-frontend"
+                  placeholder="nova-frontend"
                 />
               </div>
               <div className="flex flex-col gap-1">

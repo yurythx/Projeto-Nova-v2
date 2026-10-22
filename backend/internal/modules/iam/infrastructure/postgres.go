@@ -478,7 +478,7 @@ func (r *Repository) UserGrants(ctx context.Context, db database.DBTX, id uuid.U
 
 func (r *Repository) ListUsers(ctx context.Context, db database.DBTX, f domain.UserFilter, p pagination.Params) ([]domain.User, int64, error) {
 	q := "%" + strings.ToLower(f.Query) + "%"
-	where := `WHERE ($1 = '%%' OR nexus_unaccent(lower(display_name || ' ' || username || ' ' || email)) LIKE nexus_unaccent($1))
+	where := `WHERE ($1 = '%%' OR nova_unaccent(lower(display_name || ' ' || username || ' ' || email)) LIKE nova_unaccent($1))
 		AND ($2::boolean IS NULL OR active = $2)`
 	args := []any{q, f.Active}
 	if f.Area != nil {
@@ -514,22 +514,22 @@ func (r *Repository) GetUser(ctx context.Context, db database.DBTX, id uuid.UUID
 
 // UserPermissions aplica a mesma regra do resolvedor (platform/iam): perfis
 // ativos das lotações, perfis ativos dos grupos do AD da conta e "*" para
-// o papel nexus-admin.
+// o papel nova-admin.
 func (r *Repository) UserPermissions(ctx context.Context, db database.DBTX, id uuid.UUID) ([]string, error) {
 	var perms []string
 	err := db.QueryRow(ctx, `
 		WITH u AS (SELECT roles, groups FROM users WHERE id = $1),
 		grants AS (
 			SELECT unnest(p.permissoes) AS perm FROM user_scopes s JOIN perfis p ON p.id = s.perfil_id AND p.ativo
-			 WHERE s.user_id = $1 AND nexus_scope_active(s.entidade_id, s.unidade_id, s.departamento_id)
+			 WHERE s.user_id = $1 AND nova_scope_active(s.entidade_id, s.unidade_id, s.departamento_id)
 			UNION
 			SELECT unnest(p.permissoes) FROM ad_group_mappings m JOIN perfis p ON p.id = m.perfil_id AND p.ativo, u
 			 WHERE lower(m.ad_group) = ANY (SELECT lower(g) FROM unnest(u.groups) g)
-			   AND nexus_scope_active(m.entidade_id, m.unidade_id, m.departamento_id)
+			   AND nova_scope_active(m.entidade_id, m.unidade_id, m.departamento_id)
 			UNION
 			SELECT '*' FROM u WHERE $2 = ANY (u.roles)
 		)
-		SELECT COALESCE(array_agg(perm ORDER BY perm), '{}') FROM grants`, id, "nexus-admin").Scan(&perms)
+		SELECT COALESCE(array_agg(perm ORDER BY perm), '{}') FROM grants`, id, "nova-admin").Scan(&perms)
 	return perms, wrap("user permissions", err)
 }
 

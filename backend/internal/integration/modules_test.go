@@ -68,7 +68,7 @@ import (
 
 var errReauth = signumDomain.ErrReauth
 
-const bucket = "nexus-test"
+const bucket = "nova-test"
 
 type env struct {
 	pool     *pgxpool.Pool
@@ -83,7 +83,7 @@ type env struct {
 	depto    uuid.UUID
 }
 
-// gestaoGlobal: quem gerencia sem escopo (ADR 013) — nexus-admin.
+// gestaoGlobal: quem gerencia sem escopo (ADR 013) — nova-admin.
 var gestaoGlobal = auth.Identity{Roles: []string{auth.RoleAdmin}}
 
 func setup(t *testing.T) *env {
@@ -98,7 +98,7 @@ func setup(t *testing.T) *env {
 	}
 	t.Cleanup(pool.Close)
 	e := &env{pool: pool, ctx: context.Background(), store: newMemStorage(),
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)), ob: outbox.NewWriter("nexus.test")}
+		logger: slog.New(slog.NewTextHandler(io.Discard, nil)), ob: outbox.NewWriter("nova.test")}
 
 	iamSvc := iamApp.NewService(pool, iamInfra.NewRepository(), nil)
 	suffix := uuid.NewString()[:8]
@@ -122,11 +122,11 @@ func setup(t *testing.T) *env {
 	}
 
 	user, err := iamSvc.CreateLocalUser(e.ctx, iamApp.CreateLocalUserInput{
-		Username: "tester." + suffix, Email: "tester." + suffix + "@nexus.test", DisplayName: "Tester", Password: "Senha-Forte-123",
+		Username: "tester." + suffix, Email: "tester." + suffix + "@nova.test", DisplayName: "Tester", Password: "Senha-Forte-123",
 	})
 	must(t, err)
 	other, err := iamSvc.CreateLocalUser(e.ctx, iamApp.CreateLocalUserInput{
-		Username: "colega." + suffix, Email: "colega." + suffix + "@nexus.test", DisplayName: "Colega", Password: "Senha-Forte-123",
+		Username: "colega." + suffix, Email: "colega." + suffix + "@nova.test", DisplayName: "Colega", Password: "Senha-Forte-123",
 	})
 	must(t, err)
 	e.other = other.ID
@@ -151,7 +151,7 @@ func setup(t *testing.T) *env {
 	resolver := iam.NewResolver(pool, nil, e.logger)
 	identity, err := resolver.Enrich(e.ctx, auth.Identity{
 		Subject: user.ID.String(), Username: user.Username, Source: auth.SourceLocal,
-		Roles: []string{"nexus-user"}, Groups: []string{"/Nexus/GG_Gestores_" + suffix},
+		Roles: []string{"nova-user"}, Groups: []string{"/Nova/GG_Gestores_" + suffix},
 	})
 	must(t, err)
 	if !auth.HasPermission(identity, auth.PermTramiteCreate) || auth.HasPermission(identity, auth.PermIAMManage) {
@@ -161,7 +161,7 @@ func setup(t *testing.T) *env {
 		t.Fatalf("escopos deveriam cobrir as duas unidades (lotação + AD): %+v", identity.Scopes)
 	}
 	// Para os demais fluxos, o testador também é administrador (papel
-	// nexus-admin = "*" global; "*" só na lista achatada não concede nada
+	// nova-admin = "*" global; "*" só na lista achatada não concede nada
 	// no modelo de concessões — ADR 013).
 	identity.Roles = append(identity.Roles, auth.RoleAdmin)
 	identity.Permissions = append(identity.Permissions, "*")

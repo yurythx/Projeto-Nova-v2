@@ -41,7 +41,7 @@ test.describe("Acessibilidade e-MAG / WCAG 2.1 AA", () => {
   });
 
   test("Modal de Consentimento LGPD é um diálogo modal acessível", async ({ page }) => {
-    await page.evaluate(() => localStorage.removeItem("nexus_lgpd_consent"));
+    await page.evaluate(() => localStorage.removeItem("nova_lgpd_consent"));
     await page.reload();
 
     const dialog = page.getByRole("dialog");

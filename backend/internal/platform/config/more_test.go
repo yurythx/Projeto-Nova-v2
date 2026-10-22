@@ -50,8 +50,8 @@ func TestProductionRejectsWeakKeyAndOpenEgress(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			setRequiredEnv(t)
 			t.Setenv("APP_ENV", "production")
-			t.Setenv("MINIO_ACCESS_KEY", "nexus-prod-access")
-			t.Setenv("MINIO_SECRET_KEY", "nexus-prod-secret-strong-value")
+			t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+			t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
 			t.Setenv("CONFIG_ENCRYPTION_KEY", "cHJvZC1zdHJvbmcta2V5LTMyLWJ5dGVzLWxvbmchIQ==")
 			for k, v := range env {
 				t.Setenv(k, v)
@@ -131,7 +131,7 @@ func TestIAEndpoint(t *testing.T) {
 func TestTypesense(t *testing.T) {
 	setRequiredEnv(t)
 	cfg, err := Load()
-	if err != nil || cfg.Typesense.Enabled() || cfg.Typesense.Collection != "nexus_busca_v1" {
+	if err != nil || cfg.Typesense.Enabled() || cfg.Typesense.Collection != "nova_busca_v1" {
 		t.Fatalf("sem TYPESENSE_URL o índice fica desligado: %+v %v", cfg.Typesense, err)
 	}
 	casos := map[string]map[string]string{

@@ -59,7 +59,7 @@ rename() {
         -e "s#^package example\$#package ${NAME}#" \
         -e "s#auth\.PermExampleManage#auth.Permission(\"${NAME}:manage\")#g" \
         -e "s#example:manage#${NAME}:manage#g" \
-        -e "s#nexus\.example#nexus.${NAME}#g" \
+        -e "s#nova\.example#nova.${NAME}#g" \
         -e "s#example_items#${NAME}_items#g" \
         -e "s#example_item#${NAME}_item#g" \
         -e "s#example\.item\.#${NAME}.item.#g" \

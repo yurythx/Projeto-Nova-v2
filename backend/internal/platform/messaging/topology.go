@@ -8,7 +8,7 @@ import (
 
 // ExchangeEvents é o único exchange topic do barramento de eventos do
 // Projeto-nova-v2. O Relay do Outbox publica aqui com routing key = tipo do evento.
-const ExchangeEvents = "nexus.events"
+const ExchangeEvents = "nova.events"
 
 // QueueSpec descreve uma fila durável com sua DLQ e seus bindings.
 type QueueSpec struct {
@@ -18,19 +18,19 @@ type QueueSpec struct {
 }
 
 // RetryHeader carrega o número da tentativa numa republicação com atraso.
-const RetryHeader = "x-nexus-attempt"
+const RetryHeader = "x-nova-attempt"
 
 // RoutingKeyHeader preserva a routing key original (o tipo do evento) na
 // cópia de retry, que volta direto para a fila de origem pelo exchange
 // padrão (routing key = nome da fila).
-const RoutingKeyHeader = "x-nexus-routing-key"
+const RoutingKeyHeader = "x-nova-routing-key"
 
 // QueueNotificationWebsocket alimenta o Hub de WebSocket (processo API)
 // com eventos SEGUROS para difusão geral — nunca eventos que carreguem
 // metadados sigilosos (ex.: Trâmite restrito/sigiloso).
 var QueueNotificationWebsocket = QueueSpec{
-	Name:    "nexus.notification.websocket",
-	DLQName: "nexus.notification.dlq",
+	Name:    "nova.notification.websocket",
+	DLQName: "nova.notification.dlq",
 	RoutingKeys: []string{
 		"notification.created",
 		"blog.post.published",

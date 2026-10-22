@@ -134,7 +134,7 @@ saúde, filial, sede.
   - o Diretório e as telas do Trâmite deixam de oferecer o que está
     desativado.
 
-  A regra do escopo ativo é única, `nexus_scope_active` (função do banco),
+  A regra do escopo ativo é única, `nova_scope_active` (função do banco),
   usada tanto pelo cálculo de permissões por requisição quanto pela tela de
   usuários.
 - Toda alteração é auditada com o antes e o depois.
@@ -195,7 +195,7 @@ Regras:
   a plataforma.
 - **Desativar um perfil** retira na hora as permissões dele de todos que o
   têm. Reativar devolve.
-- A role de realm `nexus-admin` no Keycloak equivale a `*`.
+- A role de realm `nova-admin` no Keycloak equivale a `*`.
 
 ### 3.3. Ninguém concede o que não tem (anti-escalada)
 
@@ -205,7 +205,7 @@ Na administração delegada (seção 5), vale **no escopo da lotação**: o
 delegado só concede uma permissão que ele próprio tem ali.
 Exemplo: o `gestor-iam` (que não tem `audit:read`) não cria um perfil com
 `audit:read` nem lota alguém num perfil com essa permissão; recebe `403`.
-Só quem tem acesso total concede ou retira `nexus-admin`.
+Só quem tem acesso total concede ou retira `nova-admin`.
 
 ---
 
@@ -311,8 +311,8 @@ não vale.
    processos. Use unidade-mãe se houver hierarquia.
 3. **Departamentos:** os setores de cada unidade.
 4. **Grupos no Keycloak/AD:** idealmente um por departamento, com nome
-   único (ex.: `SEMSA-UPA-ADM`), e grupos de papel (`NEXUS-ADMINS`,
-   `NEXUS-AUDITORES`…).
+   único (ex.: `SEMSA-UPA-ADM`), e grupos de papel (`NOVA-ADMINS`,
+   `NOVA-AUDITORES`…).
 5. **Mapeamentos:**
    - cada grupo de departamento → `servidor` no departamento;
    - quem protocola (ex.: a Administração da unidade) → `protocolo` na
@@ -375,7 +375,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
      `SIGNUM_CHALLENGE_TTL`, padrão 5 min);
   2. confirma o hash do documento;
   3. **reautentica com a senha**: conta local contra o banco, conta do
-     Keycloak via Keycloak/AD, pelo client `nexus-backend`.
+     Keycloak via Keycloak/AD, pelo client `nova-backend`.
 - **Sequencial:** ninguém assina antes dos anteriores.
 - **Estados:** `pending` → `completed` (todos assinaram) | `refused`
   (alguém recusou com motivo) | `cancelled` (dono ou `signum:manage`

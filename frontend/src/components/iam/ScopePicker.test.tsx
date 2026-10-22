@@ -64,7 +64,7 @@ describe("ScopePicker", () => {
   });
 
   it("administração global: tudo, inclusive o escopo global", () => {
-    me = { roles: ["nexus-admin"], scopes: [] };
+    me = { roles: ["nova-admin"], scopes: [] };
     render(<Harness onChange={vi.fn()} permission="iam:manage" />);
     expect(opcoes("Entidade")).toEqual(["Todas (global)", "SEC — Secretaria", "Outra"]);
   });

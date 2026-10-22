@@ -129,7 +129,7 @@ func writeProblemDetails(w http.ResponseWriter, r *http.Request, appErr *apperro
 	w.Header().Set("Content-Type", "application/problem+json; charset=utf-8")
 	w.WriteHeader(appErr.Status)
 	_ = json.NewEncoder(w).Encode(ProblemDetails{
-		Type:      "urn:nexus:error:" + strings.ToLower(string(appErr.Code)),
+		Type:      "urn:nova:error:" + strings.ToLower(string(appErr.Code)),
 		Title:     title,
 		Status:    appErr.Status,
 		Detail:    appErr.Message,

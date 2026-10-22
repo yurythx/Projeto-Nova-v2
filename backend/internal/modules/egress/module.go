@@ -17,8 +17,8 @@ const Key = "egress"
 
 // QueueDispatcher recebe TODO evento de domínio do barramento.
 var QueueDispatcher = messaging.QueueSpec{
-	Name:        "nexus.egress.dispatcher",
-	DLQName:     "nexus.egress.dispatcher.dlq",
+	Name:        "nova.egress.dispatcher",
+	DLQName:     "nova.egress.dispatcher.dlq",
 	RoutingKeys: []string{"#"},
 }
 

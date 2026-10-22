@@ -148,9 +148,9 @@ sabiam interpretar como um erro específico de domínio, não como "o
 provedor está fora do ar" — contar 4xx abriria o circuito por um problema
 de configuração (uma chave de API errada), não de disponibilidade.
 
-Toda transição de estado atualiza `nexus_circuit_breaker_state{name=...}`
+Toda transição de estado atualiza `nova_circuit_breaker_state{name=...}`
 (0=closed, 1=half-open, 2=open) e incrementa
-`nexus_circuit_breaker_transitions_total{name,from,to}`, além de gerar uma
+`nova_circuit_breaker_transitions_total{name,from,to}`, além de gerar uma
 linha de log — dá visibilidade operacional sem precisar consultar o
 estado ativamente.
 
@@ -264,8 +264,8 @@ contra um schema já compilado.
 - Um evento fora do contrato padrão nunca chega a ser gravado no outbox
   nem publicado no RabbitMQ, não importa qual caminho de código o gerou.
 - Toda nova capacidade é observável via Prometheus
-  (`nexus_idempotency_outcomes_total`, `nexus_circuit_breaker_state`,
-  `nexus_circuit_breaker_transitions_total`, `nexus_feature_flag_checks_total`)
+  (`nova_idempotency_outcomes_total`, `nova_circuit_breaker_state`,
+  `nova_circuit_breaker_transitions_total`, `nova_feature_flag_checks_total`)
   e testável sem depender de infraestrutura viva onde a lógica permite
   (`middleware_test.go` do idempotency e `circuitbreaker_test.go` do
   resilience usam só implementações falsas/em memória).

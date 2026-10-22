@@ -55,8 +55,8 @@ func TestIssueTokenPropagatesSigningFailure(t *testing.T) {
 
 func TestOptionalAuthentication(t *testing.T) {
 	provider := newTestOIDCProvider(t)
-	v := newTestVerifier(t, provider, "nexus", "nexus")
-	good := provider.signToken(t, tokenOpts{subject: "s1", preferredUsername: "ana", audience: "nexus", expiresAt: time.Now().Add(time.Hour)})
+	v := newTestVerifier(t, provider, "nova", "nova")
+	good := provider.signToken(t, tokenOpts{subject: "s1", preferredUsername: "ana", audience: "nova", expiresAt: time.Now().Add(time.Hour)})
 	echo := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if id, ok := IdentityFromContext(r.Context()); ok {
 			_, _ = w.Write([]byte("user:" + id.Username))
@@ -101,10 +101,10 @@ func TestVerifierPaths(t *testing.T) {
 		t.Fatal("issuer inacessível no boot")
 	}
 	provider := newTestOIDCProvider(t)
-	v := newTestVerifier(t, provider, "nexus", "nexus")
+	v := newTestVerifier(t, provider, "nova", "nova")
 	// Token válido do Keycloak com claims em formato inesperado.
 	weird := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iss": provider.issuer, "sub": "s", "aud": "nexus", "exp": time.Now().Add(time.Hour).Unix(),
+		"iss": provider.issuer, "sub": "s", "aud": "nova", "exp": time.Now().Add(time.Hour).Unix(),
 		"realm_access": "não é objeto",
 	})
 	weird.Header["kid"] = provider.kid
@@ -120,7 +120,7 @@ func TestVerifierPaths(t *testing.T) {
 	}
 
 	signer := testSigner(t, time.Hour)
-	both, err := NewVerifier(ctx, config.KeycloakConfig{IssuerURL: provider.issuer, ClientID: "nexus", Audience: "nexus"}, signer)
+	both, err := NewVerifier(ctx, config.KeycloakConfig{IssuerURL: provider.issuer, ClientID: "nova", Audience: "nova"}, signer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,8 +143,8 @@ func (v *Verifier) verifyWithEmptyState(ctx context.Context) (Identity, error) {
 
 func TestRequireAuthenticationEnrichAndPermission(t *testing.T) {
 	provider := newTestOIDCProvider(t)
-	v := newTestVerifier(t, provider, "nexus", "nexus")
-	tok := provider.signToken(t, tokenOpts{subject: "s1", preferredUsername: "ana", audience: "nexus", expiresAt: time.Now().Add(time.Hour)})
+	v := newTestVerifier(t, provider, "nova", "nova")
+	tok := provider.signToken(t, tokenOpts{subject: "s1", preferredUsername: "ana", audience: "nova", expiresAt: time.Now().Add(time.Hour)})
 	withPerm := func(_ context.Context, id Identity) (Identity, error) {
 		id.Permissions = []string{"blog:manage"}
 		return id, nil

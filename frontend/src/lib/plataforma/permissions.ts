@@ -13,7 +13,7 @@ export function hasPermission(granted: readonly string[] | undefined, want: stri
 /** Onde uma permissão com escopo vale (ADR 013) — espelho de
  * auth.Scope.Covers no backend, só para decidir o que OFERECER nos
  * formulários (a API confere de novo):
- *   - concessão global (ou o papel nexus-admin): todas as unidades e o
+ *   - concessão global (ou o papel nova-admin): todas as unidades e o
  *     "institucional" (sem dono);
  *   - entidade: todas as unidades dela;
  *   - unidade: ela e as subunidades (árvore parent_id);
@@ -24,7 +24,7 @@ export function unidadesGeridas(
   permission: string,
 ): { global: boolean; unidades: Set<string> } {
   const all = (tree ?? []).flatMap((e) => e.unidades);
-  if (me?.roles?.includes("nexus-admin"))
+  if (me?.roles?.includes("nova-admin"))
     return { global: true, unidades: new Set(all.map((u) => u.id)) };
   const filhas = new Map<string, string[]>();
   for (const u of all)

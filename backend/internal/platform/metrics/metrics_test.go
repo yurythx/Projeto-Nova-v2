@@ -16,7 +16,7 @@ func gauge(t *testing.T, state string) float64 {
 		t.Fatal(err)
 	}
 	for _, mf := range mfs {
-		if mf.GetName() != "nexus_postgres_connections" {
+		if mf.GetName() != "nova_postgres_connections" {
 			continue
 		}
 		for _, m := range mf.GetMetric() {

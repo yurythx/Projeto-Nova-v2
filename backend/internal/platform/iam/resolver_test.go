@@ -312,7 +312,7 @@ func TestResolverCacheEvictionAndInvalidation(t *testing.T) {
 	}
 }
 
-func redisKey() string { return "nexus:" + invalidateChannel }
+func redisKey() string { return "nova:" + invalidateChannel }
 
 func waitFor(t *testing.T, cond func() bool) {
 	t.Helper()

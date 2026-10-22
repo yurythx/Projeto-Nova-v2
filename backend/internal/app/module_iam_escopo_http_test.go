@@ -33,7 +33,7 @@ func (h *apiHarness) relogin(id uuid.UUID) string {
 	return out.Data.AccessToken
 }
 
-// Estrutura desativada deixa de conceder (nexus_scope_active,
+// Estrutura desativada deixa de conceder (nova_scope_active,
 // docs/REGRAS_DE_NEGOCIO.md §2): lotações e mapeamentos de grupo num
 // escopo com entidade, unidade ou departamento desativado não valem — e a
 // mudança é imediata (salvar a estrutura invalida o cache do IAM).
@@ -68,7 +68,7 @@ func TestIAMEscopoDesativadoNaoConcede(t *testing.T) {
 	}
 
 	// Lotação manual no departamento (o escopo é completado até a entidade).
-	userID, tok := h.user("nexus-user")
+	userID, tok := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+userID.String()+"/lotacoes", admin,
 		`{"perfil_id":"`+perfil.ID+`","departamento_id":"`+dep.ID+`"}`)
 	quer(tok, true)
@@ -88,7 +88,7 @@ func TestIAMEscopoDesativadoNaoConcede(t *testing.T) {
 	grupo := "GRP_ESCOPO_" + sfx
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/ad-mappings", admin,
 		`{"ad_group":"`+grupo+`","perfil_id":"`+perfil.ID+`","unidade_id":"`+un.ID+`"}`)
-	membroID, _ := h.user("nexus-user")
+	membroID, _ := h.user("nova-user")
 	if _, err := h.d.DB.Exec(context.Background(), `UPDATE users SET groups = $2 WHERE id = $1`, membroID, []string{grupo}); err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestIAMPermissaoDePlataformaSoGlobal(t *testing.T) {
 	perfil := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", admin,
 		`{"nome":"Monitor `+sfx+`","permissoes":["monitoring:read"]}`))
 
-	userID, tok := h.user("nexus-user")
+	userID, tok := h.user("nova-user")
 	lot := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+userID.String()+"/lotacoes", admin,
 		`{"perfil_id":"`+perfil.ID+`","unidade_id":"`+un.ID+`"}`))
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/monitoring/outbox-stats", tok, "")
@@ -209,7 +209,7 @@ func (h *apiHarness) gestorEm(t *testing.T, unidade string, permissoes ...string
 	perms, _ := json.Marshal(permissoes)
 	perfil := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", admin,
 		`{"nome":"Gestor `+uuid.NewString()[:8]+`","permissoes":`+string(perms)+`}`)).ID
-	id, tok := h.user("nexus-user")
+	id, tok := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+id.String()+"/lotacoes", admin,
 		`{"perfil_id":"`+perfil+`","unidade_id":"`+unidade+`"}`)
 	return tok
@@ -265,9 +265,9 @@ func TestIAMDelegado(t *testing.T) {
 	h.expect(http.StatusForbidden, http.MethodDelete, "/api/v1/iam/departamentos/"+depB, delegado, "")
 
 	// Contas: as sem lotação e as da área aparecem; as de fora, não.
-	novoID, _ := h.user("nexus-user")
-	deBID, _ := h.user("nexus-user")
-	adminID, _ := h.user("nexus-admin")
+	novoID, _ := h.user("nova-user")
+	deBID, _ := h.user("nova-user")
+	adminID, _ := h.user("nova-admin")
 	lotar := func(want int, tok string, user uuid.UUID, perfilID, unidadeID string) string {
 		body := `{"perfil_id":"` + perfilID + `"`
 		if unidadeID != "" {
@@ -297,7 +297,7 @@ func TestIAMDelegado(t *testing.T) {
 	}
 	h.expect(http.StatusForbidden, http.MethodDelete, "/api/v1/users/"+deBID.String()+"/lotacoes/"+emB, delegado, "")
 	h.expect(http.StatusForbidden, http.MethodPatch, "/api/v1/users/"+deBID.String(), delegado, `{"display_name":"B","active":true}`)
-	soB, _ := h.user("nexus-user")
+	soB, _ := h.user("nova-user")
 	lotar(http.StatusCreated, admin, soB, perfilBlog, o.b)
 	h.expect(http.StatusNotFound, http.MethodGet, "/api/v1/users/"+soB.String(), delegado, "")
 
@@ -310,7 +310,7 @@ func TestIAMDelegado(t *testing.T) {
 	// Administrar a conta: só a que está inteiramente na área.
 	h.expect(http.StatusNoContent, http.MethodPost, "/api/v1/users/"+novoID.String()+"/password", delegado, `{"password":"Outra-Senha-Forte-9"}`)
 	h.expect(http.StatusNoContent, http.MethodPost, "/api/v1/users/"+novoID.String()+"/unlock", delegado, "")
-	h.expect(http.StatusOK, http.MethodPatch, "/api/v1/users/"+novoID.String(), delegado, `{"display_name":"Nova pessoa","active":true,"roles":["nexus-user"]}`)
+	h.expect(http.StatusOK, http.MethodPatch, "/api/v1/users/"+novoID.String(), delegado, `{"display_name":"Nova pessoa","active":true,"roles":["nova-user"]}`)
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/users/"+deBID.String()+"/unlock", delegado, "")
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/users/"+adminID.String()+"/password", delegado, `{"password":"Outra-Senha-Forte-9"}`)
 	h.expect(http.StatusNoContent, http.MethodDelete, "/api/v1/users/"+novoID.String()+"/lotacoes/"+lot, delegado, "")

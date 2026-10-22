@@ -17,4 +17,4 @@
   hosts: app_servers
   become: true
   roles:
-    - nexus_deploy
+    - nova_deploy

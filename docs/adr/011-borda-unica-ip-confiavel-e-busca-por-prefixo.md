@@ -33,7 +33,7 @@ mostraram estes problemas:
 4. **Busca só por palavra inteira.** `websearch_to_tsquery` não acha
    prefixos: "vacina" não encontrava "vacinação".
 5. **Assinatura impossível com conta do Keycloak.** A reautenticação do
-   Signum usa o grant `password` no client `nexus-backend`. Quando o client
+   Signum usa o grant `password` no client `nova-backend`. Quando o client
    não permitia esse fluxo (`unauthorized_client`), a mensagem era "senha
    incorreta" para a senha certa.
 6. **Supervisor em laço.** No processo da API nenhum plug-in tem worker, e o
@@ -66,7 +66,7 @@ O contador do IP continua sem zerar no login certo. Zerar deixaria um
 atacante com uma conta válida limpar o IP durante password spraying.
 
 **Busca por prefixo.** A migration 000125 cria
-`nexus_search_tsquery(cfg, q)`, que é o websearch **OU** o prefixo de cada
+`nova_search_tsquery(cfg, q)`, que é o websearch **OU** o prefixo de cada
 termo (`'vacina':* & 'campan':*`, sem acento). Consultas com operador
 (aspas, `-termo`, `or`) usam só o websearch, para não mudar o sentido.
 Todo filtro full-text passa a usá-la, e ela é a regra para plug-ins novos.
@@ -90,6 +90,6 @@ unidades.
     local;
   - ponta a ponta: `make demo-test`, 7 suítes com 267 checagens.
 - **Keycloak oficial:** precisa dos clients descritos em `docs/DEPLOY.md`,
-  inclusive o `nexus-backend` confidencial com Direct Access Grants.
+  inclusive o `nova-backend` confidencial com Direct Access Grants.
 - **ADR 003:** descreve o bloqueio de conta da época (no banco). O bloqueio
   vigente é o progressivo no Redis, com as políticas acima.

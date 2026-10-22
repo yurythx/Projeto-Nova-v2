@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — DESTAQUE EDITORIAL DO BLOG: PROXMOX + TERRAFORM + ANSIBLE
+-- PROJETO NOVA — DESTAQUE EDITORIAL DO BLOG: PROXMOX + TERRAFORM + ANSIBLE
 -- ==============================================================================
 -- Configura 'artigo-proxmox' como o destaque editorial (pinned = true)
 -- com conteúdo aprofundado sobre IaC, vantagens vs VMware e casos reais.
@@ -103,7 +103,7 @@ terraform {
 }
 
 provider "proxmox" {
-  endpoint  = "https://pve.nexus.corp:8006/"
+  endpoint  = "https://pve.nova.corp:8006/"
   api_token = "admin@pve!terraform=seu-token-secreto"
   insecure  = false
 }
@@ -165,7 +165,7 @@ Após a criação das instâncias, o Ansible utiliza o **plugin de inventário d
 ```yaml
 # inventory/proxmox.yml
 plugin: community.general.proxmox
-url: "https://pve.nexus.corp:8006"
+url: "https://pve.nova.corp:8006"
 user: "admin@pve!terraform"
 token_secret: "seu-token-secreto"
 validate_certs: false
@@ -276,9 +276,9 @@ A combinação de Proxmox VE com automação declarativa tornou-se o padrão pre
 
 ---
 
-## Como a Plataforma Nexus Apoia Sua Infraestrutura
+## Como a Plataforma Nova Apoia Sua Infraestrutura
 
-O Projeto Nexus integra nativamente essas soluções corporativas:
+O Projeto-nova-v2 integra nativamente essas soluções corporativas:
 - Arquitetura de clusters Proxmox VE com alta disponibilidade (HA) e storages ZFS/TrueNAS.
 - Desenvolvimento de módulos Terraform e playbooks Ansible homologados para a sua realidade.
 - Monitoramento proativo 24x7 integrado via Zabbix e central de atendimento ITIL no GLPI.

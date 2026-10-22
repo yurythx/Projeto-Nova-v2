@@ -24,14 +24,14 @@ func TestMercurioRoomsAndMessageRules(t *testing.T) {
 	if err := h.d.DB.QueryRow(ctx, `SELECT id FROM perfis WHERE slug = 'servidor'`).Scan(&servidor); err != nil {
 		t.Fatal(err)
 	}
-	anaID, ana := h.user("nexus-user")
+	anaID, ana := h.user("nova-user")
 	lotacao := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+anaID.String()+"/lotacoes", admin,
 		`{"perfil_id":"`+servidor+`","departamento_id":"`+dep.ID+`"}`))
-	grupoID, _ := h.user("nexus-user")
+	grupoID, _ := h.user("nova-user")
 	if _, err := h.d.DB.Exec(ctx, `UPDATE users SET groups = ARRAY['grp_ti_`+sfx+`'] WHERE id = $1`, grupoID); err != nil {
 		t.Fatal(err)
 	}
-	_, beto := h.user("nexus-user")
+	_, beto := h.user("nova-user")
 
 	// Validação na criação da sala.
 	saveRoom := func(want int, body string) {

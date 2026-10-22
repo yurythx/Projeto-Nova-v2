@@ -75,7 +75,7 @@ func TestTestConnection_DiscoveryFails_EmptyIssuer(t *testing.T) {
 func TestTestConnection_CredentialsOK(t *testing.T) {
 	srv := newFakeKeycloak(t, http.StatusOK)
 
-	result := TestConnection(t.Context(), srv.URL, "nexus-backend", "s3gr3d0", "nexus-backend")
+	result := TestConnection(t.Context(), srv.URL, "nova-backend", "s3gr3d0", "nova-backend")
 
 	if !result.DiscoveryOK {
 		t.Fatalf("esperava discovery OK: %+v", result)
@@ -91,7 +91,7 @@ func TestTestConnection_CredentialsOK(t *testing.T) {
 func TestTestConnection_CredentialsFail_IsWarningNotFailure(t *testing.T) {
 	srv := newFakeKeycloak(t, http.StatusUnauthorized)
 
-	result := TestConnection(t.Context(), srv.URL, "nexus-backend", "senha-errada", "nexus-backend")
+	result := TestConnection(t.Context(), srv.URL, "nova-backend", "senha-errada", "nova-backend")
 
 	if !result.DiscoveryOK {
 		t.Fatalf("discovery deveria continuar OK mesmo com credenciais inválidas: %+v", result)

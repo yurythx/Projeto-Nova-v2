@@ -25,7 +25,7 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()
 	svc := func(r *faultRepo) *application.Service {
-		return application.NewService(pool, r, outbox.NewWriter("nexus.example"), testLogger())
+		return application.NewService(pool, r, outbox.NewWriter("nova.example"), testLogger())
 	}
 	created, err := svc(&faultRepo{inner: infrastructure.NewPostgresRepository()}).CreateItem(ctx, "Base", "")
 	if err != nil {
@@ -66,7 +66,7 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 func TestHandlersReportServiceFailures(t *testing.T) {
 	pool := testPool(t)
 	down := &faultRepo{inner: infrastructure.NewPostgresRepository(), failAt: 1}
-	h := transport.NewHandlers(application.NewService(pool, down, outbox.NewWriter("nexus.example"), testLogger()), testLogger())
+	h := transport.NewHandlers(application.NewService(pool, down, outbox.NewWriter("nova.example"), testLogger()), testLogger())
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

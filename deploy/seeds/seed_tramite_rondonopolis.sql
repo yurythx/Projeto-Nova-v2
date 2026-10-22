@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — SEMENTE DE PROCESSOS ELETRÔNICOS E TRÂMITE (RONDONÓPOLIS)
+-- PROJETO NOVA — SEMENTE DE PROCESSOS ELETRÔNICOS E TRÂMITE (RONDONÓPOLIS)
 -- ==============================================================================
 -- Cria processos realistas tramitando entre as 5 unidades corporativas de
 -- Rondonópolis, com documentos redigidos e histórico de movimentações das personas.
@@ -59,7 +59,7 @@ BEGIN
         ) VALUES (
             v_proc1_id, '000001/2026', v_tipo_contratacao,
             'Expansão de Infraestrutura de Servidores para o Laboratório AgroTech',
-            'Nexus AgroTech & Soluções Digitais',
+            'Nova AgroTech & Soluções Digitais',
             'Aquisição de servidores de alta densidade para processamento em tempo real de telemetria de frotas e IA preditiva no Hub da Vila Aurora.',
             'publico', 'em_tramitacao',
             v_unid_aurora, v_unid_centro, v_u_lucas, now() - interval '3 days', now() - interval '1 day'
@@ -174,7 +174,7 @@ BEGIN
             unidade_origem_id, unidade_atual_id, created_by, created_at, updated_at
         ) VALUES (
             v_proc3_id, '000003/2026', v_tipo_requerimento,
-            'Cadastro e Integração de Cooperativa Agropecuária no Portal Nexus',
+            'Cadastro e Integração de Cooperativa Agropecuária no Portal Nova',
             'Cooperativa Agrícola do Sul de Mato Grosso (COOPERSUL)',
             'Solicitação de convênio e credenciamento digital para integração de dados de rastreabilidade de grãos e agendamento de descargas no terminal.',
             'publico', 'em_tramitacao',
@@ -187,7 +187,7 @@ BEGIN
             gen_random_uuid(), v_proc3_id, 'requerimento',
             'Formulário de Triagem e Solicitação de Convênio Digital',
             'redigido',
-            '# Termo de Atendimento e Triagem\n\n- **Solicitante:** Cooperativa COOPERSUL (CNPJ: 04.992.118/0001-50)\n- **Representante:** João Batista Silva\n- **Demanda:** Integração via Webhook/API com o Portal Nexus para envio automatizado de romaneios de entrada.',
+            '# Termo de Atendimento e Triagem\n\n- **Solicitante:** Cooperativa COOPERSUL (CNPJ: 04.992.118/0001-50)\n- **Representante:** João Batista Silva\n- **Demanda:** Integração via Webhook/API com o Portal Nova para envio automatizado de romaneios de entrada.',
             'assinado', v_u_ana, now() - interval '2 days'
         );
 
@@ -220,7 +220,7 @@ BEGIN
             unidade_origem_id, unidade_atual_id, created_by, created_at, updated_at, concluido_at
         ) VALUES (
             v_proc4_id, '000004/2026', v_tipo_memorando,
-            'Aprovação de Campanha Institucional e Stand da Nexus na Exposul 2026',
+            'Aprovação de Campanha Institucional e Stand da Nova na Exposul 2026',
             'Departamento de Marketing & Comunicação Institucional',
             'Planejamento de comunicação, identidade visual, estande corporativo e divulgação de soluções agro-digitais na maior feira agropecuária do sul do estado.',
             'publico', 'concluido',
@@ -233,7 +233,7 @@ BEGIN
             gen_random_uuid(), v_proc4_id, 'memorando',
             'Plano de Mídia e Projeto Arquitetônico do Estande Exposul',
             'redigido',
-            '# Plano de Ação - Exposul Rondonópolis 2026\n\n- **Local:** Parque de Exposições Wilmar Peres de Farias\n- **Ações:** Demonstração interativa do aplicativo Nexus AgroTech, palestras sobre segurança de dados no agronegócio e distribuição de brindes corporativos.',
+            '# Plano de Ação - Exposul Rondonópolis 2026\n\n- **Local:** Parque de Exposições Wilmar Peres de Farias\n- **Ações:** Demonstração interativa do aplicativo Nova AgroTech, palestras sobre segurança de dados no agronegócio e distribuição de brindes corporativos.',
             'assinado', v_u_mariana, now() - interval '10 days'
         ),
         (

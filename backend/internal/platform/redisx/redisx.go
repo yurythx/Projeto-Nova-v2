@@ -41,9 +41,9 @@ func Ping(client *redis.Client) func(ctx context.Context) error {
 	}
 }
 
-// Key monta uma chave namespaced do Projeto-nova-v2 ("nexus:<partes>").
+// Key monta uma chave namespaced do Projeto-nova-v2 ("nova:<partes>").
 func Key(parts ...string) string {
-	k := "nexus"
+	k := "nova"
 	for _, p := range parts {
 		k += ":" + p
 	}

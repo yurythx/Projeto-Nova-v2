@@ -78,12 +78,12 @@ func TestPostgresStore_SetThenGet_RoundTripsAllFields(t *testing.T) {
 	ctx := context.Background()
 
 	in := Settings{
-		IssuerURL:            "https://sso.orgao.gov.br/realms/nexus",
-		Realm:                "nexus",
-		ClientID:             "nexus-backend",
+		IssuerURL:            "https://sso.orgao.gov.br/realms/nova",
+		Realm:                "nova",
+		ClientID:             "nova-backend",
 		ClientSecret:         "s3gr3d0-do-backend",
-		Audience:             "nexus-backend",
-		FrontendClientID:     "nexus-frontend",
+		Audience:             "nova-backend",
+		FrontendClientID:     "nova-frontend",
 		FrontendClientSecret: "s3gr3d0-do-frontend",
 	}
 	saved, err := store.Set(ctx, in, "admin-1")
@@ -123,11 +123,11 @@ func TestPostgresStore_Set_EmptySecretKeepsExistingSecret(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := store.Set(ctx, Settings{
-		IssuerURL:    "https://sso.orgao.gov.br/realms/nexus",
-		Realm:        "nexus",
-		ClientID:     "nexus-backend",
+		IssuerURL:    "https://sso.orgao.gov.br/realms/nova",
+		Realm:        "nova",
+		ClientID:     "nova-backend",
 		ClientSecret: "segredo-original",
-		Audience:     "nexus-backend",
+		Audience:     "nova-backend",
 	}, "admin-1")
 	if err != nil {
 		t.Fatalf("Set inicial: %v", err)
@@ -136,17 +136,17 @@ func TestPostgresStore_Set_EmptySecretKeepsExistingSecret(t *testing.T) {
 	// Segunda chamada só muda o Realm, client_secret vazio — deve MANTER
 	// "segredo-original", nunca apagar.
 	updated, err := store.Set(ctx, Settings{
-		IssuerURL:    "https://sso.orgao.gov.br/realms/nexus",
-		Realm:        "nexus-v2",
-		ClientID:     "nexus-backend",
+		IssuerURL:    "https://sso.orgao.gov.br/realms/nova",
+		Realm:        "nova",
+		ClientID:     "nova-backend",
 		ClientSecret: "",
-		Audience:     "nexus-backend",
+		Audience:     "nova-backend",
 	}, "admin-1")
 	if err != nil {
 		t.Fatalf("Set de atualização: %v", err)
 	}
 
-	if updated.Realm != "nexus-v2" {
+	if updated.Realm != "nova" {
 		t.Errorf("Realm deveria ter sido atualizado, got %q", updated.Realm)
 	}
 	if updated.ClientSecret != "segredo-original" {
@@ -161,11 +161,11 @@ func TestPostgresStore_Get_WrongCipherKeyFailsLoudly(t *testing.T) {
 	ctx := context.Background()
 
 	if _, err := store.Set(ctx, Settings{
-		IssuerURL:    "https://sso.orgao.gov.br/realms/nexus",
-		Realm:        "nexus",
-		ClientID:     "nexus-backend",
+		IssuerURL:    "https://sso.orgao.gov.br/realms/nova",
+		Realm:        "nova",
+		ClientID:     "nova-backend",
 		ClientSecret: "segredo",
-		Audience:     "nexus-backend",
+		Audience:     "nova-backend",
 	}, "admin-1"); err != nil {
 		t.Fatalf("Set: %v", err)
 	}

@@ -25,7 +25,7 @@ func TestConnectPingAndKey(t *testing.T) {
 	if _, err := Connect(ctx, "redis://"+addr+"/0"); err == nil {
 		t.Fatal("PING inicial falha (fail fast)")
 	}
-	if Key("ws", "ticket", "x") != "nexus:ws:ticket:x" || Key() != "nexus" {
+	if Key("ws", "ticket", "x") != "nova:ws:ticket:x" || Key() != "nova" {
 		t.Fatal("chave namespaced")
 	}
 }

@@ -231,7 +231,7 @@ describe("componentes menores", () => {
 
     act(() => void window.dispatchEvent(Object.assign(new Event("beforeinstallprompt"), { prompt, userChoice: Promise.resolve({ outcome: "dismissed" }) })));
     await userEvent.click(await screen.findByRole("button", { name: "Dispensar" }));
-    expect(localStorage.getItem("nexus-pwa-install-dismissed")).toBe("1");
+    expect(localStorage.getItem("nova-pwa-install-dismissed")).toBe("1");
     unmount();
     // já dispensado: nunca mais aparece
     render(withBrand(<PwaInstallPrompt />));

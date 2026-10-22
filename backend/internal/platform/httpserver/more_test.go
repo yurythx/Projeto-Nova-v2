@@ -11,7 +11,7 @@ import (
 
 func TestRouterSurfaceAndMetricsToken(t *testing.T) {
 	proxies, _ := ParseTrustedProxies([]string{"10.0.0.0/8"})
-	r := New(Options{Logger: testLogger(), AllowedOrigins: []string{"https://nexus.gov.br"}, RequestTimeout: time.Second, MetricsToken: "s3cr3t", TrustedProxies: proxies})
+	r := New(Options{Logger: testLogger(), AllowedOrigins: []string{"https://nova.gov.br"}, RequestTimeout: time.Second, MetricsToken: "s3cr3t", TrustedProxies: proxies})
 	for _, p := range []string{"/health", "/livez", "/healthz"} {
 		for _, m := range []string{http.MethodGet, http.MethodHead} {
 			rec := httptest.NewRecorder()

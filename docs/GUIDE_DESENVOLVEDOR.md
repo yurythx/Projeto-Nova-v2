@@ -77,7 +77,7 @@ Todo código desenvolvido na plataforma deve obedecer estritamente aos 5 pilares
   identity, _ := auth.IdentityFromContext(ctx)
   if auth.HasPermission(identity, "financeiro:manage") { /* ... */ }
   ```
-- **Ninguém concede o que não possui**: o IAM recusa (403) criar perfil, lotar ou mapear grupo do AD com permissões que o administrador não tem, e só quem tem acesso total concede o papel `nexus-admin`.
+- **Ninguém concede o que não possui**: o IAM recusa (403) criar perfil, lotar ou mapear grupo do AD com permissões que o administrador não tem, e só quem tem acesso total concede o papel `nova-admin`.
 
 ### 3.4. Plug-ins
 
@@ -155,7 +155,7 @@ proxy de borda confiável ele é forjável.
 
 ### Busca full-text
 Filtros de texto nos repositórios usam
-`search @@ nexus_search_tsquery('<config>', $n)` (função do banco), nunca
+`search @@ nova_search_tsquery('<config>', $n)` (função do banco), nunca
 `websearch_to_tsquery` direto: a função soma a busca por prefixo ("vacina"
 acha "vacinação") e mantém a sintaxe de operadores (aspas, `-termo`, `or`).
 
@@ -168,7 +168,7 @@ acha "vacinação") e mantém a sintaxe de operadores (aspas, `-termo`, `or`).
 | `make dev` | Sobe toda a stack (Postgres, RabbitMQ, MinIO, Go API, Frontend) em modo desenvolvimento |
 | `make build` | Compila o backend Go e gera o bundle de produção do Next.js |
 | `make test` | Executa 100% das suítes de teste unitário do backend e frontend |
-| `make test-db-reset` | Recria `nexus_test` vazio (`TEMPLATE template0`) e aplica as migrations |
+| `make test-db-reset` | Recria `nova_test` vazio (`TEMPLATE template0`) e aplica as migrations |
 | `make lint` | Executa auditoria estática de código e acessibilidade (`jsx-a11y`) |
 | `make backend-sec` | SAST do backend: `govulncheck` + `staticcheck` + `gosec` (mesmo do CI) |
 | `make migrate-up` | Executa as migrations de banco pendentes via Goose |
@@ -195,12 +195,12 @@ A suíte cobre três níveis, todos rodando no CI (job de backend com Postgres 1
 Os testes de mensageria, armazenamento e composição rodam contra RabbitMQ e MinIO reais quando `TEST_RABBITMQ_URL` e `TEST_MINIO_ENDPOINT`/`TEST_MINIO_ACCESS_KEY`/`TEST_MINIO_SECRET_KEY` estão definidas; sem elas, são pulados. Para subir os dois localmente:
 
 ```bash
-docker run -d --name nx-rabbit -p 5672:5672 -e RABBITMQ_DEFAULT_USER=nexus -e RABBITMQ_DEFAULT_PASS=nexus \
-  -e RABBITMQ_DEFAULT_VHOST=nexus rabbitmq:3.13-management-alpine
-docker run -d --name nx-minio -p 9000:9000 -e MINIO_ROOT_USER=nexusadmin -e MINIO_ROOT_PASSWORD=nexussecret123 \
+docker run -d --name nx-rabbit -p 5672:5672 -e RABBITMQ_DEFAULT_USER=nova -e RABBITMQ_DEFAULT_PASS=nova \
+  -e RABBITMQ_DEFAULT_VHOST=nova rabbitmq:3.13-management-alpine
+docker run -d --name nx-minio -p 9000:9000 -e MINIO_ROOT_USER=novaadmin -e MINIO_ROOT_PASSWORD=novasecret123 \
   pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
-export TEST_RABBITMQ_URL=amqp://nexus:nexus@localhost:5672/nexus \
-  TEST_MINIO_ENDPOINT=localhost:9000 TEST_MINIO_ACCESS_KEY=nexusadmin TEST_MINIO_SECRET_KEY=nexussecret123
+export TEST_RABBITMQ_URL=amqp://nova:nova@localhost:5672/nova \
+  TEST_MINIO_ENDPOINT=localhost:9000 TEST_MINIO_ACCESS_KEY=novaadmin TEST_MINIO_SECRET_KEY=novasecret123
 ```
 
 Rodando localmente (os testes de integração pulam sem banco):
@@ -211,11 +211,11 @@ Rodando localmente (os testes de integração pulam sem banco):
 make test-db-reset
 
 # Ou à mão:
-createdb nexus_test
-DB_HOST=localhost DB_PORT=5432 DB_NAME=nexus_test DB_USER=nexus DB_PASSWORD=... go run ./cmd/migrate up
+createdb nova_test
+DB_HOST=localhost DB_PORT=5432 DB_NAME=nova_test DB_USER=nova DB_PASSWORD=... go run ./cmd/migrate up
 
 cd backend
-TEST_DATABASE_URL="postgres://nexus:...@localhost:5432/nexus_test?sslmode=disable" \
+TEST_DATABASE_URL="postgres://nova:...@localhost:5432/nova_test?sslmode=disable" \
   go test -race -p 1 -coverpkg=./internal/... ./...
 
 # Meta de cobertura por pacote (a mesma do CI):

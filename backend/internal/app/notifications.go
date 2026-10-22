@@ -41,7 +41,7 @@ func RunAPIBackground(ctx context.Context, d *Dependencies) {
 }
 
 // NotificationHandler encaminha ao navegador os eventos de difusão geral
-// (fila nexus.notification.websocket só recebe eventos seguros — ver
+// (fila nova.notification.websocket só recebe eventos seguros — ver
 // messaging.QueueNotificationWebsocket). Nunca são difundidos: eventos de
 // agenda privados e conteúdo com público-alvo ("restrito", ADR 014) — a
 // difusão chega a todos, e o título não pode.

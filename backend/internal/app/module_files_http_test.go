@@ -46,7 +46,7 @@ func TestFilesACLSubjects(t *testing.T) {
 	admin := h.admin()
 	ctx := context.Background()
 	sfx := uuid.NewString()[:6]
-	_, owner := h.user("nexus-user")
+	_, owner := h.user("nova-user")
 
 	ent := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/entidades", admin, `{"nome":"Órgão `+sfx+`"}`))
 	un := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/unidades", admin, `{"entidade_id":"`+ent.ID+`","nome":"Unidade `+sfx+`"}`))
@@ -56,15 +56,15 @@ func TestFilesACLSubjects(t *testing.T) {
 		t.Fatal(err)
 	}
 	lotado := func(scope string) (uuid.UUID, string) {
-		id, tok := h.user("nexus-user")
+		id, tok := h.user("nova-user")
 		h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+id.String()+"/lotacoes", admin, `{"perfil_id":"`+servidor+`"`+scope+`}`)
 		return id, tok
 	}
-	pessoaID, pessoa := h.user("nexus-user")
+	pessoaID, pessoa := h.user("nova-user")
 	_, daUnidade := lotado(`,"unidade_id":"` + un.ID + `"`)
 	_, doDep := lotado(`,"departamento_id":"` + dep.ID + `"`)
 	_, comPerfil := lotado("")
-	_, estranho := h.user("nexus-user")
+	_, estranho := h.user("nova-user")
 
 	root := h.folder(owner, "Projetos "+sfx, "")
 	sub := h.folder(owner, "Contratos", root)
@@ -140,9 +140,9 @@ func TestFilesACLSubjects(t *testing.T) {
 func TestFilesMoveRenameAndDelete(t *testing.T) {
 	h := newHarness(t)
 	sfx := uuid.NewString()[:6]
-	ownerID, owner := h.user("nexus-user")
-	colegaID, colega := h.user("nexus-user")
-	_, leitor := h.user("nexus-user")
+	ownerID, owner := h.user("nova-user")
+	colegaID, colega := h.user("nova-user")
+	_, leitor := h.user("nova-user")
 
 	a := h.folder(owner, "A "+sfx, "")
 	b := h.folder(owner, "B", a)
@@ -199,8 +199,8 @@ func TestFilesMoveRenameAndDelete(t *testing.T) {
 // recusado removido do armazenamento, download só de arquivo pronto.
 func TestFilesUploadRules(t *testing.T) {
 	h := newHarness(t)
-	_, owner := h.user("nexus-user")
-	_, other := h.user("nexus-user")
+	_, owner := h.user("nova-user")
+	_, other := h.user("nova-user")
 	folder := h.folder(owner, "Uploads "+uuid.NewString()[:6], "")
 	start := func(want int, body string) {
 		h.expect(want, http.MethodPost, "/api/v1/files/uploads", owner, body)
@@ -265,7 +265,7 @@ func TestFilesPastaDaUnidade(t *testing.T) {
 	gestorA := h.gestorEm(t, o.a, "files:manage")
 	lotadoSub := h.gestorEm(t, o.sub, "contact:read")
 	lotadoB := h.gestorEm(t, o.b, "contact:read")
-	_, estranho := h.user("nexus-user")
+	_, estranho := h.user("nova-user")
 	criar := func(want int, token, name, parent, unidade string) string {
 		body := `{"name":"` + name + `"`
 		if parent != "" {

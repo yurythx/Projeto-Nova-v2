@@ -46,7 +46,7 @@ func (h *apiHarness) pessoaEm(t *testing.T, unidade string, permissoes ...string
 	perms, _ := json.Marshal(permissoes)
 	perfil := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", admin,
 		`{"nome":"Perfil `+uuid.NewString()[:8]+`","permissoes":`+string(perms)+`}`)).ID
-	id, tok := h.user("nexus-user")
+	id, tok := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+id.String()+"/lotacoes", admin,
 		`{"perfil_id":"`+perfil+`","unidade_id":"`+unidade+`"}`)
 	return id, tok
@@ -72,7 +72,7 @@ func TestAtendimentoSolicitacao(t *testing.T) {
 	tecID, tecnico := h.pessoaEm(t, o.a, "atendimento:atender", "atendimento:manage")
 	_, tecnicoB := h.pessoaEm(t, o.b, "atendimento:atender")
 	servID, servidor := h.pessoaEm(t, o.b, "atendimento:abrir")
-	_, semPerm := h.user("nexus-user")
+	_, semPerm := h.user("nova-user")
 
 	oferta := data[recursoResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/atendimento/ofertas", tecnico,
 		`{"nome":"Não consigo acessar o e-mail","tipo":"incidente","unidade_id":"`+o.a+`"}`))

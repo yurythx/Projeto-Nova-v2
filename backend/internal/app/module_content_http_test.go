@@ -29,7 +29,7 @@ func outboxCount(t *testing.T, h *apiHarness, eventType, aggregateID string) int
 func TestBlogHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, reader := h.user("nexus-user")
+	_, reader := h.user("nova-user")
 	title := "Comunicado " + uuid.NewString()[:8]
 
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/blog/posts", reader, `{"title":"x"}`)
@@ -88,7 +88,7 @@ func TestBlogHTTP(t *testing.T) {
 func TestCatalogHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 	title := "Emissão de certidão " + uuid.NewString()[:6]
 
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/catalog/admin/services", plain, "")
@@ -119,7 +119,7 @@ func TestCatalogHTTP(t *testing.T) {
 func TestContactHTTP(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, plain := h.user("nexus-user")
+	_, plain := h.user("nova-user")
 	msg := func(extra string) string {
 		return `{"name":"Maria Silva","email":"maria@example.com","subject":"Dúvida sobre serviço","message":"Gostaria de saber o prazo.","category":"duvida"` + extra + `}`
 	}

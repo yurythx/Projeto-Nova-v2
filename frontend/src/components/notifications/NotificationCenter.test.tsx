@@ -36,7 +36,7 @@ function renderCenter() {
 const envelope = (type: string, payload: unknown) => ({
   type: "event",
   topic: "broadcast",
-  data: { id: "e1", type, version: 1, source: "nexus", occurred_at: "2026-09-25T12:00:00Z", correlation_id: "c1", payload },
+  data: { id: "e1", type, version: 1, source: "nova", occurred_at: "2026-09-25T12:00:00Z", correlation_id: "c1", payload },
 });
 
 describe("NotificationCenter", () => {

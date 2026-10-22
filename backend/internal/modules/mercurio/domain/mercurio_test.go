@@ -11,7 +11,7 @@ import (
 func TestCanAccess(t *testing.T) {
 	me, other := uuid.New(), uuid.New()
 	dep := uuid.New()
-	identity := auth.Identity{UserID: me, Groups: []string{"/Nexus/Financeiro"}, Scopes: []auth.Scope{{DepartamentoID: &dep}}}
+	identity := auth.Identity{UserID: me, Groups: []string{"/Nova/Financeiro"}, Scopes: []auth.Scope{{DepartamentoID: &dep}}}
 
 	cases := []struct {
 		name string

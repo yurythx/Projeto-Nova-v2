@@ -23,39 +23,39 @@ import (
 var (
 	// --- HTTP ---
 	HTTPRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_http_requests_total",
+		Name: "nova_http_requests_total",
 		Help: "Total HTTP requests handled, by method, route and status code.",
 	}, []string{"method", "route", "status"})
 
 	HTTPRequestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "nexus_http_request_duration_seconds",
+		Name:    "nova_http_request_duration_seconds",
 		Help:    "HTTP request duration in seconds, by method and route.",
 		Buckets: prometheus.DefBuckets,
 	}, []string{"method", "route"})
 
 	// --- RabbitMQ ---
 	RabbitMQPublishedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_rabbitmq_published_total",
+		Name: "nova_rabbitmq_published_total",
 		Help: "Messages successfully published (broker-confirmed), by routing key.",
 	}, []string{"routing_key"})
 
 	RabbitMQConsumedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_rabbitmq_consumed_total",
+		Name: "nova_rabbitmq_consumed_total",
 		Help: "Messages successfully consumed (acked), by queue.",
 	}, []string{"queue"})
 
 	RabbitMQFailedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_rabbitmq_failed_total",
+		Name: "nova_rabbitmq_failed_total",
 		Help: "Message handler failures, by queue.",
 	}, []string{"queue"})
 
 	RabbitMQRetryTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_rabbitmq_retry_total",
+		Name: "nova_rabbitmq_retry_total",
 		Help: "Message redelivery attempts scheduled, by queue.",
 	}, []string{"queue"})
 
 	RabbitMQDLQTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_rabbitmq_dlq_total",
+		Name: "nova_rabbitmq_dlq_total",
 		Help: "Messages routed to a dead-letter queue after exhausting retries, by queue.",
 	}, []string{"queue"})
 
@@ -63,29 +63,29 @@ var (
 	// respondeu e voltaram ao Postgres: "erro" (indisponível) ou "vazio"
 	// (sem resultado — o índice pode ainda não ter recebido a carga).
 	SearchIndexFallbackTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_search_index_fallback_total",
+		Name: "nova_search_index_fallback_total",
 		Help: "Global searches answered by the Postgres providers instead of the Typesense index, by reason.",
 	}, []string{"reason"})
 
 	// --- WebSocket ---
 	WebSocketConnections = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "nexus_websocket_connections",
+		Name: "nova_websocket_connections",
 		Help: "Currently connected WebSocket clients.",
 	})
 
 	WebSocketErrorsTotal = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "nexus_websocket_errors_total",
+		Name: "nova_websocket_errors_total",
 		Help: "WebSocket upgrade failures and dropped (slow/stuck) clients.",
 	})
 
 	// --- Idempotency (internal/platform/idempotency) ---
 	IdempotencyOutcomesTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "nexus_idempotency_outcomes_total",
+		Name: "nova_idempotency_outcomes_total",
 		Help: "Outcomes of idempotency-key-guarded requests, by outcome (new/replayed/conflict/reused_key).",
 	}, []string{"outcome"})
 )
 
-// poolStats é o pool observado pelos gauges nexus_postgres_connections.
+// poolStats é o pool observado pelos gauges nova_postgres_connections.
 var (
 	poolMu       sync.RWMutex
 	observedPool *pgxpool.Pool
@@ -93,7 +93,7 @@ var (
 )
 
 // RegisterPostgresPoolMetrics expõe os gauges
-// nexus_postgres_connections{state=acquired|idle|max} com as estatísticas
+// nova_postgres_connections{state=acquired|idle|max} com as estatísticas
 // ao vivo do pool (§53). Os valores são calculados no scrape (GaugeFunc),
 // sem goroutine própria. Os gauges são registrados uma única vez; chamar
 // de novo (ex.: um segundo NewDependencies no mesmo processo, nos testes)
@@ -110,7 +110,7 @@ func RegisterPostgresPoolMetrics(pool *pgxpool.Pool) {
 			"max":      func(s *pgxpool.Stat) float64 { return float64(s.MaxConns()) },
 		} {
 			promauto.NewGaugeFunc(prometheus.GaugeOpts{
-				Name:        "nexus_postgres_connections",
+				Name:        "nova_postgres_connections",
 				Help:        "PostgreSQL pool connections, by state (acquired/idle/max).",
 				ConstLabels: prometheus.Labels{"state": state},
 			}, func() float64 {

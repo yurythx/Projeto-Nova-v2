@@ -28,7 +28,7 @@ ROOT="$(pwd)"
 
 API_URL="${API_URL:-http://127.0.0.1:8010/health}"
 DISK_LIMIT="${DISK_LIMIT:-80}"
-BACKUP_DIR="${BACKUP_DIR:-/root/backups/nexus}"
+BACKUP_DIR="${BACKUP_DIR:-/root/backups/nova}"
 BACKUP_MAX_HOURS="${BACKUP_MAX_HOURS:-26}"
 STATE_FILE="${STATE_FILE:-/var/lib/plataforma-monitor/estado}"
 HOST_LABEL="${HOST_LABEL:-$(hostname)}"

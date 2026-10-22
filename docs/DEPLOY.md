@@ -80,14 +80,14 @@ quem precisa continuar com acesso amplo (concessão global) antes do deploy.
   98% do disco no servidor de teste). Rode `make prod-limpeza` de tempos em
   tempos — remove só cache sem uso há 3 dias e imagens órfãs, nunca
   volumes. Com o disco cheio, o Postgres para de gravar.
-- **Instale a CA nas máquinas de teste** (`http://<host>/nexus-ca.crt`):
+- **Instale a CA nas máquinas de teste** (`http://<host>/nova-ca.crt`):
   aceitar o aviso do navegador vale só para a página. Downloads e envios de
   arquivo (MinIO, `:9443`) são feitos por `fetch` e falham em silêncio sem
   a CA; o WebSocket já usa a mesma origem do site (`/ws`).
 - **CA recriada:** se o volume `caddy_data` se perder (ex.: `down -v`), o
   Caddy gera uma CA nova. O `deploy.sh` percebe, atualiza `secrets/ca` e
   reinicia API, worker e frontend — mas cada máquina de teste precisa
-  instalar a nova raiz (`http://<host>/nexus-ca.crt`).
+  instalar a nova raiz (`http://<host>/nova-ca.crt`).
 - **Não exponha a stack sem o proxy HTTPS.** Sem um proxy de borda que
   sobrescreva o `X-Forwarded-For`, o frontend não repassa o IP do visitante
   (seria forjável) e a API enxerga todo mundo com o IP do frontend: os
@@ -111,7 +111,7 @@ Idempotente. Coloca o Caddy (`docker-compose.https.yml`,
 | API direta (health, integrações) | `https://<host>:8443` |
 | MinIO (URLs pré-assinadas) | `https://<host>:9443` |
 | Keycloak de teste | `https://<host>:8543` |
-| Raiz da CA (para instalar) | `http://<host>/nexus-ca.crt` |
+| Raiz da CA (para instalar) | `http://<host>/nova-ca.crt` |
 
 A porta 80 só serve a CA e redireciona o resto para https.
 
@@ -128,9 +128,9 @@ confia nele vindo da rede docker (`TRUSTED_PROXIES`, definido pelo script).
 (volume `caddy_data`, incluído no backup). A API e o frontend confiam nela
 sozinhos (`secrets/ca/`). **Cada máquina de teste instala a raiz uma vez**:
 
-- Windows: baixe `http://<host>/nexus-ca.crt` → duplo clique → Instalar
+- Windows: baixe `http://<host>/nova-ca.crt` → duplo clique → Instalar
   certificado → Máquina local → "Autoridades de Certificação Raiz
-  Confiáveis" (ou `certutil -addstore -f Root nexus-ca.crt` como
+  Confiáveis" (ou `certutil -addstore -f Root nova-ca.crt` como
   administrador); reabra o navegador.
 - Firefox usa repositório próprio: Configurações → Certificados → Importar.
 - Linux: copie para `/usr/local/share/ca-certificates/` e rode
@@ -145,8 +145,8 @@ Com domínio e certificado oficiais, troque `tls internal` no Caddyfile.
 ## Backup e restauração
 
 ```bash
-scripts/backup.sh                    # agora, em /root/backups/nexus/<data-hora>
-scripts/backup.sh --install-cron     # todo dia às 02:30 (log: /var/log/nexus-backup.log)
+scripts/backup.sh                    # agora, em /root/backups/nova/<data-hora>
+scripts/backup.sh --install-cron     # todo dia às 02:30 (log: /var/log/nova-backup.log)
 scripts/restore.sh --verify <dir>    # restaura num banco temporário e compara — não altera nada
 scripts/restore.sh --yes <dir> --minio   # SUBSTITUI banco (e objetos) pelo backup
 ```
@@ -230,7 +230,7 @@ o que o escopo restringe ou não): [REGRAS_DE_NEGOCIO.md](REGRAS_DE_NEGOCIO.md#6
 
 Enquanto não há um Keycloak oficial, `make demo-keycloak` sobe um
 **Keycloak de teste** (`docker-compose.keycloak.yml`, Keycloak 26 em
-`start-dev`) com o realm `nexus` e carrega no Postgres uma estrutura
+`start-dev`) com o realm `nova` e carrega no Postgres uma estrutura
 organizacional fictícia:
 
 | Entidade | Unidades | Departamentos |
@@ -253,7 +253,7 @@ organizacional fictícia:
   ramal); o login pelo Keycloak só os atualiza.
 - Console: `https://<host>:8543/admin` (sem HTTPS: `http://<host>:8180/admin`),
   usuário `admin` e `KEYCLOAK_ADMIN_PASSWORD` do `.env`. Os usuários do
-  Projeto-nova-v2 ficam no realm **nexus**.
+  Projeto-nova-v2 ficam no realm **nova**.
 - `make demo-popular` (uma vez; marca em `.demo-popular`) povoa todos os
   apps com dados criados pelos próprios usuários fictícios: serviços do
   catálogo, notícias, manuais na Wiki, salas e eventos, salas de equipe e
@@ -264,7 +264,7 @@ Mudar a estrutura: edite `scripts/demo-data/generate.mjs`, rode
 `make demo-generate` e faça commit dos arquivos gerados. O SQL é reaplicável
 (`make demo-seed`), mas o realm só é importado quando ainda não existe —
 para reimportar, `docker compose rm -sf keycloak && docker volume rm
-projeto-nexus_keycloak_data` e `make deploy` (os usuários voltam com os
+projeto-nova_keycloak_data` e `make deploy` (os usuários voltam com os
 mesmos ids; quem estava logado entra de novo).
 
 ### Cenários ponta a ponta (`make demo-test`)
@@ -289,13 +289,13 @@ Chamadas avulsas como qualquer usuário:
 ### Trocar pelo Keycloak oficial
 
 No realm oficial, dois clients (o realm de teste em
-`deploy/keycloak/realm-nexus.json` serve de modelo):
+`deploy/keycloak/realm-nova.json` serve de modelo):
 
-- **`nexus-frontend`** — confidencial, Standard Flow com PKCE S256,
-  redirect `https://<host>/*`, *audience mapper* incluindo `nexus-backend`
+- **`nova-frontend`** — confidencial, Standard Flow com PKCE S256,
+  redirect `https://<host>/*`, *audience mapper* incluindo `nova-backend`
   no access token e *group membership mapper* `groups` com
   `full.path=false` (é o nome do grupo que o IAM cruza com os mapeamentos).
-- **`nexus-backend`** — confidencial, **só Direct Access Grants**: é a
+- **`nova-backend`** — confidencial, **só Direct Access Grants**: é a
   audience dos tokens e o client da reautenticação do Signum (senha na hora
   de assinar). Sem ele, ninguém assina com conta do Keycloak.
 

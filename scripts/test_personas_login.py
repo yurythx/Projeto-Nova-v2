@@ -2,12 +2,12 @@ import json
 import urllib.request
 
 creds = [
-    ("carlos.diretoria", "Nexus@Rondonopolis2026!"),
-    ("mariana.mkt", "Nexus@Rondonopolis2026!"),
-    ("lucas.tech", "Nexus@Rondonopolis2026!"),
-    ("marcos.ops", "Nexus@Rondonopolis2026!"),
-    ("ana.protocolo", "Nexus@Rondonopolis2026!"),
-    ("rodrigo.agro", "Nexus@Rondonopolis2026!"),
+    ("carlos.diretoria", "Nova@Rondonopolis2026!"),
+    ("mariana.mkt", "Nova@Rondonopolis2026!"),
+    ("lucas.tech", "Nova@Rondonopolis2026!"),
+    ("marcos.ops", "Nova@Rondonopolis2026!"),
+    ("ana.protocolo", "Nova@Rondonopolis2026!"),
+    ("rodrigo.agro", "Nova@Rondonopolis2026!"),
 ]
 
 for username, password in creds:

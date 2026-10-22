@@ -18,7 +18,7 @@ export function CertificateActions({ envelopeId }: CertificateActionsProps) {
 
   const verifyUrl = typeof window !== "undefined"
     ? `${window.location.origin}/verificar/${envelopeId}`
-    : `https://nexus.rondonopolis.mt.gov.br/verificar/${envelopeId}`;
+    : `https://nova.rondonopolis.mt.gov.br/verificar/${envelopeId}`;
 
   function copyCode() {
     void navigator.clipboard.writeText(envelopeId);

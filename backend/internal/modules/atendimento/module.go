@@ -26,8 +26,8 @@ const Key = "atendimento"
 // QueueTempoReal recebe as mudanças das solicitações para avisar as telas
 // abertas (fila, Kanban, detalhe e a lista de quem abriu).
 var QueueTempoReal = messaging.QueueSpec{
-	Name:    "nexus.atendimento.tempo_real",
-	DLQName: "nexus.atendimento.tempo_real.dlq",
+	Name:    "nova.atendimento.tempo_real",
+	DLQName: "nova.atendimento.tempo_real.dlq",
 	RoutingKeys: []string{
 		application.EventoSolicitacaoAberta, application.EventoSolicitacaoEstado,
 		application.EventoSolicitacaoAtribuida, application.EventoSolicitacaoComentada,

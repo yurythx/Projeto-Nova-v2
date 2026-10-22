@@ -50,7 +50,7 @@ func TestCreateItem_PersistsItemAndWritesOutboxEventInSameTransaction(t *testing
 	pool := testPool(t)
 	ctx := context.Background()
 	repo := infrastructure.NewPostgresRepository()
-	writer := outbox.NewWriter("nexus.example")
+	writer := outbox.NewWriter("nova.example")
 	svc := application.NewService(pool, repo, writer, testLogger())
 
 	item, err := svc.CreateItem(ctx, "Item de teste", "descrição de teste")
@@ -135,7 +135,7 @@ func TestCreateItem_PersistsItemAndWritesOutboxEventInSameTransaction(t *testing
 func TestCreateItem_RejectsEmptyTitleWithoutTouchingTheDatabase(t *testing.T) {
 	pool := testPool(t)
 	repo := infrastructure.NewPostgresRepository()
-	writer := outbox.NewWriter("nexus.example")
+	writer := outbox.NewWriter("nova.example")
 	svc := application.NewService(pool, repo, writer, testLogger())
 
 	if _, err := svc.CreateItem(context.Background(), "", "sem título"); err == nil {
@@ -145,7 +145,7 @@ func TestCreateItem_RejectsEmptyTitleWithoutTouchingTheDatabase(t *testing.T) {
 
 func TestCreateItem_TrimsAndValidatesTitle(t *testing.T) {
 	pool := testPool(t)
-	svc := application.NewService(pool, infrastructure.NewPostgresRepository(), outbox.NewWriter("nexus.example"), testLogger())
+	svc := application.NewService(pool, infrastructure.NewPostgresRepository(), outbox.NewWriter("nova.example"), testLogger())
 	ctx := context.Background()
 	for _, bad := range []string{"   ", strings.Repeat("á", 201)} {
 		if _, err := svc.CreateItem(ctx, bad, ""); !errors.Is(err, domain.ErrInvalidInput) {

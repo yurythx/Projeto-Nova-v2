@@ -12,30 +12,30 @@
 #   scripts/backup.sh                 # grava em $BACKUP_DIR/<data-hora>
 #   scripts/backup.sh --install-cron  # agenda diariamente às 02:30
 #
-# BACKUP_DIR (padrão /root/backups/nexus) e BACKUP_KEEP_DAYS (padrão 7).
+# BACKUP_DIR (padrão /root/backups/nova) e BACKUP_KEEP_DAYS (padrão 7).
 # Fica no MESMO disco do servidor: protege contra erro humano e dados
 # corrompidos, não contra perda da máquina — copie para fora (rsync/rclone).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-BACKUP_DIR="${BACKUP_DIR:-/root/backups/nexus}"
+BACKUP_DIR="${BACKUP_DIR:-/root/backups/nova}"
 KEEP_DAYS="${BACKUP_KEEP_DAYS:-7}"
 
 if [ "${1:-}" = "--install-cron" ]; then
-  cat >/etc/cron.d/nexus-backup <<EOF
+  cat >/etc/cron.d/nova-backup <<EOF
 # Backup diário do Projeto-nova-v2 (scripts/backup.sh --install-cron)
 SHELL=/bin/bash
-30 2 * * * root cd $ROOT && BACKUP_DIR=$BACKUP_DIR BACKUP_KEEP_DAYS=$KEEP_DAYS ./scripts/backup.sh >>/var/log/nexus-backup.log 2>&1
+30 2 * * * root cd $ROOT && BACKUP_DIR=$BACKUP_DIR BACKUP_KEEP_DAYS=$KEEP_DAYS ./scripts/backup.sh >>/var/log/nova-backup.log 2>&1
 EOF
-  chmod 644 /etc/cron.d/nexus-backup
-  echo "Agendado: /etc/cron.d/nexus-backup (02:30, log em /var/log/nexus-backup.log)"
+  chmod 644 /etc/cron.d/nova-backup
+  echo "Agendado: /etc/cron.d/nova-backup (02:30, log em /var/log/nova-backup.log)"
   exit 0
 fi
 
 env_val() { grep "^$1=" .env | tail -1 | cut -d= -f2- || true; }
-DB_USER="$(env_val DB_USER)"; DB_USER="${DB_USER:-nexus}"
-DB_NAME="$(env_val DB_NAME)"; DB_NAME="${DB_NAME:-nexus}"
+DB_USER="$(env_val DB_USER)"; DB_USER="${DB_USER:-nova}"
+DB_NAME="$(env_val DB_NAME)"; DB_NAME="${DB_NAME:-nova}"
 PROJECT="$(docker compose config 2>/dev/null | sed -n 's/^name: //p' | head -1)"
 
 dest="$BACKUP_DIR/$(date +%Y%m%d-%H%M%S)"

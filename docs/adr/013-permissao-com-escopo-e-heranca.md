@@ -94,7 +94,7 @@ depois implementada no [ADR 014](014-publico-alvo.md).
   caso das de plataforma. Antes de publicar, um **relatório de impacto**
   (`make iam-scope-report`) lista cada lotação e mapeamento afetado,
   indicando quem perde o quê.
-- **Ambiente de teste:** os grupos `NEXUS-*` são globais e não mudam. O
+- **Ambiente de teste:** os grupos `NOVA-*` são globais e não mudam. O
   Protocolo já é restrito por unidade.
 
 ## Fases

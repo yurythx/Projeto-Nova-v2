@@ -55,7 +55,7 @@ dependência que o bloqueia.
 - **Ninguém concede o que não possui.** Permissões novas de um perfil, e os
   perfis atribuídos por lotação ou mapeamento do AD, precisam estar cobertos
   pelas permissões efetivas de quem concede.
-- **`nexus-admin` equivale a `*`.** Só quem já tem acesso total concede ou
+- **`nova-admin` equivale a `*`.** Só quem já tem acesso total concede ou
   retira esse papel.
 - **Estrutura e perfis com `ON DELETE RESTRICT`** (migration 000121).
   Excluir uma entidade, unidade, departamento ou perfil em uso responde

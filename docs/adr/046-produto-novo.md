@@ -35,10 +35,12 @@ por compatibilidade.
    cabeçalhos do Egress (`X-Projeto-Nova-*`, `Projeto-Nova-Egress/1.0`) e a
    origem dos eventos (`projeto-nova.platform`) usam o nome novo. A
    variável de IA é `IA_*`.
-4. **O que fica com `nexus`:** os identificadores de infraestrutura do
-   microkernel (banco, usuário e vhost, exchange `nexus.events`, filas,
-   coleção do Typesense, métricas, chaves do Redis, funções SQL `nexus_*`,
-   papéis do Keycloak). São nomes internos, não do sistema anterior.
+4. **Nomes de infraestrutura com `nova`:** banco, usuário e vhost `nova`,
+   exchange `nova.events`, filas `nova.*`, coleção do Typesense, métricas
+   e funções SQL `nova_*`, chaves `nova:` do Redis, papéis `nova-*` do
+   Keycloak (realm `nova`), domínio de teste `nova.test` e o projeto
+   Compose `projeto-nova`. Os nomes herdados da base anterior (`nexus`)
+   saem junto.
 5. **Documentação.** Saem os 26 ADRs do Atlas e do Acervo e os registros
    do servidor e da VM do sistema anterior (`SERVIDOR_TESTE.md`,
    `INFRA_PROXMOX.md`). O histórico fica no git.
@@ -49,6 +51,8 @@ por compatibilidade.
   ambiente é recriado do zero (`make test-db-reset` no teste; banco novo
   no desenvolvimento e na produção).
 - Quem consumia webhooks do Egress precisa ler os cabeçalhos novos.
+- O ambiente local muda de projeto Compose: os volumes `projeto-nexus_*`
+  ficam órfãos e o banco nasce de novo no projeto `projeto-nova`.
 - O Terraform usa `moved` para que o state troque o endereço do módulo da
   VM sem recriá-la.
 - O VPAT segue valendo para o casco e os componentes; as telas da gestão

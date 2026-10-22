@@ -6,7 +6,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-var tracer = otel.Tracer("nexus.messaging")
+var tracer = otel.Tracer("nova.messaging")
 
 // amqpHeaderCarrier adapta amqp.Table para o TextMapCarrier do otel, para
 // que o contexto de trace viaje junto com uma mensagem do Publish até o

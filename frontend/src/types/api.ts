@@ -3,7 +3,7 @@
 
 export type IntegrationStatus = "unknown" | "online" | "offline" | "degraded" | "disabled";
 
-// GET/PUT /api/v1/admin/keycloak (restrito a nexus-admin) — ver docs/openapi.yaml.
+// GET/PUT /api/v1/admin/keycloak (restrito a nova-admin) — ver docs/openapi.yaml.
 // "source" indica de onde vieram os valores: "database" (já salvo pelo
 // menu Configurações > Keycloak — o que está em uso agora), "environment"
 // (nunca foi salvo por esta tela; vem de variável de ambiente do

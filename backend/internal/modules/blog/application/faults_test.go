@@ -29,7 +29,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/storage/storagetest"
 )
 
-const bucket = "nexus-test"
+const bucket = "nova-test"
 
 type env struct {
 	t       *testing.T

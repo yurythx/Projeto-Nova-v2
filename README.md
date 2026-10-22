@@ -146,7 +146,7 @@ make test                 # backend + frontend
 
 # Backend com os testes de integração (Postgres real, como no CI)
 cd backend
-TEST_DATABASE_URL="postgres://nexus:SENHA@localhost:5432/nexus_test?sslmode=disable" \
+TEST_DATABASE_URL="postgres://nova:SENHA@localhost:5432/nova_test?sslmode=disable" \
   go test -race -p 1 -coverpkg=./internal/... ./...
 
 cd frontend && npm test   # Vitest + Testing Library

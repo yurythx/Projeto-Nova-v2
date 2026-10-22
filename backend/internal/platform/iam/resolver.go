@@ -223,16 +223,16 @@ func (r *Resolver) loadGrants(ctx context.Context, userID uuid.UUID, identity au
 	}
 	const q = `
 		SELECT p.slug, p.permissoes, s.entidade_id, s.unidade_id, s.departamento_id, 'manual',
-		       nexus_unidades_cobertas(s.entidade_id, s.unidade_id, s.departamento_id), nexus_unidades_acima(s.unidade_id)
+		       nova_unidades_cobertas(s.entidade_id, s.unidade_id, s.departamento_id), nova_unidades_acima(s.unidade_id)
 		  FROM user_scopes s JOIN perfis p ON p.id = s.perfil_id AND p.ativo
 		 WHERE s.user_id = $1
-		   AND nexus_scope_active(s.entidade_id, s.unidade_id, s.departamento_id)
+		   AND nova_scope_active(s.entidade_id, s.unidade_id, s.departamento_id)
 		UNION ALL
 		SELECT p.slug, p.permissoes, m.entidade_id, m.unidade_id, m.departamento_id, 'ad',
-		       nexus_unidades_cobertas(m.entidade_id, m.unidade_id, m.departamento_id), nexus_unidades_acima(m.unidade_id)
+		       nova_unidades_cobertas(m.entidade_id, m.unidade_id, m.departamento_id), nova_unidades_acima(m.unidade_id)
 		  FROM ad_group_mappings m JOIN perfis p ON p.id = m.perfil_id AND p.ativo
 		 WHERE lower(m.ad_group) = ANY($2)
-		   AND nexus_scope_active(m.entidade_id, m.unidade_id, m.departamento_id)`
+		   AND nova_scope_active(m.entidade_id, m.unidade_id, m.departamento_id)`
 	rows, err := r.db.Query(ctx, q, userID, groups)
 	if err != nil {
 		return nil, nil, fmt.Errorf("iam: load grants: %w", err)
@@ -255,7 +255,7 @@ func (r *Resolver) loadGrants(ctx context.Context, userID uuid.UUID, identity au
 		return nil, nil, err
 	}
 	perms := auth.EffectivePermissions(scopes)
-	// Role de realm nexus-admin equivale a "*" (evita trancar o
+	// Role de realm nova-admin equivale a "*" (evita trancar o
 	// administrador fora por um mapeamento mal configurado).
 	if identity.HasRole(auth.RoleAdmin) && !slices.Contains(perms, "*") {
 		perms = append([]string{"*"}, perms...)

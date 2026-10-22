@@ -32,7 +32,7 @@ func run() error {
 
 	runner := app.NewWorker(deps)
 
-	deps.Logger.Info("projeto nexus worker starting")
+	deps.Logger.Info("projeto nova worker starting")
 
 	errCh := make(chan error, 2)
 	go func() { errCh <- runner.Run(ctx) }()

@@ -43,7 +43,7 @@ expect("servidor não cria entidade", code, 403)
 code, d = call(IAM, "POST", "iam/entidades", {"nome": f"Autarquia de Teste {RUN}", "sigla": "AUT"})
 expect("gestor IAM cria entidade", code, (200, 201), d)
 ent = d["data"]["id"]
-code, d = call(IAM, "POST", "iam/unidades", {"entidade_id": ent, "nome": "Sede da Autarquia", "sigla": "SEDE", "email": "sede@nexus.test"})
+code, d = call(IAM, "POST", "iam/unidades", {"entidade_id": ent, "nome": "Sede da Autarquia", "sigla": "SEDE", "email": "sede@nova.test"})
 expect("cria unidade", code, (200, 201), d)
 uni = d["data"]["id"]
 code, d = call(IAM, "POST", "iam/unidades", {"entidade_id": ent, "parent_id": uni, "nome": "Anexo", "sigla": "ANX"})
@@ -114,10 +114,10 @@ check("catálogo de permissões por módulo", code == 200 and len(d["data"]) >= 
 
 print("\n== Usuários locais")
 uname = f"local.teste{RUN}"
-code, d = call(IAM, "POST", "users", {"username": uname, "email": f"{uname}@nexus.test", "display_name": "Local Teste", "password": "curta"})
+code, d = call(IAM, "POST", "users", {"username": uname, "email": f"{uname}@nova.test", "display_name": "Local Teste", "password": "curta"})
 expect("senha fraca recusada", code, (400, 422), d)
 pw1 = f"Senha-forte-{RUN}!"
-code, d = call(IAM, "POST", "users", {"username": uname, "email": f"{uname}@nexus.test", "display_name": "Local Teste", "password": pw1})
+code, d = call(IAM, "POST", "users", {"username": uname, "email": f"{uname}@nova.test", "display_name": "Local Teste", "password": pw1})
 expect("cria usuário local", code, (200, 201), d)
 lid = d["data"]["id"]
 expect("login local funciona", local_login(uname, pw1), 200)
@@ -159,7 +159,7 @@ expect("servidor não mexe em módulos", code, 403)
 print("\n== Branding (white-label)")
 code, orig = call(ADMIN, "GET", "branding")
 b = orig["data"]
-code, d = call(ADMIN, "PUT", "admin/branding", {**b, "org_name": f"Município Fictício {RUN}", "support_email": "ouvidoria@nexus.test"})
+code, d = call(ADMIN, "PUT", "admin/branding", {**b, "org_name": f"Município Fictício {RUN}", "support_email": "ouvidoria@nova.test"})
 expect("admin altera identidade visual", code, 200, d)
 code, d = public("GET", "branding")
 check("site público reflete a mudança", code == 200 and str(RUN) in json.dumps(d), d)

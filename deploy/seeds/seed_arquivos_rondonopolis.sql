@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — SEMENTE DO REPOSITÓRIO DE ARQUIVOS E GED (RONDONÓPOLIS - MT)
+-- PROJETO NOVA — SEMENTE DO REPOSITÓRIO DE ARQUIVOS E GED (RONDONÓPOLIS - MT)
 -- ==============================================================================
 -- Cria a estrutura de pastas corporativas e permissões (ACLs) do GED
 -- distribuídas entre as 5 unidades e departamentos de Rondonópolis.

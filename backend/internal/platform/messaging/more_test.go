@@ -55,7 +55,7 @@ func TestRetryGoesOnlyToTheFailingQueue(t *testing.T) {
 
 	c := NewConsumer(conn, a.Name, 5, 3, testLogger())
 	c.baseBackoff, c.maxBackoff = 50*time.Millisecond, 50*time.Millisecond
-	ev, _ := events.New(a.RoutingKeys[0], "nexus.test", uuid.Nil, map[string]string{})
+	ev, _ := events.New(a.RoutingKeys[0], "nova.test", uuid.Nil, map[string]string{})
 	if err := NewPublisher(conn).Publish(context.Background(), ev); err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func TestConsumerEdgeCases(t *testing.T) {
 	<-done
 
 	// Shutdown durante o backoff: a mensagem volta para a fila.
-	ev, _ := events.New(spec.RoutingKeys[0], "nexus.test", uuid.Nil, nil)
+	ev, _ := events.New(spec.RoutingKeys[0], "nova.test", uuid.Nil, nil)
 	_ = pub.Publish(context.Background(), ev)
 	c.baseBackoff, c.maxBackoff = time.Hour, time.Hour
 	ctx, stop = context.WithCancel(context.Background())
@@ -351,7 +351,7 @@ func TestTopologyErrors(t *testing.T) {
 
 func TestPublisherFailures(t *testing.T) {
 	conn := testConnection(t)
-	ev, _ := events.New("test.pub.fail", "nexus.test", uuid.Nil, nil)
+	ev, _ := events.New("test.pub.fail", "nova.test", uuid.Nil, nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if err := NewPublisher(conn).Publish(ctx, ev); err == nil {
@@ -408,7 +408,7 @@ func TestConsumerStopsWhenConnectionGoes(t *testing.T) {
 	// canal de entregas fecha.
 	conn := testConnection(t)
 	spec := testQueueSpec(t, conn)
-	ev, _ := events.New(spec.RoutingKeys[0], "nexus.test", uuid.Nil, nil)
+	ev, _ := events.New(spec.RoutingKeys[0], "nova.test", uuid.Nil, nil)
 	if err := NewPublisher(conn).Publish(context.Background(), ev); err != nil {
 		t.Fatal(err)
 	}

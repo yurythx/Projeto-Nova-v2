@@ -5,7 +5,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")
 CSV = os.path.join(ROOT, "deploy", "demo", "usuarios.csv")
 NX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nx")
 # HTTPS com a CA interna (scripts/enable-https.sh): curl e urllib confiam nela.
-CAFILE = os.path.join(ROOT, "secrets", "ca", "nexus-ca.crt")
+CAFILE = os.path.join(ROOT, "secrets", "ca", "nova-ca.crt")
 if os.path.exists(CAFILE):
     os.environ["CURL_CA_BUNDLE"] = CAFILE
 SSL_CTX = ssl.create_default_context(cafile=CAFILE if os.path.exists(CAFILE) else None)

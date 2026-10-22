@@ -16,13 +16,13 @@ variable "hostname" {
 variable "description" {
   description = "Descrição ou anotação do container"
   type        = string
-  default     = "Gerenciado via Terraform - Projeto Nexus"
+  default     = "Gerenciado via Terraform - Projeto-nova-v2"
 }
 
 variable "tags" {
   description = "Tags de classificação no Proxmox"
   type        = list(string)
-  default     = ["terraform", "nexus", "lxc"]
+  default     = ["terraform", "nova", "lxc"]
 }
 
 variable "unprivileged" {

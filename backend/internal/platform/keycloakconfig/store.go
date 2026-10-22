@@ -1,5 +1,5 @@
 // Package keycloakconfig implementa a configuração do Keycloak editável
-// em tempo de execução pelo nexus-admin (menu Configurações > Keycloak /
+// em tempo de execução pelo nova-admin (menu Configurações > Keycloak /
 // IAM) — o mesmo espírito de internal/platform/configflags (persistida no
 // Postgres, sem cache, alterável sem reiniciar o processo), mas para os
 // parâmetros de conexão OIDC em vez de interruptores booleanos.

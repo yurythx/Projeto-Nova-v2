@@ -16,7 +16,7 @@ import (
 func TestCalendarRules(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
-	_, ana := h.user("nexus-user")
+	_, ana := h.user("nova-user")
 	base := time.Now().UTC().Add(72 * time.Hour).Truncate(time.Hour)
 	iso := func(d time.Duration) string { return base.Add(d).Format(time.RFC3339) }
 	evBody := func(title, room string, from, to time.Duration) string {
@@ -58,7 +58,7 @@ func TestCalendarRules(t *testing.T) {
 		ev.ID).Scan(&cancels); err != nil || cancels != 1 {
 		t.Fatalf("um único cancelamento auditado: %d %v", cancels, err)
 	}
-	_, beto := h.user("nexus-user")
+	_, beto := h.user("nova-user")
 	h.expect(http.StatusForbidden, http.MethodDelete, "/api/v1/calendar/events/"+ev.ID, beto, "")
 	h.expect(http.StatusNoContent, http.MethodDelete, "/api/v1/calendar/events/"+ev.ID, ana, "")
 	h.expect(http.StatusNotFound, http.MethodDelete, "/api/v1/calendar/events/"+ev.ID, ana, "")
@@ -109,7 +109,7 @@ func TestCalendarGestaoComEscopo(t *testing.T) {
 	admin := h.admin()
 	o := h.orgEscopo(t)
 	gestorA := h.gestorEm(t, o.a, "calendar:manage")
-	_, ana := h.user("nexus-user")
+	_, ana := h.user("nova-user")
 	sala := func(unidade string) string {
 		body := `{"name":"Sala ` + uuid.NewString()[:8] + `"`
 		if unidade != "" {

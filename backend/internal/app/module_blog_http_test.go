@@ -105,7 +105,7 @@ func TestBlogPublicoAlvo(t *testing.T) {
 	o := h.orgEscopo(t)
 	naSub := h.gestorEm(t, o.sub, "contact:read")
 	emB := h.gestorEm(t, o.b, "contact:read")
-	_, semLotacao := h.user("nexus-user")
+	_, semLotacao := h.user("nova-user")
 	sfx := uuid.NewString()[:8]
 	publicar := func(titulo, publico string) string {
 		id := data[postResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/blog/posts", admin,

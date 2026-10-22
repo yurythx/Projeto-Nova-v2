@@ -2,7 +2,7 @@
 
 > **Ambiente:** Servidor de Teste (`https://192.168.1.42`)  
 > **Método de Autenticação:** Login Local (NextAuth Credentials via `POST /api/v1/auth/login`)  
-> **Senha Padrão de Todas as Personas:** `Nexus@Rondonopolis2026!`
+> **Senha Padrão de Todas as Personas:** `Nova@Rondonopolis2026!`
 
 ---
 
@@ -25,7 +25,7 @@ Todas as personas estão ativas, com hashes criptográficos **Argon2id**, perfis
 ## 2. Cenários Práticos de Teste e Validação
 
 ### Cenário 1: Validação do Público-Alvo no Blog (ADR 014 / ADR 030)
-1. Faça login como **`mariana.mkt`** (senha: `Nexus@Rondonopolis2026!`).
+1. Faça login como **`mariana.mkt`** (senha: `Nova@Rondonopolis2026!`).
 2. Acesse `/gestao/blog/novo`.
 3. Crie uma matéria técnica (ex.: *"Novo Lab de IoT & Sensores no Hub Aurora"*).
 4. No seletor de **Público-Alvo**, expanda o componente e marque exclusivamente a unidade **Hub de Inovação & P&D - Vila Aurora**. Salve e publique.
@@ -52,8 +52,8 @@ Os 4 processos eletrônicos abaixo já estão ativos e circulando no sistema com
 |---|---|---|---|---|---|
 | **`000001/2026`** | Contratação | Hub Aurora (`HUB-AURORA`) | Sede Centro (`SEDE-CENTRO`) | Expansão de Infraestrutura de Servidores para o Laboratório AgroTech | • *Memorando nº 12/2026* (Lucas Albuquerque)<br>• *Despacho Decisório nº 44/2026* (Carlos Mendes) |
 | **`000002/2026`** | Requerimento | Polo Industrial (`POLO-IND`) | Terminal Agro (`TERM-AGRO`) | Revisão e Manutenção Preventiva da Frota Bitrem (Safra 2026/2027) | • *Laudo de Vistoria nº 08/2026* (Marcos Souza)<br>• *Parecer Balança nº 19/2026* (Rodrigo Camargo) |
-| **`000003/2026`** | Requerimento | CIA Poguba (`UNID-POGUBA`) | Hub Aurora (`HUB-AURORA`) | Cadastro e Integração de Cooperativa Agropecuária no Portal Nexus | • *Formulário de Triagem* (Ana Paula Ferreira) |
-| **`000004/2026`** | Memorando | Sede Centro (`SEDE-CENTRO`) | Sede Centro (`SEDE-CENTRO`) | Aprovação de Campanha Institucional e Stand da Nexus na Exposul 2026 | • *Plano de Mídia Exposul* (Mariana Silva)<br>• *Homologação Presidência* (Carlos Mendes) — **Concluído** |
+| **`000003/2026`** | Requerimento | CIA Poguba (`UNID-POGUBA`) | Hub Aurora (`HUB-AURORA`) | Cadastro e Integração de Cooperativa Agropecuária no Portal Nova | • *Formulário de Triagem* (Ana Paula Ferreira) |
+| **`000004/2026`** | Memorando | Sede Centro (`SEDE-CENTRO`) | Sede Centro (`SEDE-CENTRO`) | Aprovação de Campanha Institucional e Stand da Nova na Exposul 2026 | • *Plano de Mídia Exposul* (Mariana Silva)<br>• *Homologação Presidência* (Carlos Mendes) — **Concluído** |
 
 #### Como validar no navegador:
 1. Faça login como **`lucas.tech`** e acesse `/tramite`:
@@ -76,25 +76,25 @@ Foram configuradas **7 salas de reunião corporativas** distribuídas entre as u
 - **Terminal Agro:** *Sala de Briefing do Terminal Agro* (10 lugares)
 
 #### Eventos cadastrados para o mês:
-1. **Comitê Executivo Nexus:** Amanhã das 09h às 11h30 na *Sala Executiva Pantanal* (Organizado por Carlos Mendes).
+1. **Comitê Executivo Nova:** Amanhã das 09h às 11h30 na *Sala Executiva Pantanal* (Organizado por Carlos Mendes).
 2. **Sprint Review AgroTech:** Em 2 dias das 14h às 16h no *Espaço Inovação Hub Aurora* (Restrito ao Hub Aurora — Organizado por Lucas Albuquerque).
 3. **Alinhamento de Frotas e Safra:** Em 3 dias das 08h30 às 10h30 na *Sala Operações Polo* (Organizado por Marcos Souza).
 4. **Workshop de Atendimento e LGPD:** Em 4 dias das 13h30 às 17h na *Sala CIA Poguba* (Organizado por Ana Paula Ferreira).
-5. **Workshop Aberto Nexus:** Em 7 dias das 19h às 21h30 no *Auditório Marechal Rondon* (Público — Organizado por Mariana Silva).
+5. **Workshop Aberto Nova:** Em 7 dias das 19h às 21h30 no *Auditório Marechal Rondon* (Público — Organizado por Mariana Silva).
 
 #### Como validar no navegador:
 1. Faça login como **`lucas.tech`** e acesse `/agenda`:
    - No calendário do mês, você verá **5 eventos**, incluindo o evento restrito *"Sprint Review: Plataforma de Telemetria e IA AgroTech"*.
 2. Faça login como **`marcos.ops`** e acesse `/agenda`:
    - Você verá **4 eventos**. O evento do Hub Aurora **não aparece**, validando o filtro de público-alvo por unidade na Agenda!
-3. Acesse sem login em aba anônima na Agenda pública (`/agenda` sem autenticação): apenas o evento público *"Workshop Nexus: O Futuro da Tecnologia no Campo"* no Auditório Marechal Rondon fica visível aos visitantes externos.
+3. Acesse sem login em aba anônima na Agenda pública (`/agenda` sem autenticação): apenas o evento público *"Workshop Nova: O Futuro da Tecnologia no Campo"* no Auditório Marechal Rondon fica visível aos visitantes externos.
 
 ---
 
 ### Cenário 5: Base de Conhecimento Wiki & Isolamento de Manuais Técnicos (`/wiki`)
 
 A Wiki corporativa conta com 6 manuais e procedimentos operacionais cadastrados para as unidades de Rondonópolis, com controle de versão e público-alvo:
-- **`onboarding-colaborador`**: *Guia de Boas-Vindas & Integração do Colaborador Nexus* (Mariana Silva — Sede Centro)
+- **`onboarding-colaborador`**: *Guia de Boas-Vindas & Integração do Colaborador Nova* (Mariana Silva — Sede Centro)
 - **`codigo-de-conduta`**: *Código de Ética, Integridade & Conduta Corporativa* (Carlos Mendes — Sede Centro)
 - **`politica-seguranca-informacao`**: *Política de Segurança da Informação, Controle de Acessos & SOC* (Lucas Albuquerque — Hub Aurora)
 - **`guia-desenvolvimento-agrotech`**: *Manual de Boas Práticas de Engenharia e Arquitetura de Software* (Restrito ao Hub Aurora — Lucas Albuquerque)

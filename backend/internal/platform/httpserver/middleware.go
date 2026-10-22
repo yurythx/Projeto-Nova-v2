@@ -119,8 +119,8 @@ func (r *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return hijacker.Hijack()
 }
 
-// Metrics registra nexus_http_requests_total e
-// nexus_http_request_duration_seconds (§53). Rotula pelo *padrão* de rota
+// Metrics registra nova_http_requests_total e
+// nova_http_request_duration_seconds (§53). Rotula pelo *padrão* de rota
 // que o chi casou (ex.: "/api/v1/users/{id}"), lido do contexto de
 // roteamento depois que ServeHTTP retorna — nunca o path bruto, que
 // explodiria a cardinalidade das métricas com uma série por id de usuário.

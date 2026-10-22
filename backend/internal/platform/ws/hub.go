@@ -2,7 +2,7 @@
 //
 // Modelo de tópicos: cada cliente assina tópicos ("mercurio:room:<id>",
 // "user:<id>", "broadcast"). Toda publicação passa pelo backplane Redis
-// (PUBLISH em "nexus:ws"), e cada réplica da API entrega aos SEUS clientes
+// (PUBLISH em "nova:ws"), e cada réplica da API entrega aos SEUS clientes
 // locais assinantes daquele tópico — o chat e as notificações funcionam
 // com N réplicas atrás do balanceador.
 //

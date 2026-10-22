@@ -53,7 +53,7 @@ func writeEvents(t *testing.T, pool *pgxpool.Pool, n int) string {
 		t.Fatal(err)
 	}
 	for i := 0; i < n; i++ {
-		if err := NewWriter("nexus.test").Write(context.Background(), tx, "test.relay.created", "test", agg, uuid.Nil, map[string]int{"i": i}); err != nil {
+		if err := NewWriter("nova.test").Write(context.Background(), tx, "test.relay.created", "test", agg, uuid.Nil, map[string]int{"i": i}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -153,7 +153,7 @@ func TestUndecodableEnvelopeFailsWithoutBlockingTheBatch(t *testing.T) {
 
 func TestPublishRowPropagatesStatusUpdateFailures(t *testing.T) {
 	ctx := context.Background()
-	ev, _ := events.New("test.relay.created", "nexus.test", uuid.Nil, nil)
+	ev, _ := events.New("test.relay.created", "nova.test", uuid.Nil, nil)
 	payload, _ := json.Marshal(ev)
 	for name, c := range map[string]struct {
 		pub      events.EventPublisher
@@ -406,7 +406,7 @@ func (e *execTx) Exec(ctx context.Context, sql string, args ...any) (pgconn.Comm
 func TestWriterRejectsBadEventsAndPropagatesFailures(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()
-	w := NewWriter("nexus.test")
+	w := NewWriter("nova.test")
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)

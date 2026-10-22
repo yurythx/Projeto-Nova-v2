@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # nx <usuario> <METODO> <rota v1 sem /api/v1> [json]
-# Sessões em ~/.cache/nexus-nx (apague para forçar novo login).
+# Sessões em ~/.cache/nova-nx (apague para forçar novo login).
 # Loga pelo Keycloak (fluxo NextAuth do navegador) uma vez por usuário e
 # chama o BFF (/api/backend/v1/...). Imprime "HTTP <code>" + corpo.
 set -uo pipefail
 cd "$(dirname "$(readlink -f "$0")")/../../.."
 FE=$(grep ^FRONTEND_URL= .env | cut -d= -f2-)
 # HTTPS com a CA interna (scripts/enable-https.sh): curl confia nela.
-[ -f secrets/ca/nexus-ca.crt ] && export CURL_CA_BUNDLE="$PWD/secrets/ca/nexus-ca.crt"
+[ -f secrets/ca/nova-ca.crt ] && export CURL_CA_BUNDLE="$PWD/secrets/ca/nova-ca.crt"
 PW=$(grep ^DEMO_USER_PASSWORD= .env | cut -d= -f2-)
 user="$1"; method="$2"; path="${3#/}"; body="${4:-}"
-SESS=${NX_SESSIONS:-$HOME/.cache/nexus-nx}; mkdir -p "$SESS"; J=$SESS/$user.jar
+SESS=${NX_SESSIONS:-$HOME/.cache/nova-nx}; mkdir -p "$SESS"; J=$SESS/$user.jar
 
 login() {
   rm -f $J

@@ -24,7 +24,7 @@ const ActionKeycloakConfigChanged = "keycloak_config.changed"
 // nada, PUT para salvar (que só persiste depois de um teste de discovery
 // bem-sucedido, e então recarrega auth.Verifier em tempo real). Registrado
 // atrás de auth.RequirePermission(auth.PermKeycloakManage) — só
-// nexus-admin.
+// nova-admin.
 type Handlers struct {
 	store       Store
 	verifier    *auth.Verifier
@@ -277,7 +277,7 @@ func (h *Handlers) Save(w http.ResponseWriter, r *http.Request) {
 // RegisterRoutes monta as rotas administrativas de configuração do
 // Keycloak. r já deve estar atrás de auth.RequireAuthentication; este
 // método adiciona por cima a exigência de auth.PermKeycloakManage
-// (nexus-admin) para toda rota — mesmo o teste de conexão, já que ele
+// (nova-admin) para toda rota — mesmo o teste de conexão, já que ele
 // aceita um client_secret no corpo e faz uma chamada de rede de saída
 // com ele.
 func RegisterRoutes(r chi.Router, h *Handlers, logger *slog.Logger) {

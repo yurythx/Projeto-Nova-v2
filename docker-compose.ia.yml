@@ -32,7 +32,7 @@ services:
     # Sem porta publicada: só a API o alcança, pela rede interna. Limites
     # para a inferência (CPU) não sufocar o banco e a API.
     networks:
-      - nexus_internal
+      - nova_internal
     mem_limit: ${IA_LOCAL_MEMORIA:-2560m}
     cpus: ${IA_LOCAL_CPUS:-3}
     healthcheck:
@@ -50,7 +50,7 @@ services:
     environment:
       OLLAMA_HOST: http://ia-local:11434
     networks:
-      - nexus_internal
+      - nova_internal
     depends_on:
       ia-local:
         condition: service_healthy

@@ -80,7 +80,7 @@
       set -e
 
       REG_TOKEN="$1"
-      RUNNER_NAME="${2:-nexus-pve1-lxc200}"
+      RUNNER_NAME="${2:-nova-pve1-lxc200}"
 
       if [ -z "$REG_TOKEN" ]; then
         echo "=========================================================="

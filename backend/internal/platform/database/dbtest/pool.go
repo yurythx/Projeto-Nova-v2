@@ -31,7 +31,7 @@ func User(t testing.TB, pool *pgxpool.Pool) uuid.UUID {
 	name := "u_" + uuid.NewString()[:12]
 	var id uuid.UUID
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO users (username, email, display_name, keycloak_subject) VALUES ($1, $1 || '@nexus.test', 'Usuário ' || $1, $1) RETURNING id`,
+		`INSERT INTO users (username, email, display_name, keycloak_subject) VALUES ($1, $1 || '@nova.test', 'Usuário ' || $1, $1) RETURNING id`,
 		name).Scan(&id); err != nil {
 		t.Fatal(err)
 	}

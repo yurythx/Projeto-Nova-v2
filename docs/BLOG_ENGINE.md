@@ -30,11 +30,11 @@ O módulo **Blog & Novidades** do Projeto-nova-v2 foi projetado para operar como
 └────────┬────────┘                                                   │
          │                                                            │
          │ 3. PUT direto do arquivo                                   │ Gera chave única
-         │    (https://host:9443/nexus/blog/covers/...)               │
+         │    (https://host:9443/nova/blog/covers/...)               │
          ▼                                                            ▼
 ┌────────────────────────────────────────────────────────┐   ┌─────────────────┐
 │                    MinIO Storage                       │   │   PostgreSQL    │
-│  • Bucket: nexus / WORM audit lock                     │   │   (Chave S3 e   │
+│  • Bucket: nova / WORM audit lock                     │   │   (Chave S3 e   │
 │  • Proxy seguro Caddy TLS na porta 9443                │   │    Markdown)    │
 └────────────────────────────────────────────────────────┘   └─────────────────┘
 ```

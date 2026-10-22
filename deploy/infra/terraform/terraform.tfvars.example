@@ -13,7 +13,7 @@ default_gateway       = "192.168.1.1"
 
 # Template já existente (ubuntu-2404-cloud). Não rode create-cloudinit-template.sh.
 vm_template_id    = 9000
-# VM nova. No pve1: 201=nexus-prod-app, 210=projeto-assistencia (ocupados).
+# VM nova. No pve1: 201=nova-prod-app, 210=projeto-assistencia (ocupados).
 vm_id             = 220
 vm_name           = "projeto-nova-prod-app"
 app_ipv4          = "192.168.1.52/24"

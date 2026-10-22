@@ -159,7 +159,7 @@ func isMethod(m string) bool {
 // novas e remove as que não existem mais.
 func regenerate(t *testing.T, h *apiHarness, spec map[string]any, routes []routeInfo) {
 	t.Helper()
-	_, plainTok := h.user("nexus-user")
+	_, plainTok := h.user("nova-user")
 	oldPaths, _ := spec["paths"].(map[string]any)
 	newPaths := map[string]any{}
 	manifests := map[string]kernel.Manifest{}

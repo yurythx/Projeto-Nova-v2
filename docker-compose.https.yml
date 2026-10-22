@@ -3,7 +3,7 @@
 # .env e troca as URLs públicas para https. Ver deploy/caddy/Caddyfile.
 #
 # Portas: 443 frontend, 8443 API/WebSocket, 9443 MinIO, 8543 Keycloak,
-# 80 -> redireciona e serve /nexus-ca.crt.
+# 80 -> redireciona e serve /nova-ca.crt.
 volumes:
   caddy_data: null
   caddy_config: null
@@ -30,7 +30,7 @@ services:
       - "9443:9443"
       - "8543:8543"
     networks:
-      - nexus_internal
+      - nova_internal
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
       interval: 10s
@@ -53,7 +53,7 @@ services:
       SSL_CERT_DIR: /etc/ssl/certs:/run/secrets/ca
   frontend:
     environment:
-      NODE_EXTRA_CA_CERTS: /run/secrets/ca/nexus-ca.crt
+      NODE_EXTRA_CA_CERTS: /run/secrets/ca/nova-ca.crt
       # O Caddy sobrescreve o X-Forwarded-For com o IP real: o frontend
       # pode repassá-lo à API (rate limit, lockout, prova LGPD). Só é
       # seguro porque, com HTTPS, as portas diretas ficam em 127.0.0.1

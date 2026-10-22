@@ -21,12 +21,12 @@ function mockFetchOnce(status: number, body: unknown) {
 function makeStatus(overrides: Partial<KeycloakSettingsStatus> = {}): KeycloakSettingsStatus {
   return {
     source: "database",
-    issuer_url: "https://sso.orgao.gov.br/realms/nexus",
-    realm: "nexus",
-    client_id: "nexus-backend",
+    issuer_url: "https://sso.orgao.gov.br/realms/nova",
+    realm: "nova",
+    client_id: "nova-backend",
     client_secret_set: true,
-    audience: "nexus-backend",
-    frontend_client_id: "nexus-frontend",
+    audience: "nova-backend",
+    frontend_client_id: "nova-frontend",
     frontend_client_secret_set: true,
     updated_at: "2026-01-01T00:00:00Z",
     updated_by: "admin-1",
@@ -46,8 +46,8 @@ describe("KeycloakSettingsForm", () => {
       </ToastProvider>,
     );
 
-    expect(screen.getByDisplayValue("https://sso.orgao.gov.br/realms/nexus")).toBeInTheDocument();
-    expect(screen.getByLabelText("Client ID do Backend *")).toHaveValue("nexus-backend");
+    expect(screen.getByDisplayValue("https://sso.orgao.gov.br/realms/nova")).toBeInTheDocument();
+    expect(screen.getByLabelText("Client ID do Backend *")).toHaveValue("nova-backend");
     expect(screen.getByText("Salvo no banco — em uso agora")).toBeInTheDocument();
     // O client secret NUNCA vem preenchido — só um placeholder indicando
     // que já existe um valor salvo.
@@ -91,7 +91,7 @@ describe("KeycloakSettingsForm", () => {
   });
 
   it("salvar chama PUT /admin/keycloak, atualiza o selo e mostra um toast de sucesso", async () => {
-    const saved = makeStatus({ realm: "nexus-v2" });
+    const saved = makeStatus({ realm: "nova" });
     mockFetchOnce(200, {
       data: {
         settings: saved,
@@ -115,14 +115,14 @@ describe("KeycloakSettingsForm", () => {
     );
 
     await user.clear(screen.getByLabelText("Realm *"));
-    await user.type(screen.getByLabelText("Realm *"), "nexus-v2");
+    await user.type(screen.getByLabelText("Realm *"), "nova");
     await user.click(screen.getByRole("button", { name: /salvar alterações/i }));
 
     expect(await screen.findByText("Configuração do Keycloak salva")).toBeInTheDocument();
     const [path, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
     expect(path).toBe("/api/backend/v1/admin/keycloak");
     expect(init.method).toBe("PUT");
-    expect(JSON.parse(init.body as string)).toMatchObject({ realm: "nexus-v2", client_secret: "" });
+    expect(JSON.parse(init.body as string)).toMatchObject({ realm: "nova", client_secret: "" });
   });
 
   it("se o salvamento falhar (ex.: discovery recusado), mostra um toast de erro e não perde os dados digitados", async () => {
@@ -143,6 +143,6 @@ describe("KeycloakSettingsForm", () => {
     expect(await screen.findByText("Não foi possível salvar")).toBeInTheDocument();
     expect(screen.getByText("Não foi possível salvar: issuer inalcançável")).toBeInTheDocument();
     // Os campos continuam preenchidos com o que o admin digitou.
-    expect(screen.getByDisplayValue("https://sso.orgao.gov.br/realms/nexus")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("https://sso.orgao.gov.br/realms/nova")).toBeInTheDocument();
   });
 });

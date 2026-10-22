@@ -2,7 +2,7 @@
 // Gera os dados FICTÍCIOS do ambiente de teste a partir de uma única
 // definição da estrutura organizacional:
 //
-//   deploy/keycloak/realm-nexus.json  realm "nexus" (clients, grupos, usuários)
+//   deploy/keycloak/realm-nova.json  realm "nova" (clients, grupos, usuários)
 //   deploy/demo/seed-demo.sql         entidades, unidades, departamentos,
 //                                     mapeamentos grupo -> perfil, usuários
 //                                     pré-provisionados e perfis do Diretório
@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const USERS_PER_UNIT = 50;
-const EMAIL_DOMAIN = "nexus.test";
+const EMAIL_DOMAIN = "nova.test";
 
 // --- Estrutura organizacional -------------------------------------------
 
@@ -85,18 +85,18 @@ const ENTIDADES = [
 
 // Grupos de plataforma -> perfil de sistema (escopo: plataforma toda).
 const GRUPOS_PLATAFORMA = [
-  { group: "NEXUS-ADMINS", perfil: "administrador", descricao: "Administradores da plataforma (teste)" },
-  { group: "NEXUS-AUDITORES", perfil: "auditor", descricao: "Auditores (teste)" },
-  { group: "NEXUS-GESTORES-IAM", perfil: "gestor-iam", descricao: "Gestores de identidade (teste)" },
-  { group: "NEXUS-GESTORES-CONTEUDO", perfil: "gestor-conteudo", descricao: "Gestores de conteúdo (teste)" },
+  { group: "NOVA-ADMINS", perfil: "administrador", descricao: "Administradores da plataforma (teste)" },
+  { group: "NOVA-AUDITORES", perfil: "auditor", descricao: "Auditores (teste)" },
+  { group: "NOVA-GESTORES-IAM", perfil: "gestor-iam", descricao: "Gestores de identidade (teste)" },
+  { group: "NOVA-GESTORES-CONTEUDO", perfil: "gestor-conteudo", descricao: "Gestores de conteúdo (teste)" },
 ];
 
 // Contas de teste por papel, lotadas na TI da Prefeitura.
 const CONTAS_TESTE = [
-  { username: "teste.admin", first: "Teste", last: "Administrador", groups: ["NEXUS-ADMINS"], roles: ["nexus-admin"], cargo: "Administrador(a) da Plataforma" },
-  { username: "teste.auditor", first: "Teste", last: "Auditor", groups: ["NEXUS-AUDITORES"], roles: [], cargo: "Auditor(a)" },
-  { username: "teste.iam", first: "Teste", last: "Gestor IAM", groups: ["NEXUS-GESTORES-IAM"], roles: [], cargo: "Gestor(a) de Identidade" },
-  { username: "teste.conteudo", first: "Teste", last: "Gestor Conteúdo", groups: ["NEXUS-GESTORES-CONTEUDO"], roles: [], cargo: "Gestor(a) de Conteúdo" },
+  { username: "teste.admin", first: "Teste", last: "Administrador", groups: ["NOVA-ADMINS"], roles: ["nova-admin"], cargo: "Administrador(a) da Plataforma" },
+  { username: "teste.auditor", first: "Teste", last: "Auditor", groups: ["NOVA-AUDITORES"], roles: [], cargo: "Auditor(a)" },
+  { username: "teste.iam", first: "Teste", last: "Gestor IAM", groups: ["NOVA-GESTORES-IAM"], roles: [], cargo: "Gestor(a) de Identidade" },
+  { username: "teste.conteudo", first: "Teste", last: "Gestor Conteúdo", groups: ["NOVA-GESTORES-CONTEUDO"], roles: [], cargo: "Gestor(a) de Conteúdo" },
 ];
 
 // --- Nomes fictícios ----------------------------------------------------
@@ -136,7 +136,7 @@ const pick = (arr) => arr[Math.floor(rand() * arr.length)];
 
 // UUID determinístico (formato v5) a partir de um nome.
 function uuidFrom(name) {
-  const h = createHash("sha1").update(`projeto-nexus-demo:${name}`).digest();
+  const h = createHash("sha1").update(`projeto-nova-demo:${name}`).digest();
   h[6] = (h[6] & 0x0f) | 0x50;
   h[8] = (h[8] & 0x3f) | 0x80;
   const x = h.subarray(0, 16).toString("hex");
@@ -234,16 +234,16 @@ const kcGroups = entidades.map((e) => ({
     })),
 }));
 kcGroups.push({
-  name: "NEXUS",
+  name: "NOVA",
   attributes: { descricao: ["Grupos de papéis da plataforma"] },
   subGroups: GRUPOS_PLATAFORMA.map((g) => {
-    groupPath.set(g.group, `/NEXUS/${g.group}`);
+    groupPath.set(g.group, `/NOVA/${g.group}`);
     return { name: g.group, attributes: { descricao: [g.descricao] } };
   }),
 });
 
 const realm = {
-  realm: "nexus",
+  realm: "nova",
   displayName: "Projeto-nova-v2 (teste)",
   enabled: true,
   // Ambiente de TESTE servido por HTTP na rede interna.
@@ -260,14 +260,14 @@ const realm = {
   bruteForceProtected: true,
   roles: {
     realm: [
-      { name: "nexus-admin", description: "Administrador da plataforma (equivale a *)" },
-      { name: "nexus-user", description: "Usuário da plataforma" },
+      { name: "nova-admin", description: "Administrador da plataforma (equivale a *)" },
+      { name: "nova-user", description: "Usuário da plataforma" },
     ],
   },
   groups: kcGroups,
   clients: [
     {
-      clientId: "nexus-frontend",
+      clientId: "nova-frontend",
       name: "Projeto-nova-v2 — frontend (NextAuth)",
       enabled: true,
       publicClient: false,
@@ -284,11 +284,11 @@ const realm = {
       },
       protocolMappers: [
         {
-          // A API valida aud = nexus-backend (KEYCLOAK_AUDIENCE).
-          name: "audience-nexus-backend",
+          // A API valida aud = nova-backend (KEYCLOAK_AUDIENCE).
+          name: "audience-nova-backend",
           protocol: "openid-connect",
           protocolMapper: "oidc-audience-mapper",
-          config: { "included.client.audience": "nexus-backend", "access.token.claim": "true", "id.token.claim": "false" },
+          config: { "included.client.audience": "nova-backend", "access.token.claim": "true", "id.token.claim": "false" },
         },
         {
           // "groups" só com o nome do grupo (não o caminho): é o que o IAM
@@ -305,7 +305,7 @@ const realm = {
       // confere a senha na hora da assinatura com o grant "password"
       // (KEYCLOAK_CLIENT_ID/SECRET) — por isso confidencial, com Direct
       // Access Grants e nenhum outro fluxo.
-      clientId: "nexus-backend",
+      clientId: "nova-backend",
       name: "Projeto-nova-v2 — API (audience + reautenticação do Signum)",
       enabled: true,
       publicClient: false,
@@ -327,7 +327,7 @@ const realm = {
     enabled: true,
     attributes: { matricula: [u.matricula], cargo: [u.cargo], unidade: [u.dep.unidade.nome], departamento: [u.dep.nome] },
     credentials: [{ type: "password", value: "${DEMO_USER_PASSWORD}", temporary: false }],
-    realmRoles: ["nexus-user", ...u.roles],
+    realmRoles: ["nova-user", ...u.roles],
     groups: u.groups.map((g) => groupPath.get(g)),
   })),
 };
@@ -406,7 +406,7 @@ const write = (rel, content) => {
   writeFileSync(p, content);
   console.log(`${rel} (${Buffer.byteLength(content)} bytes)`);
 };
-write("deploy/keycloak/realm-nexus.json", JSON.stringify(realm, null, 2) + "\n");
+write("deploy/keycloak/realm-nova.json", JSON.stringify(realm, null, 2) + "\n");
 write("deploy/demo/seed-demo.sql", sql.join("\n"));
 write("deploy/demo/usuarios.csv", "﻿" + csv + "\n");
 console.log(`${entidades.length} entidades, ${unidades.length} unidades, ${departamentos.length} departamentos, ${users.length} usuários`);

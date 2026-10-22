@@ -16,9 +16,9 @@ COMPOSE      := docker compose -f docker-compose.yml -f docker-compose.dev.yml
 # Sem -f: respeita COMPOSE_FILE do .env (Keycloak de teste); padrão = docker-compose.yml.
 COMPOSE_PROD := docker compose
 GOOSE_DIR    := backend/migrations
-DB_USER      ?= nexus
-DB_PASSWORD  ?= nexus_pass
-DB_NAME      ?= nexus
+DB_USER      ?= nova
+DB_PASSWORD  ?= nova_pass
+DB_NAME      ?= nova
 HOST_DB_PORT ?= 5433
 DB_DSN       ?= postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(HOST_DB_PORT)/$(DB_NAME)?sslmode=disable
 
@@ -117,9 +117,9 @@ frontend-build:
 test: backend-test frontend-test ## Roda as suítes de teste do backend e do frontend
 
 TEST_PG_CONTAINER ?= projeto-nova-test-pg
-TEST_DB_NAME ?= nexus_test
-TEST_DB_USER ?= nexus
-TEST_DB_PASSWORD ?= nexus_ci_password
+TEST_DB_NAME ?= nova_test
+TEST_DB_USER ?= nova
+TEST_DB_PASSWORD ?= nova_ci_password
 
 test-db-reset: ## Recria o Postgres de teste vazio (template0) e aplica as migrations
 	./scripts/test-db-reset.sh

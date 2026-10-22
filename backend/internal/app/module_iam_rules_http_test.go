@@ -10,7 +10,7 @@ import (
 )
 
 // A01 — só administra uma conta quem cobre as permissões efetivas dela
-// (lotações, grupos do AD e o papel nexus-admin). Sem isso, quem tem só
+// (lotações, grupos do AD e o papel nova-admin). Sem isso, quem tem só
 // users:manage redefiniria a senha de um administrador e entraria como ele.
 func TestIAMAdministersOnlyCoveredAccounts(t *testing.T) {
 	h := newHarness(t)
@@ -24,15 +24,15 @@ func TestIAMAdministersOnlyCoveredAccounts(t *testing.T) {
 		}
 		return id
 	}
-	managerID, manager := h.user("nexus-user")
+	managerID, manager := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+managerID.String()+"/lotacoes", admin, `{"perfil_id":"`+perfil("gestor-iam")+`"}`)
 
-	adminID, _ := h.user("nexus-admin")
-	auditorID, _ := h.user("nexus-user")
+	adminID, _ := h.user("nova-admin")
+	auditorID, _ := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/users/"+auditorID.String()+"/lotacoes", admin, `{"perfil_id":"`+perfil("auditor")+`"}`)
-	comumID, _ := h.user("nexus-user")
+	comumID, _ := h.user("nova-user")
 	// Permissão vinda de grupo do AD também conta.
-	grupoID, _ := h.user("nexus-user")
+	grupoID, _ := h.user("nova-user")
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/ad-mappings", admin, `{"ad_group":"GRP_AUD_`+sfx+`","perfil_id":"`+perfil("auditor")+`"}`)
 	if _, err := h.d.DB.Exec(ctx, `UPDATE users SET groups = ARRAY['grp_aud_`+sfx+`'] WHERE id = $1`, grupoID); err != nil {
 		t.Fatal(err)

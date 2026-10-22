@@ -198,7 +198,7 @@ func (s *Service) guardTarget(ctx context.Context, db database.DBTX, targetID uu
 
 // guardAdminRole impede escalada de privilégio (A01): só quem já detém
 // acesso total ("*") concede ou retira o papel de administrador da
-// plataforma (nexus-admin equivale a "*").
+// plataforma (nova-admin equivale a "*").
 func guardAdminRole(ctx context.Context, before, after []string) error {
 	if slices.Contains(before, auth.RoleAdmin) == slices.Contains(after, auth.RoleAdmin) {
 		return nil

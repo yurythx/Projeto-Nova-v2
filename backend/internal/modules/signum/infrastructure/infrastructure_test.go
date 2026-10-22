@@ -185,7 +185,7 @@ func TestFederatedReauthentication(t *testing.T) {
 	ctx := context.Background()
 	creds := func(secret string) KeycloakCredentials {
 		return func(context.Context) (string, string, string) {
-			return kc.URL + "/realms/nexus/", "nexus-backend", secret
+			return kc.URL + "/realms/nova/", "nova-backend", secret
 		}
 	}
 
@@ -193,8 +193,8 @@ func TestFederatedReauthentication(t *testing.T) {
 	if m, err := r.Reauthenticate(ctx, uuid.New(), "joao.silva", true, "senha-do-ad"); err != nil || m != "password_reauth:keycloak" {
 		t.Fatalf("senha aceita pelo Keycloak: %q %v", m, err)
 	}
-	if gotForm["path"] != "/realms/nexus/protocol/openid-connect/token" || gotForm["grant_type"] != "password" ||
-		gotForm["username"] != "joao.silva" || gotForm["client_id"] != "nexus-backend" || gotForm["client_secret"] != "s3cr3t" {
+	if gotForm["path"] != "/realms/nova/protocol/openid-connect/token" || gotForm["grant_type"] != "password" ||
+		gotForm["username"] != "joao.silva" || gotForm["client_id"] != "nova-backend" || gotForm["client_secret"] != "s3cr3t" {
 		t.Fatalf("requisição ao Keycloak: %+v", gotForm)
 	}
 	// Client público (sem segredo) não envia client_secret.

@@ -44,7 +44,7 @@ Blog, Wiki e Agenda ganham um **público-alvo** opcional: uma ou mais
   que é público de algum conteúdo é recusado (senão o conteúdo ficaria
   visível a todos em silêncio).
 - O resolvedor do IAM calcula, junto com as concessões, as unidades a que
-  a pessoa pertence (a da lotação e as de cima — `nexus_unidades_acima`),
+  a pessoa pertence (a da lotação e as de cima — `nova_unidades_acima`),
   no cache da identidade: checar o público não consulta o banco.
 - Público-alvo **não é sigilo**: serve para direcionar a leitura, não para
   proteger informação classificada (que tem regra própria no Trâmite).

@@ -20,8 +20,8 @@ func setRequiredEnv(t *testing.T) {
 		"REDIS_URL":           "redis://localhost:6379/0",
 		"KEYCLOAK_ISSUER_URL": "https://idp.example.com/realms/nix",
 		"KEYCLOAK_REALM":      "nix",
-		"KEYCLOAK_CLIENT_ID":  "projeto-nexus",
-		"KEYCLOAK_AUDIENCE":   "projeto-nexus",
+		"KEYCLOAK_CLIENT_ID":  "projeto-nova",
+		"KEYCLOAK_AUDIENCE":   "projeto-nova",
 	}
 	for k, v := range vars {
 		t.Setenv(k, v)
@@ -167,8 +167,8 @@ func TestLoad_ProductionRejectsInsecureDefaultSecrets(t *testing.T) {
 func TestLoad_ProductionAcceptsStrongSecrets(t *testing.T) {
 	setRequiredEnv(t)
 	t.Setenv("APP_ENV", "production")
-	t.Setenv("MINIO_ACCESS_KEY", "nexus-prod-access")
-	t.Setenv("MINIO_SECRET_KEY", "nexus-prod-secret-strong-value")
+	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
 	t.Setenv("CONFIG_ENCRYPTION_KEY", "cHJvZC1zdHJvbmcta2V5LTMyLWJ5dGVzLWxvbmchIQ==")
 
 	if _, err := Load(); err != nil {
@@ -190,8 +190,8 @@ func TestLoad_DevelopmentAllowsDefaultSecrets(t *testing.T) {
 func TestLoad_ProductionRejectsExampleDBPassword(t *testing.T) {
 	setRequiredEnv(t)
 	t.Setenv("APP_ENV", "production")
-	t.Setenv("MINIO_ACCESS_KEY", "nexus-prod-access")
-	t.Setenv("MINIO_SECRET_KEY", "nexus-prod-secret-strong-value")
+	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
 	t.Setenv("DB_PASSWORD", exampleDBPassword)
 
 	_, err := Load()
@@ -210,9 +210,9 @@ func TestLoad_ProductionRejectsExampleDBPassword(t *testing.T) {
 func TestLoad_ProductionRejectsExampleRabbitMQPassword(t *testing.T) {
 	setRequiredEnv(t)
 	t.Setenv("APP_ENV", "production")
-	t.Setenv("MINIO_ACCESS_KEY", "nexus-prod-access")
-	t.Setenv("MINIO_SECRET_KEY", "nexus-prod-secret-strong-value")
-	t.Setenv("RABBITMQ_URL", "amqp://nexus:"+exampleRabbitMQPassword+"@rabbitmq:5672/nexus")
+	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
+	t.Setenv("RABBITMQ_URL", "amqp://nova:"+exampleRabbitMQPassword+"@rabbitmq:5672/nova")
 
 	_, err := Load()
 	if err == nil {
@@ -228,8 +228,8 @@ func TestLoad_ProductionRejectsExampleRabbitMQPassword(t *testing.T) {
 func TestLoad_ProductionRejectsExampleRedisPassword(t *testing.T) {
 	setRequiredEnv(t)
 	t.Setenv("APP_ENV", "production")
-	t.Setenv("MINIO_ACCESS_KEY", "nexus-prod-access")
-	t.Setenv("MINIO_SECRET_KEY", "nexus-prod-secret-strong-value")
+	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
 	t.Setenv("REDIS_URL", "redis://:"+exampleRedisPassword+"@redis:6379/0")
 
 	_, err := Load()
@@ -250,8 +250,8 @@ func TestLoad_ProductionRejectsExampleRedisPassword(t *testing.T) {
 func TestLoad_ProductionRejectsInsecureConfigEncryptionKey(t *testing.T) {
 	setRequiredEnv(t)
 	t.Setenv("APP_ENV", "production")
-	t.Setenv("MINIO_ACCESS_KEY", "nexus-prod-access")
-	t.Setenv("MINIO_SECRET_KEY", "nexus-prod-secret-strong-value")
+	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
 	// Não define CONFIG_ENCRYPTION_KEY -> fica no default inseguro.
 
 	_, err := Load()

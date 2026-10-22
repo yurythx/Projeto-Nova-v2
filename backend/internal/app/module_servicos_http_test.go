@@ -22,7 +22,7 @@ func TestProdutosCicloEEscopo(t *testing.T) {
 	admin := h.admin()
 	o := h.orgEscopo(t)
 	gestor := h.gestorEm(t, o.a, "produtos:manage")
-	_, semPerm := h.user("nexus-user")
+	_, semPerm := h.user("nova-user")
 
 	h.expect(http.StatusUnauthorized, http.MethodGet, "/api/v1/produtos", "", "")
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/produtos", semPerm, `{"nome":"Protocolo","estagio":"operacao"}`)
@@ -80,7 +80,7 @@ func TestAtendimentoOfertasEquipes(t *testing.T) {
 	h := newHarness(t)
 	admin := h.admin()
 	o := h.orgEscopo(t)
-	uid, gestor := h.user("nexus-user")
+	uid, gestor := h.user("nova-user")
 	perms := `["atendimento:manage","produtos:manage"]`
 	perfil := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/iam/perfis", admin,
 		`{"nome":"Atendimento `+uuid.NewString()[:6]+`","permissoes":`+perms+`}`)).ID

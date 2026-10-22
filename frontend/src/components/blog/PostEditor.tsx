@@ -25,7 +25,7 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
   const [uploading, setUploading] = useState(false);
   const [publico, setPublico] = useState(post?.publico ?? TODOS);
 
-  const storageKey = post ? `nexus_blog_draft_${post.id}` : "nexus_blog_draft_new";
+  const storageKey = post ? `nova_blog_draft_${post.id}` : "nova_blog_draft_new";
   const [hasDraft, setHasDraft] = useState(() => {
     if (typeof window === "undefined") return false;
     try {

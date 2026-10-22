@@ -211,7 +211,7 @@ func (l *logRecorder) has(msg string) bool {
 }
 
 func TestQueuesAndMountSkipPluginsWithoutCapabilities(t *testing.T) {
-	q := messaging.QueueSpec{Name: "nexus.teste"}
+	q := messaging.QueueSpec{Name: "nova.teste"}
 	k, _ := newKernel(t, bare{m: Manifest{Key: "nada"}}, &consumerPlugin{fakePlugin: fakePlugin{m: Manifest{Key: "fila"}}, consumers: []Consumer{{Queue: q}}})
 	if qs := k.Queues(); len(qs) != 1 || qs[0].Name != q.Name {
 		t.Fatalf("filas declaradas: %v", qs)
@@ -329,7 +329,7 @@ func TestSuperviseRunsConsumersWithDedup(t *testing.T) {
 	var mu sync.Mutex
 	queues := map[string]events.MessageHandler{}
 	cp := &consumerPlugin{fakePlugin: fakePlugin{m: Manifest{Key: "fila", DefaultEnabled: true}}, consumers: []Consumer{{
-		Queue:   messaging.QueueSpec{Name: "nexus.kernel.teste." + uuid.NewString()[:8]},
+		Queue:   messaging.QueueSpec{Name: "nova.kernel.teste." + uuid.NewString()[:8]},
 		Handler: func(context.Context, events.Event) error { handled.Add(1); return nil },
 	}}}
 	k, _ := newKernel(t, cp)

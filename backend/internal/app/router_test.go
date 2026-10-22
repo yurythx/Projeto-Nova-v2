@@ -61,7 +61,7 @@ func testDeps(t *testing.T) *Dependencies {
 	cfg := &config.Config{
 		App:         config.AppConfig{Env: "test", Name: "projeto-nova-test"},
 		LocalAuth:   config.LocalAuthConfig{Enabled: true, PrivateKeyPEM: pemKey, TokenTTL: time.Hour},
-		MinIO:       config.MinIOConfig{Bucket: "nexus-test"},
+		MinIO:       config.MinIOConfig{Bucket: "nova-test"},
 		Upload:      config.UploadConfig{MaxFileBytes: 10 << 20, URLExpiry: time.Minute},
 		Signum:      config.SignumConfig{ChallengeTTL: time.Minute},
 		Egress:      config.EgressConfig{Timeout: time.Second, MaxAttempts: 3, BatchSize: 10, PollInterval: time.Second},
@@ -81,7 +81,7 @@ func testDeps(t *testing.T) *Dependencies {
 
 	d := &Dependencies{
 		Config: cfg, Logger: logger, DB: pool, Redis: rdb, Verifier: verifier, LocalSigner: signer,
-		IAM: iam.NewResolver(pool, rdb, logger), Outbox: outbox.NewWriter("nexus.test"), OutboxStats: outbox.NewStats(pool),
+		IAM: iam.NewResolver(pool, rdb, logger), Outbox: outbox.NewWriter("nova.test"), OutboxStats: outbox.NewStats(pool),
 		Storage: storagetest.New(), Hub: ws.NewHub(logger, rdb), Tickets: ws.NewTicketStore(rdb, ws.TicketTTL), Cipher: cipher,
 		Idempotency: idempotency.NewPostgresStore(pool), KeycloakCfg: keycloakconfig.NewPostgresStore(pool, cipher),
 		Branding: branding.NewStore(pool), LGPD: lgpd.NewService(pool, logger, nil),
@@ -131,7 +131,7 @@ func TestRouterMountsEveryPluginAndEnforcesAuthAndGuard(t *testing.T) {
 	// 2) Conta local com senha Argon2id -> login -> token RS256.
 	username := "rt_" + strings.ReplaceAll(uuid.NewString()[:8], "-", "")
 	hash, _ := passwords.Hash("Senha-Forte-123")
-	if _, err := d.DB.Exec(context.Background(), `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $1 || '@nexus.test', $2, '{nexus-admin}')`,
+	if _, err := d.DB.Exec(context.Background(), `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $1 || '@nova.test', $2, '{nova-admin}')`,
 		username, hash); err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestRouterMountsEveryPluginAndEnforcesAuthAndGuard(t *testing.T) {
 		t.Fatalf("sem token deveria ser 401, veio %d", rec.Code)
 	}
 	if rec := do(http.MethodGet, "/api/v1/me", token, ""); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"*"`) {
-		t.Fatalf("/me deveria trazer a permissão curinga do nexus-admin: %d %s", rec.Code, rec.Body.String())
+		t.Fatalf("/me deveria trazer a permissão curinga do nova-admin: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := do(http.MethodGet, "/api/v1/blog/posts", token, ""); rec.Code != http.StatusOK {
 		t.Fatalf("blog ativo deveria responder 200, veio %d %s", rec.Code, rec.Body.String())
@@ -201,7 +201,7 @@ func TestRouterMountsEveryPluginAndEnforcesAuthAndGuard(t *testing.T) {
 
 	// 7) Autorização por escopo: usuário sem perfil não acessa a auditoria.
 	plain := "rt_" + strings.ReplaceAll(uuid.NewString()[:8], "-", "")
-	if _, err := d.DB.Exec(context.Background(), `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $1 || '@nexus.test', $2, '{nexus-user}')`,
+	if _, err := d.DB.Exec(context.Background(), `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $1 || '@nova.test', $2, '{nova-user}')`,
 		plain, hash); err != nil {
 		t.Fatal(err)
 	}

@@ -87,13 +87,13 @@ export function RunbooksTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Diretório de Snapshots</span>
-              <p className="font-mono text-sm font-bold text-foreground mt-1">/root/backups/nexus</p>
+              <p className="font-mono text-sm font-bold text-foreground mt-1">/root/backups/nova</p>
               <span className="text-xs text-muted-foreground">Isolado com umask 077</span>
             </div>
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Agendamento Diário</span>
               <p className="text-sm font-bold text-foreground mt-1">02:30 AM (Madrugada)</p>
-              <span className="text-xs text-muted-foreground">Configurado em /etc/cron.d/nexus-backup</span>
+              <span className="text-xs text-muted-foreground">Configurado em /etc/cron.d/nova-backup</span>
             </div>
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Política de Retenção</span>
@@ -122,7 +122,7 @@ export function RunbooksTab() {
                   size="sm"
                   onClick={() =>
                     copyToClipboard(
-                      "./scripts/restore.sh --verify $(ls -td /root/backups/nexus/* | head -1)",
+                      "./scripts/restore.sh --verify $(ls -td /root/backups/nova/* | head -1)",
                       "cmd-verify"
                     )
                   }
@@ -133,10 +133,10 @@ export function RunbooksTab() {
                 </Button>
               </div>
               <p className="text-xs text-muted">
-                Restaura o último dump num banco temporário (<code>nexus_restore_check</code>), confere contagens de usuários, unidades e auditoria e descarta o temporário.
+                Restaura o último dump num banco temporário (<code>nova_restore_check</code>), confere contagens de usuários, unidades e auditoria e descarta o temporário.
               </p>
               <pre className="p-2 rounded bg-surface-elevated font-mono text-xs text-foreground overflow-x-auto">
-                ./scripts/restore.sh --verify $(ls -td /root/backups/nexus/* | head -1)
+                ./scripts/restore.sh --verify $(ls -td /root/backups/nova/* | head -1)
               </pre>
             </div>
 
@@ -151,7 +151,7 @@ export function RunbooksTab() {
                   size="sm"
                   onClick={() =>
                     copyToClipboard(
-                      "./scripts/restore.sh --yes /root/backups/nexus/<DATA-HORA> --minio",
+                      "./scripts/restore.sh --yes /root/backups/nova/<DATA-HORA> --minio",
                       "cmd-restore"
                     )
                   }
@@ -165,7 +165,7 @@ export function RunbooksTab() {
                 Para a API e workers, substitui o banco pelo backup e sobrepõe os objetos de armazenamento S3.
               </p>
               <pre className="p-2 rounded bg-surface-elevated font-mono text-xs text-danger overflow-x-auto">
-                ./scripts/restore.sh --yes /root/backups/nexus/&lt;DATA-HORA&gt; --minio
+                ./scripts/restore.sh --yes /root/backups/nova/&lt;DATA-HORA&gt; --minio
               </pre>
             </div>
           </div>

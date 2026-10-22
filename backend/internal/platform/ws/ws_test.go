@@ -42,7 +42,7 @@ func newHarness(t *testing.T) *harness {
 	ctx, cancel := context.WithCancel(context.Background())
 	h.cancel = cancel
 	go func() { _ = h.hub.Run(ctx) }()
-	h.srv = httptest.NewServer(UpgradeHandler(h.hub, h.tickets, "http://nexus.test", testLogger()))
+	h.srv = httptest.NewServer(UpgradeHandler(h.hub, h.tickets, "http://nova.test", testLogger()))
 	t.Cleanup(func() { h.srv.Close(); cancel() })
 	time.Sleep(50 * time.Millisecond) // backplane assinado
 	return h

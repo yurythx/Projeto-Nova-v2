@@ -68,7 +68,7 @@ internal/modules/financeiro/
 ├── module.go          # kernel.Plugin: Manifest + RegisterRoutes/Workers/Consumers/SearchProviders…
 ├── domain/            # Entidades, invariantes e erros de domínio (sem dependência de infraestrutura)
 ├── application/       # Casos de uso: transação (database.WithTx) + outbox + auditoria
-├── infrastructure/    # Repositório PostgreSQL (pgx, queries parametrizadas; full-text via nexus_search_tsquery — ADR 011)
+├── infrastructure/    # Repositório PostgreSQL (pgx, queries parametrizadas; full-text via nova_search_tsquery — ADR 011)
 └── transport/         # Handlers chi: Bind/Validate, RequirePermission, WriteOK/WritePage
 ```
 

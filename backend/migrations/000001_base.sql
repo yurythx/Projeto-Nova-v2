@@ -28,7 +28,7 @@ DECLARE
     v_pos  BIGINT;
     v_hash TEXT;
 BEGIN
-    -- Chave fixa do lock da cadeia de auditoria do Nexus.
+    -- Chave fixa do lock da cadeia de auditoria do Nova.
     PERFORM pg_advisory_xact_lock(7300101);
     SELECT chain_pos, hash INTO v_pos, v_hash
       FROM audit_logs ORDER BY chain_pos DESC LIMIT 1;
@@ -169,7 +169,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION public.nexus_scope_active(e uuid, u uuid, d uuid) RETURNS boolean
+CREATE FUNCTION public.nova_scope_active(e uuid, u uuid, d uuid) RETURNS boolean
     LANGUAGE sql STABLE PARALLEL SAFE
     AS $$
     SELECT (e IS NULL OR EXISTS (SELECT 1 FROM entidades WHERE id = e AND ativo))
@@ -177,25 +177,25 @@ CREATE FUNCTION public.nexus_scope_active(e uuid, u uuid, d uuid) RETURNS boolea
        AND (d IS NULL OR EXISTS (SELECT 1 FROM departamentos WHERE id = d AND ativo))
 $$;
 
-CREATE FUNCTION public.nexus_search_tsquery(cfg regconfig, q text) RETURNS tsquery
+CREATE FUNCTION public.nova_search_tsquery(cfg regconfig, q text) RETURNS tsquery
     LANGUAGE sql STABLE PARALLEL SAFE
     AS $$
-    SELECT websearch_to_tsquery(cfg, nexus_unaccent(q)) || COALESCE((
+    SELECT websearch_to_tsquery(cfg, nova_unaccent(q)) || COALESCE((
         SELECT to_tsquery(cfg, string_agg(quote_literal(t) || ':*', ' & '))
-          FROM regexp_split_to_table(lower(nexus_unaccent(q)), '[^[:alnum:]]+') AS t
+          FROM regexp_split_to_table(lower(nova_unaccent(q)), '[^[:alnum:]]+') AS t
          WHERE length(t) >= 2
            AND q !~ '["-]'
            AND q !~* '\mor\M'
     ), ''::tsquery)
 $$;
 
-CREATE FUNCTION public.nexus_unaccent(txt text) RETURNS text
+CREATE FUNCTION public.nova_unaccent(txt text) RETURNS text
     LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE
     AS $$
     SELECT public.unaccent('public.unaccent'::regdictionary, txt)
 $$;
 
-CREATE FUNCTION public.nexus_unidades_acima(u uuid) RETURNS uuid[]
+CREATE FUNCTION public.nova_unidades_acima(u uuid) RETURNS uuid[]
     LANGUAGE sql STABLE PARALLEL SAFE
     AS $$
     SELECT CASE WHEN u IS NULL THEN '{}'::UUID[] ELSE (
@@ -208,7 +208,7 @@ CREATE FUNCTION public.nexus_unidades_acima(u uuid) RETURNS uuid[]
     END
 $$;
 
-CREATE FUNCTION public.nexus_unidades_cobertas(e uuid, u uuid, d uuid) RETURNS uuid[]
+CREATE FUNCTION public.nova_unidades_cobertas(e uuid, u uuid, d uuid) RETURNS uuid[]
     LANGUAGE sql STABLE PARALLEL SAFE
     AS $$
     SELECT CASE
@@ -225,7 +225,7 @@ CREATE FUNCTION public.nexus_unidades_cobertas(e uuid, u uuid, d uuid) RETURNS u
     END
 $$;
 
-CREATE FUNCTION public.nexus_valid_permissions(perms text[]) RETURNS boolean
+CREATE FUNCTION public.nova_valid_permissions(perms text[]) RETURNS boolean
     LANGUAGE sql IMMUTABLE PARALLEL SAFE
     AS $_$
     SELECT COALESCE(bool_and(p ~ '^(\*|[a-z_]+:(\*|[a-z_]+))$'), true) FROM unnest(perms) AS p
@@ -235,7 +235,7 @@ CREATE FUNCTION public.notify_system_modules_changed() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    PERFORM pg_notify('nexus_modules_channel', COALESCE(NEW.key, OLD.key));
+    PERFORM pg_notify('nova_modules_channel', COALESCE(NEW.key, OLD.key));
     RETURN NULL;
 END;
 $$;
@@ -271,7 +271,7 @@ CREATE FUNCTION public.prevent_tramite_movimentos_mutation() RETURNS trigger
     AS $$
 BEGIN
     -- A exclusão em cascata do processo (ON DELETE CASCADE) é a única
-    -- remoção admitida; o Nexus nunca apaga processo pela API.
+    -- remoção admitida; o Nova nunca apaga processo pela API.
     IF TG_OP = 'DELETE' AND NOT EXISTS (SELECT 1 FROM tramite_processos WHERE id = OLD.processo_id) THEN
         RETURN OLD;
     END IF;
@@ -519,7 +519,7 @@ CREATE TABLE public.blog_posts (
     published_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    search tsvector GENERATED ALWAYS AS (((setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(title)), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(summary)), 'B'::"char")) || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(body)), 'C'::"char"))) STORED,
+    search tsvector GENERATED ALWAYS AS (((setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(title)), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(summary)), 'B'::"char")) || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(body)), 'C'::"char"))) STORED,
     unidade_id uuid,
     CONSTRAINT blog_posts_kind_check CHECK ((kind = ANY (ARRAY['noticia'::text, 'comunicado'::text]))),
     CONSTRAINT blog_posts_published_has_date CHECK (((status <> 'published'::text) OR (published_at IS NOT NULL))),
@@ -601,7 +601,7 @@ CREATE TABLE public.catalog_services (
     published_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    search tsvector GENERATED ALWAYS AS (((setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(title)), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(((category || ' '::text) || summary))), 'B'::"char")) || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(description)), 'C'::"char"))) STORED,
+    search tsvector GENERATED ALWAYS AS (((setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(title)), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(((category || ' '::text) || summary))), 'B'::"char")) || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(description)), 'C'::"char"))) STORED,
     CONSTRAINT catalog_services_status_check CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'archived'::text])))
 );
 
@@ -767,7 +767,7 @@ CREATE TABLE public.files_objects (
     owner_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    search tsvector GENERATED ALWAYS AS (to_tsvector('simple'::regconfig, public.nexus_unaccent(name))) STORED,
+    search tsvector GENERATED ALWAYS AS (to_tsvector('simple'::regconfig, public.nova_unaccent(name))) STORED,
     CONSTRAINT files_objects_name_check CHECK ((((char_length(name) >= 1) AND (char_length(name) <= 255)) AND (name !~ '[/\\]'::text))),
     CONSTRAINT files_objects_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'ready'::text])))
 );
@@ -1012,7 +1012,7 @@ CREATE TABLE public.perfis (
     ativo boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT ck_perfis_permissoes_formato CHECK (public.nexus_valid_permissions(permissoes))
+    CONSTRAINT ck_perfis_permissoes_formato CHECK (public.nova_valid_permissions(permissoes))
 );
 
 CREATE TABLE public.problemas (
@@ -1195,7 +1195,7 @@ CREATE TABLE public.tramite_processos (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     concluido_at timestamp with time zone,
-    search tsvector GENERATED ALWAYS AS (((setweight(to_tsvector('simple'::regconfig, numero), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(assunto)), 'A'::"char")) || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(((interessado || ' '::text) || descricao))), 'B'::"char"))) STORED,
+    search tsvector GENERATED ALWAYS AS (((setweight(to_tsvector('simple'::regconfig, numero), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(assunto)), 'A'::"char")) || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(((interessado || ' '::text) || descricao))), 'B'::"char"))) STORED,
     CONSTRAINT tramite_processos_sigilo_check CHECK ((sigilo = ANY (ARRAY['publico'::text, 'restrito'::text, 'sigiloso'::text]))),
     CONSTRAINT tramite_processos_status_check CHECK ((status = ANY (ARRAY['aberto'::text, 'em_tramitacao'::text, 'concluido'::text, 'arquivado'::text])))
 );
@@ -1284,7 +1284,7 @@ CREATE TABLE public.wiki_pages (
     updated_by uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    search tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(title)), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nexus_unaccent(body)), 'C'::"char"))) STORED,
+    search tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(title)), 'A'::"char") || setweight(to_tsvector('portuguese'::regconfig, public.nova_unaccent(body)), 'C'::"char"))) STORED,
     unidade_id uuid,
     CONSTRAINT wiki_pages_parent_not_self CHECK (((parent_id IS NULL) OR (parent_id <> id)))
 );
@@ -1787,7 +1787,7 @@ CREATE INDEX idx_users_groups ON public.users USING gin (groups);
 
 CREATE UNIQUE INDEX idx_users_keycloak_subject ON public.users USING btree (keycloak_subject);
 
-CREATE INDEX idx_users_search ON public.users USING gin (public.nexus_unaccent(lower(((((display_name || ' '::text) || username) || ' '::text) || email))) public.gin_trgm_ops);
+CREATE INDEX idx_users_search ON public.users USING gin (public.nova_unaccent(lower(((((display_name || ' '::text) || username) || ' '::text) || email))) public.gin_trgm_ops);
 
 CREATE UNIQUE INDEX idx_users_username ON public.users USING btree (username);
 

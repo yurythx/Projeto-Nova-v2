@@ -16,7 +16,7 @@ async function load(env: Record<string, string | undefined> = {}): Promise<Optio
   return import("./options");
 }
 
-const KC = { KEYCLOAK_ISSUER_URL: "https://sso/realms/n", KEYCLOAK_FRONTEND_CLIENT_ID: "nexus-web", KEYCLOAK_FRONTEND_CLIENT_SECRET: "s" };
+const KC = { KEYCLOAK_ISSUER_URL: "https://sso/realms/n", KEYCLOAK_FRONTEND_CLIENT_ID: "nova-web", KEYCLOAK_FRONTEND_CLIENT_SECRET: "s" };
 
 function jwtOf(payload: Record<string, unknown>): string {
   return `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
@@ -115,7 +115,7 @@ describe("callback jwt", () => {
 
   it("login Keycloak guarda os tokens e as claims de exibição (roles de realm e do client, grupos)", async () => {
     const o = await load(KC);
-    const access = jwtOf({ roles: ["a"], realm_access: { roles: ["b"] }, resource_access: { "nexus-web": { roles: ["c"] } }, groups: ["GRP_TI"] });
+    const access = jwtOf({ roles: ["a"], realm_access: { roles: ["b"] }, resource_access: { "nova-web": { roles: ["c"] } }, groups: ["GRP_TI"] });
     const t = await jwt(o, { token: {}, account: { provider: "keycloak", access_token: access, expires_at: Math.floor(future() / 1000), refresh_token: "r", id_token: "i" } });
     expect(t).toMatchObject({ accessToken: access, refreshToken: "r", idToken: "i", provider: "keycloak", roles: ["a", "b", "c"], groups: ["GRP_TI"] });
     expect(t.error).toBeUndefined();

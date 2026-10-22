@@ -59,11 +59,11 @@ describe("unidadesGeridas (ADR 013)", () => {
     );
     expect(ids(r)).toEqual(["W"]);
   });
-  it("global e nexus-admin cobrem tudo (e o institucional)", () => {
+  it("global e nova-admin cobrem tudo (e o institucional)", () => {
     expect(unidadesGeridas({ roles: [], scopes: [scope({})] }, TREE, "catalog:manage").global).toBe(
       true,
     );
-    const admin = unidadesGeridas({ roles: ["nexus-admin"], scopes: [] }, TREE, "catalog:manage");
+    const admin = unidadesGeridas({ roles: ["nova-admin"], scopes: [] }, TREE, "catalog:manage");
     expect(admin.global).toBe(true);
     expect(admin.unidades.size).toBe(5);
   });
@@ -107,7 +107,7 @@ describe("departamentosGeridos (ADR 013)", () => {
     expect([...r.departamentos].sort()).toEqual(["d-B", "d-NETA", "d-SUB"]);
   });
   it("global cobre todos", () => {
-    const r = departamentosGeridos({ roles: ["nexus-admin"], scopes: [] }, TREE, "mercurio:manage");
+    const r = departamentosGeridos({ roles: ["nova-admin"], scopes: [] }, TREE, "mercurio:manage");
     expect(r.global).toBe(true);
     expect(r.departamentos.size).toBe(5);
   });

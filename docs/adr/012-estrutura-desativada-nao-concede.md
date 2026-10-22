@@ -26,7 +26,7 @@ eram três:
 ## Decisão
 
 1. **Escopo ativo como regra única.** A função
-   `nexus_scope_active(entidade, unidade, departamento)`, da migration
+   `nova_scope_active(entidade, unidade, departamento)`, da migration
    000126, vale só se cada nível informado existe e está ativo. Ela é usada
    pelo resolvedor do IAM (permissões por requisição) e pelo cálculo de
    permissões da tela de usuários, que antes repetia a regra em SQL

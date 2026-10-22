@@ -21,8 +21,8 @@ fi
 src="$(cd "$src" && pwd)"
 
 env_val() { grep "^$1=" .env | tail -1 | cut -d= -f2- || true; }
-DB_USER="$(env_val DB_USER)"; DB_USER="${DB_USER:-nexus}"
-DB_NAME="$(env_val DB_NAME)"; DB_NAME="${DB_NAME:-nexus}"
+DB_USER="$(env_val DB_USER)"; DB_USER="${DB_USER:-nova}"
+DB_NAME="$(env_val DB_NAME)"; DB_NAME="${DB_NAME:-nova}"
 psql() { docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$DB_USER" "$@"; }
 
 echo "==> Conferindo hashes"

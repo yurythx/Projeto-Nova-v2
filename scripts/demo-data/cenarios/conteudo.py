@@ -150,7 +150,7 @@ expect("servidor não vê integrações", code, 403)
 for url in ("http://192.168.1.42:8010/health", "http://127.0.0.1/", "http://169.254.169.254/latest/meta-data/", "http://postgres:5432/"):
     code, d = call(admin, "POST", "egress/targets", {"name": f"ssrf {RUN}", "kind": "webhook", "url": url, "event_patterns": ["*"]})
     expect(f"destino interno recusado ({url.split('/')[2]})", code, (400, 422), d)
-code, d = call(admin, "POST", "egress/targets", {"name": f"Webhook público {RUN}", "kind": "webhook", "url": "https://example.com/nexus-hook", "event_patterns": ["tramite.*"]})
+code, d = call(admin, "POST", "egress/targets", {"name": f"Webhook público {RUN}", "kind": "webhook", "url": "https://example.com/nova-hook", "event_patterns": ["tramite.*"]})
 expect("destino público aceito", code, (200, 201), d)
 if code in (200, 201):
     code, _ = call(admin, "DELETE", f"egress/targets/{d['data']['id']}")

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — SEMENTE DO CHAT CORPORATIVO MERCÚRIO (RONDONÓPOLIS - MT)
+-- PROJETO NOVA — SEMENTE DO CHAT CORPORATIVO MERCÚRIO (RONDONÓPOLIS - MT)
 -- ==============================================================================
 -- Cadastra salas departamentais vinculadas aos departamentos de Rondonópolis,
 -- associa as personas aos canais e popula mensagens de boas-vindas e alinhamento.
@@ -53,8 +53,8 @@ BEGIN
     -- 2. Salas Departamentais
     INSERT INTO mercurio_rooms (id, kind, name, description, ad_group, departamento_id, created_by, created_at, updated_at)
     VALUES
-        (v_r_dir, 'department', 'Diretoria Executiva & Estratégia', 'Alinhamento da liderança e diretoria executiva na Sede Centro.', 'NEXUS-DIR', v_dep_dir, v_u_carlos, now() - interval '10 days', now()),
-        (v_r_mkt, 'department', 'Comunicação & Marketing', 'Coordenação de eventos, comunicados corporativos e publicações do Blog.', 'NEXUS-MKT', v_dep_mkt, v_u_mariana, now() - interval '10 days', now()),
+        (v_r_dir, 'department', 'Diretoria Executiva & Estratégia', 'Alinhamento da liderança e diretoria executiva na Sede Centro.', 'NOVA-DIR', v_dep_dir, v_u_carlos, now() - interval '10 days', now()),
+        (v_r_mkt, 'department', 'Comunicação & Marketing', 'Coordenação de eventos, comunicados corporativos e publicações do Blog.', 'NOVA-MKT', v_dep_mkt, v_u_mariana, now() - interval '10 days', now()),
         (v_r_dev, 'department', 'Engenharia de Software & P&D', 'Discussões de arquitetura, deploys e projetos do Hub Aurora.', 'TECH-DEV', v_dep_dev, v_u_lucas, now() - interval '10 days', now()),
         (v_r_ops, 'department', 'Operações & Logística Regional', 'Acompanhamento do tráfego de frotas, armazém e logística no Polo Industrial.', 'LOG-OPS', v_dep_ops, v_u_marcos, now() - interval '10 days', now()),
         (v_r_prot, 'department', 'Protocolo & Atendimento Integrado', 'Recepção de processos físicos, triagem e atendimento presencial no CIA Poguba.', 'ATD-PROT', v_dep_prot, v_u_ana, now() - interval '10 days', now()),
@@ -93,7 +93,7 @@ BEGIN
     -- Canal Geral
     INSERT INTO mercurio_messages (id, room_id, author_id, body, created_at)
     VALUES
-        (gen_random_uuid(), v_r_geral, v_u_carlos, 'Bom dia a todas as equipes de Rondonópolis! Sejam bem-vindos ao novo ambiente unificado da Plataforma Nexus.', now() - interval '4 days'),
+        (gen_random_uuid(), v_r_geral, v_u_carlos, 'Bom dia a todas as equipes de Rondonópolis! Sejam bem-vindos ao novo ambiente unificado da Plataforma Nova.', now() - interval '4 days'),
         (gen_random_uuid(), v_r_geral, v_u_mariana, 'Lembrando que o cronograma da Exposul 2026 já está publicado no Blog Corporativo e aberto a comentários!', now() - interval '3 days'),
         (gen_random_uuid(), v_r_geral, v_u_lucas, 'Equipe Hub Aurora à disposição para integrações e suporte técnico no ramal 5508.', now() - interval '2 days'),
         (gen_random_uuid(), v_r_geral, v_u_marcos, 'Operações no Polo Industrial normalizadas após a manutenção preventiva da frota bitrem.', now() - interval '1 day'),

@@ -27,7 +27,7 @@ type Store interface {
 
 // ModulesChannel é o canal LISTEN/NOTIFY disparado pelo gatilho de
 // system_modules.
-const ModulesChannel = "nexus_modules_channel"
+const ModulesChannel = "nova_modules_channel"
 
 // PostgresStore implementa Store sobre system_modules.
 type PostgresStore struct {

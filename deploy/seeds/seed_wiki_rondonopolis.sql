@@ -1,5 +1,5 @@
 -- ==============================================================================
--- PROJETO NEXUS — SEMENTE DA BASE DE CONHECIMENTO WIKI (RONDONÓPOLIS - MT)
+-- PROJETO NOVA — SEMENTE DA BASE DE CONHECIMENTO WIKI (RONDONÓPOLIS - MT)
 -- ==============================================================================
 -- Cadastra artigos e manuais operacionais corporativos para as unidades
 -- de Rondonópolis, com controle de versão, árvore hierárquica e público-alvo.
@@ -46,8 +46,8 @@ BEGIN
         created_by, updated_by, unidade_id, created_at, updated_at
     ) VALUES (
         v_p_onboarding, NULL, 'onboarding-colaborador',
-        'Guia de Boas-Vindas & Integração do Colaborador Nexus',
-        '# Boas-Vindas à Nexus Corporation — Polo Rondonópolis\n\nEste manual reúne as principais informações para apoiar a sua jornada e integração em nossas unidades em Rondonópolis - MT.\n\n## 1. Nossas Unidades Regionais\n- **Sede Corporativa Central:** Av. Marechal Rondon, 1250 (Centro)\n- **Hub de Inovação & P&D:** Av. Lions Internacional, 1500 (Vila Aurora)\n- **Complexo Operacional:** Rodovia BR-364, km 205 (Distrito Industrial Veterinário)\n- **Centro Integrado de Atendimento:** Av. Poguba, 850 (Sagrada Família)\n- **Terminal Intermodal & Agronegócios:** Anel Viário Conrado Sales Brito\n\n## 2. Acesso aos Sistemas Internos\n- **E-mail Corporativo e SSO:** Gerenciado pelo Keycloak integrado ao Active Directory.\n- **Processos & Memorandos:** Acesse o módulo **Trâmite** para autuar ou assinar despachos eletrônicos.\n- **Agendamento de Salas:** Utilize a **Agenda** para reservar salas de reunião em qualquer uma das unidades.\n\nEm caso de dúvidas, procure o departamento de Gente & Gestão (RH) ou o Suporte de TI no ramal `5508`.',
+        'Guia de Boas-Vindas & Integração do Colaborador Nova',
+        '# Boas-Vindas à Nova Corporation — Polo Rondonópolis\n\nEste manual reúne as principais informações para apoiar a sua jornada e integração em nossas unidades em Rondonópolis - MT.\n\n## 1. Nossas Unidades Regionais\n- **Sede Corporativa Central:** Av. Marechal Rondon, 1250 (Centro)\n- **Hub de Inovação & P&D:** Av. Lions Internacional, 1500 (Vila Aurora)\n- **Complexo Operacional:** Rodovia BR-364, km 205 (Distrito Industrial Veterinário)\n- **Centro Integrado de Atendimento:** Av. Poguba, 850 (Sagrada Família)\n- **Terminal Intermodal & Agronegócios:** Anel Viário Conrado Sales Brito\n\n## 2. Acesso aos Sistemas Internos\n- **E-mail Corporativo e SSO:** Gerenciado pelo Keycloak integrado ao Active Directory.\n- **Processos & Memorandos:** Acesse o módulo **Trâmite** para autuar ou assinar despachos eletrônicos.\n- **Agendamento de Salas:** Utilize a **Agenda** para reservar salas de reunião em qualquer uma das unidades.\n\nEm caso de dúvidas, procure o departamento de Gente & Gestão (RH) ou o Suporte de TI no ramal `5508`.',
         1, 1, v_u_mariana, v_u_mariana, v_unid_centro, now() - interval '15 days', now() - interval '5 days'
     ) ON CONFLICT (slug) DO UPDATE SET
         title = EXCLUDED.title, body = EXCLUDED.body, updated_at = now();
@@ -56,8 +56,8 @@ BEGIN
     INSERT INTO wiki_revisions (id, page_id, version, title, body, summary, edited_by, edited_at)
     VALUES (
         gen_random_uuid(), v_p_onboarding, 1,
-        'Guia de Boas-Vindas & Integração do Colaborador Nexus',
-        '# Boas-Vindas à Nexus Corporation — Polo Rondonópolis...',
+        'Guia de Boas-Vindas & Integração do Colaborador Nova',
+        '# Boas-Vindas à Nova Corporation — Polo Rondonópolis...',
         'Publicação inicial do manual de onboarding corporativo.',
         v_u_mariana, now() - interval '15 days'
     ) ON CONFLICT (page_id, version) DO NOTHING;
@@ -71,7 +71,7 @@ BEGIN
     ) VALUES (
         v_p_conduta, v_p_onboarding, 'codigo-de-conduta',
         'Código de Ética, Integridade & Conduta Corporativa',
-        '# Diretrizes de Ética & Integridade Corporativa\n\nO presente código estabelece os padrões éticos que orientam as relações profissionais, a condução de negócios e o cumprimento da legislação em todas as operações da Nexus.\n\n## 1. Princípios Fundamentais\n- **Transparência e Respeito:** Comunicação clara, tratamento igualitário e combate a qualquer forma de discriminação.\n- **Conformidade com a LGPD:** Proteção absoluta dos dados pessoais de colaboradores, clientes e produtores rurais cadastrados.\n- **Conflito de Interesses:** Colaboradores devem comunicar previamente qualquer relação comercial ou familiar que possa influenciar decisões da companhia.\n\n## 2. Canal de Denúncias e Ouvidoria\nDenúncias sobre desvios éticos podem ser encaminhadas de forma anônima à Diretoria de Governança ou protocoladas diretamente no CIA Poguba.',
+        '# Diretrizes de Ética & Integridade Corporativa\n\nO presente código estabelece os padrões éticos que orientam as relações profissionais, a condução de negócios e o cumprimento da legislação em todas as operações da Nova.\n\n## 1. Princípios Fundamentais\n- **Transparência e Respeito:** Comunicação clara, tratamento igualitário e combate a qualquer forma de discriminação.\n- **Conformidade com a LGPD:** Proteção absoluta dos dados pessoais de colaboradores, clientes e produtores rurais cadastrados.\n- **Conflito de Interesses:** Colaboradores devem comunicar previamente qualquer relação comercial ou familiar que possa influenciar decisões da companhia.\n\n## 2. Canal de Denúncias e Ouvidoria\nDenúncias sobre desvios éticos podem ser encaminhadas de forma anônima à Diretoria de Governança ou protocoladas diretamente no CIA Poguba.',
         1, 1, v_u_carlos, v_u_carlos, v_unid_centro, now() - interval '14 days', now() - interval '4 days'
     ) ON CONFLICT (slug) DO UPDATE SET
         title = EXCLUDED.title, body = EXCLUDED.body, parent_id = v_p_onboarding, updated_at = now();
@@ -94,7 +94,7 @@ BEGIN
     ) VALUES (
         v_p_seguranca, NULL, 'politica-seguranca-informacao',
         'Política de Segurança da Informação, Controle de Acessos & SOC',
-        '# Política de Segurança da Informação (PSI)\n\nDiretrizes normativas para mitigação de riscos cibernéticos, salvaguarda de ativos computacionais e controle de acessos em todas as redes da Nexus.\n\n## 1. Gestão de Senhas e Credenciais\n- Senhas devem conter no mínimo 12 caracteres, combinando letras maiúsculas, minúsculas, números e símbolos.\n- O compartilhamento de credenciais de login ou chaves de API é terminantemente proibido.\n- O lockout progressivo bloqueia contas automaticamente após tentativas inválidas consecutivas.\n\n## 2. Acesso Remoto & Redes Sem Fio\n- Colaboradores em trabalho remoto devem utilizar o cliente corporativo WireGuard.\n- Redes Wi-Fi de visitantes não possuem rota para os servidores de banco de dados ou painel administrativo.\n\n## 3. Notificação de Incidentes\nQualquer suspeita de vazamento de dados ou atividade anômala deve ser comunicada imediatamente ao SOC do Hub Aurora pelo ramal `5510`.',
+        '# Política de Segurança da Informação (PSI)\n\nDiretrizes normativas para mitigação de riscos cibernéticos, salvaguarda de ativos computacionais e controle de acessos em todas as redes da Nova.\n\n## 1. Gestão de Senhas e Credenciais\n- Senhas devem conter no mínimo 12 caracteres, combinando letras maiúsculas, minúsculas, números e símbolos.\n- O compartilhamento de credenciais de login ou chaves de API é terminantemente proibido.\n- O lockout progressivo bloqueia contas automaticamente após tentativas inválidas consecutivas.\n\n## 2. Acesso Remoto & Redes Sem Fio\n- Colaboradores em trabalho remoto devem utilizar o cliente corporativo WireGuard.\n- Redes Wi-Fi de visitantes não possuem rota para os servidores de banco de dados ou painel administrativo.\n\n## 3. Notificação de Incidentes\nQualquer suspeita de vazamento de dados ou atividade anômala deve ser comunicada imediatamente ao SOC do Hub Aurora pelo ramal `5510`.',
         2, 1, v_u_lucas, v_u_lucas, v_unid_aurora, now() - interval '12 days', now() - interval '2 days'
     ) ON CONFLICT (slug) DO UPDATE SET
         title = EXCLUDED.title, body = EXCLUDED.body, updated_at = now();
@@ -117,7 +117,7 @@ BEGIN
     ) VALUES (
         v_p_dev, v_p_seguranca, 'guia-desenvolvimento-agrotech',
         'Manual de Boas Práticas de Engenharia e Arquitetura de Software',
-        '# Guia de Engenharia & Arquitetura — Nexus AgroTech\n\n> **Aviso de Confidencialidade:** Este documento é de circulação restrita à equipe de Pesquisa, Desenvolvimento e Engenharia de Software do Hub de Inovação da Vila Aurora.\n\n## 1. Padrões de Código e Arquitetura\n- **Backend Go:** Clean Architecture com separação rigorosa de domínios, aplicação e adaptadores de infraestrutura.\n- **Frontend Next.js:** React 19, componentes com design tokens Vanilla CSS e zero uso de classes utilitárias dispersas.\n- **Documentação de API:** Todo endpoint deve ser especificado em `docs/openapi.yaml` e validado por testes de contrato.\n\n## 2. Esteira de Integração Contínua (CI)\n- Toda alteração passa pela suíte completa de testes unitários e de integração antes do merge.\n- Cobertura obrigatória mínima mantida em 100% dos pacotes críticos do sistema.\n- Builds de imagem Docker utilizam multi-stage builds reproduzíveis.',
+        '# Guia de Engenharia & Arquitetura — Nova AgroTech\n\n> **Aviso de Confidencialidade:** Este documento é de circulação restrita à equipe de Pesquisa, Desenvolvimento e Engenharia de Software do Hub de Inovação da Vila Aurora.\n\n## 1. Padrões de Código e Arquitetura\n- **Backend Go:** Clean Architecture com separação rigorosa de domínios, aplicação e adaptadores de infraestrutura.\n- **Frontend Next.js:** React 19, componentes com design tokens Vanilla CSS e zero uso de classes utilitárias dispersas.\n- **Documentação de API:** Todo endpoint deve ser especificado em `docs/openapi.yaml` e validado por testes de contrato.\n\n## 2. Esteira de Integração Contínua (CI)\n- Toda alteração passa pela suíte completa de testes unitários e de integração antes do merge.\n- Cobertura obrigatória mínima mantida em 100% dos pacotes críticos do sistema.\n- Builds de imagem Docker utilizam multi-stage builds reproduzíveis.',
         1, 1, v_u_lucas, v_u_lucas, v_unid_aurora, now() - interval '10 days', now() - interval '1 day'
     ) ON CONFLICT (slug) DO UPDATE SET
         title = EXCLUDED.title, body = EXCLUDED.body, parent_id = v_p_seguranca, updated_at = now();
@@ -126,7 +126,7 @@ BEGIN
     VALUES (
         gen_random_uuid(), v_p_dev, 1,
         'Manual de Boas Práticas de Engenharia e Arquitetura de Software',
-        '# Guia de Engenharia & Arquitetura — Nexus AgroTech...',
+        '# Guia de Engenharia & Arquitetura — Nova AgroTech...',
         'Atualização dos padrões de CI e multi-stage builds.',
         v_u_lucas, now() - interval '10 days'
     ) ON CONFLICT (page_id, version) DO NOTHING;

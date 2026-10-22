@@ -222,7 +222,7 @@ func (f fakeSign) OpenEnvelope(context.Context, pgx.Tx, domain.SignatureRequest)
 	return uuid.New(), f.err
 }
 
-const bucket = "nexus-test"
+const bucket = "nova-test"
 
 type env struct {
 	t             *testing.T

@@ -195,7 +195,7 @@ func (r *Repository) Revision(ctx context.Context, db database.DBTX, pageID uuid
 
 func (r *Repository) Search(ctx context.Context, db database.DBTX, q string, limit int) ([]domain.Page, []float64, error) {
 	rows, err := db.Query(ctx, `SELECT `+cols+`, ts_rank(p.search, q), ts_headline('portuguese', p.body, q,
-		'MaxWords=25, MinWords=10, StartSel=**, StopSel=**')`+from+`, nexus_search_tsquery('portuguese', $1) q
+		'MaxWords=25, MinWords=10, StartSel=**, StopSel=**')`+from+`, nova_search_tsquery('portuguese', $1) q
 		WHERE p.search @@ q ORDER BY 13 DESC LIMIT $2`, q, limit)
 	if err != nil {
 		return nil, nil, wrap(err)

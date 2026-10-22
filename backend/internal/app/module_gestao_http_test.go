@@ -324,6 +324,6 @@ func TestMudancas(t *testing.T) {
 // mustUser cria um usuário sem permissões e devolve o token.
 func (h *apiHarness) mustUser(t *testing.T) string {
 	t.Helper()
-	_, tok := h.user("nexus-user")
+	_, tok := h.user("nova-user")
 	return tok
 }

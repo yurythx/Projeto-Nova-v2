@@ -44,7 +44,7 @@ func (h *apiHarness) user(roles ...string) (uuid.UUID, string) {
 	var id uuid.UUID
 	if err := h.d.DB.QueryRow(context.Background(),
 		`INSERT INTO users (username, email, display_name, password_hash, roles)
-		 VALUES ($1, $1 || '@nexus.test', 'Usuário ' || $1, $2, $3) RETURNING id`,
+		 VALUES ($1, $1 || '@nova.test', 'Usuário ' || $1, $2, $3) RETURNING id`,
 		username, hash, roles).Scan(&id); err != nil {
 		h.t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func (h *apiHarness) upload(objectKey, contentType string, body []byte) {
 }
 
 func (h *apiHarness) admin() string {
-	_, tok := h.user("nexus-admin")
+	_, tok := h.user("nova-admin")
 	return tok
 }
 
