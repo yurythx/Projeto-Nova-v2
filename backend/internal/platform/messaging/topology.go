@@ -37,6 +37,8 @@ var QueueNotificationWebsocket = QueueSpec{
 		"catalog.service.published",
 		"calendar.event.created",
 		"example.item.created",
+		"projetos.projeto.*",
+		"projetos.vinculo.*",
 	},
 }
 

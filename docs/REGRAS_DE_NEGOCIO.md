@@ -41,7 +41,7 @@ Referência funcional da plataforma. Serve para quem **implanta e administra**
 | Tipo | Módulos | Pode desligar? |
 |---|---|---|
 | Núcleo | IAM & Usuários, Auditoria | Não |
-| Plug-ins | Mercúrio, Egress, Blog, Catálogo, Contato, Diretório, Agenda, Arquivos, Wiki, Busca, Signum, Trâmite, Produtos digitais, Atendimento, Ativos, Problemas, Mudanças, Módulo Modelo | Sim, em Configurações → Módulos (`modules:manage`) |
+| Plug-ins | Mercúrio, Egress, Blog, Catálogo, Contato, Diretório, Agenda, Arquivos, Wiki, Busca, Signum, Trâmite, Produtos digitais, Atendimento, Ativos, Problemas, Mudanças, Projetos, Módulo Modelo | Sim, em Configurações → Módulos (`modules:manage`) |
 
 - Desligar um módulo tem efeito imediato, sem reiniciar:
   - as rotas dele respondem `404 MODULE_DISABLED`;
@@ -629,6 +629,28 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   mudança (institucional com institucional). O rótulo é guardado no momento da ligação. Mudança
   cancelada não aceita nem desfaz vínculos; a concluída e a que falhou
   aceitam (para ligar a mudança ao problema que ela resolveu).
+
+### Projetos
+- **Finalidade:** Gestão e acompanhamento de iniciativas, planos de ação, cronogramas e entregas estratégicas ou operacionais.
+- **Permissões:** `projetos:read` para consulta e `projetos:manage` para criação, edição e condução das fases e tarefas.
+- **Ciclo de vida do projeto:**
+  - `planejado` → `em_andamento` | `cancelado`
+  - `em_andamento` → `suspenso` | `concluido` | `cancelado`
+  - `suspenso` → `em_andamento` | `cancelado`
+  - `concluido` e `cancelado` encerram o ciclo de vida.
+- **Tarefas e marcos:** cada projeto possui tarefas ordenadas com estados `a_fazer`, `em_andamento`, `concluida` e `bloqueada`.
+- **Visões integradas:** interface em lista, quadro Kanban e Cronograma / Linha do Tempo (Gantt) de 90 dias.
+- **Apontamento de Horas & Timesheet:** registro de esforço técnico por tarefa ou projeto (data, horas entre 0 e 24h, custo/hora e descrição das atividades). Cálculo automático do total de horas realizadas, custo acumulado e acompanhamento visual da taxa de queima do orçamento previsto.
+
+### Seção Assistência (Central de Serviços estilo ITIL/GLPI)
+- **Agrupamento unificado:** no menu lateral, a seção **Assistência** consolida:
+  - **Dashboard:** métricas operacionais consolidadas de Atendimento, Problemas, Mudanças e Projetos.
+  - **Calendário Operacional:** visão cronológica integrada de janelas planejadas de mudanças (CAB), marcos de projetos e vencimentos de SLA de chamados em grade mensal e lista de prazos.
+  - **Detecção de Sobreposições e Conflitos:** alerta proativo visual quando janelas de Mudanças de risco médio ou alto coincidem com outros eventos ou marcos na mesma data, prevenindo colisões operacionais em infraestrutura.
+  - **Atendimento:** filas, chamados e quadro kanban de solicitações e incidentes.
+  - **Problemas:** catálogo de erros conhecidos, causas-raiz e contornos.
+  - **Mudanças:** planejamento de janelas, avaliação do CAB e reversões.
+  - **Projetos:** planos de ação, cronogramas, marcos e entregas.
 
 ### Contato (ouvidoria)
 - Formulário público sem login.

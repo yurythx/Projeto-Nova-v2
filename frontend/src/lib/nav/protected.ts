@@ -22,6 +22,8 @@ export const PROTECTED_PREFIXES = [
   "/ativos",
   "/problemas",
   "/mudancas",
+  "/projetos",
+  "/assistencia",
   "/notificacoes",
 ] as const;
 

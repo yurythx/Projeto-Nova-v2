@@ -339,3 +339,20 @@ export function rotuloAcao(estado: Estado, de: Estado, solicitante: boolean): st
       return ESTADO[estado].label;
   }
 }
+
+export interface ApontamentoAtendimento {
+  id: string;
+  solicitacao_id: string;
+  usuario_id: string;
+  usuario_nome: string;
+  data_apontamento: string;
+  horas: number;
+  descricao: string;
+  created_at: string;
+}
+
+export interface ResumoApontamentosAtendimento {
+  total_horas: number;
+  apontamentos: ApontamentoAtendimento[];
+}
+

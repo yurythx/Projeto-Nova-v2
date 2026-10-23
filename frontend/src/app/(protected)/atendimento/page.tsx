@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
+import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 import { useFrames } from "@/components/realtime/RealtimeProvider";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -35,6 +36,7 @@ export default function AtendimentoPortalPage() {
   const { can } = usePlataforma();
   const abre = can("atendimento:abrir");
   const [ofertaId, setOfertaId] = useState("");
+  const [titulo, setTitulo] = useState("");
   const [situacao, setSituacao] = useState<Situacao>("abertas");
   const [pagina, setPagina] = useState(1);
   const catalogo = useApiQuery<Oferta[]>(abre ? "v1/atendimento/catalogo" : null);
@@ -86,6 +88,7 @@ export default function AtendimentoPortalPage() {
     if (criada) {
       form.reset();
       setOfertaId("");
+      setTitulo("");
       setSituacao("abertas");
       setPagina(1);
       void minhas.mutate();
@@ -136,6 +139,15 @@ export default function AtendimentoPortalPage() {
                 maxLength={160}
                 autoComplete="off"
                 placeholder="Ex.: a senha do e-mail expirou"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+              />
+              <DeflexaoConhecimento
+                termo={`${escolhida?.nome ?? ""} ${titulo}`}
+                onResolvido={() => {
+                  setOfertaId("");
+                  setTitulo("");
+                }}
               />
               <Textarea
                 id="solicitacao-descricao"

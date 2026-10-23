@@ -44,6 +44,26 @@ describe("buildNav", () => {
     const nav = buildNav(mods, (p) => hasPermission(["contact:read"], p));
     expect(nav.modules.map((m) => m.href)).toEqual(["/gestao/contato"]);
   });
+
+  it("agrupa atendimento, problemas e mudanças na seção de Assistência com o Dashboard", () => {
+    const modsComAssistencia = [
+      ...modules,
+      mod("atendimento", { name: "Atendimento", route: "/atendimento" }),
+      mod("problemas", { name: "Problemas", route: "/problemas" }),
+      mod("mudancas", { name: "Mudanças", route: "/mudancas" }),
+    ];
+    const nav = buildNav(modsComAssistencia, () => false);
+    expect(nav.assistencia.map((a) => a.href)).toEqual([
+      "/assistencia",
+      "/assistencia/calendario",
+      "/atendimento",
+      "/problemas",
+      "/mudancas",
+    ]);
+    expect(nav.assistencia[0]?.label).toBe("Dashboard");
+    expect(nav.assistencia[1]?.label).toBe("Calendário");
+    expect(nav.modules.map((m) => m.href)).toEqual(["/blog", "/tramite"]);
+  });
 });
 
 describe("isNavHrefActive", () => {

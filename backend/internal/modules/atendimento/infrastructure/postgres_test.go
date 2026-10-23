@@ -238,6 +238,9 @@ func TestSolicitacoesPropagamFalhas(t *testing.T) {
 		"ListComentarios":   func(db database.DBTX) error { _, err := r.ListComentarios(ctx, db, id, true); return err },
 		"Responsaveis":      func(db database.DBTX) error { _, err := r.Responsaveis(ctx, db, &id); return err },
 		"ResponsavelValido": func(db database.DBTX) error { _, err := r.ResponsavelValido(ctx, db, id, nil); return err },
+		"ListApontamentos":  func(db database.DBTX) error { _, err := r.ListApontamentos(ctx, db, id); return err },
+		"InsertApontamento": func(db database.DBTX) error { _, err := r.InsertApontamento(ctx, db, domain.Apontamento{}); return err },
+		"DeleteApontamento": func(db database.DBTX) error { return r.DeleteApontamento(ctx, db, id, id) },
 	}
 	for name, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {

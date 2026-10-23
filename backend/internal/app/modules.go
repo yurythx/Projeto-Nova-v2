@@ -25,6 +25,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/mudancas"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/signum"
 	signumApp "github.com/yurythx/projeto-nova-v2/internal/modules/signum/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite"
@@ -68,6 +69,7 @@ func registerPlugins(d *Dependencies) {
 		ativosModule.Repositorio(), ligado))
 	alvos, produtoDaMudanca := portasMudancas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
 		ativosModule.Repositorio(), problemasModule.Repositorio(), ligado)
+	projetosModule := projetos.New(deps)
 
 	d.Kernel.MustRegister(
 		// Core imutável (nunca desativável).
@@ -91,6 +93,7 @@ func registerPlugins(d *Dependencies) {
 		ativosModule,
 		problemasModule,
 		mudancas.New(deps, alvos, produtoDaMudanca),
+		projetosModule,
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

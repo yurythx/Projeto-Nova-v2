@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type FormEvent, type ReactNode, useCallback, useState } from "react";
 
+import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
 import { ProblemasDoIncidente } from "@/components/atendimento/ProblemasDoIncidente";
 import { VisitasCard } from "@/components/atendimento/VisitasCard";
@@ -273,6 +274,12 @@ export default function SolicitacaoPage() {
               meuId={me?.id}
               finalizada={finalizada}
               onMudou={recarregar}
+            />
+
+            <ApontamentosCard
+              solicitacaoId={s.id}
+              tecnico={tecnico}
+              finalizada={finalizada}
             />
 
             <Card>

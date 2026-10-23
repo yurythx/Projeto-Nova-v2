@@ -62,6 +62,8 @@ const (
 	PermProblemasManage Permission = "problemas:manage"
 	PermMudancasManage  Permission = "mudancas:manage"
 	PermMudancasAprovar Permission = "mudancas:aprovar"
+	PermProjetosRead    Permission = "projetos:read"
+	PermProjetosManage  Permission = "projetos:manage"
 	PermExampleManage   Permission = "example:manage"
 	// PermIAManage: conexões de inteligência artificial (Configurações).
 	PermIAManage Permission = "ia:manage"

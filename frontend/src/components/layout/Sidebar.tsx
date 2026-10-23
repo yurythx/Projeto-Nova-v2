@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ChevronDown, LayoutDashboard, Settings, ShieldCheck, type LucideProps } from "lucide-react";
+import { Activity, BarChart3, Calendar, ChevronDown, LayoutDashboard, Settings, ShieldCheck, type LucideProps } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -22,6 +22,10 @@ export interface NavItem {
 // próprias em Administração; Egress é configuração; a Busca vive no
 // cabeçalho (#global-search).
 const HIDDEN_FROM_MENU = new Set(["iam", "audit", "egress", "search"]);
+
+// Módulos agrupados sob a seção dedicada de Assistência (estilo ITIL/GLPI).
+const ASSISTENCIA_KEYS = new Set(["atendimento", "problemas", "mudancas", "projetos"]);
+const ASSISTENCIA_ORDER = ["atendimento", "problemas", "mudancas", "projetos"];
 
 // Módulos cuja tela principal é de gestão (a face pública fica no site
 // institucional): só aparecem no menu para quem tem a permissão.
@@ -55,19 +59,45 @@ export function buildNav(
   can: (p: string) => boolean,
   canGlobal: (p: string) => boolean = can,
   enabled: (m: string) => boolean = () => true,
-): { modules: NavItem[]; admin: NavItem[] } {
-  const mods = modules
+): { assistencia: NavItem[]; modules: NavItem[]; admin: NavItem[] } {
+  const activeMods = modules
     .filter((m) => m.enabled && !m.core && !HIDDEN_FROM_MENU.has(m.key) && m.route)
-    .filter((m) => !MENU_PERMISSION[m.key] || can(MENU_PERMISSION[m.key]!))
-    .map((m) => {
-      const href = m.key === "blog" ? (can("blog:manage") ? "/gestao/blog" : (m.route === "/gestao/blog" ? "/blog" : m.route)) : m.route;
-      return {
-        href,
-        label: m.name,
-        icon: m.icon,
-        children: childrenOf(m.key, href, can, canGlobal, enabled),
-      };
+    .filter((m) => !MENU_PERMISSION[m.key] || can(MENU_PERMISSION[m.key]!));
+
+  const assistenciaMods: { key: string; item: NavItem }[] = [];
+  const mods: NavItem[] = [];
+
+  for (const m of activeMods) {
+    const href = m.key === "blog" ? (can("blog:manage") ? "/gestao/blog" : (m.route === "/gestao/blog" ? "/blog" : m.route)) : m.route;
+    const item: NavItem = {
+      href,
+      label: m.name,
+      icon: m.icon,
+      children: childrenOf(m.key, href, can, canGlobal, enabled),
+    };
+    if (ASSISTENCIA_KEYS.has(m.key)) {
+      assistenciaMods.push({ key: m.key, item });
+    } else {
+      mods.push(item);
+    }
+  }
+
+  const assistencia: NavItem[] = [];
+  if (assistenciaMods.length > 0) {
+    assistencia.push({
+      href: "/assistencia",
+      label: "Dashboard",
+      icon: BarChart3,
     });
+    assistencia.push({
+      href: "/assistencia/calendario",
+      label: "Calendário",
+      icon: Calendar,
+    });
+    assistenciaMods.sort((a, b) => ASSISTENCIA_ORDER.indexOf(a.key) - ASSISTENCIA_ORDER.indexOf(b.key));
+    assistencia.push(...assistenciaMods.map((m) => m.item));
+  }
+
   const admin: NavItem[] = [];
   if (can("audit:read")) admin.push({ href: "/auditoria", label: "Auditoria", icon: ShieldCheck });
   if (can("monitoring:read")) admin.push({ href: "/monitoramento", label: "Monitoramento", icon: Activity });
@@ -79,7 +109,7 @@ export function buildNav(
       children: childrenOf("config", "/configuracao", can, canGlobal, enabled),
     });
   }
-  return { modules: mods, admin };
+  return { assistencia, modules: mods, admin };
 }
 
 export function Sidebar({
@@ -183,6 +213,13 @@ export function Sidebar({
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <ul className="flex flex-col gap-0.5 px-2 pt-3">{renderGroup({ href: "/dashboard", label: "Visão geral", icon: LayoutDashboard })}</ul>
+
+        {nav.assistencia.length > 0 && (
+          <div className="mt-3">
+            <p className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}>Assistência</p>
+            <ul className="flex flex-col gap-0.5 px-2">{nav.assistencia.map(renderGroup)}</ul>
+          </div>
+        )}
 
         {nav.modules.length > 0 && (
           <div className="mt-3">

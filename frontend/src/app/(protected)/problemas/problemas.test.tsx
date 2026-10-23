@@ -123,6 +123,41 @@ describe("Problemas — lista", () => {
     renderApp(<ProblemasPage />);
     expect(await screen.findByText("Seu perfil não consulta problemas")).toBeInTheDocument();
   });
+
+  it("exibe o quadro kanban e permite transicionar para estados seguintes", async () => {
+    const user = userEvent.setup();
+    resetNavigation({}, "/problemas", "vista=quadro");
+    const api = mockBackend({
+      ...identityRoutes(perms("problemas:manage")),
+      "GET v1/problemas": {
+        data: [
+          problema({
+            id: "p1",
+            numero: 5,
+            titulo: "Servidor lento",
+            estado: "registrado",
+            proximos: ["em_analise"],
+          }),
+        ],
+      },
+      "POST v1/problemas/p1/estado": { data: problema({ estado: "em_analise" }) },
+    });
+    renderApp(<ProblemasPage />);
+    expect(await screen.findByRole("list", { name: "Quadro de problemas" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Registrados/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Em análise/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Erros conhecidos/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Resolvidos/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Encerrados/ })).toBeInTheDocument();
+
+    const select = screen.getByLabelText("Mover o problema #5 para");
+    await user.selectOptions(select, "em_analise");
+    await waitFor(() => {
+      const call = api.to("POST v1/problemas/p1/estado")[0];
+      expect(call).toBeDefined();
+      expect(call!.body).toEqual({ estado: "em_analise" });
+    });
+  });
 });
 
 describe("Problemas — detalhe", () => {

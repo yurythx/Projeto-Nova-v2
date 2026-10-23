@@ -112,6 +112,42 @@ describe("Mudanças — lista", () => {
     renderApp(<MudancasPage />);
     expect(await screen.findByText("Seu perfil não gere nem aprova mudanças")).toBeInTheDocument();
   });
+
+  it("exibe o quadro kanban de mudanças e permite mover entre colunas", async () => {
+    const user = userEvent.setup();
+    resetNavigation({}, "/mudancas", "vista=quadro");
+    const api = mockBackend({
+      ...identityRoutes(perms("mudancas:manage")),
+      "GET v1/mudancas": {
+        data: [
+          mudanca({
+            id: "m1",
+            numero: 3,
+            titulo: "Trocar fonte",
+            estado: "rascunho",
+            proximos: ["em_avaliacao"],
+          }),
+        ],
+      },
+      "POST v1/mudancas/m1/estado": { data: mudanca({ estado: "em_avaliacao" }) },
+    });
+    renderApp(<MudancasPage />);
+    expect(await screen.findByRole("list", { name: "Quadro de mudanças" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Rascunho/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Em avaliação/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Aprovadas/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Em execução/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Concluídas/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Rejeitada \/ Falhou/ })).toBeInTheDocument();
+
+    const select = screen.getByLabelText("Mover a mudança #3 para");
+    await user.selectOptions(select, "em_avaliacao");
+    await waitFor(() => {
+      const call = api.to("POST v1/mudancas/m1/estado")[0];
+      expect(call).toBeDefined();
+      expect(call!.body).toEqual({ estado: "em_avaliacao" });
+    });
+  });
 });
 
 describe("Mudanças — detalhe", () => {

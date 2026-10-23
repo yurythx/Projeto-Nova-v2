@@ -1,11 +1,13 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { type DragEvent, useState } from "react";
 
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
 import { Badge } from "@/components/ui/Badge";
 import {
+  relogioEmFoco,
   rotuloEstado,
   rotuloTipo,
   type Estado,
@@ -103,6 +105,11 @@ export function Kanban({
             <ul className="flex flex-col gap-2">
               {cartoes.map((s) => {
                 const moves = (s.proximos ?? []).filter((p) => p !== "cancelado");
+                const foco = s.prazo ? relogioEmFoco(s.prazo) : null;
+                const isVencido = foco?.relogio.situacao === "vencido" || foco?.relogio.situacao === "descumprido";
+                const isCritico = foco?.relogio.situacao === "critico" || foco?.relogio.situacao === "atencao";
+                const percentualSLA = Math.min(100, Math.round(foco?.relogio.percentual ?? 0));
+
                 return (
                   <li
                     key={s.id}
@@ -115,7 +122,13 @@ export function Kanban({
                       setArrastado(null);
                       setSobre(null);
                     }}
-                    className="flex flex-col gap-1.5 rounded-lg border border-surface-border bg-surface p-3 shadow-sm"
+                    className={`flex flex-col gap-1.5 rounded-lg border bg-surface p-3 shadow-sm transition-all ${
+                      isVencido
+                        ? "border-danger/60 border-l-4 border-l-danger bg-danger/[0.02]"
+                        : isCritico
+                        ? "border-warning/60 border-l-4 border-l-warning bg-warning/[0.02]"
+                        : "border-surface-border"
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2 text-xs text-muted">
                       <span className="tabular-nums">#{s.numero}</span>
@@ -133,6 +146,32 @@ export function Kanban({
                     <p>
                       <PrazoBadge prazo={s.prazo} />
                     </p>
+                    {foco && foco.relogio.estado === "correndo" && (
+                      <div className="mt-0.5 flex flex-col gap-1" title={`Consumo de SLA: ${foco.relogio.percentual}%`}>
+                        <div className="flex items-center justify-between text-[11px] text-muted">
+                          <span className="flex items-center gap-1 font-medium">
+                            {isVencido && <AlertTriangle className="h-3 w-3 text-danger animate-pulse" />}
+                            {isCritico && !isVencido && <AlertTriangle className="h-3 w-3 text-warning" />}
+                            {foco.nome}
+                          </span>
+                          <span
+                            className={`font-mono text-xs ${
+                              isVencido ? "font-bold text-danger" : isCritico ? "font-semibold text-warning" : "text-muted"
+                            }`}
+                          >
+                            {foco.relogio.percentual}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-surface-border overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${
+                              isVencido ? "bg-danger" : isCritico ? "bg-warning" : "bg-success"
+                            }`}
+                            style={{ width: `${percentualSLA}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                     {moves.length > 0 && (
                       <label className="flex flex-col gap-1 text-xs">
                         <span className="sr-only">Mover a solicitação #{s.numero} para</span>

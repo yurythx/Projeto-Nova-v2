@@ -60,6 +60,10 @@ type SolicitacaoRepository interface {
 	Responsaveis(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Candidato, error)
 	ResponsavelValido(ctx context.Context, db database.DBTX, user uuid.UUID, unidade *uuid.UUID) (bool, error)
 
+	ListApontamentos(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Apontamento, error)
+	InsertApontamento(ctx context.Context, db database.DBTX, a Apontamento) (Apontamento, error)
+	DeleteApontamento(ctx context.Context, db database.DBTX, solicitacaoID, apontamentoID uuid.UUID) error
+
 	PrazoRepository
 }
 
