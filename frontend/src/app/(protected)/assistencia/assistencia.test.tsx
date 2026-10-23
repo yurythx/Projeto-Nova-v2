@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { identityRoutes, mockBackend, moduleStatus, page, renderApp } from "@/test/backend";
@@ -74,13 +75,31 @@ describe("Dashboard da Assistência", () => {
     expect(screen.getByText("Matriz de Risco das Mudanças")).toBeInTheDocument();
     expect(screen.getByText("Progresso Estratégico")).toBeInTheDocument();
 
-    // Ações de exportação, calendário e impressão
+    // Ações de exportação, calendário, impressão e relatório executivo
     expect(screen.getByRole("link", { name: /Calendário/i })).toHaveAttribute(
       "href",
       "/assistencia/calendario",
     );
+    expect(screen.getByRole("button", { name: /Relatório Executivo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Imprimir Painel/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Exportar CSV/i })).toBeInTheDocument();
+
+    // Abrir Relatório Executivo e verificar KPIs de Governança ITIL
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Relatório Executivo/i }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Relatório Executivo de Governança de TI" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("MTTR (Resolução)")).toBeInTheDocument();
+    expect(screen.getByText("MTBF (Confiabilidade)")).toBeInTheDocument();
+    expect(screen.getByText("Conformidade de SLA")).toBeInTheDocument();
+    expect(screen.getByText("Sucesso em Mudanças")).toBeInTheDocument();
+    expect(screen.getByText("Balanço Integrado de Processos e Serviços")).toBeInTheDocument();
+    expect(screen.getByText("Parecer e Diretrizes de Governança")).toBeInTheDocument();
+
+    // Fechar modal
+    await user.click(screen.getByRole("button", { name: "Concluir" }));
 
     // Links de atalho
     expect(screen.getByRole("link", { name: /Abrir fila e quadro de atendimento/ })).toHaveAttribute(

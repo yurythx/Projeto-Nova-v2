@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
+  Award,
   Calendar,
   CheckCircle2,
   Clock,
@@ -19,6 +21,7 @@ import {
 
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { AssistenciaGraficos } from "@/components/servicos/AssistenciaGraficos";
+import { RelatorioExecutivoModal } from "@/components/servicos/RelatorioExecutivoModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -30,6 +33,7 @@ import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 export default function AssistenciaDashboardPage() {
   const { can, enabled } = usePlataforma();
+  const [modalRelatorio, setModalRelatorio] = useState(false);
 
   const atende = can("atendimento:atender");
   const fila = useApiPage<Solicitacao>(
@@ -138,6 +142,16 @@ export default function AssistenciaDashboardPage() {
         description="Painel unificado da central de serviços: solicitações de atendimento, incidentes, problemas conhecidos, gestão de mudanças e projetos estratégicos."
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={() => setModalRelatorio(true)}
+              className="inline-flex items-center gap-1.5"
+            >
+              <Award className="h-4 w-4 text-primary" />
+              Relatório Executivo
+            </Button>
             <Link
               href="/assistencia/calendario"
               className={buttonClass("secondary", "sm")}
@@ -465,6 +479,15 @@ export default function AssistenciaDashboardPage() {
           </Card>
         )}
       </div>
+
+      <RelatorioExecutivoModal
+        open={modalRelatorio}
+        onClose={() => setModalRelatorio(false)}
+        solicitacoes={solicitacoes}
+        problemas={listaProblemas}
+        mudancas={listaMudancas}
+        projetos={listaProjetos}
+      />
     </div>
   );
 }

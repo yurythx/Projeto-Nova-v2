@@ -80,6 +80,36 @@ describe("Atendimento — portal do servidor", () => {
     expect(await screen.findByText("Encerrada")).toBeInTheDocument();
   });
 
+  it("preenche campos complementares e formata descrição estruturada", async () => {
+    const user = userEvent.setup();
+    const api = mockBackend({
+      ...identityRoutes(perms("atendimento:abrir")),
+      "GET v1/atendimento/catalogo": { data: [oferta] },
+      "GET v1/atendimento/minhas": page([]),
+      "POST v1/atendimento/solicitacoes": { status: 201, data: sol },
+    });
+    renderApp(<AtendimentoPortalPage />);
+
+    await user.selectOptions(await screen.findByLabelText("Preciso de ajuda com *"), "o1");
+    await user.type(screen.getByLabelText("Resumo *"), "Computador não liga");
+    await user.type(screen.getByLabelText("Localização / Ramal"), "Bloco B - Sala 102");
+    await user.type(screen.getByLabelText("Patrimônio / Equipamento"), "PAT-2024-9912");
+    await user.selectOptions(screen.getByLabelText("Impacto percebido"), "setorial");
+    await user.type(screen.getByLabelText("Detalhes"), "Houve oscilação de energia");
+
+    await user.click(screen.getByRole("button", { name: "Enviar solicitação" }));
+    await waitFor(() => expect(api.to("POST v1/atendimento/solicitacoes")).toHaveLength(1));
+
+    const body = api.to("POST v1/atendimento/solicitacoes")[0]!.body as Record<string, string>;
+    expect(body.oferta_id).toBe("o1");
+    expect(body.titulo).toBe("Computador não liga");
+    expect(body.descricao).toContain("[Informações Complementares]");
+    expect(body.descricao).toContain("• Local / Ramal: Bloco B - Sala 102");
+    expect(body.descricao).toContain("• Patrimônio / Ativo: PAT-2024-9912");
+    expect(body.descricao).toContain("• Impacto: Afeta todo o setor / equipe");
+    expect(body.descricao).toContain("Houve oscilação de energia");
+  });
+
   it("sem ofertas, falha ao abrir e perfil sem abertura", async () => {
     const user = userEvent.setup();
     mockBackend({

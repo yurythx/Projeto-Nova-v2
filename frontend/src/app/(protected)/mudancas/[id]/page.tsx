@@ -83,20 +83,46 @@ export default function MudancaPage() {
     );
   }
 
-  async function passar(para: EstadoMudanca, texto = "") {
+  async function passar(para: EstadoMudanca, texto = "", resolverCascata = false) {
     if (
       await agir(
         () => apiClient.post(`v1/mudancas/${id}/estado`, { estado: para, texto }),
         ESTADO_MUDANCA[para].label,
       )
     ) {
+      if (para === "concluida" && resolverCascata && m) {
+        for (const v of m.vinculos) {
+          if (v.tipo === "incidente") {
+            try {
+              await apiClient.post(`v1/atendimento/solicitacoes/${v.alvo_id}/estado`, { estado: "resolvido" });
+              await apiClient.post(`v1/atendimento/solicitacoes/${v.alvo_id}/comentarios`, {
+                texto: `Incidente resolvido automaticamente com a conclusão da Mudança #${m.numero}: ${m.titulo}`,
+                interno: false,
+              });
+            } catch {
+              // Silencioso se já estiver concluído
+            }
+          } else if (v.tipo === "problema") {
+            try {
+              await apiClient.post(`v1/problemas/${v.alvo_id}/estado`, {
+                estado: "resolvido",
+                texto: `Problema sanado com a implementação da Mudança #${m.numero}: ${m.titulo}`,
+              });
+            } catch {
+              // Silencioso se já estiver concluído
+            }
+          }
+        }
+      }
       setPedindo(null);
     }
   }
 
   function confirmarComTexto(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    void passar(pedindo!, String(new FormData(e.currentTarget).get("texto")).trim());
+    const fd = new FormData(e.currentTarget);
+    const resolverCascata = fd.get("resolver_em_cascata") === "on";
+    void passar(pedindo!, String(fd.get("texto") ?? "").trim(), resolverCascata);
   }
 
   const ligados = new Set(m?.vinculos.filter((v) => v.tipo === tipo).map((v) => v.alvo_id));
@@ -208,6 +234,23 @@ export default function MudancaPage() {
                           maxLength={4000}
                           rows={2}
                         />
+                        {pedindo === "concluida" &&
+                          m.vinculos.some((v) => v.tipo === "incidente" || v.tipo === "problema") && (
+                            <label className="flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/5 p-3 text-sm">
+                              <input
+                                id="mudanca-cascata-chk"
+                                type="checkbox"
+                                name="resolver_em_cascata"
+                                defaultChecked
+                                className="h-4 w-4 accent-primary"
+                              />
+                              <span className="text-foreground">
+                                <strong>Resolução em cascata:</strong> Resolver automaticamente os{" "}
+                                {m.vinculos.filter((v) => v.tipo === "incidente").length} chamados e{" "}
+                                {m.vinculos.filter((v) => v.tipo === "problema").length} problemas vinculados.
+                              </span>
+                            </label>
+                          )}
                         <div className="flex flex-wrap gap-2">
                           <Button type="submit" loading={pending}>
                             Confirmar: {ESTADO_MUDANCA[pedindo].acao.toLowerCase()}

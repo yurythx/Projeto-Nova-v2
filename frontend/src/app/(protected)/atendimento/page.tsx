@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SlidersHorizontal } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
@@ -75,11 +76,32 @@ export default function AtendimentoPortalPage() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    // Os três campos estão sempre no formulário.
+    const localizacao = String(fd.get("localizacao") || "").trim();
+    const patrimonio = String(fd.get("patrimonio") || "").trim();
+    const impacto = String(fd.get("impacto") || "").trim();
+    const detalhes = String(fd.get("descricao") || "").trim();
+
+    const blocosComplementares: string[] = [];
+    if (localizacao) blocosComplementares.push(`• Local / Ramal: ${localizacao}`);
+    if (patrimonio) blocosComplementares.push(`• Patrimônio / Ativo: ${patrimonio}`);
+    if (impacto && impacto !== "individual") {
+      const rotulos: Record<string, string> = {
+        setorial: "Afeta todo o setor / equipe",
+        institucional: "Afeta múltiplos setores / institucional",
+      };
+      blocosComplementares.push(`• Impacto: ${rotulos[impacto] || impacto}`);
+    }
+
+    let descricaoFinal = detalhes;
+    if (blocosComplementares.length > 0) {
+      const cabecalho = `[Informações Complementares]\n${blocosComplementares.join("\n")}`;
+      descricaoFinal = detalhes ? `${cabecalho}\n\n${detalhes}` : cabecalho;
+    }
+
     const body = {
       oferta_id: String(fd.get("oferta_id")),
       titulo: String(fd.get("titulo")).trim(),
-      descricao: String(fd.get("descricao")).trim(),
+      descricao: descricaoFinal,
     };
     const criada = await run(
       () => apiClient.post<Solicitacao>("v1/atendimento/solicitacoes", body),
@@ -149,6 +171,44 @@ export default function AtendimentoPortalPage() {
                   setTitulo("");
                 }}
               />
+              <details className="group rounded-lg border border-surface-border bg-black/[0.02] p-3 text-sm dark:bg-white/[0.02]">
+                <summary className="cursor-pointer font-medium text-muted hover:text-foreground flex items-center justify-between select-none">
+                  <span className="flex items-center gap-1.5">
+                    <SlidersHorizontal className="h-4 w-4 text-primary" />
+                    Informações complementares (localização, equipamento, impacto)
+                  </span>
+                  <span className="text-xs text-muted font-normal">(Opcional)</span>
+                </summary>
+                <div className="mt-3 grid gap-3 pt-2 border-t border-surface-border sm:grid-cols-2">
+                  <Input
+                    id="solicitacao-localizacao"
+                    name="localizacao"
+                    label="Localização / Ramal"
+                    placeholder="Ex.: Bloco B - Sala 204 (Ramal 3450)"
+                    autoComplete="off"
+                  />
+                  <Input
+                    id="solicitacao-patrimonio"
+                    name="patrimonio"
+                    label="Patrimônio / Equipamento"
+                    placeholder="Ex.: PAT-2024-8841 ou Dell OptiPlex"
+                    autoComplete="off"
+                  />
+                  <div className="sm:col-span-2">
+                    <Select
+                      id="solicitacao-impacto"
+                      name="impacto"
+                      label="Impacto percebido"
+                      placeholder="Individual (apenas meu posto de trabalho)"
+                      options={[
+                        { value: "individual", label: "Individual (apenas meu posto de trabalho)" },
+                        { value: "setorial", label: "Setorial (afeta toda a minha equipe / setor)" },
+                        { value: "institucional", label: "Institucional (afeta múltiplos setores ou o prédio)" },
+                      ]}
+                    />
+                  </div>
+                </div>
+              </details>
               <Textarea
                 id="solicitacao-descricao"
                 name="descricao"
