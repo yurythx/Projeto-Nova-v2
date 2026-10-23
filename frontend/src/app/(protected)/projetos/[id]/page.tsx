@@ -8,6 +8,7 @@ import { type FormEvent, Suspense, useState } from "react";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
+import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -364,6 +365,15 @@ function ProjetoDetalheConteudo() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Cronograma Visual e Diagrama de Gantt */}
+            <ProjetoGanttChart
+              projeto={p}
+              tarefas={listaTarefas}
+              vinculos={listaVinculos}
+              onAdicionarTarefa={() => setModalTarefa(true)}
+              podeEditar={gere && p.estado !== "cancelado"}
+            />
 
             {/* Tarefas e Marcos */}
             <Card>
