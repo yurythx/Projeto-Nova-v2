@@ -1,8 +1,9 @@
 "use client";
 
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
+import { MatrizRiscoCalculadora } from "@/components/servicos/MatrizRiscoCalculadora";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -43,16 +44,26 @@ export function MudancaForm({
   pending: boolean;
   onSalvar: (corpo: MudancaCorpo) => void;
 }) {
+  const [risco, setRisco] = useState<Risco>(inicial?.risco ?? "medio");
+  const [justificativaCalculo, setJustificativaCalculo] = useState<string>("");
+
   function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const texto = (nome: string) => String(fd.get(nome)).trim();
+
+    const justDigitada = texto("justificativa");
+    let justFinal = justDigitada;
+    if (justificativaCalculo && !justDigitada.includes("[Cálculo de Risco CAB")) {
+      justFinal = justDigitada ? `${justDigitada}\n\n${justificativaCalculo}` : justificativaCalculo;
+    }
+
     onSalvar({
       titulo: texto("titulo"),
       descricao: texto("descricao"),
-      justificativa: texto("justificativa"),
+      justificativa: justFinal,
       tipo: texto("tipo"),
-      risco: texto("risco"),
+      risco: risco,
       plano_reversao: texto("plano_reversao"),
       inicio_planejado: deCampoData(texto("inicio_planejado")),
       fim_planejado: deCampoData(texto("fim_planejado")),
@@ -88,9 +99,19 @@ export function MudancaForm({
         id="mudanca-risco"
         name="risco"
         label="Risco"
-        defaultValue={inicial?.risco ?? "medio"}
+        value={risco}
+        onChange={(e) => setRisco(e.target.value as Risco)}
         options={(Object.keys(RISCO) as Risco[]).map((r) => ({ value: r, label: RISCO[r].label }))}
       />
+      <div className="sm:col-span-2">
+        <MatrizRiscoCalculadora
+          riscoAtual={risco}
+          onAplicarRisco={(novoRisco, resumo) => {
+            setRisco(novoRisco);
+            setJustificativaCalculo(resumo);
+          }}
+        />
+      </div>
       <Input
         id="mudanca-inicio"
         name="inicio_planejado"

@@ -7,6 +7,7 @@ import { type FormEvent, type ReactNode, useCallback, useState } from "react";
 
 import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
+import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAtendimentoCard";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
 import { ProblemasDoIncidente } from "@/components/atendimento/ProblemasDoIncidente";
 import { VisitasCard } from "@/components/atendimento/VisitasCard";
@@ -287,6 +288,13 @@ export default function SolicitacaoPage() {
               solicitacaoId={s.id}
               tecnico={tecnico}
               finalizada={finalizada}
+            />
+
+            <AvaliacaoAtendimentoCard
+              solicitacao={s}
+              solicitante={solicitante}
+              tecnico={tecnico}
+              onAvaliado={recarregar}
             />
 
             <Card>

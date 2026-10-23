@@ -91,6 +91,40 @@ describe("Mudanças — lista", () => {
     );
   });
 
+  it("utiliza a calculadora de risco do CAB para definir score e justificativa", async () => {
+    const user = userEvent.setup();
+    const api = mockBackend({
+      ...identityRoutes(),
+      "GET v1/iam/org-tree": { data: ORG },
+      "GET v1/mudancas": { data: [] },
+      "POST v1/mudancas": { status: 201, data: mudanca({ id: "m-risco", risco: "alto" }) },
+    });
+    renderApp(<MudancasPage />);
+
+    await user.type(await screen.findByLabelText("Título *"), "Migração do Cluster Kubernetes");
+    // Abre a calculadora de risco do CAB
+    await user.click(screen.getByRole("button", { name: /Calculadora de Risco ITIL/i }));
+
+    // Seleciona Impacto Alto (3), Complexidade Alta (3) e Rollback Crítico (3)
+    await user.selectOptions(screen.getByLabelText("1. Impacto no Serviço"), "3");
+    await user.selectOptions(screen.getByLabelText("2. Complexidade / Testes"), "3");
+    await user.selectOptions(screen.getByLabelText("3. Plano de Reversão"), "3");
+
+    // Aplica o risco sugerido (Alto)
+    await user.click(screen.getByRole("button", { name: /Aplicar risco sugerido \(Risco alto\)/i }));
+
+    // O seletor de risco foi automaticamente atualizado para alto
+    expect(screen.getByLabelText("Risco")).toHaveValue("alto");
+
+    await user.click(screen.getByRole("button", { name: "Registrar rascunho" }));
+    await waitFor(() => expect(api.to("POST v1/mudancas")).toHaveLength(1));
+
+    const corpo = api.to("POST v1/mudancas")[0]!.body as Record<string, unknown>;
+    expect(corpo.titulo).toBe("Migração do Cluster Kubernetes");
+    expect(corpo.risco).toBe("alto");
+    expect(corpo.justificativa).toContain("[Cálculo de Risco CAB: Score 15/15 - Risco alto]");
+  });
+
   it("aprovador só vê; vazio, falha e sem permissão", async () => {
     const user = userEvent.setup();
     mockBackend({ ...identityRoutes(perms("mudancas:aprovar")), "GET v1/mudancas": { data: [] } });
