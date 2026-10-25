@@ -45,15 +45,40 @@ type SolicitacaoRepository interface {
 	TravarSolicitacao(ctx context.Context, db database.DBTX, id uuid.UUID) error
 	InsertSolicitacao(ctx context.Context, db database.DBTX, s Solicitacao) (Solicitacao, error)
 	UpdateSolicitacao(ctx context.Context, db database.DBTX, s Solicitacao) error
+	// SetSegredo grava ou limpa o id do cofre. Não grava senha.
+	SetSegredo(ctx context.Context, db database.DBTX, id uuid.UUID, segredo *uuid.UUID, agora time.Time) error
 
 	InsertPassagem(ctx context.Context, db database.DBTX, p Passagem) (Passagem, error)
 	ListPassagens(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Passagem, error)
 	InsertComentario(ctx context.Context, db database.DBTX, c Comentario) (Comentario, error)
 	ListComentarios(ctx context.Context, db database.DBTX, solicitacao uuid.UUID, internos bool) ([]Comentario, error)
+	// GetAvaliacao devolve ErrNaoEncontrado quando ninguém avaliou.
+	// InsertAvaliacao recusa a segunda avaliação da mesma solicitação.
+	GetAvaliacao(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) (Avaliacao, error)
+	InsertAvaliacao(ctx context.Context, db database.DBTX, a Avaliacao) (Avaliacao, error)
+	// ResumoAvaliacoes agrega as notas do escopo e devolve as mais recentes.
+	ResumoAvaliacoes(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, recentes int) (ResumoAvaliacoes, error)
+	// ListarParaGovernanca devolve até limite solicitações do escopo, da
+	// mais antiga para a mais nova, para os indicadores. Sem paginação da fila.
+	ListarParaGovernanca(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, limite int) ([]Solicitacao, error)
+	// UnidadesComSolicitacao lista as unidades que já tiveram chamado.
+	UnidadesComSolicitacao(ctx context.Context, db database.DBTX) ([]uuid.UUID, error)
+	// GravarPonto regrava o dia de hoje. Dias anteriores não são chamados.
+	GravarRetrato(ctx context.Context, db database.DBTX, p Retrato) error
+	// ListarRetratos devolve o retrato diário. restrito false lê só a linha
+	// institucional (unidade nula), que já reúne tudo.
+	ListarRetratos(ctx context.Context, db database.DBTX, desde time.Time, restrito bool, unidades []uuid.UUID) ([]Retrato, error)
 	// IncidentesRecorrentes agrupa por oferta os incidentes (não
 	// cancelados) desde a data, com pelo menos minimo: a matéria-prima da
 	// sugestão de problema (fase 6).
 	IncidentesRecorrentes(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time, minimo int) ([]Recorrencia, error)
+
+	// SolicitacaoPorNumero acha a solicitação pelo número público.
+	SolicitacaoPorNumero(ctx context.Context, db database.DBTX, numero int64) (Solicitacao, error)
+	EmailDe(ctx context.Context, db database.DBTX, user uuid.UUID) (string, error)
+	// ReservarCorreio marca a mensagem. false significa que ela já entrou.
+	ReservarCorreio(ctx context.Context, db database.DBTX, messageID string, solicitacao uuid.UUID) (bool, error)
+	LiberarCorreio(ctx context.Context, db database.DBTX, messageID string) error
 
 	// Responsaveis lista os membros ativos das equipes da unidade (nil =
 	// equipes institucionais); ResponsavelValido confere um deles.
@@ -125,6 +150,7 @@ type DadosDoTitular struct {
 	Solicitacoes []Solicitacao `json:"solicitacoes"`
 	Comentarios  []Comentario  `json:"comentarios"`
 	Visitas      []Visita      `json:"visitas"`
+	Avaliacoes   []Avaliacao   `json:"avaliacoes,omitempty"`
 }
 
 // Recorrencia são incidentes da mesma oferta num período.
@@ -158,6 +184,9 @@ type FiltroSolicitacao struct {
 	Finalizadas bool
 	Responsavel *uuid.UUID
 	SemDono     bool
-	Limit       int
-	Offset      int
+	// Texto, quando preenchido, casa com título, descrição ou número.
+	// Vazio não filtra.
+	Texto  string
+	Limit  int
+	Offset int
 }

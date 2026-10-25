@@ -4,6 +4,7 @@ package infrastructure
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -21,14 +22,14 @@ var _ domain.Repository = (*Repository)(nil)
 
 const nome = `COALESCE(NULLIF(btrim(u.display_name), ''), u.username, '')`
 
-const selectMudanca = `SELECT m.id, m.numero, m.titulo, m.descricao, m.justificativa, m.tipo, m.risco, m.estado, m.plano_reversao,
+const selectMudanca = `SELECT m.id, m.numero, m.titulo, m.descricao, m.justificativa, m.tipo, m.risco, m.risco_score, m.estado, m.plano_reversao,
 	m.inicio_planejado, m.fim_planejado, m.resultado, m.executada_inicio, m.executada_fim, m.produto_id, m.unidade_id,
 	m.solicitante_id, ` + nome + `, m.created_at, m.updated_at
 	FROM mudancas m LEFT JOIN users u ON u.id = m.solicitante_id`
 
 func scan(row interface{ Scan(...any) error }) (domain.Mudanca, error) {
 	var m domain.Mudanca
-	err := row.Scan(&m.ID, &m.Numero, &m.Titulo, &m.Descricao, &m.Justificativa, &m.Tipo, &m.Risco, &m.Estado, &m.PlanoReversao,
+	err := row.Scan(&m.ID, &m.Numero, &m.Titulo, &m.Descricao, &m.Justificativa, &m.Tipo, &m.Risco, &m.RiscoScore, &m.Estado, &m.PlanoReversao,
 		&m.InicioPlanejado, &m.FimPlanejado, &m.Resultado, &m.ExecutadaInicio, &m.ExecutadaFim, &m.ProdutoID, &m.UnidadeID,
 		&m.SolicitanteID, &m.SolicitanteNome, &m.CreatedAt, &m.UpdatedAt)
 	m.Aprovacoes, m.Vinculos = []domain.Aprovacao{}, []domain.Vinculo{}
@@ -110,10 +111,10 @@ func (r *Repository) Travar(ctx context.Context, db database.DBTX, id uuid.UUID)
 // Insert grava o rascunho e devolve o número.
 func (r *Repository) Insert(ctx context.Context, db database.DBTX, m domain.Mudanca) (domain.Mudanca, error) {
 	if _, err := db.Exec(ctx, `INSERT INTO mudancas
-		(id, titulo, descricao, justificativa, tipo, risco, estado, plano_reversao, inicio_planejado, fim_planejado,
+		(id, titulo, descricao, justificativa, tipo, risco, risco_score, estado, plano_reversao, inicio_planejado, fim_planejado,
 		 produto_id, unidade_id, solicitante_id, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-		m.ID, m.Titulo, m.Descricao, m.Justificativa, m.Tipo, m.Risco, m.Estado, m.PlanoReversao, m.InicioPlanejado,
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+		m.ID, m.Titulo, m.Descricao, m.Justificativa, m.Tipo, m.Risco, m.RiscoScore, m.Estado, m.PlanoReversao, m.InicioPlanejado,
 		m.FimPlanejado, m.ProdutoID, m.UnidadeID, m.SolicitanteID, m.CreatedAt, m.UpdatedAt); err != nil {
 		return domain.Mudanca{}, mapDB(err)
 	}
@@ -123,10 +124,10 @@ func (r *Repository) Insert(ctx context.Context, db database.DBTX, m domain.Muda
 // Update grava a edição, o estado e a execução.
 func (r *Repository) Update(ctx context.Context, db database.DBTX, m domain.Mudanca) error {
 	tag, err := db.Exec(ctx, `UPDATE mudancas
-		SET titulo = $2, descricao = $3, justificativa = $4, tipo = $5, risco = $6, estado = $7, plano_reversao = $8,
-			inicio_planejado = $9, fim_planejado = $10, resultado = $11, executada_inicio = $12, executada_fim = $13,
-			produto_id = $14, unidade_id = $15
-		WHERE id = $1`, m.ID, m.Titulo, m.Descricao, m.Justificativa, m.Tipo, m.Risco, m.Estado, m.PlanoReversao,
+		SET titulo = $2, descricao = $3, justificativa = $4, tipo = $5, risco = $6, risco_score = $7, estado = $8, plano_reversao = $9,
+			inicio_planejado = $10, fim_planejado = $11, resultado = $12, executada_inicio = $13, executada_fim = $14,
+			produto_id = $15, unidade_id = $16
+		WHERE id = $1`, m.ID, m.Titulo, m.Descricao, m.Justificativa, m.Tipo, m.Risco, m.RiscoScore, m.Estado, m.PlanoReversao,
 		m.InicioPlanejado, m.FimPlanejado, m.Resultado, m.ExecutadaInicio, m.ExecutadaFim, m.ProdutoID, m.UnidadeID)
 	if err != nil {
 		return mapDB(err)
@@ -190,4 +191,52 @@ func (r *Repository) Desvincular(ctx context.Context, db database.DBTX, mudanca 
 		return false, mapDB(err)
 	}
 	return tag.RowsAffected() == 1, nil
+}
+
+// JanelaOcupada diz se o intervalo cruza um congelamento da unidade ou
+// um congelamento institucional.
+func (r *Repository) JanelaOcupada(ctx context.Context, db database.DBTX, unidade *uuid.UUID, inicio, fim time.Time) (bool, error) {
+	var ok bool
+	err := db.QueryRow(ctx, `SELECT EXISTS (
+		SELECT 1 FROM mudanca_congelamentos
+		WHERE fim > $1 AND inicio < $2
+			AND (unidade_id IS NULL OR unidade_id = $3 OR $3::uuid IS NULL)
+	)`, inicio, fim, unidade).Scan(&ok)
+	return ok, mapDB(err)
+}
+
+func (r *Repository) ListCongelamentos(ctx context.Context, db database.DBTX, f domain.Filtro) ([]domain.Congelamento, error) {
+	rows, err := db.Query(ctx, `SELECT id, unidade_id, inicio, fim, motivo, created_at FROM mudanca_congelamentos
+		WHERE ($1 = false OR unidade_id IS NULL OR unidade_id = ANY($2::uuid[]))
+		ORDER BY inicio, id`, f.Restrito, idsOrEmpty(f.Unidades))
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	defer rows.Close()
+	out := []domain.Congelamento{}
+	for rows.Next() {
+		var c domain.Congelamento
+		if err := rows.Scan(&c.ID, &c.UnidadeID, &c.Inicio, &c.Fim, &c.Motivo, &c.CreatedAt); err != nil {
+			return nil, mapDB(err)
+		}
+		out = append(out, c)
+	}
+	return out, mapDB(rows.Err())
+}
+
+func (r *Repository) InsertCongelamento(ctx context.Context, db database.DBTX, c domain.Congelamento) (domain.Congelamento, error) {
+	err := db.QueryRow(ctx, `INSERT INTO mudanca_congelamentos (id, unidade_id, inicio, fim, motivo, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, c.ID, c.UnidadeID, c.Inicio, c.Fim, c.Motivo, c.CreatedAt).Scan(&c.ID)
+	return c, mapDB(err)
+}
+
+func (r *Repository) DeleteCongelamento(ctx context.Context, db database.DBTX, id uuid.UUID) error {
+	tag, err := db.Exec(ctx, `DELETE FROM mudanca_congelamentos WHERE id = $1`, id)
+	if err != nil {
+		return mapDB(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
+	}
+	return nil
 }

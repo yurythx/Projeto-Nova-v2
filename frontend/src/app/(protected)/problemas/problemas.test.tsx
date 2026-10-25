@@ -43,7 +43,7 @@ function perms(...p: string[]) {
   return { permissions: p, scopes: [{ perfil: "p", origem: "manual" as const, permissions: p }] };
 }
 
-beforeEach(() => resetNavigation({ id: "p1" }, "/problemas"));
+beforeEach(() => resetNavigation({ id: "p1" }, "/problemas", "vista=lista"));
 
 describe("Problemas — lista", () => {
   it("sugere a partir de incidentes repetidos, registra e filtra", async () => {

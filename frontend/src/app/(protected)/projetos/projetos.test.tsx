@@ -54,7 +54,7 @@ function perms(...p: string[]) {
   return { permissions: p, scopes: [{ perfil: "p", origem: "manual" as const, permissions: p }] };
 }
 
-beforeEach(() => resetNavigation({ id: "proj-1" }, "/projetos"));
+beforeEach(() => resetNavigation({ id: "proj-1" }, "/projetos", "vista=lista"));
 
 describe("Projetos — Lista e Criação", () => {
   it("lista os projetos e permite criar um novo projeto", async () => {

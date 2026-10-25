@@ -97,3 +97,18 @@ func TestCiclo(t *testing.T) {
 		t.Fatal("encerrado não tem próximos")
 	}
 }
+
+func TestNaoConcluivel(t *testing.T) {
+	var vazio *NaoConcluivel
+	if vazio.Error() == "" || vazio.Unwrap() != nil {
+		t.Fatal(vazio)
+	}
+	sem := &NaoConcluivel{}
+	if sem.Error() == "" || sem.Unwrap() != nil {
+		t.Fatal(sem)
+	}
+	com := &NaoConcluivel{Causa: ErrSemCausaRaiz}
+	if com.Error() != ErrSemCausaRaiz.Error() || com.Unwrap() != ErrSemCausaRaiz {
+		t.Fatal(com)
+	}
+}

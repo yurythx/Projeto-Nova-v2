@@ -170,6 +170,7 @@ func TestLoad_ProductionAcceptsStrongSecrets(t *testing.T) {
 	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
 	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
 	t.Setenv("CONFIG_ENCRYPTION_KEY", "cHJvZC1zdHJvbmcta2V5LTMyLWJ5dGVzLWxvbmchIQ==")
+	t.Setenv("COFRE_MASTER_KEY", "cHJvZC1jb2ZyZS1rZXktMzItYnl0ZXMtbG9uZyEhISE=")
 
 	if _, err := Load(); err != nil {
 		t.Fatalf("Load() com segredos fortes em produção não deveria falhar: %v", err)

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
 
+import { Congelamentos } from "@/components/servicos/Congelamentos";
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
-import { MudancasKanban } from "@/components/servicos/MudancasKanban";
+import { COLUNAS_MUDANCA, MudancasKanban, faixaDaMudanca } from "@/components/servicos/MudancasKanban";
 import { DataState } from "@/components/plataforma/DataState";
+import { ListaFaixas, NomeClicavel } from "@/components/plataforma/Faixas";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
@@ -44,7 +46,7 @@ function MudancasConteudo() {
   const { can } = usePlataforma();
   const router = useRouter();
   const params = useSearchParams();
-  const vista: Vista = params.get("vista") === "quadro" ? "kanban" : "lista";
+  const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
   const kanban = vista === "kanban";
 
   const gere = can("mudancas:manage");
@@ -79,7 +81,7 @@ function MudancasConteudo() {
   }
 
   function trocarVista(v: Vista) {
-    router.replace(v === "kanban" ? "/mudancas?vista=quadro" : "/mudancas");
+    router.replace(v === "lista" ? "/mudancas?vista=lista" : "/mudancas?vista=quadro");
   }
 
   async function criar(corpo: MudancaCorpo) {
@@ -88,6 +90,48 @@ function MudancasConteudo() {
       "Mudança registrada",
     );
     if (criada) router.push(`/mudancas/${criada.data.id}`);
+  }
+
+  async function criarCard(nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.post<Mudanca>("v1/mudancas", {
+          titulo: nome.slice(0, 160),
+          descricao: "",
+          justificativa: "",
+          tipo: "normal",
+          risco: "medio",
+          risco_score: null,
+          plano_reversao: "",
+          inicio_planejado: null,
+          fim_planejado: null,
+          produto_id: null,
+          unidade_id: null,
+        }),
+      "Mudança registrada",
+    );
+    if (ok) void mudancas.mutate();
+  }
+
+  async function renomearMudanca(m: Mudanca, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.put(`v1/mudancas/${m.id}`, {
+          titulo: nome.slice(0, 160),
+          descricao: m.descricao,
+          justificativa: m.justificativa,
+          tipo: m.tipo,
+          risco: m.risco,
+          risco_score: m.risco_score ?? null,
+          plano_reversao: m.plano_reversao,
+          inicio_planejado: m.inicio_planejado ?? null,
+          fim_planejado: m.fim_planejado ?? null,
+          produto_id: m.produto_id ?? null,
+          unidade_id: m.unidade_id ?? null,
+        }),
+      "Nome atualizado",
+    );
+    if (ok) void mudancas.mutate();
   }
 
   async function mover(m: Mudanca, para: EstadoMudanca) {
@@ -120,6 +164,21 @@ function MudancasConteudo() {
   }
 
   const lista = mudancas.data ?? [];
+
+  function novaMudanca(colunaId: string) {
+    if (colunaId !== "rascunho" || !gere) return null;
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        onClick={() => document.getElementById("mudanca-titulo")?.focus()}
+      >
+        Nova mudança
+      </Button>
+    );
+  }
+
   const reqTexto = pedindoTexto ? TEXTO_DA_PASSAGEM[pedindoTexto.para] : undefined;
 
   return (
@@ -135,25 +194,10 @@ function MudancasConteudo() {
         value={vista}
         onChange={trocarVista}
         tabs={[
-          { value: "lista", label: "Lista" },
           { value: "kanban", label: "Quadro" },
+          { value: "lista", label: "Lista" },
         ]}
       />
-
-      {gere && (
-        <Card>
-          <CardHeader>
-            <CardTitle as="h2">Nova mudança</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-5">
-            <MudancaForm
-              rotulo="Registrar rascunho"
-              pending={pending}
-              onSalvar={(c) => void criar(c)}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {!kanban && (
         <div className="max-w-xs">
@@ -177,31 +221,56 @@ function MudancasConteudo() {
         loading={mudancas.isLoading}
         error={mudancas.error}
         onRetry={() => void mudancas.mutate()}
-        empty={lista.length === 0}
-        emptyTitle="Nenhuma mudança neste recorte"
+        empty={false}
       >
+        {lista.length === 0 && (
+          <p className="text-sm text-muted">Nenhuma mudança neste recorte</p>
+        )}
         {kanban ? (
-          <MudancasKanban itens={lista} onMover={mover} pending={pending} />
+          <MudancasKanban
+            itens={lista}
+            onMover={mover}
+            pending={pending}
+            extra={novaMudanca}
+            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
+            aoRenomear={gere ? (m, nome) => void renomearMudanca(m, nome) : undefined}
+          />
         ) : (
-          <ul className="flex flex-col divide-y divide-surface-border rounded-xl border border-surface-border bg-surface">
-            {lista.map((m) => (
-              <li
-                key={m.id}
-                className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
+          <ListaFaixas
+            rotulo="Lista de mudanças"
+            memoria="nova-faixas:mudancas-lista"
+            aparencia="nova-faixas:mudancas"
+            colunas={COLUNAS_MUDANCA}
+            itens={lista}
+            colunaDe={(m) => faixaDaMudanca(m.estado)}
+            idDe={(m) => m.id}
+            nomeDe={(m) => m.titulo}
+            extra={novaMudanca}
+            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
+            aoRenomear={gere ? (m, nome) => void renomearMudanca(m, nome) : undefined}
+            aoAbrir={(m) => router.push(`/mudancas/${m.id}`)}
+            render={(m, vista) => (
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <Link
+                  <NomeClicavel
+                    nome={vista.titulo || m.titulo}
+                    rotulo={`#${m.numero} · ${vista.titulo || m.titulo}`}
                     href={`/mudancas/${m.id}`}
+                    onSalvar={vista.salvarNome}
                     className="font-medium text-primary hover:underline"
-                  >
-                    #{m.numero} · {m.titulo}
-                  </Link>
+                  />
                   <p className="text-sm text-muted">
                     {m.inicio_planejado
                       ? `Janela ${fmtDateTime(m.inicio_planejado)}`
                       : "Sem janela"}{" "}
                     · pedida por {m.solicitante_nome}
                   </p>
+                  <Link
+                    href={`/mudancas/${m.id}`}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Editar
+                  </Link>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={RISCO[m.risco].tone}>{RISCO[m.risco].label}</Badge>
@@ -209,11 +278,28 @@ function MudancasConteudo() {
                     {ESTADO_MUDANCA[m.estado].label}
                   </Badge>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          />
         )}
       </DataState>
+
+      {gere && (
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2">Nova mudança</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-5">
+            <MudancaForm
+              rotulo="Registrar rascunho"
+              pending={pending}
+              onSalvar={(c) => void criar(c)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {gere ? <Congelamentos /> : null}
 
       {/* Modal para parecer ou resultado de transição de mudança */}
       {pedindoTexto && reqTexto && (

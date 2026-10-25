@@ -30,9 +30,10 @@ func com(u uuid.UUID, perms ...string) auth.Identity {
 }
 
 type repo struct {
-	m      domain.Mudanca
-	falha  map[string]bool
-	ligado bool
+	m       domain.Mudanca
+	falha   map[string]bool
+	ligado  bool
+	ligados []domain.Vinculo
 }
 
 func (r repo) err(m string) error {
@@ -59,13 +60,31 @@ func (r repo) InsertAprovacao(context.Context, database.DBTX, uuid.UUID, domain.
 	return r.err("InsertAprovacao")
 }
 func (r repo) Vinculos(context.Context, database.DBTX, uuid.UUID) ([]domain.Vinculo, error) {
-	return []domain.Vinculo{}, r.err("Vinculos")
+	if err := r.err("Vinculos"); err != nil {
+		return nil, err
+	}
+	if r.ligados != nil {
+		return r.ligados, nil
+	}
+	return []domain.Vinculo{}, nil
 }
 func (r repo) Vincular(context.Context, database.DBTX, uuid.UUID, domain.Vinculo, uuid.UUID) (bool, error) {
 	return r.ligado, r.err("Vincular")
 }
 func (r repo) Desvincular(context.Context, database.DBTX, uuid.UUID, string, uuid.UUID) (bool, error) {
 	return r.ligado, r.err("Desvincular")
+}
+func (r repo) JanelaOcupada(context.Context, database.DBTX, *uuid.UUID, time.Time, time.Time) (bool, error) {
+	return false, r.err("JanelaOcupada")
+}
+func (r repo) ListCongelamentos(context.Context, database.DBTX, domain.Filtro) ([]domain.Congelamento, error) {
+	return []domain.Congelamento{}, r.err("ListCongelamentos")
+}
+func (r repo) InsertCongelamento(_ context.Context, _ database.DBTX, c domain.Congelamento) (domain.Congelamento, error) {
+	return c, r.err("InsertCongelamento")
+}
+func (r repo) DeleteCongelamento(context.Context, database.DBTX, uuid.UUID) error {
+	return r.err("DeleteCongelamento")
 }
 
 type eventos struct{ err error }
@@ -98,7 +117,7 @@ func TestMapError(t *testing.T) {
 	for _, err := range []error{domain.ErrNaoEncontrado, domain.ErrEntradaInvalida, domain.ErrTipoInvalido, domain.ErrForaDoEscopo,
 		domain.ErrUnidadeInexistente, domain.ErrTransicaoInvalida, domain.ErrNaoEditavel, domain.ErrSemJanela, domain.ErrSemReversao,
 		domain.ErrSemParecer, domain.ErrSemResultado, domain.ErrAutoAprovacao, domain.ErrVinculoInvalido, domain.ErrVinculoInexistente,
-		domain.ErrDeOutraUnidade, domain.ErrIntegracaoDesligada, domain.ErrMudancaEncerrada} {
+		domain.ErrDeOutraUnidade, domain.ErrIntegracaoDesligada, domain.ErrMudancaEncerrada, domain.ErrCongelada, domain.ErrRiscoDivergente} {
 		var app *apperrors.Error
 		if !errors.As(application.MapError(err), &app) {
 			t.Errorf("%v", err)
@@ -172,19 +191,19 @@ func TestRegras(t *testing.T) {
 
 	// alterar.
 	for _, m := range []string{"Travar", "Get"} {
-		if _, err := svc(falhando(m), nil, ok, eventos{}).Transicionar(ctx, gestor, base.ID, domain.Cancelada, ""); err == nil {
+		if _, err := svc(falhando(m), nil, ok, eventos{}).Transicionar(ctx, gestor, base.ID, domain.Cancelada, "", false); err == nil {
 			t.Errorf("alterar com falha em %s", m)
 		}
 	}
-	if _, err := svc(falhando(), nil, ok, eventos{}).Transicionar(ctx, com(outra, "mudancas:manage"), base.ID, domain.Cancelada, ""); !errors.Is(err, domain.ErrNaoEncontrado) {
+	if _, err := svc(falhando(), nil, ok, eventos{}).Transicionar(ctx, com(outra, "mudancas:manage"), base.ID, domain.Cancelada, "", false); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Fatal("outra unidade")
 	}
-	if _, err := svc(falhando("Update"), nil, ok, eventos{}).Transicionar(ctx, gestor, base.ID, domain.EmAvaliacao, ""); err == nil {
+	if _, err := svc(falhando("Update"), nil, ok, eventos{}).Transicionar(ctx, gestor, base.ID, domain.EmAvaliacao, "", false); err == nil {
 		t.Fatal("update da passagem")
 	}
 	avaliacao := falhando("InsertAprovacao")
 	avaliacao.m.Estado = domain.EmAvaliacao
-	if _, err := svc(avaliacao, nil, ok, eventos{}).Transicionar(ctx, aprovador, base.ID, domain.Aprovada, ""); err == nil {
+	if _, err := svc(avaliacao, nil, ok, eventos{}).Transicionar(ctx, aprovador, base.ID, domain.Aprovada, "", false); err == nil {
 		t.Fatal("registro da decisão")
 	}
 
@@ -256,6 +275,64 @@ func TestRegras(t *testing.T) {
 	semMudar.ligado = false
 	if err := vincular(semMudar, disponivel, gestor, domain.VinculoAtivo, false); err != nil {
 		t.Fatal("desvincular o que não havia não é erro")
+	}
+}
+
+type efeitos struct {
+	err     error
+	tipos   []string
+	entrega domain.Entrega
+}
+
+func (e *efeitos) Resolver(_ context.Context, _ database.DBTX, tipo string, _ uuid.UUID, _ domain.Resolucao) (domain.Entrega, error) {
+	e.tipos = append(e.tipos, tipo)
+	return e.entrega, e.err
+}
+
+func TestCascataNaMesmaTransacao(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	u := uuid.New()
+	gestor := com(u, "mudancas:manage")
+	base, err := domain.Nova(domain.Entrada{Titulo: "Trocar fonte", Tipo: domain.TipoPadrao, Risco: "baixo", UnidadeID: &u}, gestor.UserID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base.Estado = domain.EmExecucao
+	inc, prob, ativo := uuid.New(), uuid.New(), uuid.New()
+	r := repo{m: base, ligados: []domain.Vinculo{
+		{Tipo: domain.VinculoAtivo, AlvoID: ativo},
+		{Tipo: domain.VinculoProblema, AlvoID: prob},
+		{Tipo: domain.VinculoIncidente, AlvoID: inc},
+	}}
+	svc := application.NewService(pool, r, eventos{}, nil, nil)
+	if _, err := svc.Transicionar(ctx, gestor, base.ID, domain.Concluida, "", true); !errors.Is(err, domain.ErrCascataIndisponivel) {
+		t.Fatalf("sem efeitos: %v", err)
+	}
+	var app *apperrors.Error
+	if !errors.As(application.MapError(&domain.VinculoRecusado{Mensagem: "parada"}), &app) || app.Status != http.StatusConflict {
+		t.Fatalf("recusa: %+v", app)
+	}
+	entregou := false
+	fx := &efeitos{entrega: func(context.Context) { entregou = true }}
+	if _, err := svc.ComEfeitos(fx).Transicionar(ctx, gestor, base.ID, domain.Concluida, "", true); err != nil {
+		t.Fatal(err)
+	}
+	if !entregou || len(fx.tipos) != 2 || fx.tipos[0] != domain.VinculoIncidente || fx.tipos[1] != domain.VinculoProblema {
+		t.Fatalf("efeitos: %+v entregou=%v", fx.tipos, entregou)
+	}
+	fx.err = &domain.VinculoRecusado{Mensagem: "a solicitação #3 está aberta; só se conclui a partir do atendimento"}
+	fx.tipos = nil
+	entregou = false
+	if _, err := svc.Transicionar(ctx, gestor, base.ID, domain.Concluida, "", true); !errors.As(err, &app) {
+		t.Fatal(err)
+	}
+	if entregou {
+		t.Fatal("recusa não entrega aviso")
+	}
+	fx.tipos = nil
+	if _, err := svc.Transicionar(ctx, gestor, base.ID, domain.Concluida, "", false); err != nil || len(fx.tipos) != 0 {
+		t.Fatal("sem o pedido, os vínculos ficam")
 	}
 }
 

@@ -4,6 +4,7 @@ package application
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -59,6 +60,8 @@ func MapError(err error) error {
 		return causa(err, apperrors.Validation("unidade inexistente"))
 	case errors.Is(err, domain.ErrIdentificadorRepetido):
 		return causa(err, apperrors.Conflict("já há ativo com este identificador"))
+	case errors.Is(err, domain.ErrCadastroManual):
+		return causa(err, apperrors.Conflict("esse patrimônio foi cadastrado à mão e o agente não o altera"))
 	case errors.Is(err, domain.ErrProdutoInexistente):
 		return causa(err, apperrors.Validation("produto não encontrado"))
 	case errors.Is(err, domain.ErrProdutoIndisponivel):
@@ -66,6 +69,10 @@ func MapError(err error) error {
 	case errors.Is(err, domain.ErrProdutoDeOutraUnidade):
 		return causa(err, apperrors.Validation("o produto precisa ser da mesma unidade do ativo"))
 	default:
+		var relacao domain.RelacaoInvalida
+		if errors.As(err, &relacao) {
+			return causa(err, apperrors.Validation(relacao.Msg))
+		}
 		return err
 	}
 }
@@ -170,6 +177,64 @@ func (s *Service) conferirProduto(ctx context.Context, produto, unidade *uuid.UU
 	return nil
 }
 
+// Inventariar grava o relato da própria máquina. O mesmo relato não
+// reabre auditoria. Cadastro manual não é tocado.
+func (s *Service) Inventariar(ctx context.Context, identity auth.Identity, relato domain.Relato) (domain.Ativo, error) {
+	unidade, err := unidadeDoRelato(identity, relato.UnidadeID)
+	if err != nil {
+		return domain.Ativo{}, MapError(err)
+	}
+	relato.UnidadeID = unidade
+	if _, err := domain.ValidarInventario(relato.Inventario); err != nil {
+		return domain.Ativo{}, MapError(err)
+	}
+	atual, err := s.repo.PorIdentificador(ctx, s.pool, strings.TrimSpace(relato.Identificador))
+	if errors.Is(err, domain.ErrNaoEncontrado) {
+		atualPtr := (*domain.Ativo)(nil)
+		proximo, _, err := domain.AplicarRelato(atualPtr, relato)
+		if err != nil {
+			return domain.Ativo{}, MapError(err)
+		}
+		err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+			var err error
+			if proximo, err = s.repo.Insert(ctx, tx, proximo); err != nil {
+				return err
+			}
+			return s.emitir(ctx, tx, "ativos.inventario.criado", proximo, nil)
+		})
+		return proximo, MapError(err)
+	}
+	if err != nil {
+		return domain.Ativo{}, MapError(err)
+	}
+	proximo, mudou, err := domain.AplicarRelato(&atual, relato)
+	if err != nil || !mudou {
+		return atual, MapError(err)
+	}
+	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		var err error
+		if proximo, err = s.repo.Update(ctx, tx, proximo); err != nil {
+			return err
+		}
+		return s.emitir(ctx, tx, "ativos.inventario.atualizado", proximo, &atual)
+	})
+	return proximo, MapError(err)
+}
+
+func unidadeDoRelato(identity auth.Identity, informada uuid.UUID) (uuid.UUID, error) {
+	if informada != uuid.Nil {
+		if !auth.Can(identity, auth.PermAtivosReportar, auth.InUnidade(informada)) {
+			return uuid.Nil, domain.ErrForaDoEscopo
+		}
+		return informada, nil
+	}
+	cob := auth.CoverageOf(identity, auth.PermAtivosReportar)
+	if cob.All || len(cob.Unidades) != 1 {
+		return uuid.Nil, domain.ErrEntradaInvalida
+	}
+	return cob.Unidades[0], nil
+}
+
 func (s *Service) emitir(ctx context.Context, tx pgx.Tx, evento string, atual domain.Ativo, antes *domain.Ativo) error {
 	payload := map[string]any{"id": atual.ID.String(), "nome": atual.Nome, "estado": atual.Estado}
 	if err := s.eventos.Write(ctx, tx, evento, "ativo", atual.ID.String(), uuid.Nil, payload); err != nil {
@@ -177,7 +242,59 @@ func (s *Service) emitir(ctx context.Context, tx pgx.Tx, evento string, atual do
 	}
 	var before any
 	if antes != nil {
-		before = *antes
+		before = antes
 	}
 	return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, evento, "ativo", atual.ID.String(), before, atual))
+}
+
+// ListarRelacoes devolve o que o ativo aponta.
+func (s *Service) ListarRelacoes(ctx context.Context, identity auth.Identity, origem uuid.UUID) ([]domain.Relacao, error) {
+	if _, err := s.Obter(ctx, identity, origem); err != nil {
+		return nil, err
+	}
+	lista, err := s.repo.ListRelacoes(ctx, s.pool, origem)
+	return lista, MapError(err)
+}
+
+// Relacionar liga dois ativos do escopo. Dependência em ciclo é recusada.
+func (s *Service) Relacionar(ctx context.Context, identity auth.Identity, origem, destino uuid.UUID, tipo string) (domain.Relacao, error) {
+	if err := domain.ValidarRelacao(origem, destino, tipo); err != nil {
+		return domain.Relacao{}, MapError(err)
+	}
+	if _, err := s.Obter(ctx, identity, origem); err != nil {
+		return domain.Relacao{}, err
+	}
+	if _, err := s.Obter(ctx, identity, destino); err != nil {
+		return domain.Relacao{}, err
+	}
+	if tipo == "depende" {
+		ciclo, err := s.repo.FechaCiclo(ctx, s.pool, origem, destino)
+		if err != nil {
+			return domain.Relacao{}, MapError(err)
+		}
+		if ciclo {
+			return domain.Relacao{}, MapError(domain.RelacaoInvalida{"essa dependência fecharia um ciclo"})
+		}
+	}
+	item := domain.Relacao{ID: uuid.New(), OrigemID: origem, DestinoID: destino, Tipo: tipo}
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.InsertRelacao(ctx, tx, item); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Entry{Action: "ativos.relacao.criada", ResourceType: "ativo_relacao", ResourceID: item.ID.String()})
+	})
+	return item, MapError(err)
+}
+
+// Desrelacionar remove o apontamento.
+func (s *Service) Desrelacionar(ctx context.Context, identity auth.Identity, origem, id uuid.UUID) error {
+	if _, err := s.Obter(ctx, identity, origem); err != nil {
+		return err
+	}
+	return MapError(database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.DeleteRelacao(ctx, tx, id, origem); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Entry{Action: "ativos.relacao.excluida", ResourceType: "ativo_relacao", ResourceID: id.String()})
+	}))
 }

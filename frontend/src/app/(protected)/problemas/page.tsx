@@ -6,10 +6,11 @@ import { type FormEvent, Suspense, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
+import { ListaFaixas, NomeClicavel } from "@/components/plataforma/Faixas";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
-import { ProblemasKanban } from "@/components/servicos/ProblemasKanban";
+import { COLUNAS_PROBLEMA, ProblemasKanban } from "@/components/servicos/ProblemasKanban";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -45,7 +46,7 @@ function ProblemasConteudo() {
   const { can } = usePlataforma();
   const router = useRouter();
   const params = useSearchParams();
-  const vista: Vista = params.get("vista") === "quadro" ? "kanban" : "lista";
+  const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
   const gere = can("problemas:manage");
   const le = gere || can("problemas:read");
   const [estado, setEstado] = useState("");
@@ -86,7 +87,7 @@ function ProblemasConteudo() {
   }
 
   function trocarVista(v: Vista) {
-    router.replace(v === "kanban" ? "/problemas?vista=quadro" : "/problemas");
+    router.replace(v === "lista" ? "/problemas?vista=lista" : "/problemas?vista=quadro");
   }
 
   async function criar(e: FormEvent<HTMLFormElement>) {
@@ -103,6 +104,35 @@ function ProblemasConteudo() {
       "Problema registrado",
     );
     if (criado) router.push(`/problemas/${criado.data.id}`);
+  }
+
+  async function criarCard(nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.post<Problema>("v1/problemas", {
+          titulo: nome.slice(0, 160),
+          descricao: "",
+          unidade_id: null,
+        }),
+      "Problema registrado",
+    );
+    if (ok) void problemas.mutate();
+  }
+
+  async function renomearProblema(p: Problema, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.put(`v1/problemas/${p.id}`, {
+          titulo: nome.slice(0, 160),
+          descricao: p.descricao,
+          causa_raiz: p.causa_raiz,
+          contorno: p.contorno,
+          produto_id: p.produto_id ?? null,
+          unidade_id: p.unidade_id ?? null,
+        }),
+      "Nome atualizado",
+    );
+    if (ok) void problemas.mutate();
   }
 
   /** Abre o problema da recorrência e já liga os incidentes dela. */
@@ -178,6 +208,20 @@ function ProblemasConteudo() {
 
   const lista = problemas.data ?? [];
 
+  function novoProblema(colunaId: string) {
+    if (colunaId !== "registrado" || !gere) return null;
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        onClick={() => document.getElementById("problema-titulo")?.focus()}
+      >
+        Novo problema
+      </Button>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -191,10 +235,90 @@ function ProblemasConteudo() {
         value={vista}
         onChange={trocarVista}
         tabs={[
-          { value: "lista", label: "Lista" },
           { value: "kanban", label: "Quadro" },
+          { value: "lista", label: "Lista" },
         ]}
       />
+
+      {!kanban && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Select
+            id="problemas-estado"
+            label="Estado"
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+            options={[
+              { value: "", label: "Todos" },
+              ...(Object.keys(ESTADO_PROBLEMA) as EstadoProblema[]).map((e) => ({
+                value: e,
+                label: ESTADO_PROBLEMA[e].label,
+              })),
+            ]}
+          />
+          <Input
+            id="problemas-busca"
+            label="Buscar no título ou no contorno"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+      )}
+
+      <DataState
+        loading={problemas.isLoading}
+        error={problemas.error}
+        onRetry={() => void problemas.mutate()}
+        empty={false}
+      >
+        {lista.length === 0 && (
+          <p className="text-sm text-muted">Nenhum problema neste recorte</p>
+        )}
+        {kanban ? (
+          <ProblemasKanban
+            itens={lista}
+            onMover={mover}
+            pending={pending}
+            extra={novoProblema}
+            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
+            aoRenomear={gere ? (p, nome) => void renomearProblema(p, nome) : undefined}
+          />
+        ) : (
+          <ListaFaixas
+            rotulo="Lista de problemas"
+            memoria="nova-faixas:problemas-lista"
+            aparencia="nova-faixas:problemas"
+            colunas={COLUNAS_PROBLEMA}
+            itens={lista}
+            colunaDe={(p) => p.estado}
+            idDe={(p) => p.id}
+            nomeDe={(p) => p.titulo}
+            extra={novoProblema}
+            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
+            aoRenomear={gere ? (p, nome) => void renomearProblema(p, nome) : undefined}
+            aoAbrir={(p) => router.push(`/problemas/${p.id}`)}
+            render={(p, vista) => (
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <NomeClicavel
+                    nome={vista.titulo || p.titulo}
+                    rotulo={`#${p.numero} · ${vista.titulo || p.titulo}`}
+                    href={`/problemas/${p.id}`}
+                    onSalvar={vista.salvarNome}
+                    className="font-medium text-primary hover:underline"
+                  />
+                  <Badge tone={ESTADO_PROBLEMA[p.estado].tone}>
+                    {ESTADO_PROBLEMA[p.estado].label}
+                  </Badge>
+                </div>
+                {p.contorno && <p className="text-sm text-muted">Contorno: {p.contorno}</p>}
+                <Link href={`/problemas/${p.id}`} className="text-xs font-medium text-primary hover:underline">
+                  Editar
+                </Link>
+              </div>
+            )}
+          />
+        )}
+      </DataState>
 
       {gere && (sugestoes.data ?? []).length > 0 && (
         <Card>
@@ -264,61 +388,6 @@ function ProblemasConteudo() {
           </CardContent>
         </Card>
       )}
-
-      {!kanban && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Select
-            id="problemas-estado"
-            label="Estado"
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-            options={[
-              { value: "", label: "Todos" },
-              ...(Object.keys(ESTADO_PROBLEMA) as EstadoProblema[]).map((e) => ({
-                value: e,
-                label: ESTADO_PROBLEMA[e].label,
-              })),
-            ]}
-          />
-          <Input
-            id="problemas-busca"
-            label="Buscar no título ou no contorno"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-      )}
-
-      <DataState
-        loading={problemas.isLoading}
-        error={problemas.error}
-        onRetry={() => void problemas.mutate()}
-        empty={lista.length === 0}
-        emptyTitle="Nenhum problema neste recorte"
-      >
-        {kanban ? (
-          <ProblemasKanban itens={lista} onMover={mover} pending={pending} />
-        ) : (
-          <ul className="flex flex-col divide-y divide-surface-border rounded-xl border border-surface-border bg-surface">
-            {lista.map((p) => (
-              <li key={p.id} className="flex flex-col gap-1 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Link
-                    href={`/problemas/${p.id}`}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    #{p.numero} · {p.titulo}
-                  </Link>
-                  <Badge tone={ESTADO_PROBLEMA[p.estado].tone}>
-                    {ESTADO_PROBLEMA[p.estado].label}
-                  </Badge>
-                </div>
-                {p.contorno && <p className="text-sm text-muted">Contorno: {p.contorno}</p>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </DataState>
 
       {/* Modal para preenchimento de contorno ou causa raiz ao mover */}
       {modalDados && (

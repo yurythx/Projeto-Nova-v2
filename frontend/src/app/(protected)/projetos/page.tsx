@@ -8,14 +8,14 @@ import { Download, FileSpreadsheet, Printer } from "lucide-react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
+import { ListaFaixas, NomeClicavel } from "@/components/plataforma/Faixas";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetosCronograma } from "@/components/projetos/ProjetosCronograma";
-import { ProjetosKanban } from "@/components/projetos/ProjetosKanban";
+import { COLUNAS_PROJETO, ProjetosKanban } from "@/components/projetos/ProjetosKanban";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -42,16 +42,16 @@ export default function ProjetosPage() {
 }
 
 function ProjetosConteudo() {
-  const { can } = usePlataforma();
+  const { can, loading: carregandoSessao } = usePlataforma();
   const router = useRouter();
   const params = useSearchParams();
   const paramVista = params.get("vista");
   const vista: Vista =
-    paramVista === "quadro"
-      ? "kanban"
+    paramVista === "lista"
+      ? "lista"
       : paramVista === "cronograma"
         ? "cronograma"
-        : "lista";
+        : "kanban";
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const [estado, setEstado] = useState("");
@@ -80,9 +80,9 @@ function ProjetosConteudo() {
 
   function trocarVista(proxima: string) {
     const q = new URLSearchParams(params.toString());
-    if (proxima === "kanban") q.set("vista", "quadro");
+    if (proxima === "lista") q.set("vista", "lista");
     else if (proxima === "cronograma") q.set("vista", "cronograma");
-    else q.delete("vista");
+    else q.set("vista", "quadro");
     router.replace(q.toString() ? `/projetos?${q.toString()}` : "/projetos");
   }
 
@@ -148,6 +148,44 @@ function ProjetosConteudo() {
     if (ok) void projetos.mutate();
   }
 
+  async function criarCard(nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.post<Projeto>("v1/projetos", {
+          titulo: nome.slice(0, 160),
+          descricao: "",
+          objetivo: "",
+          prioridade: "media",
+          orcamento: 0,
+        }),
+      "Projeto criado",
+    );
+    if (ok) void projetos.mutate();
+  }
+
+  async function renomearProjeto(p: Projeto, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.put(`v1/projetos/${p.id}`, {
+          titulo: nome.slice(0, 160),
+          descricao: p.descricao,
+          objetivo: p.objetivo,
+          prioridade: p.prioridade,
+          data_inicio_planejada: p.data_inicio_planejada ?? null,
+          data_fim_planejada: p.data_fim_planejada ?? null,
+          data_inicio_real: p.data_inicio_real ?? null,
+          data_fim_real: p.data_fim_real ?? null,
+          orcamento: Number(p.orcamento) || 0,
+          unidade_id: p.unidade_id ?? null,
+          produto_id: p.produto_id ?? null,
+          gerente_id: p.gerente_id ?? null,
+          gerente_nome: p.gerente_nome,
+        }),
+      "Nome atualizado",
+    );
+    if (ok) void projetos.mutate();
+  }
+
   const lista = projetos.data ?? [];
 
   return (
@@ -186,8 +224,8 @@ function ProjetosConteudo() {
         value={vista}
         onChange={trocarVista}
         tabs={[
-          { value: "lista", label: "Lista" },
           { value: "kanban", label: "Quadro" },
+          { value: "lista", label: "Lista" },
           { value: "cronograma", label: "Cronograma" },
         ]}
       />
@@ -217,10 +255,10 @@ function ProjetosConteudo() {
       )}
 
       <DataState
-        loading={projetos.isLoading}
+        loading={projetos.isLoading || carregandoSessao}
         error={projetos.error}
         onRetry={() => void projetos.mutate()}
-        empty={lista.length === 0}
+        empty={vista === "cronograma" && lista.length === 0}
         emptyTitle="Nenhum projeto encontrado"
         emptyDescription={
           gere
@@ -228,76 +266,91 @@ function ProjetosConteudo() {
             : "Nenhum projeto registrado para exibição."
         }
       >
+        {lista.length === 0 && vista !== "cronograma" && (
+          <p className="text-sm text-muted">Nenhum projeto encontrado</p>
+        )}
         {vista === "kanban" ? (
-          <ProjetosKanban itens={lista} onMover={mover} pending={pending} />
+          <ProjetosKanban
+            itens={lista}
+            onMover={mover}
+            pending={pending}
+            extra={(colunaId) =>
+              colunaId === "planejado" && gere ? (
+                <Button type="button" size="sm" variant="secondary" onClick={() => setModalAberto(true)}>
+                  Adicionar projeto
+                </Button>
+              ) : null
+            }
+            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
+            aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
+          />
         ) : vista === "cronograma" ? (
           <ProjetosCronograma projetos={lista} />
         ) : (
-          <div className="grid gap-3">
-            {lista.map((p) => {
+          <ListaFaixas
+            rotulo="Lista de projetos"
+            memoria="nova-faixas:projetos-lista"
+            aparencia="nova-faixas:projetos"
+            colunas={COLUNAS_PROJETO}
+            itens={lista}
+            colunaDe={(p) => p.estado}
+            idDe={(p) => p.id}
+            nomeDe={(p) => p.titulo}
+            extra={(colunaId) =>
+              colunaId === "planejado" && gere ? (
+                <Button type="button" size="sm" variant="secondary" onClick={() => setModalAberto(true)}>
+                  Adicionar projeto
+                </Button>
+              ) : null
+            }
+            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
+            aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
+            aoAbrir={(p) => router.push(`/projetos/${p.id}`)}
+            render={(p, vista) => {
               const estadoMeta = ESTADO_PROJETO[p.estado];
               const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
-
               return (
-                <Card key={p.id} className="hover:border-primary/50 transition">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm font-semibold text-primary">
-                        #{p.numero}
-                      </span>
-                      <CardTitle as="h3" className="text-base font-semibold">
-                        <Link
-                          href={`/projetos/${p.id}`}
-                          className="text-foreground hover:underline"
-                        >
-                          {p.titulo}
-                        </Link>
-                      </CardTitle>
+                      <span className="font-mono text-sm font-semibold text-primary">#{p.numero}</span>
+                      <NomeClicavel
+                        nome={vista.titulo || p.titulo}
+                        href={`/projetos/${p.id}`}
+                        onSalvar={vista.salvarNome}
+                        className="text-left text-base font-semibold text-foreground hover:underline"
+                      />
                     </div>
                     <div className="flex items-center gap-2">
-                      {prioridadeMeta && (
-                        <Badge tone={prioridadeMeta.tone}>
-                          {prioridadeMeta.label}
-                        </Badge>
-                      )}
-                      <Badge tone={estadoMeta?.tone ?? "neutral"}>
-                        {estadoMeta?.label ?? p.estado}
-                      </Badge>
+                      {prioridadeMeta && <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>}
+                      <Badge tone={estadoMeta?.tone ?? "neutral"}>{estadoMeta?.label ?? p.estado}</Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {p.descricao && (
-                      <p className="text-sm text-muted line-clamp-2">
-                        {p.descricao}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-muted pt-2 border-t border-surface-border">
+                  </div>
+                  {p.descricao && <p className="line-clamp-2 text-sm text-muted">{p.descricao}</p>}
+                  <div className="flex flex-wrap items-center gap-4 border-t border-surface-border pt-2 text-xs text-muted">
+                    <span>
+                      Gerente: <strong>{p.gerente_nome || "Não definido"}</strong>
+                    </span>
+                    {Number(p.orcamento) > 0 && (
                       <span>
-                        Gerente: <strong>{p.gerente_nome || "Não definido"}</strong>
-                      </span>
-                      {Number(p.orcamento) > 0 && (
-                        <span>
-                          Orçamento:{" "}
-                          <strong className="font-mono">
-                            R${" "}
-                            {Number(p.orcamento).toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </strong>
-                        </span>
-                      )}
-                      <span>
-                        Criado em:{" "}
-                        <strong>
-                          {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                        Orçamento:{" "}
+                        <strong className="font-mono">
+                          R${" "}
+                          {Number(p.orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </strong>
                       </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                    )}
+                    <span>
+                      Criado em: <strong>{new Date(p.created_at).toLocaleDateString("pt-BR")}</strong>
+                    </span>
+                    <Link href={`/projetos/${p.id}`} className="font-medium text-primary hover:underline">
+                      Editar
+                    </Link>
+                  </div>
+                </div>
               );
-            })}
-          </div>
+            }}
+          />
         )}
       </DataState>
 

@@ -17,6 +17,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/mail"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 )
 
@@ -39,6 +40,8 @@ type OfertaEntrada struct {
 	Nome, Descricao, Tipo string
 	ProdutoID, UnidadeID  *uuid.UUID
 	Ativa                 *bool
+	// Campos nil conserva os atuais na edição e vale nenhum na criação.
+	Campos *[]domain.Campo
 }
 
 // EquipeEntrada são os campos de uma equipe.
@@ -60,6 +63,8 @@ type Service struct {
 	logger    *slog.Logger
 	relogio   func() time.Time // nil = time.Now (WithRelogio)
 	arquivos  *Armazenamento   // fotos e assinaturas (WithArmazenamento)
+	caixa     mail.Caixa       // entrada de e-mail (WithCaixa); nil = desligada
+	segredos  Segredos         // nome do segredo no cofre; nil recusa o vínculo
 }
 
 // NewService cria o serviço. produtos pode ser nil: oferta sem produto
@@ -67,6 +72,15 @@ type Service struct {
 func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos, produtos domain.Produtos) *Service {
 	return &Service{pool: pool, repo: repo, eventos: eventos, produtos: produtos, logger: slog.Default()}
 }
+
+// Segredos confirma que um id do cofre existe no alcance de quem vincula.
+// A resposta é o nome. A senha não atravessa esta porta.
+type Segredos interface {
+	Nome(ctx context.Context, identity auth.Identity, id uuid.UUID) (string, error)
+}
+
+// WithSegredo liga a porta do cofre.
+func (s *Service) WithSegredo(segredos Segredos) *Service { s.segredos = segredos; return s }
 
 // WithLogger troca o logger do serviço.
 func (s *Service) WithLogger(l *slog.Logger) *Service {
@@ -119,10 +133,22 @@ func MapError(err error) error {
 		return causa(err, apperrors.Validation("o responsável precisa ser membro ativo de uma equipe da unidade"))
 	case errors.Is(err, domain.ErrSolicitacaoFinalizada):
 		return causa(err, apperrors.Conflict("a solicitação já foi encerrada ou cancelada"))
+	case errors.Is(err, domain.ErrCofreDesligado):
+		return causa(err, apperrors.Validation("o cofre está desligado"))
+	case errors.Is(err, domain.ErrSegredoAusente):
+		return causa(err, apperrors.Validation("segredo não encontrado no seu cofre"))
 	case errors.Is(err, domain.ErrComentarioInvalido):
 		return causa(err, apperrors.Validation("escreva o comentário (até 4000 caracteres)"))
 	case errors.Is(err, domain.ErrNotaInternaNegada):
 		return causa(err, apperrors.Forbidden("só a equipe registra nota interna"))
+	case errors.Is(err, domain.ErrAvaliacaoInvalida):
+		return causa(err, apperrors.Validation("a nota vai de 1 a 5 e o comentário cabe em 4000 caracteres"))
+	case errors.Is(err, domain.ErrAvaliacaoForaDeHora):
+		return causa(err, apperrors.Conflict("só se avalia a solicitação resolvida, atendida ou encerrada"))
+	case errors.Is(err, domain.ErrAvaliacaoAlheia):
+		return causa(err, apperrors.Forbidden("só quem abriu a solicitação avalia o atendimento"))
+	case errors.Is(err, domain.ErrAvaliacaoExistente):
+		return causa(err, apperrors.Conflict("esta solicitação já foi avaliada"))
 	case errors.Is(err, domain.ErrPoliticaInvalida):
 		// O motivo é do domínio, escrito para quem cadastra.
 		return causa(err, apperrors.Validation(strings.TrimPrefix(err.Error(), domain.ErrPoliticaInvalida.Error()+": ")))
@@ -147,8 +173,25 @@ func MapError(err error) error {
 	case errors.Is(err, domain.ErrEvidenciaInvalida):
 		return causa(err, apperrors.Validation("a evidência é foto ou assinatura"))
 	default:
+		var campo domain.CampoInvalido
+		if errors.As(err, &campo) {
+			return causa(err, apperrors.Validation(campo.Msg))
+		}
 		return err
 	}
+}
+
+func aplicarCampos(o domain.Oferta, campos *[]domain.Campo) (domain.Oferta, error) {
+	var lista []domain.Campo
+	if campos != nil {
+		lista = *campos
+	}
+	validos, err := domain.ValidarCampos(lista)
+	if err != nil {
+		return domain.Oferta{}, err
+	}
+	o.Campos = validos
+	return o, nil
 }
 
 func causa(err error, api *apperrors.Error) error {
@@ -209,6 +252,9 @@ func (s *Service) CriarOferta(ctx context.Context, identity auth.Identity, in Of
 	if err != nil {
 		return domain.Oferta{}, MapError(err)
 	}
+	if o, err = aplicarCampos(o, in.Campos); err != nil {
+		return domain.Oferta{}, MapError(err)
+	}
 	if !ver(identity, o.UnidadeID) {
 		return domain.Oferta{}, MapError(domain.ErrForaDoEscopo)
 	}
@@ -235,6 +281,11 @@ func (s *Service) AtualizarOferta(ctx context.Context, identity auth.Identity, i
 	}
 	next, err := prev.Aplicar(in.Nome, in.Descricao, tipoDe(in.Tipo, prev.Tipo), in.ProdutoID, in.UnidadeID, ativaDe(in.Ativa, prev.Ativa))
 	if err != nil {
+		return domain.Oferta{}, MapError(err)
+	}
+	if in.Campos == nil {
+		next.Campos = prev.Campos
+	} else if next, err = aplicarCampos(next, in.Campos); err != nil {
 		return domain.Oferta{}, MapError(err)
 	}
 	if !ver(identity, next.UnidadeID) {

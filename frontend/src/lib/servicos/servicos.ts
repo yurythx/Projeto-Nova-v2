@@ -6,6 +6,33 @@ type Tone = "neutral" | "success" | "danger" | "warning" | "info";
 export type TipoAtivo = "hardware" | "software" | "servico" | "rede" | "outro";
 export type EstadoAtivo = "planejado" | "em_uso" | "manutencao" | "desativado";
 
+export interface DiscoLocal {
+  nome: string;
+  bytes: number;
+}
+
+export interface ProgramaInstalado {
+  nome: string;
+  versao?: string;
+}
+
+export interface InventarioMaquina {
+  sistema: string;
+  processadores: number;
+  memoria_bytes?: number;
+  discos?: DiscoLocal[];
+  programas?: ProgramaInstalado[];
+  programas_truncado?: boolean;
+}
+
+export interface CredencialAgente {
+  id: string;
+  nome: string;
+  unidade_id: string;
+  created_at: string;
+  token?: string;
+}
+
 export interface Ativo {
   id: string;
   nome: string;
@@ -15,6 +42,8 @@ export interface Ativo {
   descricao: string;
   produto_id?: string;
   unidade_id?: string;
+  origem?: "manual" | "agente";
+  inventario?: InventarioMaquina;
 }
 
 export const TIPO_ATIVO: Record<TipoAtivo, string> = {
@@ -94,6 +123,7 @@ export interface Mudanca {
   justificativa: string;
   tipo: TipoMudanca;
   risco: Risco;
+  risco_score?: number;
   estado: EstadoMudanca;
   plano_reversao: string;
   inicio_planejado?: string;

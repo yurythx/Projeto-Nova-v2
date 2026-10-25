@@ -22,6 +22,8 @@ type Source string
 const (
 	SourceKeycloak Source = "keycloak"
 	SourceLocal    Source = "local"
+	// SourceAgente é uma credencial de máquina, não uma conta de pessoa.
+	SourceAgente Source = "agente"
 )
 
 // Scope é uma lotação efetiva do usuário: um perfil aplicado a um escopo

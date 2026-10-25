@@ -31,6 +31,20 @@ func (rowOK) Scan(dest ...any) error {
 	return nil
 }
 
+type rowNota struct{ total, soma int }
+
+func (n rowNota) Scan(dest ...any) error {
+	if p, ok := dest[0].(*int); ok {
+		*p = n.total
+	}
+	if len(dest) > 1 {
+		if p, ok := dest[1].(*int); ok {
+			*p = n.soma
+		}
+	}
+	return nil
+}
+
 type rowBlank struct{}
 
 func (rowBlank) Scan(...any) error { return nil }
@@ -228,19 +242,44 @@ func TestSolicitacoesPropagamFalhas(t *testing.T) {
 			_, _, err := r.ListSolicitacoes(ctx, db, domain.FiltroSolicitacao{})
 			return err
 		},
-		"GetSolicitacao":    func(db database.DBTX) error { _, err := r.GetSolicitacao(ctx, db, id); return err },
-		"TravarSolicitacao": func(db database.DBTX) error { return r.TravarSolicitacao(ctx, db, id) },
-		"InsertSolicitacao": func(db database.DBTX) error { _, err := r.InsertSolicitacao(ctx, db, s); return err },
-		"UpdateSolicitacao": func(db database.DBTX) error { return r.UpdateSolicitacao(ctx, db, s) },
-		"InsertPassagem":    func(db database.DBTX) error { _, err := r.InsertPassagem(ctx, db, domain.Passagem{}); return err },
-		"ListPassagens":     func(db database.DBTX) error { _, err := r.ListPassagens(ctx, db, id); return err },
-		"InsertComentario":  func(db database.DBTX) error { _, err := r.InsertComentario(ctx, db, domain.Comentario{}); return err },
-		"ListComentarios":   func(db database.DBTX) error { _, err := r.ListComentarios(ctx, db, id, true); return err },
-		"Responsaveis":      func(db database.DBTX) error { _, err := r.Responsaveis(ctx, db, &id); return err },
-		"ResponsavelValido": func(db database.DBTX) error { _, err := r.ResponsavelValido(ctx, db, id, nil); return err },
-		"ListApontamentos":  func(db database.DBTX) error { _, err := r.ListApontamentos(ctx, db, id); return err },
-		"InsertApontamento": func(db database.DBTX) error { _, err := r.InsertApontamento(ctx, db, domain.Apontamento{}); return err },
-		"DeleteApontamento": func(db database.DBTX) error { return r.DeleteApontamento(ctx, db, id, id) },
+		"GetSolicitacao":       func(db database.DBTX) error { _, err := r.GetSolicitacao(ctx, db, id); return err },
+		"TravarSolicitacao":    func(db database.DBTX) error { return r.TravarSolicitacao(ctx, db, id) },
+		"InsertSolicitacao":    func(db database.DBTX) error { _, err := r.InsertSolicitacao(ctx, db, s); return err },
+		"UpdateSolicitacao":    func(db database.DBTX) error { return r.UpdateSolicitacao(ctx, db, s) },
+		"InsertPassagem":       func(db database.DBTX) error { _, err := r.InsertPassagem(ctx, db, domain.Passagem{}); return err },
+		"ListPassagens":        func(db database.DBTX) error { _, err := r.ListPassagens(ctx, db, id); return err },
+		"InsertComentario":     func(db database.DBTX) error { _, err := r.InsertComentario(ctx, db, domain.Comentario{}); return err },
+		"ListComentarios":      func(db database.DBTX) error { _, err := r.ListComentarios(ctx, db, id, true); return err },
+		"Responsaveis":         func(db database.DBTX) error { _, err := r.Responsaveis(ctx, db, &id); return err },
+		"ResponsavelValido":    func(db database.DBTX) error { _, err := r.ResponsavelValido(ctx, db, id, nil); return err },
+		"ListApontamentos":     func(db database.DBTX) error { _, err := r.ListApontamentos(ctx, db, id); return err },
+		"InsertApontamento":    func(db database.DBTX) error { _, err := r.InsertApontamento(ctx, db, domain.Apontamento{}); return err },
+		"DeleteApontamento":    func(db database.DBTX) error { return r.DeleteApontamento(ctx, db, id, id) },
+		"SolicitacaoPorNumero": func(db database.DBTX) error { _, err := r.SolicitacaoPorNumero(ctx, db, 1); return err },
+		"EmailDe":              func(db database.DBTX) error { _, err := r.EmailDe(ctx, db, id); return err },
+		"ReservarCorreio":      func(db database.DBTX) error { _, err := r.ReservarCorreio(ctx, db, "m", id); return err },
+		"LiberarCorreio":       func(db database.DBTX) error { return r.LiberarCorreio(ctx, db, "m") },
+		"GetAvaliacao":         func(db database.DBTX) error { _, err := r.GetAvaliacao(ctx, db, id); return err },
+		"InsertAvaliacao":      func(db database.DBTX) error { _, err := r.InsertAvaliacao(ctx, db, domain.Avaliacao{}); return err },
+		"ResumoAvaliacoes": func(db database.DBTX) error {
+			_, err := r.ResumoAvaliacoes(ctx, db, false, nil, 5)
+			return err
+		},
+		"ListarParaGovernanca": func(db database.DBTX) error {
+			_, err := r.ListarParaGovernanca(ctx, db, false, nil, 10)
+			return err
+		},
+		"UnidadesComSolicitacao": func(db database.DBTX) error {
+			_, err := r.UnidadesComSolicitacao(ctx, db)
+			return err
+		},
+		"GravarRetrato": func(db database.DBTX) error {
+			return r.GravarRetrato(ctx, db, domain.Retrato{Dia: time.Now()})
+		},
+		"ListarRetratos": func(db database.DBTX) error {
+			_, err := r.ListarRetratos(ctx, db, time.Now(), false, nil)
+			return err
+		},
 	}
 	for name, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {
@@ -258,6 +297,19 @@ func TestSolicitacoesPropagamFalhas(t *testing.T) {
 	}
 	if err := r.UpdateSolicitacao(ctx, dbtest.ScanFail{}, s); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Errorf("nenhuma linha atualizada: %v", err)
+	}
+	if _, err := r.InsertAvaliacao(ctx, queryDB{err: &pgconn.PgError{Code: "23505"}}, domain.Avaliacao{}); !errors.Is(err, domain.ErrAvaliacaoExistente) {
+		t.Errorf("avaliação repetida: %v", err)
+	}
+	nota := rowNota{total: 2, soma: 9}
+	if _, err := r.ResumoAvaliacoes(ctx, &dbtest.Seq{Row: nota, Queries: []dbtest.QueryResult{{Err: dbtest.ErrInjected}}}, false, nil, 5); !errors.Is(err, dbtest.ErrInjected) {
+		t.Errorf("resumo sem a lista: %v", err)
+	}
+	if resumo, err := r.ResumoAvaliacoes(ctx, &dbtest.Seq{Row: nota, Queries: []dbtest.QueryResult{{Rows: dbtest.NoRows()}}}, false, nil, 5); err != nil || resumo.Total != 2 || resumo.Recentes == nil {
+		t.Errorf("resumo vazio: %+v %v", resumo, err)
+	}
+	if resumo, err := r.ResumoAvaliacoes(ctx, &dbtest.Seq{Row: nota}, false, nil, 0); err != nil || len(resumo.Recentes) != 0 {
+		t.Errorf("sem recentes: %+v %v", resumo, err)
 	}
 	if err := r.TravarSolicitacao(ctx, queryDB{row: rowErr{pgx.ErrNoRows}}, id); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Errorf("trava de solicitação ausente: %v", err)
@@ -419,15 +471,21 @@ func TestVisitasPropagamFalhas(t *testing.T) {
 	if err := r.ApagarLocalizacoesDe(ctx, dbtest.Fail{}, id); !errors.Is(err, dbtest.ErrInjected) {
 		t.Errorf("eliminação: %v", err)
 	}
-	for i := 1; i <= 2; i++ {
-		qs := []dbtest.QueryResult{{Rows: dbtest.NoRows()}, {Rows: dbtest.NoRows()}}[:i]
+	for i := 1; i <= 3; i++ {
+		qs := make([]dbtest.QueryResult, i)
+		for j := range qs {
+			qs[j] = dbtest.QueryResult{Rows: dbtest.NoRows()}
+		}
 		seq := &dbtest.Seq{Queries: append(qs, dbtest.QueryResult{Err: dbtest.ErrInjected})}
 		if _, err := r.DadosDoTitular(ctx, seq, id); !errors.Is(err, dbtest.ErrInjected) {
 			t.Errorf("dados do titular, consulta %d: %v", i+1, err)
 		}
 	}
-	for i := 0; i <= 1; i++ {
-		qs := []dbtest.QueryResult{{Rows: dbtest.NoRows()}}[:i]
+	for i := 0; i <= 3; i++ {
+		qs := make([]dbtest.QueryResult, i)
+		for j := range qs {
+			qs[j] = dbtest.QueryResult{Rows: dbtest.NoRows()}
+		}
 		seq := &dbtest.Seq{Queries: append(qs, dbtest.QueryResult{Rows: dbtest.ErrRows()}, dbtest.QueryResult{Rows: dbtest.NoRows()})}
 		if _, err := r.DadosDoTitular(ctx, seq, id); !errors.Is(err, dbtest.ErrInjected) {
 			t.Errorf("leitura dos dados do titular, consulta %d: %v", i+1, err)
@@ -537,5 +595,38 @@ func TestVisitasReal(t *testing.T) {
 	}
 	if err := r.ApagarLocalizacoesDe(ctx, pool, tec); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSerieReal(t *testing.T) {
+	pool := dbtest.Pool(t)
+	r := NewRepository()
+	ctx := context.Background()
+	u := dbtest.Unidade(t, pool)
+	dia := time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC)
+	mttr := 1.5
+	p := domain.Retrato{Dia: dia, UnidadeID: &u, MTTRHoras: &mttr, SomaMTTRMin: 90, MTTRN: 1}
+	if err := r.GravarRetrato(ctx, pool, p); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM atendimento_indicadores_dia WHERE dia = $1`, dia)
+	})
+	mttr = 3
+	p.MTTRHoras = &mttr
+	p.SomaMTTRMin = 180
+	if err := r.GravarRetrato(ctx, pool, p); err != nil {
+		t.Fatal(err)
+	}
+	lista, err := r.ListarRetratos(ctx, pool, dia, true, []uuid.UUID{u})
+	if err != nil || len(lista) != 1 || lista[0].MTTRHoras == nil || *lista[0].MTTRHoras != 3 || lista[0].SomaMTTRMin != 180 {
+		t.Fatalf("regravou o dia: %+v %v", lista, err)
+	}
+	if err := r.GravarRetrato(ctx, pool, domain.Retrato{Dia: dia}); err != nil {
+		t.Fatal(err)
+	}
+	tudo, err := r.ListarRetratos(ctx, pool, dia, false, nil)
+	if err != nil || len(tudo) != 1 || tudo[0].UnidadeID != nil {
+		t.Fatalf("linha institucional: %+v %v", tudo, err)
 	}
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/keycloakconfig"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/lgpd"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/logging"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/mail"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/metrics"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
@@ -82,6 +83,9 @@ type Dependencies struct {
 	SearchIndex    *searchindex.Engine // índice da Busca Global (ADR 031); nil sem TYPESENSE_URL
 	TrustedProxies []*net.IPNet
 	Kernel         *kernel.Kernel
+	// Credencial reconhece o bearer da máquina (ativos:reportar). Nil
+	// recusa esse token e o JWT segue valendo.
+	Credencial auth.Credencial
 
 	telemetryShutdown telemetry.Shutdown
 	closers           []func()
@@ -169,6 +173,11 @@ func build(ctx context.Context, cfg *config.Config, component string) (*Dependen
 	d.OutboxStats = outbox.NewStats(d.DB)
 	d.Hub = ws.NewHub(logger, d.Redis)
 	d.Notificacoes = notificacoes.NewService(d.DB, d.Hub, logger)
+	if cfg.Mail.Host != "" {
+		d.Notificacoes.WithCorreio(correioSMTP{mail.SMTP{
+			Host: cfg.Mail.Host, Porta: cfg.Mail.Port, Usuario: cfg.Mail.User, Senha: cfg.Mail.Password, De: cfg.Mail.From,
+		}}, cfg.FrontendURL)
+	}
 	d.Tickets = ws.NewTicketStore(d.Redis, ws.TicketTTL)
 	d.IAM = iam.NewResolver(d.DB, d.Redis, logger)
 	d.Idempotency = idempotency.NewPostgresStore(d.DB)
@@ -263,6 +272,13 @@ func wireWebSocket(d *Dependencies) {
 			d.Hub.DropModule(key)
 		}
 	})
+}
+
+// correioSMTP adapta o SMTP da plataforma ao aviso do sino.
+type correioSMTP struct{ mail.SMTP }
+
+func (c correioSMTP) Send(ctx context.Context, m notificacoes.Mensagem) error {
+	return c.SMTP.Send(ctx, mail.Mensagem{Para: m.Para, Assunto: m.Assunto, Corpo: m.Corpo})
 }
 
 // Close libera tudo que NewDependencies abriu (ordem inversa).

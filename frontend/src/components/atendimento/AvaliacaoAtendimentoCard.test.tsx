@@ -30,11 +30,11 @@ beforeEach(() => {
 });
 
 describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
-  it("renderiza pesquisa de satisfação e permite enviar avaliação com nota e comentário", async () => {
+  it("envia a nota para o atendimento e não guarda no navegador", async () => {
     const user = userEvent.setup();
     const onAvaliado = vi.fn();
     const api = mockBackend({
-      "POST v1/atendimento/solicitacoes/sol-csat-1/comentarios": { status: 201, data: {} },
+      "POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao": { status: 201, data: { nota: 5 } },
     });
 
     render(
@@ -47,45 +47,50 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
     );
 
     expect(screen.getByTestId("card-csat-avaliacao")).toBeInTheDocument();
-    expect(screen.getByText("Pesquisa de Satisfação (CSAT)")).toBeInTheDocument();
-    expect(screen.getByText(/Como você avalia a resolução deste chamado\?/i)).toBeInTheDocument();
-
-    // Clica na 5ª estrela
     await user.click(screen.getByRole("button", { name: /5 estrelas: Excelente/i }));
-    // Digita comentário
-    await user.type(screen.getByLabelText("Comentário adicional (opcional)"), "Atendimento impecável e muito rápido!");
-
-    // Envia avaliação
+    await user.type(screen.getByLabelText("Comentário adicional (opcional)"), "Atendimento impecável");
     await user.click(screen.getByRole("button", { name: /Enviar avaliação/i }));
 
     await waitFor(() => {
-      expect(api.to("POST v1/atendimento/solicitacoes/sol-csat-1/comentarios")).toHaveLength(1);
+      expect(api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")).toHaveLength(1);
     });
+    const enviado = api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")[0]!.body as Record<string, unknown>;
+    expect(enviado.nota).toBe(5);
+    expect(enviado.comentario).toBe("Atendimento impecável");
+    expect(onAvaliado).toHaveBeenCalled();
+    expect(localStorage.length).toBe(0);
+  });
 
-    const comentarioEnviado = api.to("POST v1/atendimento/solicitacoes/sol-csat-1/comentarios")[0]!.body as Record<string, unknown>;
-    expect(comentarioEnviado.texto).toContain("[Pesquisa de Satisfação - CSAT]");
-    expect(comentarioEnviado.texto).toContain("5/5 estrelas");
-    expect(comentarioEnviado.texto).toContain("Atendimento impecável e muito rápido!");
-
-    // Feedback exibido
-    expect(await screen.findByText("Obrigado por avaliar o atendimento!")).toBeInTheDocument();
+  it("mostra a avaliação que veio do servidor", () => {
+    render(
+      <AvaliacaoAtendimentoCard
+        solicitacao={solicitacaoResolvida}
+        avaliacao={{
+          id: "av-1",
+          solicitacao_id: "sol-csat-1",
+          autor_id: "user-1",
+          autor_nome: "Maria Oliveira",
+          nota: 5,
+          comentario: "Atendimento impecável",
+          created_at: "2026-10-21T16:00:00Z",
+        }}
+        solicitante={true}
+        tecnico={false}
+      />,
+    );
+    expect(screen.getByText("Obrigado por avaliar o atendimento!")).toBeInTheDocument();
     expect(screen.getByText(/5\/5 — Excelente \/ Muito satisfeito/)).toBeInTheDocument();
   });
 
   it("não exibe para solicitação ainda em aberto", () => {
     const aberta: Solicitacao = { ...solicitacaoResolvida, estado: "em_atendimento" };
     render(
-      <AvaliacaoAtendimentoCard
-        solicitacao={aberta}
-        solicitante={true}
-        tecnico={false}
-      />,
+      <AvaliacaoAtendimentoCard solicitacao={aberta} solicitante={true} tecnico={false} />,
     );
-
     expect(screen.queryByTestId("card-csat-avaliacao")).not.toBeInTheDocument();
   });
 
-  it("não exibe para técnico se o usuário ainda não avaliou", () => {
+  it("não exibe o formulário para o técnico enquanto não houver nota", () => {
     render(
       <AvaliacaoAtendimentoCard
         solicitacao={solicitacaoResolvida}
@@ -93,7 +98,6 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
         tecnico={true}
       />,
     );
-
     expect(screen.queryByTestId("card-csat-avaliacao")).not.toBeInTheDocument();
   });
 });

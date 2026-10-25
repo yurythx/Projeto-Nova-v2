@@ -87,7 +87,7 @@ function ShellBody({
           collapsed ? "md:pl-[var(--sidebar-w-collapsed)]" : "md:pl-[var(--sidebar-w)]"
         }`}
       >
-        <main id="main-content" tabIndex={-1} className="flex-1 px-4 pb-10 pt-6 outline-none sm:px-8">
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 pb-10 pt-6 outline-none sm:px-8">
           <ConnectionStateProvider value={state}>
             <ModuleGate>{children}</ModuleGate>
           </ConnectionStateProvider>

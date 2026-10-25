@@ -14,7 +14,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { rotuloTipo, type Oferta, type Pessoa } from "@/lib/atendimento/atendimento";
+import { rotuloTipo, type CampoOferta, type Oferta, type Pessoa } from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 interface Produto {
@@ -53,6 +53,7 @@ export default function AtendimentoCadastroPage() {
   const produtos = useApiQuery<Produto[]>(can("produtos:manage") ? "v1/produtos" : null);
   const { run, pending } = useAction();
   const [editOferta, setEditOferta] = useState<Oferta | null>(null);
+  const [campos, setCampos] = useState<CampoOferta[]>([]);
   const [editEquipe, setEditEquipe] = useState<Equipe | null>(null);
   const [unidadeEquipe, setUnidadeEquipe] = useState("");
   const candidatos = useApiQuery<Pessoa[]>(
@@ -64,7 +65,14 @@ export default function AtendimentoCadastroPage() {
     const form = e.currentTarget;
     const fd = new FormData(form);
     const editando = editOferta;
-    const body = {
+    const perguntas = campos
+      .map((c) => ({
+        ...c,
+        rotulo: c.rotulo.trim(),
+        opcoes: c.tipo === "lista" ? c.opcoes?.map((o) => o.trim()).filter(Boolean) : undefined,
+      }))
+      .filter((c) => c.rotulo !== "");
+    const body: Record<string, unknown> = {
       nome: texto(fd, "nome"),
       descricao: texto(fd, "descricao"),
       tipo: texto(fd, "tipo"),
@@ -72,6 +80,7 @@ export default function AtendimentoCadastroPage() {
       unidade_id: idOuNulo(fd, "unidade_id"),
       ativa: fd.get("ativa") === "on",
     };
+    if (editando || perguntas.length > 0) body.campos = perguntas;
     const ok = await run(
       () =>
         editando
@@ -81,6 +90,7 @@ export default function AtendimentoCadastroPage() {
     );
     if (ok) {
       setEditOferta(null);
+      setCampos([]);
       if (!editando) form.reset();
       void ofertas.mutate();
     }
@@ -183,12 +193,91 @@ export default function AtendimentoCadastroPage() {
                 />
                 Oferta ativa
               </label>
+              <fieldset className="grid gap-2 rounded-lg border border-surface-border p-3">
+                <legend className="px-1 text-sm font-medium">Perguntas na abertura</legend>
+                {campos.map((campo, i) => (
+                  <div key={i} className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+                    <Input
+                      id={`campo-rotulo-${i}`}
+                      label={i === 0 ? "Rótulo" : undefined}
+                      aria-label={`Rótulo da pergunta ${i + 1}`}
+                      value={campo.rotulo}
+                      maxLength={80}
+                      onChange={(e) =>
+                        setCampos(campos.map((c, j) => (j === i ? { ...c, rotulo: e.target.value } : c)))
+                      }
+                    />
+                    <Select
+                      id={`campo-tipo-${i}`}
+                      label={i === 0 ? "Tipo" : undefined}
+                      aria-label={`Tipo da pergunta ${i + 1}`}
+                      value={campo.tipo}
+                      onChange={(e) =>
+                        setCampos(
+                          campos.map((c, j) =>
+                            j === i ? { ...c, tipo: e.target.value as CampoOferta["tipo"] } : c,
+                          ),
+                        )
+                      }
+                      options={[
+                        { value: "texto", label: "Texto" },
+                        { value: "numero", label: "Número" },
+                        { value: "lista", label: "Lista" },
+                      ]}
+                    />
+                    <label className="flex items-end gap-2 pb-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={campo.obrigatorio}
+                        aria-label={`Pergunta ${i + 1} obrigatória`}
+                        onChange={(e) =>
+                          setCampos(campos.map((c, j) => (j === i ? { ...c, obrigatorio: e.target.checked } : c)))
+                        }
+                      />
+                      Obrigatória
+                    </label>
+                    {campo.tipo === "lista" ? (
+                      <div className="sm:col-span-3">
+                        <Input
+                          id={`campo-opcoes-${i}`}
+                          label="Opções, separadas por vírgula"
+                          value={(campo.opcoes ?? []).join(", ")}
+                          onChange={(e) =>
+                            setCampos(
+                              campos.map((c, j) =>
+                                j === i ? { ...c, opcoes: e.target.value.split(",") } : c,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={campos.length >= 20}
+                  onClick={() =>
+                    setCampos([...campos, { chave: "", rotulo: "", tipo: "texto", obrigatorio: false }])
+                  }
+                >
+                  Adicionar pergunta
+                </Button>
+              </fieldset>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" loading={pending}>
                   {editOferta ? "Salvar oferta" : "Cadastrar oferta"}
                 </Button>
                 {editOferta && (
-                  <Button type="button" variant="secondary" onClick={() => setEditOferta(null)}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setEditOferta(null);
+                      setCampos([]);
+                    }}
+                  >
                     Cancelar edição da oferta
                   </Button>
                 )}
@@ -222,7 +311,14 @@ export default function AtendimentoCadastroPage() {
               <div className="flex items-center gap-2">
                 <Badge>{oferta.ativa ? "Ativa" : "Inativa"}</Badge>
                 {gerencia && (
-                  <Button type="button" variant="secondary" onClick={() => setEditOferta(oferta)}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setEditOferta(oferta);
+                      setCampos(oferta.campos ?? []);
+                    }}
+                  >
                     Editar {oferta.nome}
                   </Button>
                 )}

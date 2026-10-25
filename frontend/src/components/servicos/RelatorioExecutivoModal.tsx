@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import type { Solicitacao } from "@/lib/atendimento/atendimento";
+import type { Governanca, Solicitacao } from "@/lib/atendimento/atendimento";
 import type { Projeto } from "@/lib/projetos/projetos";
 import type { Mudanca, Problema } from "@/lib/servicos/servicos";
 
@@ -29,6 +29,17 @@ interface RelatorioExecutivoModalProps {
   problemas: Problema[];
   mudancas: Mudanca[];
   projetos: Projeto[];
+  governanca?: Governanca | null;
+}
+
+function textoHoras(v: number | null | undefined) {
+  if (v == null) return "sem amostra";
+  return `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
+}
+
+function textoPct(v: number | null | undefined) {
+  if (v == null) return "sem amostra";
+  return `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 }
 
 export function RelatorioExecutivoModal({
@@ -38,37 +49,18 @@ export function RelatorioExecutivoModal({
   problemas,
   mudancas,
   projetos,
+  governanca,
 }: RelatorioExecutivoModalProps) {
-  // Cálculos de Indicadores de Governança (ITIL / COBIT)
   const totalSolicitacoes = solicitacoes.length;
   const concluidas = solicitacoes.filter(
     (s) => s.estado === "resolvido" || s.estado === "encerrado" || s.estado === "atendido",
   ).length;
   const incidentes = solicitacoes.filter((s) => s.tipo === "incidente").length;
   const requisicoes = solicitacoes.filter((s) => s.tipo === "requisicao").length;
-
-  // MTTR (Tempo Médio para Resolução em horas)
-  // Calcula tempo real se houver timestamps ou define baseline corporativa
-  const resolvidosComTempo = solicitacoes.filter(
-    (s) => (s.estado === "resolvido" || s.estado === "encerrado") && s.created_at && s.updated_at,
-  );
-  let somaHoras = 0;
-  resolvidosComTempo.forEach((s) => {
-    const diffMs = new Date(s.updated_at).getTime() - new Date(s.created_at).getTime();
-    if (diffMs > 0) somaHoras += diffMs / (1000 * 60 * 60);
-  });
-  const mttrCalculado =
-    resolvidosComTempo.length > 0 ? (somaHoras / resolvidosComTempo.length).toFixed(1) : "3.2";
-
-  // MTBF (Tempo Médio entre Falhas em horas)
-  // Base mensal padrão de 720h dividida pela frequência de incidentes
-  const mtbfCalculado = incidentes > 0 ? Math.round(720 / Math.max(incidentes, 1)) : 720;
-
-  // SLA Compliance (%)
-  const taxaSla = totalSolicitacoes > 0 ? Math.min(99.2, 92 + (concluidas / totalSolicitacoes) * 7.5).toFixed(1) : "98.5";
-
-  // First Contact Resolution (%)
-  const fcrTaxa = "82.4";
+  const mttr = textoHoras(governanca?.mttr_horas);
+  const mtbf = textoHoras(governanca?.mtbf_horas);
+  const taxaSla = textoPct(governanca?.sla_percentual);
+  const fcr = textoPct(governanca?.fcr_percentual);
 
   // Mudanças
   const mudConcluidas = mudancas.filter((m) => m.estado === "concluida").length;
@@ -76,7 +68,7 @@ export function RelatorioExecutivoModal({
   const taxaSucessoMudancas =
     mudConcluidas + mudFalhas > 0
       ? ((mudConcluidas / (mudConcluidas + mudFalhas)) * 100).toFixed(0)
-      : "100";
+      : null;
 
   // Projetos & Orçamento
   const totalOrcamento = projetos.reduce((acc, p) => acc + (Number(p.orcamento) || 0), 0);
@@ -86,11 +78,11 @@ export function RelatorioExecutivoModal({
   function exportarCsvExecutivo() {
     const cabecalho = ["Indicador", "Valor", "Meta_ITIL", "Status_Governanca"];
     const dados = [
-      ["MTTR (Tempo Médio de Resolução)", `${mttrCalculado} horas`, "< 4.0 horas", "Aderente"],
-      ["MTBF (Tempo Médio Entre Falhas)", `${mtbfCalculado} horas`, "> 120 horas", "Excelente"],
-      ["Conformidade de SLA", `${taxaSla}%`, "> 95.0%", "Conforme"],
-      ["Taxa de Resolução no 1º Contato (FCR)", `${fcrTaxa}%`, "> 70.0%", "Excelente"],
-      ["Sucesso em Mudanças (RFC CAB)", `${taxaSucessoMudancas}%`, "> 95.0%", "Controlado"],
+      ["MTTR (Tempo Médio de Resolução)", mttr, "tempo útil do relógio de solução", governanca?.amostra.incidentes_resolvidos ? `${governanca.amostra.incidentes_resolvidos} incidentes` : "sem amostra"],
+      ["MTBF (Tempo Médio Entre Falhas)", mtbf, "intervalo entre aberturas", governanca?.amostra.incidentes ? `${governanca.amostra.incidentes} incidentes` : "sem amostra"],
+      ["Conformidade de SLA", taxaSla, "solução cumprida entre as concluídas com prazo", governanca?.amostra.com_prazo_concluido ? `${governanca.amostra.com_prazo_concluido} com prazo` : "sem amostra"],
+      ["Taxa de Resolução no 1º Contato (FCR)", fcr, "sem espera e sem reabertura", governanca?.amostra.concluidas ? `${governanca.amostra.fcr} de ${governanca.amostra.concluidas}` : "sem amostra"],
+      ["Sucesso em Mudanças (RFC CAB)", taxaSucessoMudancas == null ? "sem amostra" : `${taxaSucessoMudancas}%`, "concluídas sobre concluídas e falhas", `${mudConcluidas + mudFalhas} encerradas`],
       ["Chamados Concluídos", `${concluidas} de ${totalSolicitacoes}`, "-", "Ativo"],
       ["Problemas / Erros Conhecidos", `${problemas.length} mapeados`, "-", "Controlado"],
       ["Projetos em Execução", `${projAndamento} ativos (${projConcluidos} concluídos)`, "-", "Em Dia"],
@@ -167,8 +159,8 @@ export function RelatorioExecutivoModal({
                 Painel Consolidado de Disponibilidade e Eficiência
               </h3>
             </div>
-            <Badge tone="success" className="text-xs font-semibold px-2.5 py-1">
-              Operação Estável (SLA Green)
+            <Badge tone="neutral" className="px-2.5 py-1 text-xs font-semibold">
+              {governanca?.amostra.truncado ? "Amostra parcial" : "Indicadores do escopo"}
             </Badge>
           </div>
         </div>
@@ -181,7 +173,7 @@ export function RelatorioExecutivoModal({
               <Clock className="h-4 w-4 text-primary" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-foreground">{mttrCalculado}h</span>
+              <span className="text-2xl font-extrabold text-foreground">{mttr}</span>
               <span className="text-xs text-success font-medium">meta &lt; 4.0h</span>
             </div>
             <p className="mt-1 text-[11px] text-muted">Tempo médio até restabelecimento</p>
@@ -193,7 +185,7 @@ export function RelatorioExecutivoModal({
               <TrendingUp className="h-4 w-4 text-info" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-foreground">{mtbfCalculado}h</span>
+              <span className="text-2xl font-extrabold text-foreground">{mtbf}</span>
               <span className="text-xs text-info font-medium">alta estabilidade</span>
             </div>
             <p className="mt-1 text-[11px] text-muted">Tempo médio entre falhas</p>
@@ -205,7 +197,7 @@ export function RelatorioExecutivoModal({
               <CheckCircle2 className="h-4 w-4 text-success" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-success">{taxaSla}%</span>
+              <span className="text-2xl font-extrabold text-foreground">{taxaSla}</span>
               <span className="text-xs text-muted font-medium">meta 95%</span>
             </div>
             <p className="mt-1 text-[11px] text-muted">Atendimentos no prazo acordado</p>
@@ -217,7 +209,9 @@ export function RelatorioExecutivoModal({
               <Award className="h-4 w-4 text-warning" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-foreground">{taxaSucessoMudancas}%</span>
+              <span className="text-2xl font-extrabold text-foreground">
+                {taxaSucessoMudancas == null ? "sem amostra" : `${taxaSucessoMudancas}%`}
+              </span>
               <span className="text-xs text-success font-medium">sem rollback</span>
             </div>
             <p className="mt-1 text-[11px] text-muted">Liberações homologadas no CAB</p>
@@ -249,8 +243,8 @@ export function RelatorioExecutivoModal({
                     {totalSolicitacoes} chamados ({incidentes} inc. / {requisicoes} req.)
                   </td>
                   <td className="px-3.5 py-2.5 text-muted">FCR &gt; 70% | SLA &gt; 95%</td>
-                  <td className="px-3.5 py-2.5 text-right font-medium text-success">
-                    Excelente ({concluidas} concluídos)
+                  <td className="px-3.5 py-2.5 text-right font-medium text-foreground">
+                    {fcr} no primeiro contato ({concluidas} na lista)
                   </td>
                 </tr>
                 <tr>
@@ -276,7 +270,7 @@ export function RelatorioExecutivoModal({
                   </td>
                   <td className="px-3.5 py-2.5 text-muted">Janela pré-aprovada com rollback</td>
                   <td className="px-3.5 py-2.5 text-right font-medium text-success">
-                    {taxaSucessoMudancas}% sucesso operacional
+                    {taxaSucessoMudancas == null ? "sem amostra" : `${taxaSucessoMudancas}% de sucesso`}
                   </td>
                 </tr>
                 <tr>
@@ -303,12 +297,12 @@ export function RelatorioExecutivoModal({
             <Award className="h-4 w-4 text-primary" />
             Parecer e Diretrizes de Governança
           </h4>
-          <p className="text-xs text-muted leading-relaxed">
-            A infraestrutura e os serviços de TIC operam em conformidade com as diretrizes ITIL v4 e
-            COBIT. A integração nativa entre Atendimento, Investigação de Problemas, Homologação pelo
-            comitê CAB e Projetos Estratégicos assegura rastreabilidade contínua de ponta a ponta.
-            Recomenda-se manter a alimentação periódica dos artigos de conhecimento e cadastramento de
-            ativos no CMDB para maximizar a deflexão de chamados recorrentes.
+          <p className="text-xs leading-relaxed text-muted">
+            MTTR, MTBF, SLA e resolução no primeiro contato saem dos relógios de prazo e das
+            passagens das solicitações do seu escopo. Sem chamados concluídos com prazo, o
+            indicador fica em branco. O sucesso das mudanças conta só as concluídas e as que
+            falharam.
+            {governanca?.csat ? ` Satisfação média: ${governanca.csat.media} de 5 (${governanca.csat.total} avaliações).` : ""}
           </p>
         </div>
       </div>

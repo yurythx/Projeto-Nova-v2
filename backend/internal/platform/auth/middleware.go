@@ -18,10 +18,19 @@ import (
 // segurança.
 type Enricher func(ctx context.Context, identity Identity) (Identity, error)
 
+// Credencial reconhece um bearer que não é JWT. ok false significa que o
+// token não é desse tipo e o verificador segue. Um erro recusa a requisição.
+type Credencial func(ctx context.Context, token string) (Identity, bool, error)
+
 // RequireAuthentication extrai e verifica o bearer token do header
 // Authorization, enriquece a Identity (quando enrich != nil) e a guarda no
-// contexto. Precisa rodar antes de RequirePermission.
-func RequireAuthentication(verifier *Verifier, enrich Enricher, logger *slog.Logger) func(http.Handler) http.Handler {
+// contexto. Precisa rodar antes de RequirePermission. credencial, se
+// vier, trata a credencial de máquina antes do JWT e não passa pelo IAM.
+func RequireAuthentication(verifier *Verifier, enrich Enricher, logger *slog.Logger, credencial ...Credencial) func(http.Handler) http.Handler {
+	var resolver Credencial
+	if len(credencial) > 0 {
+		resolver = credencial[0]
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawToken, err := bearerToken(r)
@@ -30,7 +39,23 @@ func RequireAuthentication(verifier *Verifier, enrich Enricher, logger *slog.Log
 				return
 			}
 
-			identity, err := verifier.Verify(r.Context(), rawToken)
+			var identity Identity
+			if resolver != nil {
+				var ok bool
+				identity, ok, err = resolver(r.Context(), rawToken)
+				if err != nil {
+					httputil.WriteError(w, r, logger, err)
+					return
+				}
+				if ok {
+					ctx := WithIdentity(r.Context(), identity)
+					ctx = logging.WithUserID(ctx, identity.Subject)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+			}
+
+			identity, err = verifier.Verify(r.Context(), rawToken)
 			if err != nil {
 				httputil.WriteError(w, r, logger, apperrors.Unauthorized("invalid or expired access token"))
 				return

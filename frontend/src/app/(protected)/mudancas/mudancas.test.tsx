@@ -47,7 +47,7 @@ function perms(...p: string[]) {
   return { permissions: p, scopes: [{ perfil: "p", origem: "manual" as const, permissions: p }] };
 }
 
-beforeEach(() => resetNavigation({ id: "m1" }, "/mudancas"));
+beforeEach(() => resetNavigation({ id: "m1" }, "/mudancas", "vista=lista"));
 
 describe("Mudanças — lista", () => {
   it("registra o rascunho e filtra pelo estado", async () => {
@@ -122,6 +122,7 @@ describe("Mudanças — lista", () => {
     const corpo = api.to("POST v1/mudancas")[0]!.body as Record<string, unknown>;
     expect(corpo.titulo).toBe("Migração do Cluster Kubernetes");
     expect(corpo.risco).toBe("alto");
+    expect(corpo.risco_score).toBe(15);
     expect(corpo.justificativa).toContain("[Cálculo de Risco CAB: Score 15/15 - Risco alto]");
   });
 
@@ -241,6 +242,7 @@ describe("Mudanças — detalhe", () => {
       expect(api.to("POST v1/mudancas/m1/estado")[0]!.body).toEqual({
         estado: "em_avaliacao",
         texto: "",
+        resolver_vinculos: false,
       }),
     );
 
@@ -322,6 +324,7 @@ describe("Mudanças — detalhe", () => {
       expect(api.to("POST v1/mudancas/m1/estado")[0]!.body).toEqual({
         estado: "aprovada",
         texto: "ok, na janela",
+        resolver_vinculos: false,
       }),
     );
     await waitFor(() => expect(screen.queryByLabelText("Parecer")).not.toBeInTheDocument());

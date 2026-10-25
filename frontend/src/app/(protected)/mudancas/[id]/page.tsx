@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { type FormEvent, type ReactNode, useState } from "react";
 
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
+import { RfcDocumento } from "@/components/servicos/RfcDocumento";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
@@ -57,6 +58,7 @@ export default function MudancaPage() {
   const [tipo, setTipo] = useState<TipoVinculo>("problema");
   const [alvo, setAlvo] = useState("");
   const [pedindo, setPedindo] = useState<EstadoMudanca | null>(null);
+  const [folha, setFolha] = useState(false);
   const problemas = useApiQuery<Problema[]>(
     vincula && tipo === "problema" && can("problemas:manage") ? "v1/problemas" : null,
   );
@@ -86,34 +88,15 @@ export default function MudancaPage() {
   async function passar(para: EstadoMudanca, texto = "", resolverCascata = false) {
     if (
       await agir(
-        () => apiClient.post(`v1/mudancas/${id}/estado`, { estado: para, texto }),
+        () =>
+          apiClient.post(`v1/mudancas/${id}/estado`, {
+            estado: para,
+            texto,
+            resolver_vinculos: resolverCascata,
+          }),
         ESTADO_MUDANCA[para].label,
       )
     ) {
-      if (para === "concluida" && resolverCascata && m) {
-        for (const v of m.vinculos) {
-          if (v.tipo === "incidente") {
-            try {
-              await apiClient.post(`v1/atendimento/solicitacoes/${v.alvo_id}/estado`, { estado: "resolvido" });
-              await apiClient.post(`v1/atendimento/solicitacoes/${v.alvo_id}/comentarios`, {
-                texto: `Incidente resolvido automaticamente com a conclusão da Mudança #${m.numero}: ${m.titulo}`,
-                interno: false,
-              });
-            } catch {
-              // Silencioso se já estiver concluído
-            }
-          } else if (v.tipo === "problema") {
-            try {
-              await apiClient.post(`v1/problemas/${v.alvo_id}/estado`, {
-                estado: "resolvido",
-                texto: `Problema sanado com a implementação da Mudança #${m.numero}: ${m.titulo}`,
-              });
-            } catch {
-              // Silencioso se já estiver concluído
-            }
-          }
-        }
-      }
       setPedindo(null);
     }
   }
@@ -160,6 +143,9 @@ export default function MudancaPage() {
               description={`${TIPO_MUDANCA[m.tipo]} · pedida por ${m.solicitante_nome}`}
               actions={
                 <>
+                  <Button type="button" variant="secondary" size="sm" onClick={() => setFolha(true)}>
+                    Emitir RFC
+                  </Button>
                   <Badge tone={RISCO[m.risco].tone}>{RISCO[m.risco].label}</Badge>
                   <Badge tone={ESTADO_MUDANCA[m.estado].tone}>
                     {ESTADO_MUDANCA[m.estado].label}
@@ -167,6 +153,25 @@ export default function MudancaPage() {
                 </>
               }
             />
+
+            {folha && (
+              <Card>
+                <CardHeader>
+                  <CardTitle as="h2">Folha da RFC</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 pb-5">
+                  <RfcDocumento mudanca={m} />
+                  <div className="flex flex-wrap gap-2 print:hidden">
+                    <Button type="button" onClick={() => window.print()}>
+                      Imprimir ou salvar em PDF
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => setFolha(false)}>
+                      Fechar folha
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
@@ -241,13 +246,13 @@ export default function MudancaPage() {
                                 id="mudanca-cascata-chk"
                                 type="checkbox"
                                 name="resolver_em_cascata"
-                                defaultChecked
                                 className="h-4 w-4 accent-primary"
                               />
                               <span className="text-foreground">
-                                <strong>Resolução em cascata:</strong> Resolver automaticamente os{" "}
-                                {m.vinculos.filter((v) => v.tipo === "incidente").length} chamados e{" "}
-                                {m.vinculos.filter((v) => v.tipo === "problema").length} problemas vinculados.
+                                <strong>Concluir vínculos junto:</strong> os{" "}
+                                {m.vinculos.filter((v) => v.tipo === "incidente").length} incidentes e os{" "}
+                                {m.vinculos.filter((v) => v.tipo === "problema").length} problemas entram na mesma
+                                gravação. Se algum não puder ser concluído, a mudança permanece como está.
                               </span>
                             </label>
                           )}

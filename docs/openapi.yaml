@@ -135,12 +135,185 @@ components:
                 oferta_id:
                     format: uuid
                     type: string
+                respostas:
+                    additionalProperties:
+                        type: string
+                    type: object
                 titulo:
                     maxLength: 160
                     type: string
             required:
                 - oferta_id
                 - titulo
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoAmostra:
+            properties:
+                com_prazo_concluido:
+                    type: integer
+                concluidas:
+                    type: integer
+                fcr:
+                    type: integer
+                incidentes:
+                    type: integer
+                incidentes_resolvidos:
+                    type: integer
+                truncado:
+                    type: boolean
+            required:
+                - com_prazo_concluido
+                - concluidas
+                - fcr
+                - incidentes
+                - incidentes_resolvidos
+                - truncado
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoApontamento:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                data_apontamento:
+                    type: string
+                descricao:
+                    type: string
+                horas:
+                    type: number
+                id:
+                    format: uuid
+                    type: string
+                solicitacao_id:
+                    format: uuid
+                    type: string
+                usuario_id:
+                    format: uuid
+                    type: string
+                usuario_nome:
+                    type: string
+            required:
+                - created_at
+                - data_apontamento
+                - descricao
+                - horas
+                - id
+                - solicitacao_id
+                - usuario_id
+                - usuario_nome
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoApontamentoRequest:
+            properties:
+                data_apontamento:
+                    type: string
+                descricao:
+                    type: string
+                horas:
+                    type: number
+            required:
+                - descricao
+                - horas
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoAvaliacao:
+            properties:
+                autor_id:
+                    format: uuid
+                    type: string
+                autor_nome:
+                    type: string
+                comentario:
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nota:
+                    type: integer
+                numero:
+                    type: integer
+                solicitacao_id:
+                    format: uuid
+                    type: string
+                titulo:
+                    type: string
+            required:
+                - autor_id
+                - autor_nome
+                - comentario
+                - created_at
+                - id
+                - nota
+                - solicitacao_id
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoAvaliacaoRequest:
+            properties:
+                comentario:
+                    maxLength: 4000
+                    type: string
+                nota:
+                    maximum: 5
+                    minimum: 1
+                    type: integer
+            required:
+                - nota
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoCSAT:
+            properties:
+                media:
+                    type: number
+                recentes:
+                    items:
+                        $ref: '#/components/schemas/AtendimentoAvaliacao'
+                    type: array
+                total:
+                    type: integer
+            required:
+                - media
+                - recentes
+                - total
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoCampo:
+            properties:
+                chave:
+                    type: string
+                obrigatorio:
+                    type: boolean
+                opcoes:
+                    items:
+                        type: string
+                    type: array
+                rotulo:
+                    type: string
+                tipo:
+                    type: string
+            required:
+                - chave
+                - obrigatorio
+                - rotulo
+                - tipo
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoCampoInput:
+            properties:
+                chave:
+                    type: string
+                obrigatorio:
+                    type: boolean
+                opcoes:
+                    items:
+                        type: string
+                    type: array
+                rotulo:
+                    type: string
+                tipo:
+                    type: string
             type: object
             x-projeto-nova-generated: true
         AtendimentoCandidato:
@@ -299,6 +472,8 @@ components:
             x-projeto-nova-generated: true
         AtendimentoDetalhe:
             properties:
+                avaliacao:
+                    $ref: '#/components/schemas/AtendimentoAvaliacao'
                 comentarios:
                     items:
                         $ref: '#/components/schemas/AtendimentoComentario'
@@ -502,6 +677,32 @@ components:
                 - tipo
             type: object
             x-projeto-nova-generated: true
+        AtendimentoGovernanca:
+            properties:
+                amostra:
+                    $ref: '#/components/schemas/AtendimentoAmostra'
+                csat:
+                    $ref: '#/components/schemas/AtendimentoCSAT'
+                fcr_percentual:
+                    nullable: true
+                    type: number
+                mtbf_horas:
+                    nullable: true
+                    type: number
+                mttr_horas:
+                    nullable: true
+                    type: number
+                sla_percentual:
+                    nullable: true
+                    type: number
+            required:
+                - amostra
+                - fcr_percentual
+                - mtbf_horas
+                - mttr_horas
+                - sla_percentual
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoMeta:
             properties:
                 prioridade:
@@ -530,6 +731,10 @@ components:
             properties:
                 ativa:
                     type: boolean
+                campos:
+                    items:
+                        $ref: '#/components/schemas/AtendimentoCampo'
+                    type: array
                 created_at:
                     format: date-time
                     type: string
@@ -553,6 +758,7 @@ components:
                     type: string
             required:
                 - ativa
+                - campos
                 - created_at
                 - descricao
                 - id
@@ -566,6 +772,11 @@ components:
                 ativa:
                     nullable: true
                     type: boolean
+                campos:
+                    items:
+                        $ref: '#/components/schemas/AtendimentoCampoInput'
+                    nullable: true
+                    type: array
                 descricao:
                     maxLength: 4000
                     type: string
@@ -755,8 +966,64 @@ components:
                 - responsavel_id
             type: object
             x-projeto-nova-generated: true
+        AtendimentoResumoApontamentos:
+            properties:
+                apontamentos:
+                    items:
+                        $ref: '#/components/schemas/AtendimentoApontamento'
+                    type: array
+                total_horas:
+                    type: number
+            required:
+                - apontamentos
+                - total_horas
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoRetrato:
+            properties:
+                csat_media:
+                    nullable: true
+                    type: number
+                dia:
+                    format: date-time
+                    type: string
+                fcr_percentual:
+                    nullable: true
+                    type: number
+                mtbf_horas:
+                    nullable: true
+                    type: number
+                mttr_horas:
+                    nullable: true
+                    type: number
+                sla_percentual:
+                    nullable: true
+                    type: number
+                truncado:
+                    type: boolean
+            required:
+                - csat_media
+                - dia
+                - fcr_percentual
+                - mtbf_horas
+                - mttr_horas
+                - sla_percentual
+                - truncado
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoSegredoVinculoRequest:
+            properties:
+                segredo_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoSolicitacao:
             properties:
+                cofre_segredo_id:
+                    format: uuid
+                    type: string
                 created_at:
                     format: date-time
                     type: string
@@ -802,6 +1069,10 @@ components:
                     type: string
                 responsavel_nome:
                     type: string
+                respostas:
+                    additionalProperties:
+                        type: string
+                    type: object
                 solicitante_id:
                     format: uuid
                     type: string
@@ -1033,7 +1304,11 @@ components:
                     type: string
                 identificador:
                     type: string
+                inventario:
+                    $ref: '#/components/schemas/AtivosInventario'
                 nome:
+                    type: string
+                origem:
                     type: string
                 produto_id:
                     format: uuid
@@ -1053,6 +1328,7 @@ components:
                 - id
                 - identificador
                 - nome
+                - origem
                 - tipo
                 - updated_at
             type: object
@@ -1094,6 +1370,222 @@ components:
             required:
                 - estado
                 - nome
+                - tipo
+            type: object
+            x-projeto-nova-generated: true
+        AtivosCredencial:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                revogada_em:
+                    format: date-time
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+            required:
+                - created_at
+                - id
+                - nome
+                - unidade_id
+            type: object
+            x-projeto-nova-generated: true
+        AtivosCredencialEmitida:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                revogada_em:
+                    format: date-time
+                    type: string
+                token:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+            required:
+                - created_at
+                - id
+                - nome
+                - token
+                - unidade_id
+            type: object
+            x-projeto-nova-generated: true
+        AtivosCredencialRequest:
+            properties:
+                nome:
+                    maxLength: 160
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+            required:
+                - nome
+                - unidade_id
+            type: object
+            x-projeto-nova-generated: true
+        AtivosDisco:
+            properties:
+                bytes:
+                    type: integer
+                nome:
+                    type: string
+            required:
+                - bytes
+                - nome
+            type: object
+            x-projeto-nova-generated: true
+        AtivosDiscoInput:
+            properties:
+                bytes:
+                    type: integer
+                nome:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        AtivosInventario:
+            properties:
+                discos:
+                    items:
+                        $ref: '#/components/schemas/AtivosDisco'
+                    type: array
+                memoria_bytes:
+                    type: integer
+                processadores:
+                    type: integer
+                programas:
+                    items:
+                        $ref: '#/components/schemas/AtivosPrograma'
+                    type: array
+                programas_truncado:
+                    type: boolean
+                sistema:
+                    type: string
+            required:
+                - processadores
+                - sistema
+            type: object
+            x-projeto-nova-generated: true
+        AtivosInventarioInput:
+            properties:
+                discos:
+                    items:
+                        $ref: '#/components/schemas/AtivosDiscoInput'
+                    type: array
+                memoria_bytes:
+                    type: integer
+                processadores:
+                    type: integer
+                programas:
+                    items:
+                        $ref: '#/components/schemas/AtivosProgramaInput'
+                    type: array
+                programas_truncado:
+                    type: boolean
+                sistema:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        AtivosInventarioRequest:
+            properties:
+                descricao:
+                    maxLength: 4000
+                    type: string
+                identificador:
+                    maxLength: 80
+                    type: string
+                inventario:
+                    allOf:
+                        - $ref: '#/components/schemas/AtivosInventarioInput'
+                    nullable: true
+                nome:
+                    maxLength: 160
+                    type: string
+                tipo:
+                    enum:
+                        - hardware
+                        - software
+                        - servico
+                        - rede
+                        - outro
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - identificador
+            type: object
+            x-projeto-nova-generated: true
+        AtivosPrograma:
+            properties:
+                nome:
+                    type: string
+                versao:
+                    type: string
+            required:
+                - nome
+            type: object
+            x-projeto-nova-generated: true
+        AtivosProgramaInput:
+            properties:
+                nome:
+                    type: string
+                versao:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        AtivosRelacao:
+            properties:
+                criada_em:
+                    format: date-time
+                    type: string
+                destino_id:
+                    format: uuid
+                    type: string
+                destino_nome:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                origem_id:
+                    format: uuid
+                    type: string
+                tipo:
+                    type: string
+            required:
+                - criada_em
+                - destino_id
+                - destino_nome
+                - id
+                - origem_id
+                - tipo
+            type: object
+            x-projeto-nova-generated: true
+        AtivosRelacaoRequest:
+            properties:
+                destino_id:
+                    format: uuid
+                    type: string
+                tipo:
+                    enum:
+                        - depende
+                        - composto
+                        - conectado
+                    type: string
+            required:
+                - destino_id
                 - tipo
             type: object
             x-projeto-nova-generated: true
@@ -1781,6 +2273,119 @@ components:
                 - title
             type: object
             x-projeto-nova-generated: true
+        CofreAtualizarRequest:
+            properties:
+                mover_unidade:
+                    type: boolean
+                nome:
+                    maxLength: 160
+                    type: string
+                notas:
+                    maxLength: 4000
+                    nullable: true
+                    type: string
+                senha:
+                    maxLength: 2000
+                    nullable: true
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                usuario:
+                    maxLength: 160
+                    type: string
+            required:
+                - nome
+            type: object
+            x-projeto-nova-generated: true
+        CofreRevelado:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                notas:
+                    type: string
+                senha:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                usuario:
+                    type: string
+                versao:
+                    type: integer
+            required:
+                - created_at
+                - id
+                - nome
+                - notas
+                - senha
+                - updated_at
+                - usuario
+                - versao
+            type: object
+            x-projeto-nova-generated: true
+        CofreSegredo:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                usuario:
+                    type: string
+                versao:
+                    type: integer
+            required:
+                - created_at
+                - id
+                - nome
+                - updated_at
+                - usuario
+                - versao
+            type: object
+            x-projeto-nova-generated: true
+        CofreSegredoRequest:
+            properties:
+                nome:
+                    maxLength: 160
+                    type: string
+                notas:
+                    maxLength: 4000
+                    type: string
+                senha:
+                    maxLength: 2000
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                usuario:
+                    maxLength: 160
+                    type: string
+            required:
+                - nome
+                - senha
+            type: object
+            x-projeto-nova-generated: true
         ContactMessage:
             properties:
                 assigned_to:
@@ -1933,6 +2538,190 @@ components:
                     type: string
             required:
                 - status
+            type: object
+            x-projeto-nova-generated: true
+        ContratosContrato:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                fim:
+                    format: date-time
+                    type: string
+                fornecedor_id:
+                    format: uuid
+                    type: string
+                fornecedor_nome:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                inicio:
+                    format: date-time
+                    type: string
+                numero:
+                    type: string
+                titulo:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                valor_centavos:
+                    type: integer
+            required:
+                - created_at
+                - fim
+                - fornecedor_id
+                - fornecedor_nome
+                - id
+                - inicio
+                - numero
+                - titulo
+                - updated_at
+                - valor_centavos
+            type: object
+            x-projeto-nova-generated: true
+        ContratosContratoRequest:
+            properties:
+                fim:
+                    format: date-time
+                    type: string
+                fornecedor_id:
+                    format: uuid
+                    type: string
+                inicio:
+                    format: date-time
+                    type: string
+                numero:
+                    maxLength: 40
+                    type: string
+                titulo:
+                    maxLength: 160
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                valor_centavos:
+                    minimum: 0
+                    type: integer
+            required:
+                - fim
+                - fornecedor_id
+                - inicio
+                - titulo
+            type: object
+            x-projeto-nova-generated: true
+        ContratosFornecedor:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                email:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                telefone:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+            required:
+                - created_at
+                - email
+                - id
+                - nome
+                - telefone
+                - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        ContratosFornecedorRequest:
+            properties:
+                email:
+                    maxLength: 160
+                    type: string
+                nome:
+                    maxLength: 160
+                    type: string
+                telefone:
+                    maxLength: 40
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - nome
+            type: object
+            x-projeto-nova-generated: true
+        ContratosLicenca:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                fim:
+                    format: date-time
+                    type: string
+                fornecedor_id:
+                    format: uuid
+                    type: string
+                fornecedor_nome:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                quantidade:
+                    type: integer
+                unidade_id:
+                    format: uuid
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+            required:
+                - created_at
+                - fornecedor_id
+                - fornecedor_nome
+                - id
+                - nome
+                - quantidade
+                - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        ContratosLicencaRequest:
+            properties:
+                fim:
+                    format: date-time
+                    nullable: true
+                    type: string
+                fornecedor_id:
+                    format: uuid
+                    type: string
+                nome:
+                    maxLength: 160
+                    type: string
+                quantidade:
+                    minimum: 1
+                    type: integer
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - fornecedor_id
+                - nome
+                - quantidade
             type: object
             x-projeto-nova-generated: true
         DirectoryPerson:
@@ -3887,6 +4676,53 @@ components:
                 - parecer
             type: object
             x-projeto-nova-generated: true
+        MudancasCongelamento:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                fim:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                inicio:
+                    format: date-time
+                    type: string
+                motivo:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+            required:
+                - created_at
+                - fim
+                - id
+                - inicio
+                - motivo
+            type: object
+            x-projeto-nova-generated: true
+        MudancasCongelamentoRequest:
+            properties:
+                fim:
+                    format: date-time
+                    type: string
+                inicio:
+                    format: date-time
+                    type: string
+                motivo:
+                    maxLength: 4000
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - fim
+                - inicio
+            type: object
+            x-projeto-nova-generated: true
         MudancasEstadoRequest:
             properties:
                 estado:
@@ -3899,6 +4735,8 @@ components:
                         - falhou
                         - cancelada
                     type: string
+                resolver_vinculos:
+                    type: boolean
                 texto:
                     maxLength: 4000
                     type: string
@@ -3951,6 +4789,8 @@ components:
                     type: string
                 risco:
                     type: string
+                risco_score:
+                    type: integer
                 solicitante_id:
                     format: uuid
                     type: string
@@ -4019,6 +4859,9 @@ components:
                         - medio
                         - alto
                     type: string
+                risco_score:
+                    nullable: true
+                    type: integer
                 tipo:
                     enum:
                         - padrao
@@ -4398,6 +5241,356 @@ components:
                     type: string
             required:
                 - nome
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosApontamento:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                custo_hora:
+                    type: number
+                custo_total:
+                    type: number
+                data_apontamento:
+                    type: string
+                descricao:
+                    type: string
+                horas:
+                    type: number
+                id:
+                    format: uuid
+                    type: string
+                projeto_id:
+                    format: uuid
+                    type: string
+                tarefa_id:
+                    format: uuid
+                    type: string
+                tarefa_titulo:
+                    type: string
+                usuario_id:
+                    format: uuid
+                    type: string
+                usuario_nome:
+                    type: string
+            required:
+                - created_at
+                - custo_hora
+                - custo_total
+                - data_apontamento
+                - descricao
+                - horas
+                - id
+                - projeto_id
+                - usuario_id
+                - usuario_nome
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosApontamentoRequest:
+            properties:
+                custo_hora:
+                    type: number
+                data_apontamento:
+                    type: string
+                descricao:
+                    maxLength: 2000
+                    type: string
+                horas:
+                    type: number
+                tarefa_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - descricao
+                - horas
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosEstadoRequest:
+            properties:
+                estado:
+                    enum:
+                        - planejado
+                        - em_andamento
+                        - suspenso
+                        - concluido
+                        - cancelado
+                    type: string
+            required:
+                - estado
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosListarApontamentosResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/ProjetosApontamento'
+                    type: array
+                resumo:
+                    $ref: '#/components/schemas/ProjetosResumoHorasProjeto'
+            required:
+                - items
+                - resumo
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosProjeto:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                data_fim_planejada:
+                    format: date-time
+                    type: string
+                data_fim_real:
+                    format: date-time
+                    type: string
+                data_inicio_planejada:
+                    format: date-time
+                    type: string
+                data_inicio_real:
+                    format: date-time
+                    type: string
+                descricao:
+                    type: string
+                estado:
+                    type: string
+                gerente_id:
+                    format: uuid
+                    type: string
+                gerente_nome:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                numero:
+                    type: integer
+                objetivo:
+                    type: string
+                orcamento:
+                    type: number
+                prioridade:
+                    type: string
+                produto_id:
+                    format: uuid
+                    type: string
+                proximos:
+                    items:
+                        type: string
+                    type: array
+                tarefas:
+                    items:
+                        $ref: '#/components/schemas/ProjetosTarefa'
+                    type: array
+                titulo:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                vinculos:
+                    items:
+                        $ref: '#/components/schemas/ProjetosVinculo'
+                    type: array
+            required:
+                - created_at
+                - descricao
+                - estado
+                - gerente_nome
+                - id
+                - numero
+                - objetivo
+                - orcamento
+                - prioridade
+                - proximos
+                - titulo
+                - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosProjetoRequest:
+            properties:
+                data_fim_planejada:
+                    format: date-time
+                    nullable: true
+                    type: string
+                data_fim_real:
+                    format: date-time
+                    nullable: true
+                    type: string
+                data_inicio_planejada:
+                    format: date-time
+                    nullable: true
+                    type: string
+                data_inicio_real:
+                    format: date-time
+                    nullable: true
+                    type: string
+                descricao:
+                    maxLength: 4000
+                    type: string
+                gerente_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                gerente_nome:
+                    maxLength: 200
+                    type: string
+                objetivo:
+                    maxLength: 4000
+                    type: string
+                orcamento:
+                    type: number
+                prioridade:
+                    enum:
+                        - baixa
+                        - media
+                        - alta
+                        - critica
+                    type: string
+                produto_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                titulo:
+                    maxLength: 160
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - titulo
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosResumoHorasProjeto:
+            properties:
+                por_usuario:
+                    additionalProperties:
+                        type: number
+                    type: object
+                total_custo:
+                    type: number
+                total_horas:
+                    type: number
+            required:
+                - por_usuario
+                - total_custo
+                - total_horas
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosTarefa:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                data_limite:
+                    format: date-time
+                    type: string
+                descricao:
+                    type: string
+                estado:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                ordem:
+                    type: integer
+                projeto_id:
+                    format: uuid
+                    type: string
+                responsavel_nome:
+                    type: string
+                titulo:
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+            required:
+                - created_at
+                - descricao
+                - estado
+                - id
+                - ordem
+                - projeto_id
+                - responsavel_nome
+                - titulo
+                - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosTarefaRequest:
+            properties:
+                descricao:
+                    maxLength: 2000
+                    type: string
+                estado:
+                    enum:
+                        - a_fazer
+                        - em_andamento
+                        - concluida
+                        - bloqueada
+                    type: string
+                ordem:
+                    type: integer
+                responsavel_nome:
+                    maxLength: 200
+                    type: string
+                titulo:
+                    maxLength: 200
+                    type: string
+            required:
+                - titulo
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosVinculo:
+            properties:
+                alvo_id:
+                    format: uuid
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                projeto_id:
+                    format: uuid
+                    type: string
+                rotulo:
+                    type: string
+                tipo:
+                    type: string
+                vinculado_por:
+                    type: string
+            required:
+                - alvo_id
+                - created_at
+                - id
+                - projeto_id
+                - rotulo
+                - tipo
+                - vinculado_por
+            type: object
+            x-projeto-nova-generated: true
+        ProjetosVinculoRequest:
+            properties:
+                alvo_id:
+                    format: uuid
+                    type: string
+                rotulo:
+                    maxLength: 200
+                    type: string
+                tipo:
+                    enum:
+                        - mudanca
+                        - problema
+                        - ativo
+                        - solicitacao
+                    type: string
+            required:
+                - alvo_id
+                - tipo
             type: object
             x-projeto-nova-generated: true
         SearchResult:
@@ -5990,6 +7183,79 @@ paths:
             summary: Atendimento — Listar/consultar /atendimento/fila/topicos
             tags:
                 - atendimento
+    /api/v1/atendimento/governanca:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtendimentoGovernanca
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoGovernanca'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Listar/consultar /atendimento/governanca
+            tags:
+                - atendimento
+    /api/v1/atendimento/governanca/serie:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtendimentoGovernancaSerie
+            parameters:
+                - in: query
+                  name: dias
+                  required: false
+                  schema:
+                    type: string
+                  x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtendimentoRetrato'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Listar/consultar /atendimento/governanca/serie
+            tags:
+                - atendimento
     /api/v1/atendimento/minhas:
         get:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -6372,6 +7638,163 @@ paths:
             summary: Atendimento — Obter /atendimento/solicitacoes/{id}
             tags:
                 - atendimento
+    /api/v1/atendimento/solicitacoes/{id}/apontamentos:
+        get:
+            operationId: getAtendimentoSolicitacoesIdApontamentos
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoResumoApontamentos'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Listar/consultar /atendimento/solicitacoes/{id}/apontamentos
+            tags:
+                - atendimento
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtendimentoSolicitacoesIdApontamentos
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoApontamentoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoApontamento'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Executar ação /atendimento/solicitacoes/{id}/apontamentos
+            tags:
+                - atendimento
+    /api/v1/atendimento/solicitacoes/{id}/apontamentos/{apontamentoId}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteAtendimentoSolicitacoesIdApontamentosApontamentoId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: apontamentoId
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Excluir /atendimento/solicitacoes/{id}/apontamentos/{apontamentoId}
+            tags:
+                - atendimento
+    /api/v1/atendimento/solicitacoes/{id}/avaliacao:
+        post:
+            operationId: postAtendimentoSolicitacoesIdAvaliacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoAvaliacaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoAvaliacao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Executar ação /atendimento/solicitacoes/{id}/avaliacao
+            tags:
+                - atendimento
     /api/v1/atendimento/solicitacoes/{id}/classificacao:
         put:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -6588,6 +8011,52 @@ paths:
             security:
                 - bearerAuth: []
             summary: Atendimento — Salvar /atendimento/solicitacoes/{id}/responsavel
+            tags:
+                - atendimento
+    /api/v1/atendimento/solicitacoes/{id}/segredo:
+        put:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: putAtendimentoSolicitacoesIdSegredo
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoSegredoVinculoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoDetalhe'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Salvar /atendimento/solicitacoes/{id}/segredo
             tags:
                 - atendimento
     /api/v1/atendimento/solicitacoes/{id}/visitas:
@@ -7050,6 +8519,269 @@ paths:
             security:
                 - bearerAuth: []
             summary: Ativos — Salvar /ativos/{id}
+            tags:
+                - ativos
+    /api/v1/ativos/{id}/relacoes:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtivosIdRelacoes
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtivosRelacao'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Listar/consultar /ativos/{id}/relacoes
+            tags:
+                - ativos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtivosIdRelacoes
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtivosRelacaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtivosRelacao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Executar ação /ativos/{id}/relacoes
+            tags:
+                - ativos
+    /api/v1/ativos/{id}/relacoes/{relacao}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteAtivosIdRelacoesRelacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: relacao
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Excluir /ativos/{id}/relacoes/{relacao}
+            tags:
+                - ativos
+    /api/v1/ativos/credenciais:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtivosCredenciais
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtivosCredencial'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Listar/consultar /ativos/credenciais
+            tags:
+                - ativos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtivosCredenciais
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtivosCredencialRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtivosCredencialEmitida'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Criar /ativos/credenciais
+            tags:
+                - ativos
+    /api/v1/ativos/credenciais/{id}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteAtivosCredenciaisId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Excluir /ativos/credenciais/{id}
+            tags:
+                - ativos
+    /api/v1/ativos/inventario:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtivosInventario
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtivosInventarioRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtivosAtivo'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ativos — Criar /ativos/inventario
             tags:
                 - ativos
     /api/v1/audit/export:
@@ -8807,6 +10539,206 @@ paths:
             summary: Catálogo de Serviços — Obter /catalog/services/{slug}
             tags:
                 - catalog
+    /api/v1/cofre/segredos:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getCofreSegredos
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/CofreSegredo'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Cofre — Listar/consultar /cofre/segredos
+            tags:
+                - cofre
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postCofreSegredos
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CofreSegredoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CofreSegredo'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Cofre — Criar /cofre/segredos
+            tags:
+                - cofre
+    /api/v1/cofre/segredos/{id}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteCofreSegredosId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Cofre — Excluir /cofre/segredos/{id}
+            tags:
+                - cofre
+        put:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: putCofreSegredosId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CofreAtualizarRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CofreSegredo'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Cofre — Salvar /cofre/segredos/{id}
+            tags:
+                - cofre
+    /api/v1/cofre/segredos/{id}/revelar:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postCofreSegredosIdRevelar
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                senha_de_acesso:
+                                    maxLength: 1024
+                                    type: string
+                            required:
+                                - senha_de_acesso
+                            type: object
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CofreRevelado'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Cofre — Executar ação /cofre/segredos/{id}/revelar
+            tags:
+                - cofre
     /api/v1/contact/messages:
         get:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -8985,6 +10917,315 @@ paths:
             summary: Contato — Alterar /contact/messages/{id}
             tags:
                 - contact
+    /api/v1/contratos/contratos:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getContratosContratos
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ContratosContrato'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Listar/consultar /contratos/contratos
+            tags:
+                - contratos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postContratosContratos
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ContratosContratoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ContratosContrato'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Criar /contratos/contratos
+            tags:
+                - contratos
+    /api/v1/contratos/contratos/{id}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteContratosContratosId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Excluir /contratos/contratos/{id}
+            tags:
+                - contratos
+    /api/v1/contratos/fornecedores:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getContratosFornecedores
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ContratosFornecedor'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Listar/consultar /contratos/fornecedores
+            tags:
+                - contratos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postContratosFornecedores
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ContratosFornecedorRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ContratosFornecedor'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Criar /contratos/fornecedores
+            tags:
+                - contratos
+    /api/v1/contratos/fornecedores/{id}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteContratosFornecedoresId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Excluir /contratos/fornecedores/{id}
+            tags:
+                - contratos
+    /api/v1/contratos/licencas:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getContratosLicencas
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ContratosLicenca'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Listar/consultar /contratos/licencas
+            tags:
+                - contratos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postContratosLicencas
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ContratosLicencaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ContratosLicenca'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Criar /contratos/licencas
+            tags:
+                - contratos
+    /api/v1/contratos/licencas/{id}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteContratosLicencasId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Contratos — Excluir /contratos/licencas/{id}
+            tags:
+                - contratos
     /api/v1/directory/me:
         get:
             operationId: getDirectoryMe
@@ -12106,6 +14347,109 @@ paths:
             summary: Mudanças — Salvar /mudancas/{id}/vinculos/{tipo}/{alvo}
             tags:
                 - mudancas
+    /api/v1/mudancas/congelamentos:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getMudancasCongelamentos
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/MudancasCongelamento'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Mudanças — Listar/consultar /mudancas/congelamentos
+            tags:
+                - mudancas
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postMudancasCongelamentos
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/MudancasCongelamentoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/MudancasCongelamento'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Mudanças — Criar /mudancas/congelamentos
+            tags:
+                - mudancas
+    /api/v1/mudancas/congelamentos/{id}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteMudancasCongelamentosId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Mudanças — Excluir /mudancas/congelamentos/{id}
+            tags:
+                - mudancas
     /api/v1/notificacoes:
         get:
             operationId: getNotificacoes
@@ -12875,6 +15219,630 @@ paths:
             summary: Produtos digitais — Executar ação /produtos/{id}/estagio
             tags:
                 - produtos
+    /api/v1/projetos:
+        get:
+            operationId: getProjetos
+            parameters:
+                - in: query
+                  name: estado
+                  required: false
+                  schema:
+                    maxLength: 20
+                    type: string
+                  x-projeto-nova-generated: true
+                - in: query
+                  name: q
+                  required: false
+                  schema:
+                    maxLength: 100
+                    type: string
+                  x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ProjetosProjeto'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Listar/consultar /projetos
+            tags:
+                - projetos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProjetos
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosProjetoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosProjeto'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Criar /projetos
+            tags:
+                - projetos
+    /api/v1/projetos/{id}:
+        get:
+            operationId: getProjetosId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosProjeto'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Obter /projetos/{id}
+            tags:
+                - projetos
+        put:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: putProjetosId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosProjetoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosProjeto'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Salvar /projetos/{id}
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/apontamentos:
+        get:
+            operationId: getProjetosIdApontamentos
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProjetosListarApontamentosResponse'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Listar/consultar /projetos/{id}/apontamentos
+            tags:
+                - projetos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProjetosIdApontamentos
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosApontamentoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosApontamento'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Executar ação /projetos/{id}/apontamentos
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/apontamentos/{apontamentoId}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteProjetosIdApontamentosApontamentoId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: apontamentoId
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Excluir /projetos/{id}/apontamentos/{apontamentoId}
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/estado:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProjetosIdEstado
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosEstadoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosProjeto'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Executar ação /projetos/{id}/estado
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/tarefas:
+        get:
+            operationId: getProjetosIdTarefas
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ProjetosTarefa'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Listar/consultar /projetos/{id}/tarefas
+            tags:
+                - projetos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProjetosIdTarefas
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosTarefaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosTarefa'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Executar ação /projetos/{id}/tarefas
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/tarefas/{tarefaId}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteProjetosIdTarefasTarefaId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: tarefaId
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Excluir /projetos/{id}/tarefas/{tarefaId}
+            tags:
+                - projetos
+        put:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: putProjetosIdTarefasTarefaId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: tarefaId
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosTarefaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosTarefa'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Salvar /projetos/{id}/tarefas/{tarefaId}
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/vinculos:
+        get:
+            operationId: getProjetosIdVinculos
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ProjetosVinculo'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Listar/consultar /projetos/{id}/vinculos
+            tags:
+                - projetos
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProjetosIdVinculos
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProjetosVinculoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            allOf:
+                                                - $ref: '#/components/schemas/ProjetosVinculo'
+                                            nullable: true
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Executar ação /projetos/{id}/vinculos
+            tags:
+                - projetos
+    /api/v1/projetos/{id}/vinculos/{vinculoId}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteProjetosIdVinculosVinculoId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: vinculoId
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Projetos — Excluir /projetos/{id}/vinculos/{vinculoId}
+            tags:
+                - projetos
     /api/v1/search:
         get:
             operationId: getSearch
@@ -14923,8 +17891,12 @@ tags:
       name: calendar
     - description: Catálogo de Serviços. Plug-in — Carta de serviços no site institucional (/servicos).
       name: catalog
+    - description: Cofre. Plug-in — Senhas da unidade. A lista não mostra o segredo; revelar fica na auditoria.
+      name: cofre
     - description: Contato. Plug-in — Formulário público de contato, com rate limit dedicado.
       name: contact
+    - description: Contratos. Plug-in — Fornecedores, contratos e licenças, com aviso quando a vigência se aproxima.
+      name: contratos
     - description: Diretório. Plug-in — Pessoas e setores, a partir do Active Directory.
       name: directory
     - description: Egress. Plug-in — Webhooks de saída assinados, com proteção anti-SSRF.
@@ -14953,6 +17925,8 @@ tags:
       name: problemas
     - description: 'Produtos digitais. Plug-in — Produtos que a organização mantém ao longo do ciclo de vida: da descoberta ao suporte.'
       name: produtos
+    - description: Projetos. Plug-in — Gestão de projetos e planos de ação da organização.
+      name: projetos
     - description: Busca Global. Plug-in — Busca unificada sobre os módulos ativos.
       name: search
     - description: Signum. Plug-in — Assinatura eletrônica com reautenticação e hash SHA-256 (integridade; PAdES/ICP-Brasil conforme ADR vigente).

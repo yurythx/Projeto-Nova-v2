@@ -93,17 +93,38 @@ type Publisher interface {
 	Publish(ctx context.Context, topic, frameType string, data any) error
 }
 
+// Correio envia o mesmo aviso por e-mail. Falha aqui não desfaz o sino.
+type Correio interface {
+	Send(ctx context.Context, m Mensagem) error
+}
+
+// Mensagem é o texto do e-mail. Fica neste pacote para o correio da
+// plataforma não obrigar quem testa o sino a importar o SMTP.
+type Mensagem struct {
+	Para, Assunto, Corpo string
+}
+
 // Service grava e entrega notificações.
 type Service struct {
-	pool   *pgxpool.Pool
-	db     database.DBTX // leituras e atualizações (o pool; substituível em teste)
-	hub    Publisher     // nil: só grava (sem tempo real)
-	logger *slog.Logger
+	pool    *pgxpool.Pool
+	db      database.DBTX // leituras e atualizações (o pool; substituível em teste)
+	hub     Publisher     // nil: só grava (sem tempo real)
+	logger  *slog.Logger
+	correio Correio
+	baseURL string
 }
 
 // NewService cria o serviço.
 func NewService(pool *pgxpool.Pool, hub Publisher, logger *slog.Logger) *Service {
 	return &Service{pool: pool, db: pool, hub: hub, logger: logger}
+}
+
+// WithCorreio manda por e-mail os avisos do atendimento, depois do sino.
+// Os outros módulos continuam só no sino. baseURL prefixa o caminho.
+func (s *Service) WithCorreio(c Correio, baseURL string) *Service {
+	s.correio = c
+	s.baseURL = strings.TrimRight(baseURL, "/")
+	return s
 }
 
 // Enviada é o que foi gravado para cada destinatário (para entregar depois
@@ -155,12 +176,56 @@ func Registrar(ctx context.Context, db database.DBTX, usuarios []uuid.UUID, n No
 // É o melhor esforço: o aviso já está na caixa; quem estiver fora vê ao
 // abrir o sino.
 func (s *Service) Entregar(ctx context.Context, enviadas []Enviada) {
-	if s.hub == nil {
+	if s.hub != nil {
+		for _, e := range enviadas {
+			if err := s.hub.Publish(ctx, ws.UserTopic(e.Usuario.String()), FrameNova, e.Item); err != nil && s.logger != nil {
+				s.logger.WarnContext(ctx, "notificacoes: entrega em tempo real falhou (o aviso está na caixa)", "error", err)
+			}
+		}
+	}
+	s.enviarCorreio(ctx, enviadas)
+}
+
+func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
+	if s.correio == nil || s.db == nil || len(enviadas) == 0 {
 		return
 	}
+	ids := make([]uuid.UUID, 0, len(enviadas))
 	for _, e := range enviadas {
-		if err := s.hub.Publish(ctx, ws.UserTopic(e.Usuario.String()), FrameNova, e.Item); err != nil {
-			s.logger.WarnContext(ctx, "notificacoes: entrega em tempo real falhou (o aviso está na caixa)", "error", err)
+		if e.Item.Modulo == "atendimento" {
+			ids = append(ids, e.Usuario)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	rows, err := s.db.Query(ctx, `SELECT id, email FROM users WHERE id = ANY($1::uuid[]) AND btrim(email) <> ''`, ids)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.WarnContext(ctx, "notificacoes: não leu o e-mail do destinatário", "error", err)
+		}
+		return
+	}
+	defer rows.Close()
+	endereco := map[uuid.UUID]string{}
+	for rows.Next() {
+		var id uuid.UUID
+		var email string
+		if err := rows.Scan(&id, &email); err != nil {
+			return
+		}
+		endereco[id] = email
+	}
+	for _, e := range enviadas {
+		if e.Item.Modulo != "atendimento" || endereco[e.Usuario] == "" {
+			continue
+		}
+		corpo := e.Item.Mensagem
+		if e.Item.Link != "" && s.baseURL != "" {
+			corpo += "\n\n" + s.baseURL + e.Item.Link
+		}
+		if err := s.correio.Send(ctx, Mensagem{Para: endereco[e.Usuario], Assunto: e.Item.Titulo, Corpo: corpo}); err != nil && s.logger != nil {
+			s.logger.WarnContext(ctx, "notificacoes: e-mail do aviso falhou (o sino permanece)", "error", err)
 		}
 	}
 }

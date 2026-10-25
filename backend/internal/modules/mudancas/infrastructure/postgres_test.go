@@ -43,6 +43,16 @@ func TestRepositorioPropagaFalhas(t *testing.T) {
 		"Vinculos":        func(db database.DBTX) error { _, err := r.Vinculos(ctx, db, id); return err },
 		"Vincular":        func(db database.DBTX) error { _, err := r.Vincular(ctx, db, id, domain.Vinculo{}, id); return err },
 		"Desvincular":     func(db database.DBTX) error { _, err := r.Desvincular(ctx, db, id, "ativo", id); return err },
+		"JanelaOcupada": func(db database.DBTX) error {
+			_, err := r.JanelaOcupada(ctx, db, nil, time.Now(), time.Now().Add(time.Hour))
+			return err
+		},
+		"ListCongelamentos": func(db database.DBTX) error { _, err := r.ListCongelamentos(ctx, db, domain.Filtro{}); return err },
+		"InsertCongelamento": func(db database.DBTX) error {
+			_, err := r.InsertCongelamento(ctx, db, domain.Congelamento{ID: id})
+			return err
+		},
+		"DeleteCongelamento": func(db database.DBTX) error { return r.DeleteCongelamento(ctx, db, id) },
 	}
 	for nome, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {

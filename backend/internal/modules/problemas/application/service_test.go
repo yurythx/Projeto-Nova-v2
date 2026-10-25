@@ -288,6 +288,47 @@ func TestRegras(t *testing.T) {
 	}
 }
 
+func TestConcluirPorMudanca(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	id := uuid.New()
+	pronto := domain.Problema{ID: id, Numero: 4, Estado: domain.EmAnalise, CausaRaiz: "disco cheio"}
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
+	svc := application.NewService(pool, repo{p: pronto}, eventos{}, application.Portas{})
+	if err := svc.ConcluirPorMudanca(ctx, tx, id, uuid.New(), "aplicada"); err != nil {
+		t.Fatal(err)
+	}
+	feito := pronto
+	feito.Estado = domain.Resolvido
+	if err := application.NewService(pool, repo{p: feito}, eventos{}, application.Portas{}).ConcluirPorMudanca(ctx, tx, id, uuid.New(), ""); err != nil {
+		t.Fatal(err)
+	}
+	aberto := pronto
+	aberto.Estado = domain.Registrado
+	err = application.NewService(pool, repo{p: aberto}, eventos{}, application.Portas{}).ConcluirPorMudanca(ctx, tx, id, uuid.New(), "")
+	var recusa *domain.NaoConcluivel
+	if !errors.As(err, &recusa) || !errors.Is(err, domain.ErrTransicaoInvalida) {
+		t.Fatalf("estado: %v", err)
+	}
+	semCausa := pronto
+	semCausa.CausaRaiz = ""
+	if err := application.NewService(pool, repo{p: semCausa}, eventos{}, application.Portas{}).ConcluirPorMudanca(ctx, tx, id, uuid.New(), ""); !errors.Is(err, domain.ErrSemCausaRaiz) {
+		t.Fatal(err)
+	}
+	for _, m := range []string{"Travar", "Get", "Update"} {
+		if err := application.NewService(pool, repo{p: pronto, falha: map[string]bool{m: true}}, eventos{}, application.Portas{}).ConcluirPorMudanca(ctx, tx, id, uuid.New(), ""); err == nil {
+			t.Errorf("falha em %s", m)
+		}
+	}
+	if err := application.NewService(pool, repo{p: pronto}, eventos{err: errFalha}, application.Portas{}).ConcluirPorMudanca(ctx, tx, id, uuid.New(), ""); err == nil {
+		t.Fatal("evento")
+	}
+}
+
 func TestHandlersComFalha(t *testing.T) {
 	r := repo{falha: map[string]bool{"List": true}}
 	h := transport.NewHandlers(application.NewService(nil, r, eventos{}, application.Portas{Incidentes: incidentes{rerr: errFalha}}), slog.New(slog.DiscardHandler))

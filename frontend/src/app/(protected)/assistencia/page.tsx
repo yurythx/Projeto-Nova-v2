@@ -26,10 +26,66 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useApiPage, useApiQuery } from "@/lib/api/swr";
-import type { Solicitacao } from "@/lib/atendimento/atendimento";
+import type { Governanca, PontoIndicador, Solicitacao } from "@/lib/atendimento/atendimento";
 import type { Projeto } from "@/lib/projetos/projetos";
 import type { Mudanca, Problema } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+
+function textoMedida(valor: number | null, sufixo: string) {
+  if (valor == null) return "sem amostra";
+  return `${valor.toLocaleString("pt-BR")}${sufixo}`;
+}
+
+function SerieIndicadores({ serie, erro }: { serie?: PontoIndicador[]; erro?: unknown }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle as="h2">Histórico dos indicadores</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-5">
+        <p className="mb-3 text-sm text-muted">
+          O dia segue o fuso da unidade. O dia de hoje é atualizado. Os anteriores ficam como foram medidos.
+        </p>
+        {erro ? (
+          <p className="text-sm text-danger" role="alert">
+            Não foi possível carregar o histórico.
+          </p>
+        ) : null}
+        {(serie ?? []).length === 0 && !erro ? (
+          <p className="text-sm">Ainda não há dia medido neste escopo.</p>
+        ) : null}
+        {(serie ?? []).length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-muted">
+                  <th className="py-1 pr-3 font-medium">Dia</th>
+                  <th className="py-1 pr-3 font-medium">Resolução</th>
+                  <th className="py-1 pr-3 font-medium">Entre falhas</th>
+                  <th className="py-1 pr-3 font-medium">Prazo</th>
+                  <th className="py-1 pr-3 font-medium">Primeiro contato</th>
+                  <th className="py-1 font-medium">Satisfação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {serie!.map((p) => (
+                  <tr key={p.dia} className="border-t border-surface-border">
+                    <td className="py-1 pr-3">{p.dia.slice(0, 10)}{p.truncado ? " · amostra parcial" : ""}</td>
+                    <td className="py-1 pr-3">{textoMedida(p.mttr_horas, " h")}</td>
+                    <td className="py-1 pr-3">{textoMedida(p.mtbf_horas, " h")}</td>
+                    <td className="py-1 pr-3">{textoMedida(p.sla_percentual, "%")}</td>
+                    <td className="py-1 pr-3">{textoMedida(p.fcr_percentual, "%")}</td>
+                    <td className="py-1">{textoMedida(p.csat_media, "")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AssistenciaDashboardPage() {
   const { can, enabled } = usePlataforma();
@@ -38,6 +94,12 @@ export default function AssistenciaDashboardPage() {
   const atende = can("atendimento:atender");
   const fila = useApiPage<Solicitacao>(
     enabled("atendimento") && atende ? "v1/atendimento/fila?page_size=100" : null,
+  );
+  const governanca = useApiQuery<Governanca>(
+    enabled("atendimento") && atende ? "v1/atendimento/governanca" : null,
+  );
+  const serie = useApiQuery<PontoIndicador[]>(
+    enabled("atendimento") && atende ? "v1/atendimento/governanca/serie?dias=90" : null,
   );
 
   const gereProblemas = can("problemas:manage");
@@ -183,6 +245,31 @@ export default function AssistenciaDashboardPage() {
           </div>
         }
       />
+
+      {governanca.data?.csat && (
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2">Satisfação do atendimento</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 pb-5">
+            <p className="text-sm">
+              Média <strong>{governanca.data.csat.media.toLocaleString("pt-BR")}</strong> de 5, em{" "}
+              {governanca.data.csat.total} {governanca.data.csat.total === 1 ? "avaliação" : "avaliações"}.
+            </p>
+            <ul className="flex flex-col gap-2">
+              {governanca.data.csat.recentes.map((a) => (
+                <li key={a.id} className="text-sm">
+                  <span className="font-medium">{a.nota}/5</span>
+                  <span className="text-muted"> · solicitação #{a.numero}</span>
+                  {a.comentario ? <span className="text-muted"> — {a.comentario}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {enabled("atendimento") && atende ? <SerieIndicadores serie={serie.data} erro={serie.error} /> : null}
 
       {/* Destaques Macro / KPIs da Assistência */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -487,6 +574,7 @@ export default function AssistenciaDashboardPage() {
         problemas={listaProblemas}
         mudancas={listaMudancas}
         projetos={listaProjetos}
+        governanca={governanca.data}
       />
     </div>
   );

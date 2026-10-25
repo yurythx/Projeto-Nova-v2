@@ -10,18 +10,20 @@ import (
 
 	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
 // OfertaRequest é o corpo de criação e edição de uma oferta.
 type OfertaRequest struct {
-	Nome      string     `json:"nome" validate:"required,max=160"`
-	Descricao string     `json:"descricao" validate:"max=4000"`
-	Tipo      string     `json:"tipo" validate:"omitempty,oneof=incidente requisicao"`
-	ProdutoID *uuid.UUID `json:"produto_id"`
-	UnidadeID *uuid.UUID `json:"unidade_id"`
-	Ativa     *bool      `json:"ativa"`
+	Nome      string          `json:"nome" validate:"required,max=160"`
+	Descricao string          `json:"descricao" validate:"max=4000"`
+	Tipo      string          `json:"tipo" validate:"omitempty,oneof=incidente requisicao"`
+	ProdutoID *uuid.UUID      `json:"produto_id"`
+	UnidadeID *uuid.UUID      `json:"unidade_id"`
+	Ativa     *bool           `json:"ativa"`
+	Campos    *[]domain.Campo `json:"campos"`
 }
 
 // EquipeRequest é o corpo de criação e edição de uma equipe.
@@ -57,10 +59,13 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtendimentoAtender))
 		r.Get("/atendimento/fila", h.ListarFila)
+		r.Get("/atendimento/governanca", h.Governanca)
+		r.Get("/atendimento/governanca/serie", h.Serie)
 		r.Get("/atendimento/fila/topicos", h.TopicosDaFila)
 		r.Put("/atendimento/solicitacoes/{id}/responsavel", h.Atribuir)
 		r.Get("/atendimento/solicitacoes/{id}/responsaveis", h.Responsaveis)
 		r.Put("/atendimento/solicitacoes/{id}/classificacao", h.Classificar)
+		r.Put("/atendimento/solicitacoes/{id}/segredo", h.VincularSegredo)
 		r.Post("/atendimento/solicitacoes/{id}/visitas", h.IniciarVisita)
 		r.Post("/atendimento/visitas/{id}/checkout", h.ConcluirVisita)
 		r.Post("/atendimento/visitas/{id}/cancelar", h.CancelarVisita)
@@ -74,6 +79,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/atendimento/solicitacoes/{id}/apontamentos", h.ListarApontamentos)
 	r.Post("/atendimento/solicitacoes/{id}/estado", h.Transicionar)
 	r.Post("/atendimento/solicitacoes/{id}/comentarios", h.Comentar)
+	r.Post("/atendimento/solicitacoes/{id}/avaliacao", h.Avaliar)
 	r.Get("/atendimento/visitas/{id}/evidencias/{evidencia}", h.URLEvidencia)
 
 	r.Group(func(r chi.Router) {
@@ -100,7 +106,7 @@ func (h *Handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func (req OfertaRequest) entrada() application.OfertaEntrada {
-	return application.OfertaEntrada{Nome: req.Nome, Descricao: req.Descricao, Tipo: req.Tipo, ProdutoID: req.ProdutoID, UnidadeID: req.UnidadeID, Ativa: req.Ativa}
+	return application.OfertaEntrada{Nome: req.Nome, Descricao: req.Descricao, Tipo: req.Tipo, ProdutoID: req.ProdutoID, UnidadeID: req.UnidadeID, Ativa: req.Ativa, Campos: req.Campos}
 }
 
 func (req EquipeRequest) entrada() application.EquipeEntrada {

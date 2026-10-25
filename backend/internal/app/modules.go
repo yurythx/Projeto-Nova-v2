@@ -14,7 +14,9 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/busca"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/calendar"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/catalog"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/cofre"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/contact"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/contratos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/directory"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/egress"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/example"
@@ -65,11 +67,17 @@ func registerPlugins(d *Dependencies) {
 	ligado := d.Kernel.Enabled
 	atendimentoModule := atendimento.New(deps, produtoPort{repo: produtosModule.Repositorio(), ativo: func() bool { return d.Kernel.Enabled(produtos.Key) }})
 	ativosModule := ativos.New(deps, portaProdutoAtivos(produtosModule.Repositorio(), ligado))
+	d.Credencial = ativosModule.Reconhecer
 	problemasModule := problemas.New(deps, portasProblemas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
 		ativosModule.Repositorio(), ligado))
 	alvos, produtoDaMudanca := portasMudancas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
 		ativosModule.Repositorio(), problemasModule.Repositorio(), ligado)
+	mudancasModule := mudancas.New(deps, alvos, produtoDaMudanca)
+	mudancasModule.ComEfeitos(efeitosCascata{atend: atendimentoModule, prob: problemasModule, ligado: ligado})
 	projetosModule := projetos.New(deps)
+	cofreModule := cofre.New(deps)
+	cofreModule.ComConfirmacao(confirmaSenha{reauth: signumModule.Reautenticador()}, d.RateLimiters.Lockout)
+	atendimentoModule.ComSegredo(portaSegredo{svc: cofreModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(cofre.Key) }})
 
 	d.Kernel.MustRegister(
 		// Core imutável (nunca desativável).
@@ -92,8 +100,10 @@ func registerPlugins(d *Dependencies) {
 		atendimentoModule,
 		ativosModule,
 		problemasModule,
-		mudancas.New(deps, alvos, produtoDaMudanca),
+		mudancasModule,
 		projetosModule,
+		contratos.New(deps),
+		cofreModule,
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

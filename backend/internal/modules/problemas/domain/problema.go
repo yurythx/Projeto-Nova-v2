@@ -50,6 +50,27 @@ var (
 	ErrProdutoInexistente   = errors.New("problemas: produto não encontrado")
 )
 
+// NaoConcluivel explica por que a mudança não pode resolver este problema.
+type NaoConcluivel struct {
+	Numero int64
+	Estado string
+	Causa  error
+}
+
+func (e *NaoConcluivel) Error() string {
+	if e == nil || e.Causa == nil {
+		return "problemas: problema não concluível"
+	}
+	return e.Causa.Error()
+}
+
+func (e *NaoConcluivel) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Causa
+}
+
 // transicoes: para onde cada estado pode ir. Encerrado não sai.
 var transicoes = map[string][]string{
 	Registrado:    {EmAnalise},

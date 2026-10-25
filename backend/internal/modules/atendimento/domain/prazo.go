@@ -60,6 +60,12 @@ const (
 	LimiarCritico = 90
 	LimiarVencido = 100
 
+	// AntecedenciaAlerta avisa quando o relógio correndo vence em até
+	// duas horas de relógio de parede. A meta precisa ser maior que essa
+	// janela: um prazo que já nasce com menos de duas horas não dispara
+	// o aviso na abertura.
+	AntecedenciaAlerta = 2 * time.Hour
+
 	// horizonte é até onde a previsão de vencimento procura tempo útil.
 	horizonteDias = 400
 )
@@ -479,6 +485,20 @@ func relogio(metaMin int, usado time.Duration, estado string, cal Calendario, ag
 		}
 	}
 	return r
+}
+
+// DentroDaAntecedencia diz se o relógio correndo vence dentro de janela
+// e a meta é maior que ela. Relógio parado, vencido ou sem previsão não
+// entra: o vencimento já tem o próprio aviso.
+func (r Relogio) DentroDaAntecedencia(agora time.Time, janela time.Duration) bool {
+	if r.Estado != RelogioCorrendo || r.VenceEm == nil || janela <= 0 {
+		return false
+	}
+	if r.MetaMin <= int(janela/time.Minute) {
+		return false
+	}
+	falta := r.VenceEm.Sub(agora)
+	return falta > 0 && falta <= janela
 }
 
 // Limiar é o maior limiar de alerta que o relógio correndo já cruzou

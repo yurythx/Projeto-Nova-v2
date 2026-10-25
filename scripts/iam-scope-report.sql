@@ -44,10 +44,18 @@ escopo AS (
         'atendimento:abrir',
         'atendimento:atender',
         'ativos:manage',
+        'ativos:reportar',
         'problemas:read',
         'problemas:manage',
         'mudancas:manage',
-        'mudancas:aprovar'
+        'mudancas:aprovar',
+        'projetos:read',
+        'projetos:manage',
+        'contratos:manage',
+        'cofre:read',
+        'cofre:reveal',
+        'cofre:manage',
+        'cofre:grant'
     ]) AS perm
 )
 SELECT c.origem, c.quem, c.perfil,

@@ -264,9 +264,11 @@ func (s *Service) RunAlertas(ctx context.Context) error {
 var nomeRelogio = map[string]string{"resposta": "resposta", "solucao": "solução"}
 
 // VerificarPrazos avisa o responsável (ou, sem ele, a equipe da unidade)
-// quando um relógio correndo cruza 75%, 90% e 100% da meta. A chave do
-// aviso inclui a solicitação, o relógio e o limiar: conferir de novo, em
-// qualquer réplica, não repete o aviso.
+// quando um relógio correndo cruza 75%, 90% e 100% da meta. Aos 90%, nas
+// duas horas finais e no vencimento, a equipe da unidade também recebe o
+// aviso: o responsável não é trocado. A chave do aviso inclui a
+// solicitação, o relógio e o limiar: conferir de novo, em qualquer
+// réplica, não repete o aviso.
 func (s *Service) VerificarPrazos(ctx context.Context) error {
 	if s.avisos == nil {
 		return nil
@@ -289,22 +291,30 @@ func (s *Service) VerificarPrazos(ctx context.Context) error {
 			relogio domain.Relogio
 		}{{"resposta", sol.Prazo.Resposta}, {"solucao", sol.Prazo.Solucao}} {
 			limiar := r.relogio.Limiar()
-			if limiar == 0 {
+			antecedencia := r.relogio.DentroDaAntecedencia(s.agora(), domain.AntecedenciaAlerta)
+			if limiar == 0 && !antecedencia {
 				continue
 			}
-			destinos, err := s.destinosDoPrazo(ctx, equipes, sol)
+			destinos, err := s.destinosDoPrazo(ctx, equipes, sol, limiar >= domain.LimiarCritico || antecedencia)
 			if err != nil {
 				return err
 			}
-			titulo := fmt.Sprintf("Prazo de %s da solicitação #%d em %d%%", nomeRelogio[r.chave], sol.Numero, limiar)
-			if limiar >= domain.LimiarVencido {
-				titulo = fmt.Sprintf("Prazo de %s da solicitação #%d vencido", nomeRelogio[r.chave], sol.Numero)
+			if limiar != 0 {
+				titulo := fmt.Sprintf("Prazo de %s da solicitação #%d em %d%%", nomeRelogio[r.chave], sol.Numero, limiar)
+				if limiar >= domain.LimiarVencido {
+					titulo = fmt.Sprintf("Prazo de %s da solicitação #%d vencido", nomeRelogio[r.chave], sol.Numero)
+				}
+				e, err := s.avisarPrazo(ctx, destinos, sol, r.chave, titulo, fmt.Sprintf("%d", limiar))
+				if err != nil {
+					return err
+				}
+				enviadas = append(enviadas, e...)
 			}
-			e, err := notificacoes.Registrar(ctx, s.pool, destinos, notificacoes.Nova{
-				Modulo: "atendimento", Titulo: titulo, Mensagem: sol.OfertaNome + ": " + sol.Titulo,
-				Link:  "/atendimento/solicitacoes/" + sol.ID.String(),
-				Chave: fmt.Sprintf("atendimento:%s:prazo:%s:%d", sol.ID, r.chave, limiar),
-			})
+			if !antecedencia {
+				continue
+			}
+			e, err := s.avisarPrazo(ctx, destinos, sol, r.chave,
+				fmt.Sprintf("Prazo de %s da solicitação #%d vence em menos de 2 horas", nomeRelogio[r.chave], sol.Numero), "2h")
 			if err != nil {
 				return err
 			}
@@ -315,10 +325,33 @@ func (s *Service) VerificarPrazos(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) destinosDoPrazo(ctx context.Context, equipes map[string][]uuid.UUID, sol domain.Solicitacao) ([]uuid.UUID, error) {
-	if sol.ResponsavelID != nil {
-		return []uuid.UUID{*sol.ResponsavelID}, nil
+func (s *Service) avisarPrazo(ctx context.Context, destinos []uuid.UUID, sol domain.Solicitacao, relogio, titulo, fato string) ([]notificacoes.Enviada, error) {
+	return notificacoes.Registrar(ctx, s.pool, destinos, notificacoes.Nova{
+		Modulo: "atendimento", Titulo: titulo, Mensagem: sol.OfertaNome + ": " + sol.Titulo,
+		Link:  "/atendimento/solicitacoes/" + sol.ID.String(),
+		Chave: fmt.Sprintf("atendimento:%s:prazo:%s:%s", sol.ID, relogio, fato),
+	})
+}
+
+func (s *Service) destinosDoPrazo(ctx context.Context, equipes map[string][]uuid.UUID, sol domain.Solicitacao, escalar bool) ([]uuid.UUID, error) {
+	equipe, err := s.equipeDoPrazo(ctx, equipes, sol)
+	if err != nil {
+		return nil, err
 	}
+	if !escalar {
+		if sol.ResponsavelID != nil {
+			return []uuid.UUID{*sol.ResponsavelID}, nil
+		}
+		return equipe, nil
+	}
+	out := append([]uuid.UUID(nil), equipe...)
+	if sol.ResponsavelID != nil && !slices.Contains(out, *sol.ResponsavelID) {
+		out = append([]uuid.UUID{*sol.ResponsavelID}, out...)
+	}
+	return out, nil
+}
+
+func (s *Service) equipeDoPrazo(ctx context.Context, equipes map[string][]uuid.UUID, sol domain.Solicitacao) ([]uuid.UUID, error) {
 	chave := "institucional"
 	if sol.UnidadeID != nil {
 		chave = sol.UnidadeID.String()

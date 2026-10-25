@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
+	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -21,6 +24,8 @@ const (
 	EventoSolicitacaoEstado    = "atendimento.solicitacao.estado_alterado"
 	EventoSolicitacaoAtribuida = "atendimento.solicitacao.atribuida"
 	EventoSolicitacaoComentada = "atendimento.solicitacao.comentada"
+	EventoSolicitacaoAvaliada  = "atendimento.solicitacao.avaliada"
+	EventoSolicitacaoSegredo   = "atendimento.solicitacao.segredo_vinculado"
 )
 
 // Recortes de responsável da fila.
@@ -45,6 +50,7 @@ var rotulos = map[string]string{
 type AberturaEntrada struct {
 	OfertaID          uuid.UUID
 	Titulo, Descricao string
+	Respostas         map[string]string
 }
 
 // FiltroFila são os recortes da lista. Responsavel aceita "eu", "nenhum"
@@ -65,6 +71,8 @@ type Detalhe struct {
 	// Visitas vêm sem coordenadas: a posição só aparece na supervisão de
 	// visitas em andamento.
 	Visitas []domain.Visita `json:"visitas"`
+	// Avaliacao é a nota de quem abriu, quando já existe.
+	Avaliacao *domain.Avaliacao `json:"avaliacao,omitempty"`
 }
 
 // papeis devolve como identity age sobre a solicitação. Vazio = não vê.
@@ -95,6 +103,10 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in Abertura
 		return domain.Solicitacao{}, MapError(err)
 	}
 	sol, err := domain.NovaSolicitacao(o, in.Titulo, in.Descricao, identity.UserID)
+	if err != nil {
+		return domain.Solicitacao{}, MapError(err)
+	}
+	sol.Respostas, err = domain.ValidarRespostas(o.Campos, in.Respostas)
 	if err != nil {
 		return domain.Solicitacao{}, MapError(err)
 	}
@@ -175,7 +187,9 @@ func (s *Service) ListarFila(ctx context.Context, identity auth.Identity, f Filt
 	// O Kanban move o cartão só para onde a máquina deixa: as passagens
 	// vêm daqui, não de uma cópia da regra no navegador.
 	for i := range lista {
-		lista[i].PodeIrPara = lista[i].Proximos(papeis(identity, lista[i])...)
+		ps := papeis(identity, lista[i])
+		lista[i].PodeIrPara = lista[i].Proximos(ps...)
+		ocultarSegredo(&lista[i], ps)
 	}
 	if err := s.medir(ctx, lista); err != nil {
 		return nil, 0, err
@@ -210,6 +224,7 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 		}
 		sol = um[0]
 	}
+	ocultarSegredo(&sol, ps)
 	visitas, err := s.repo.ListVisitas(ctx, s.pool, id)
 	if err != nil {
 		return Detalhe{}, MapError(err)
@@ -217,7 +232,64 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	for i := range visitas {
 		visitas[i] = visitas[i].SemCoordenadas()
 	}
-	return Detalhe{Solicitacao: sol, Papeis: ps, Proximos: sol.Proximos(ps...), Passagens: passagens, Comentarios: comentarios, Visitas: visitas}, nil
+	detalhe := Detalhe{Solicitacao: sol, Papeis: ps, Proximos: sol.Proximos(ps...), Passagens: passagens, Comentarios: comentarios, Visitas: visitas}
+	avaliacao, err := s.repo.GetAvaliacao(ctx, s.pool, id)
+	if err != nil && !errors.Is(err, domain.ErrNaoEncontrado) {
+		return Detalhe{}, MapError(err)
+	}
+	if err == nil {
+		detalhe.Avaliacao = &avaliacao
+	}
+	return detalhe, nil
+}
+
+// VincularSegredo grava o id de um segredo do cofre, ou limpa quando ele vem nulo.
+// A senha não entra na solicitação nem na auditoria.
+func (s *Service) VincularSegredo(ctx context.Context, identity auth.Identity, id uuid.UUID, segredo *uuid.UUID) (Detalhe, error) {
+	err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, ps []string) ([]notificacoes.Enviada, error) {
+		if !slices.Contains(ps, domain.PapelTecnico) {
+			return nil, domain.ErrForaDoEscopo
+		}
+		if sol.Estado == domain.EstadoEncerrado || sol.Estado == domain.EstadoCancelado {
+			return nil, domain.ErrSolicitacaoFinalizada
+		}
+		if segredo != nil {
+			if s.segredos == nil {
+				return nil, domain.ErrCofreDesligado
+			}
+			if _, err := s.segredos.Nome(ctx, identity, *segredo); err != nil {
+				if errors.Is(err, domain.ErrCofreDesligado) {
+					return nil, err
+				}
+				return nil, domain.ErrSegredoAusente
+			}
+		}
+		agora := time.Now()
+		if s.relogio != nil {
+			agora = s.relogio()
+		}
+		if err := s.repo.SetSegredo(ctx, tx, sol.ID, segredo, agora); err != nil {
+			return nil, err
+		}
+		payload := payloadDe(sol)
+		if segredo != nil {
+			payload["cofre_segredo_id"] = segredo.String()
+		}
+		if err := s.registrar(ctx, tx, EventoSolicitacaoSegredo, "solicitacao", sol.ID, payload, payload, nil); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return Detalhe{}, err
+	}
+	return s.Obter(ctx, identity, id)
+}
+
+func ocultarSegredo(sol *domain.Solicitacao, ps []string) {
+	if !slices.Contains(ps, domain.PapelTecnico) {
+		sol.CofreSegredoID = nil
+	}
 }
 
 // Transicionar muda o estado com a regra do tipo e o papel de quem age.
@@ -389,8 +461,18 @@ func (s *Service) gravarPassagem(ctx context.Context, tx pgx.Tx, identity auth.I
 	if next.ResponsavelID != nil {
 		destinos = append(destinos, *next.ResponsavelID)
 	}
-	return s.avisar(ctx, tx, next, destinos, identity.UserID, fmt.Sprintf("passagem:%d", p.ID),
+	enviadas, err := s.avisar(ctx, tx, next, destinos, identity.UserID, fmt.Sprintf("passagem:%d", p.ID),
 		fmt.Sprintf("Solicitação #%d %s", next.Numero, rotulos[next.Estado]), next.Titulo)
+	if err != nil || (next.Estado != domain.EstadoResolvido && next.Estado != domain.EstadoAtendido) {
+		return enviadas, err
+	}
+	pesquisa, err := s.avisar(ctx, tx, next, []uuid.UUID{next.SolicitanteID}, uuid.Nil, "avaliar",
+		fmt.Sprintf("Avalie o atendimento da solicitação #%d", next.Numero),
+		"A nota fica registrada uma vez, na própria solicitação.")
+	if err != nil {
+		return nil, err
+	}
+	return append(enviadas, pesquisa...), nil
 }
 
 func (s *Service) passar(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, de *string, autor uuid.UUID) (domain.Passagem, error) {
@@ -424,6 +506,60 @@ func (s *Service) entregar(ctx context.Context, enviadas []notificacoes.Enviada)
 	if s.avisos != nil && len(enviadas) > 0 {
 		s.avisos.Entregar(ctx, enviadas)
 	}
+}
+
+// Search alimenta a Busca Global. Devolve o que identity abriu e, se
+// atende a fila, o que está no escopo dela. O texto livre da descrição
+// não vai no resultado: a busca mostra número, título, oferta e estado.
+// Chamado não é conteúdo público, então este módulo não publica no índice.
+func (s *Service) Search(ctx context.Context, identity auth.Identity, q string, limit int) ([]domain.Solicitacao, error) {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return nil, nil
+	}
+	if utf8.RuneCountInString(q) > 80 {
+		q = string([]rune(q)[:80])
+	}
+	if limit < 1 || limit > 20 {
+		limit = 8
+	}
+	quem := identity.UserID
+	visto := map[uuid.UUID]struct{}{}
+	var out []domain.Solicitacao
+	juntar := func(lista []domain.Solicitacao) {
+		for _, item := range lista {
+			if _, ok := visto[item.ID]; ok {
+				continue
+			}
+			visto[item.ID] = struct{}{}
+			out = append(out, item)
+			if len(out) == limit {
+				return
+			}
+		}
+	}
+	minhas, _, err := s.repo.ListSolicitacoes(ctx, s.pool, domain.FiltroSolicitacao{
+		Solicitante: &quem, Texto: q, Finalizadas: true, Limit: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	juntar(minhas)
+	if len(out) == limit {
+		return out, nil
+	}
+	cob := auth.CoverageOf(identity, auth.PermAtendimentoAtender)
+	if !cob.All && len(cob.Unidades) == 0 {
+		return out, nil
+	}
+	fila, _, err := s.repo.ListSolicitacoes(ctx, s.pool, domain.FiltroSolicitacao{
+		Restrito: !cob.All, Unidades: cob.Unidades, Texto: q, Finalizadas: true, Limit: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	juntar(fila)
+	return out, nil
 }
 
 // payloadDe é o que o barramento precisa para avisar as telas abertas sem

@@ -41,6 +41,7 @@ describe("MatrizRiscoCalculadora (Gestão de Riscos do CAB)", () => {
     expect(onAplicar).toHaveBeenCalledWith(
       "alto",
       expect.stringContaining("[Cálculo de Risco CAB: Score 15/15 - Risco alto]"),
+      15,
     );
   });
 });

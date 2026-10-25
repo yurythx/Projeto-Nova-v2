@@ -46,6 +46,29 @@ func (r repo) Insert(_ context.Context, _ database.DBTX, a domain.Ativo) (domain
 func (r repo) Update(_ context.Context, _ database.DBTX, a domain.Ativo) (domain.Ativo, error) {
 	return a, r.update
 }
+func (r repo) ListRelacoes(context.Context, database.DBTX, uuid.UUID) ([]domain.Relacao, error) {
+	return []domain.Relacao{}, nil
+}
+func (r repo) InsertRelacao(context.Context, database.DBTX, domain.Relacao) error { return nil }
+func (r repo) DeleteRelacao(context.Context, database.DBTX, uuid.UUID, uuid.UUID) error {
+	return nil
+}
+func (r repo) FechaCiclo(context.Context, database.DBTX, uuid.UUID, uuid.UUID) (bool, error) {
+	return false, nil
+}
+func (r repo) PorIdentificador(context.Context, database.DBTX, string) (domain.Ativo, error) {
+	return domain.Ativo{}, domain.ErrNaoEncontrado
+}
+func (r repo) InsertCredencial(context.Context, database.DBTX, domain.Credencial) error { return nil }
+func (r repo) ListCredenciais(context.Context, database.DBTX, domain.Filtro) ([]domain.Credencial, error) {
+	return []domain.Credencial{}, nil
+}
+func (r repo) RevogarCredencial(context.Context, database.DBTX, uuid.UUID, domain.Filtro) error {
+	return nil
+}
+func (r repo) PorHash(context.Context, database.DBTX, []byte) (domain.Credencial, error) {
+	return domain.Credencial{}, domain.ErrNaoEncontrado
+}
 
 type eventos struct{ err error }
 
@@ -65,7 +88,7 @@ func (p produtos) Consultar(context.Context, database.DBTX, uuid.UUID) (*uuid.UU
 func TestMapError(t *testing.T) {
 	for _, err := range []error{domain.ErrNaoEncontrado, domain.ErrEntradaInvalida, domain.ErrTipoInvalido, domain.ErrEstadoInvalido,
 		domain.ErrForaDoEscopo, domain.ErrUnidadeInexistente, domain.ErrIdentificadorRepetido, domain.ErrProdutoInexistente,
-		domain.ErrProdutoIndisponivel, domain.ErrProdutoDeOutraUnidade} {
+		domain.ErrProdutoIndisponivel, domain.ErrProdutoDeOutraUnidade, domain.ErrCadastroManual} {
 		var app *apperrors.Error
 		if !errors.As(application.MapError(err), &app) {
 			t.Errorf("%v", err)

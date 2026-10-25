@@ -2,49 +2,52 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+const { get } = vi.hoisted(() => ({ get: vi.fn() }));
+
+vi.mock("@/lib/api/client", () => ({ apiClient: { get } }));
+
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 
-describe("DeflexaoConhecimento (Self-service / Deflexão de chamados)", () => {
-  it("não renderiza nada para termos curtos", () => {
+const artigo = {
+  module: "wiki",
+  type: "page",
+  id: "p1",
+  title: "Como redefinir a senha de rede",
+  snippet: "Passos publicados na wiki.",
+  url: "/wiki/senha",
+  score: 1,
+};
+
+describe("DeflexaoConhecimento", () => {
+  it("não consulta a wiki para um termo curto", () => {
+    get.mockClear();
     const { container } = render(<DeflexaoConhecimento termo="oi" />);
     expect(container.firstChild).toBeNull();
+    expect(get).not.toHaveBeenCalled();
   });
 
-  it("sugere guias de autoatendimento para termos como 'senha'", async () => {
-    render(<DeflexaoConhecimento termo="não lembro minha senha" />);
-
-    expect(screen.getByTestId("deflexao-conhecimento")).toBeInTheDocument();
-    expect(screen.getByText("Encontramos soluções rápidas para o seu caso")).toBeInTheDocument();
-    expect(
-      screen.getByText("Como redefinir sua senha de rede ou desbloquear sua conta"),
-    ).toBeInTheDocument();
-  });
-
-  it("abre modal com passo a passo e permite marcar como resolvido", async () => {
+  it("mostra o artigo que a busca devolve e deixa de abrir o chamado", async () => {
+    get.mockReset();
+    get.mockResolvedValue({ data: { query: "senha", results: [artigo], modules: ["wiki"], degraded: [], took_ms: 1 } });
     const user = userEvent.setup();
     const onResolvido = vi.fn();
 
-    render(
-      <DeflexaoConhecimento
-        termo="falha na vpn corporativa"
-        onResolvido={onResolvido}
-      />,
-    );
+    render(<DeflexaoConhecimento termo="não lembro minha senha" onResolvido={onResolvido} />);
 
-    expect(
-      screen.getByText("Guia de conexão e solução de falhas na VPN corporativa"),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("deflexao-conhecimento")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: artigo.title })).toHaveAttribute("href", "/wiki/senha");
+    expect(get).toHaveBeenCalledWith(expect.stringContaining("module=wiki"));
 
-    // Clica no card da sugestão para abrir o modal
-    await user.click(screen.getByText("Guia de conexão e solução de falhas na VPN corporativa"));
-
-    expect(screen.getByText("Procedimento Recomendado:")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Sim, resolveu!/i })).toBeInTheDocument();
-
-    // Clica em 'Sim, resolveu!'
-    await user.click(screen.getByRole("button", { name: /Sim, resolveu!/i }));
-
+    await user.click(screen.getByRole("button", { name: "Não preciso mais abrir" }));
     expect(onResolvido).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText("Excelente! Problema resolvido com sucesso.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("não foi enviada");
+  });
+
+  it("não mostra nada quando a busca falha", async () => {
+    get.mockReset();
+    get.mockRejectedValue(new Error("sem wiki"));
+    const { container } = render(<DeflexaoConhecimento termo="vpn corporativa" />);
+    await vi.waitFor(() => expect(get).toHaveBeenCalled());
+    expect(container.querySelector("[data-testid='deflexao-conhecimento']")).toBeNull();
   });
 });

@@ -4,6 +4,11 @@
 package problemas
 
 import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas/infrastructure"
@@ -18,6 +23,7 @@ const Key = "problemas"
 // Module é o plugin.
 type Module struct {
 	repo     domain.Repository
+	svc      *application.Service
 	handlers *transport.Handlers
 }
 
@@ -25,7 +31,12 @@ type Module struct {
 func New(deps modkit.Deps, portas application.Portas) *Module {
 	repo := infrastructure.NewRepository()
 	svc := application.NewService(deps.Pool, repo, deps.Outbox, portas)
-	return &Module{repo: repo, handlers: transport.NewHandlers(svc, deps.Logger)}
+	return &Module{repo: repo, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
+}
+
+// ConcluirPorMudanca resolve o problema na transação de quem chama.
+func (m *Module) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uuid.UUID, texto string) error {
+	return m.svc.ConcluirPorMudanca(ctx, tx, id, autor, texto)
 }
 
 // Repositorio é a porta usada pelas mudanças para conferir o problema.

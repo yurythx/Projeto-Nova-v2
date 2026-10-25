@@ -24,3 +24,11 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [030](030-blog-autoria-dedicada-publico-alvo-e-estrutura-rondonopolis.md) | Autoria do Blog em páginas dedicadas (novo/editar com TipTap WYSIWYG e MinIO); seletor de público-alvo recolhido por padrão ("Todos"); estrutura corporativa exclusiva de Rondonópolis (MT) e unificação do nome Projeto-nova-v2 | Aceito e implementado |
 | [031](031-typesense-na-busca-global.md) | Typesense como índice da Busca Global: cliente com coleção garantida, filtro escapado e chave obrigatória; só conteúdo público indexado; carga no worker por geração, recarga por evento e volta ao Postgres se o índice falhar | Aceito e implementado |
 | [046](046-produto-novo.md) | Produto novo: o sistema anterior (SISMARQ, arquivo municipal) sai por inteiro; migrations num esquema base para banco novo; nomes do produto trocados | Aceito e implementado |
+| [047](047-avaliacao-governanca-e-cascata.md) | Avaliação persistida, indicadores da central a partir dos relógios, aviso de 2 horas e conclusão dos vínculos da mudança na mesma transação | Aceito e implementado |
+| [048](048-roteiro-itsm.md) | O que a gestão de serviços copia do mercado, o que não copia, e a ordem das levas | Aceito; as três levas estão implementadas |
+| [049](049-correio-contratos-e-cadastros.md) | Correio do atendimento, contratos, relações de ativo, perguntas da oferta, nota de risco e congelamento | Aceito e implementado |
+| [050](050-portal-serie-e-agente.md) | Portal de quem pede, série diária dos indicadores e agente da própria máquina | Aceito e implementado |
+| [051](051-fuso-da-serie-e-inventario-local.md) | Dia da série no fuso da unidade e inventário da própria máquina | Aceito e implementado |
+| [052](052-programas-e-credencial-de-agente.md) | Programas da máquina e credencial que não é de pessoa | Aceito e implementado |
+| [053](053-cofre-de-senhas.md) | Cofre de senhas no escopo da unidade, com revelação auditada | Aceito e implementado |
+| [054](054-revelacao-e-segredo-no-chamado.md) | Revelar pede a senha de acesso de novo; o chamado guarda só o id | Aceito e implementado |

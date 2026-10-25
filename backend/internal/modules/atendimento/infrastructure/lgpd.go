@@ -27,6 +27,13 @@ func (r *Repository) DadosDoTitular(ctx context.Context, db database.DBTX, user 
 	if out.Comentarios, err = coletar(rows, scanComentario); err != nil {
 		return out, err
 	}
+	rows, err = db.Query(ctx, avaliacaoSelect+` WHERE a.autor_id = $1 ORDER BY a.created_at`, user)
+	if err != nil {
+		return out, mapDB(err)
+	}
+	if out.Avaliacoes, err = coletar(rows, scanAvaliacao); err != nil {
+		return out, err
+	}
 	rows, err = db.Query(ctx, visitaSelect+` WHERE v.tecnico_id = $1 ORDER BY v.inicio_em`, user)
 	if err != nil {
 		return out, mapDB(err)

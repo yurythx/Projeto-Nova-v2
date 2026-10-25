@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	atendimento "github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	ativos "github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
@@ -14,6 +15,7 @@ import (
 	problemas "github.com/yurythx/projeto-nova-v2/internal/modules/problemas/domain"
 	produtos "github.com/yurythx/projeto-nova-v2/internal/modules/produtos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
 var errBanco = errors.New("banco")
@@ -142,5 +144,82 @@ func TestPortasDosServicos(t *testing.T) {
 	}
 	if _, err := quebrados.Consultar(ctx, nil, mudancas.VinculoAtivo, id); !errors.Is(err, errBanco) {
 		t.Fatal(err)
+	}
+}
+
+type concluiChamado struct {
+	err     error
+	entrega func(context.Context)
+}
+
+func (c concluiChamado) ConcluirPorMudanca(context.Context, pgx.Tx, uuid.UUID, uuid.UUID, int64, string, string) (func(context.Context), error) {
+	return c.entrega, c.err
+}
+
+type concluiCausa struct{ err error }
+
+func (c concluiCausa) ConcluirPorMudanca(context.Context, pgx.Tx, uuid.UUID, uuid.UUID, string) error {
+	return c.err
+}
+
+func TestEfeitosDaCascata(t *testing.T) {
+	ctx := context.Background()
+	id := uuid.New()
+	r := mudancas.Resolucao{Numero: 3, Titulo: "Fonte"}
+	if _, err := (efeitosCascata{}).Resolver(ctx, nil, mudancas.VinculoIncidente, id, r); !errors.Is(err, mudancas.ErrCascataIndisponivel) {
+		t.Fatal(err)
+	}
+	pool := dbtest.Pool(t)
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
+	if _, err := (efeitosCascata{atend: concluiChamado{}}).Resolver(ctx, tx, mudancas.VinculoIncidente, id, r); !errors.Is(err, mudancas.ErrCascataIndisponivel) {
+		t.Fatal(err)
+	}
+	if _, err := (efeitosCascata{ligado: ligadoSe(false)}).Resolver(ctx, tx, mudancas.VinculoIncidente, id, r); !errors.Is(err, mudancas.ErrCascataIndisponivel) {
+		t.Fatal(err)
+	}
+	if _, err := (efeitosCascata{ligado: ligadoSe(false), prob: concluiCausa{}}).Resolver(ctx, tx, mudancas.VinculoProblema, id, r); !errors.Is(err, mudancas.ErrCascataIndisponivel) {
+		t.Fatal(err)
+	}
+	if _, err := (efeitosCascata{ligado: ligadoSe(true), atend: concluiChamado{}}).Resolver(ctx, tx, "ativo", id, r); !errors.Is(err, mudancas.ErrVinculoInvalido) {
+		t.Fatal(err)
+	}
+	entregou := false
+	ent, err := (efeitosCascata{ligado: ligadoSe(true), atend: concluiChamado{entrega: func(context.Context) { entregou = true }}}).Resolver(ctx, tx, mudancas.VinculoIncidente, id, r)
+	if err != nil || ent == nil {
+		t.Fatal(err)
+	}
+	ent(ctx)
+	if !entregou {
+		t.Fatal("entrega")
+	}
+	for _, causa := range []error{atendimento.ErrSemResponsavel, atendimento.ErrSolicitacaoFinalizada, atendimento.ErrTransicaoInvalida} {
+		_, err := (efeitosCascata{ligado: ligadoSe(true), atend: concluiChamado{err: &atendimento.NaoConcluivel{Numero: 3, Estado: "xyz", Causa: causa}}}).Resolver(ctx, tx, mudancas.VinculoIncidente, id, r)
+		var recusa *mudancas.VinculoRecusado
+		if !errors.As(err, &recusa) || recusa.Mensagem == "" {
+			t.Fatalf("%v -> %v", causa, err)
+		}
+	}
+	if _, err := (efeitosCascata{ligado: ligadoSe(true), atend: concluiChamado{err: errBanco}}).Resolver(ctx, tx, mudancas.VinculoIncidente, id, r); !errors.Is(err, errBanco) {
+		t.Fatal(err)
+	}
+	if _, err := (efeitosCascata{ligado: ligadoSe(true), prob: concluiCausa{}}).Resolver(ctx, tx, mudancas.VinculoProblema, id, r); err != nil {
+		t.Fatal(err)
+	}
+	for _, causa := range []error{problemas.ErrSemCausaRaiz, problemas.ErrTransicaoInvalida} {
+		_, err := (efeitosCascata{ligado: ligadoSe(true), prob: concluiCausa{err: &problemas.NaoConcluivel{Numero: 4, Estado: "xyz", Causa: causa}}}).Resolver(ctx, tx, mudancas.VinculoProblema, id, r)
+		var recusa *mudancas.VinculoRecusado
+		if !errors.As(err, &recusa) || recusa.Mensagem == "" {
+			t.Fatalf("%v -> %v", causa, err)
+		}
+	}
+	if _, err := (efeitosCascata{ligado: ligadoSe(true), prob: concluiCausa{err: errBanco}}).Resolver(ctx, tx, mudancas.VinculoProblema, id, r); !errors.Is(err, errBanco) {
+		t.Fatal(err)
+	}
+	if rotuloEstado("desconhecido", rotuloSolicitacao) != "desconhecido" {
+		t.Fatal("rótulo")
 	}
 }

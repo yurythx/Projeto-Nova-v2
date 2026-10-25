@@ -46,14 +46,17 @@ type Solicitacao struct {
 	ResponsavelID *uuid.UUID `json:"responsavel_id,omitempty"`
 	ResolvidaEm   *time.Time `json:"resolvida_em,omitempty"`
 	// Classificação e o compromisso de prazo do momento em que foi feita.
-	Impacto         int        `json:"impacto"`
-	Urgencia        int        `json:"urgencia"`
-	Prioridade      *string    `json:"prioridade,omitempty"`
-	MetaRespostaMin *int       `json:"meta_resposta_min,omitempty"`
-	MetaSolucaoMin  *int       `json:"meta_solucao_min,omitempty"`
-	EncerradaEm     *time.Time `json:"encerrada_em,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
+	Impacto         int               `json:"impacto"`
+	Urgencia        int               `json:"urgencia"`
+	Prioridade      *string           `json:"prioridade,omitempty"`
+	MetaRespostaMin *int              `json:"meta_resposta_min,omitempty"`
+	MetaSolucaoMin  *int              `json:"meta_solucao_min,omitempty"`
+	EncerradaEm     *time.Time        `json:"encerrada_em,omitempty"`
+	Respostas       map[string]string `json:"respostas,omitempty"`
+	// CofreSegredoID aponta para um segredo. A senha não fica nesta linha.
+	CofreSegredoID *uuid.UUID `json:"cofre_segredo_id,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 
 	OfertaNome      string `json:"oferta_nome"`
 	SolicitanteNome string `json:"solicitante_nome"`

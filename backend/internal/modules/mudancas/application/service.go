@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
+	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -36,12 +39,20 @@ type Service struct {
 	eventos  Eventos
 	portas   domain.Portas
 	produtos domain.Produtos
+	efeitos  domain.Efeitos
 }
 
 // NewService cria o serviço. portas e produtos podem ser nil: o vínculo
 // correspondente fica indisponível.
 func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos, portas domain.Portas, produtos domain.Produtos) *Service {
 	return &Service{pool: pool, repo: repo, eventos: eventos, portas: portas, produtos: produtos}
+}
+
+// ComEfeitos liga a conclusão dos incidentes e problemas. Sem ela, pedir
+// a cascata devolve indisponível.
+func (s *Service) ComEfeitos(e domain.Efeitos) *Service {
+	s.efeitos = e
+	return s
 }
 
 // MapError traduz erros de domínio para a API e preserva a causa.
@@ -83,9 +94,30 @@ func MapError(err error) error {
 		return causa(err, apperrors.Validation("o módulo deste vínculo está desligado"))
 	case errors.Is(err, domain.ErrMudancaEncerrada):
 		return causa(err, apperrors.Conflict("a mudança já foi encerrada"))
+	case errors.Is(err, domain.ErrCascataIndisponivel):
+		return causa(err, apperrors.Validation("não dá para concluir os vínculos com os módulos desligados"))
+	case errors.Is(err, domain.ErrRiscoDivergente):
+		return causa(err, apperrors.Validation("a nota de 5 a 15 precisa corresponder ao risco: até 7 é baixo, até 11 é médio, acima é alto"))
+	case errors.Is(err, domain.ErrCongelada):
+		return causa(err, apperrors.Conflict("essa janela cai num período de congelamento"))
 	default:
+		var recusa *domain.VinculoRecusado
+		if errors.As(err, &recusa) && recusa.Mensagem != "" {
+			return causa(err, apperrors.Conflict(recusa.Mensagem))
+		}
 		return err
 	}
+}
+
+func (s *Service) conferirJanela(ctx context.Context, db database.DBTX, unidade *uuid.UUID, inicio, fim *time.Time) error {
+	if inicio == nil || fim == nil {
+		return nil
+	}
+	ocupada, err := s.repo.JanelaOcupada(ctx, db, unidade, *inicio, *fim)
+	if err != nil || !ocupada {
+		return err
+	}
+	return domain.ErrCongelada
 }
 
 func causa(err error, api *apperrors.Error) error {
@@ -158,6 +190,9 @@ func (s *Service) Criar(ctx context.Context, identity auth.Identity, in domain.E
 	if err := s.conferirProduto(ctx, s.pool, m.ProdutoID, m.UnidadeID); err != nil {
 		return domain.Mudanca{}, MapError(err)
 	}
+	if err := s.conferirJanela(ctx, s.pool, m.UnidadeID, m.InicioPlanejado, m.FimPlanejado); err != nil {
+		return domain.Mudanca{}, MapError(err)
+	}
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		if m, err = s.repo.Insert(ctx, tx, m); err != nil {
 			return err
@@ -207,6 +242,9 @@ func (s *Service) Atualizar(ctx context.Context, identity auth.Identity, id uuid
 		if err := s.conferirProduto(ctx, tx, next.ProdutoID, next.UnidadeID); err != nil {
 			return err
 		}
+		if err := s.conferirJanela(ctx, tx, next.UnidadeID, next.InicioPlanejado, next.FimPlanejado); err != nil {
+			return err
+		}
 		if m.Igual(next) {
 			return nil
 		}
@@ -218,12 +256,20 @@ func (s *Service) Atualizar(ctx context.Context, identity auth.Identity, id uuid
 }
 
 // Transicionar conduz (gestor) ou decide (aprovador) a mudança. A decisão
-// fica registrada com quem, quando e o parecer.
-func (s *Service) Transicionar(ctx context.Context, identity auth.Identity, id uuid.UUID, para, texto string) (domain.Mudanca, error) {
-	return s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, m domain.Mudanca, ps []string) error {
+// fica registrada com quem, quando e o parecer. resolverVinculos, na
+// conclusão, resolve incidentes e problemas ligados na mesma transação:
+// se um não puder ser concluído, a mudança não muda de estado.
+func (s *Service) Transicionar(ctx context.Context, identity auth.Identity, id uuid.UUID, para, texto string, resolverVinculos bool) (domain.Mudanca, error) {
+	var depois []domain.Entrega
+	m, err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, m domain.Mudanca, ps []string) error {
 		next, decisao, mudou, err := m.Transicionar(domain.Transicao{Para: para, Autor: identity.UserID, Texto: texto}, ps...)
 		if err != nil || !mudou {
 			return err
+		}
+		if para == domain.EmAvaliacao {
+			if err := s.conferirJanela(ctx, tx, next.UnidadeID, next.InicioPlanejado, next.FimPlanejado); err != nil {
+				return err
+			}
 		}
 		if err := s.repo.Update(ctx, tx, next); err != nil {
 			return err
@@ -235,8 +281,59 @@ func (s *Service) Transicionar(ctx context.Context, identity auth.Identity, id u
 			}
 			extra["decisao"] = decisao.Decisao
 		}
+		if next.Estado == domain.Concluida && resolverVinculos {
+			entregas, err := s.resolverVinculos(ctx, tx, id, domain.Resolucao{
+				Autor: identity.UserID, Texto: texto, Numero: next.Numero, Titulo: next.Titulo,
+			})
+			if err != nil {
+				return err
+			}
+			depois = entregas
+			extra["resolver_vinculos"] = true
+		}
 		return s.registrar(ctx, tx, EventoEstado, next, m, next, extra)
 	})
+	if err != nil {
+		return domain.Mudanca{}, err
+	}
+	for _, entrega := range depois {
+		if entrega != nil {
+			entrega(ctx)
+		}
+	}
+	return m, nil
+}
+
+// resolverVinculos conclui incidentes e problemas em ordem estável, para
+// duas mudanças simultâneas não se travarem em ordem diferente.
+func (s *Service) resolverVinculos(ctx context.Context, tx pgx.Tx, id uuid.UUID, r domain.Resolucao) ([]domain.Entrega, error) {
+	if s.efeitos == nil {
+		return nil, domain.ErrCascataIndisponivel
+	}
+	vinculos, err := s.repo.Vinculos(ctx, tx, id)
+	if err != nil {
+		return nil, err
+	}
+	slices.SortFunc(vinculos, func(a, b domain.Vinculo) int {
+		if c := strings.Compare(a.Tipo, b.Tipo); c != 0 {
+			return c
+		}
+		return strings.Compare(a.AlvoID.String(), b.AlvoID.String())
+	})
+	var entregas []domain.Entrega
+	for _, v := range vinculos {
+		if v.Tipo != domain.VinculoIncidente && v.Tipo != domain.VinculoProblema {
+			continue
+		}
+		entrega, err := s.efeitos.Resolver(ctx, tx, v.Tipo, v.AlvoID, r)
+		if err != nil {
+			return nil, err
+		}
+		if entrega != nil {
+			entregas = append(entregas, entrega)
+		}
+	}
+	return entregas, nil
 }
 
 // Vincular liga (ou desfaz) um problema, incidente ou ativo da mesma
@@ -309,4 +406,47 @@ func (s *Service) registrar(ctx context.Context, tx pgx.Tx, evento string, m dom
 		return err
 	}
 	return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, evento, "mudanca", m.ID.String(), antes, depois))
+}
+
+// ListarCongelamentos devolve as janelas do escopo e as institucionais.
+func (s *Service) ListarCongelamentos(ctx context.Context, identity auth.Identity) ([]domain.Congelamento, error) {
+	cob := auth.CoverageOf(identity, auth.PermMudancasManage)
+	if !cob.All && len(cob.Unidades) == 0 {
+		return []domain.Congelamento{}, nil
+	}
+	lista, err := s.repo.ListCongelamentos(ctx, s.pool, domain.Filtro{Restrito: !cob.All, Unidades: cob.Unidades})
+	return lista, MapError(err)
+}
+
+// CriarCongelamento grava a janela em que mudança não é agendada.
+func (s *Service) CriarCongelamento(ctx context.Context, identity auth.Identity, unidade *uuid.UUID, inicio, fim time.Time, motivo string) (domain.Congelamento, error) {
+	motivo = strings.TrimSpace(motivo)
+	if !fim.After(inicio) || utf8.RuneCountInString(motivo) > 4000 {
+		return domain.Congelamento{}, MapError(domain.ErrEntradaInvalida)
+	}
+	if !slices.Contains(papeis(identity, unidade), domain.PapelGestor) {
+		return domain.Congelamento{}, MapError(domain.ErrForaDoEscopo)
+	}
+	c := domain.Congelamento{ID: uuid.New(), UnidadeID: unidade, Inicio: inicio, Fim: fim, Motivo: motivo, CreatedAt: time.Now().UTC()}
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		var err error
+		if c, err = s.repo.InsertCongelamento(ctx, tx, c); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Entry{Action: "mudancas.congelamento.criado", ResourceType: "mudanca_congelamento", ResourceID: c.ID.String()})
+	})
+	return c, MapError(err)
+}
+
+// ExcluirCongelamento remove a janela.
+func (s *Service) ExcluirCongelamento(ctx context.Context, identity auth.Identity, id uuid.UUID) error {
+	if !slices.Contains(papeis(identity, nil), domain.PapelGestor) && auth.CoverageOf(identity, auth.PermMudancasManage).All == false && len(auth.CoverageOf(identity, auth.PermMudancasManage).Unidades) == 0 {
+		return MapError(domain.ErrForaDoEscopo)
+	}
+	return MapError(database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.DeleteCongelamento(ctx, tx, id); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Entry{Action: "mudancas.congelamento.excluido", ResourceType: "mudanca_congelamento", ResourceID: id.String()})
+	}))
 }

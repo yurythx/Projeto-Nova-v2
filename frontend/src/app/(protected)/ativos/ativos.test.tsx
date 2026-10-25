@@ -53,7 +53,9 @@ describe("Ativos", () => {
     renderApp(<AtivosPage />);
     expect(await screen.findByText(/Rede · PAT-1 · Rede da escola/)).toBeInTheDocument();
     expect(screen.getByText(/Sistema ou licença · produto vinculado/)).toBeInTheDocument();
-    expect(within(screen.getByRole("list")).getByText("Em manutenção")).toBeInTheDocument();
+    const ativos = screen.getByRole("list", { name: "Ativos cadastrados" });
+    expect(within(ativos).getByRole("heading", { name: "Em manutenção" })).toBeInTheDocument();
+    expect(within(ativos).getAllByText("Em manutenção").length).toBeGreaterThan(0);
 
     await user.type(screen.getByLabelText("Nome *"), "Nobreak");
     await user.selectOptions(screen.getByLabelText("Tipo"), "hardware");

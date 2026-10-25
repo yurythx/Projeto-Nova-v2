@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	atendimento "github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	ativos "github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
@@ -170,4 +171,90 @@ func portasMudancas(prod produtos.Repository, atend atendimento.Repository, ativ
 	return alvosMudanca{problemas: prob, solicitacao: atend, ativos: ativ, ligado: ligado},
 		produtoUnidade{repo: prod, ativo: func() bool { return ligado("produtos") },
 			desligado: mudancas.ErrIntegracaoDesligada, naoEncontrado: mudancas.ErrVinculoInexistente}
+}
+
+// concluiSolicitacao e concluiProblema são os casos de uso que a mudança
+// chama na própria transação. Os módulos concretos os implementam.
+type concluiSolicitacao interface {
+	ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uuid.UUID, numero int64, titulo, texto string) (func(context.Context), error)
+}
+
+type concluiProblema interface {
+	ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uuid.UUID, texto string) error
+}
+
+type efeitosCascata struct {
+	atend  concluiSolicitacao
+	prob   concluiProblema
+	ligado func(string) bool
+}
+
+func (e efeitosCascata) Resolver(ctx context.Context, db database.DBTX, tipo string, alvo uuid.UUID, r mudancas.Resolucao) (mudancas.Entrega, error) {
+	tx, ok := db.(pgx.Tx)
+	if !ok {
+		return nil, mudancas.ErrCascataIndisponivel
+	}
+	switch tipo {
+	case mudancas.VinculoIncidente:
+		if e.ligado == nil || !e.ligado("atendimento") {
+			return nil, mudancas.ErrCascataIndisponivel
+		}
+		entrega, err := e.atend.ConcluirPorMudanca(ctx, tx, alvo, r.Autor, r.Numero, r.Titulo, r.Texto)
+		if err != nil {
+			return nil, recusaSolicitacao(err)
+		}
+		return entrega, nil
+	case mudancas.VinculoProblema:
+		if e.ligado == nil || !e.ligado("problemas") {
+			return nil, mudancas.ErrCascataIndisponivel
+		}
+		if err := e.prob.ConcluirPorMudanca(ctx, tx, alvo, r.Autor, r.Texto); err != nil {
+			return nil, recusaProblema(err)
+		}
+		return nil, nil
+	default:
+		return nil, mudancas.ErrVinculoInvalido
+	}
+}
+
+func recusaSolicitacao(err error) error {
+	var n *atendimento.NaoConcluivel
+	if !errors.As(err, &n) {
+		return err
+	}
+	if errors.Is(n.Causa, atendimento.ErrSemResponsavel) {
+		return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("a solicitação #%d precisa de um responsável antes de ser concluída pela mudança", n.Numero)}
+	}
+	if errors.Is(n.Causa, atendimento.ErrSolicitacaoFinalizada) {
+		return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("a solicitação #%d está cancelada e não é concluída pela mudança", n.Numero)}
+	}
+	return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("a solicitação #%d está %s; só se conclui a partir do atendimento", n.Numero, rotuloEstado(n.Estado, rotuloSolicitacao))}
+}
+
+func recusaProblema(err error) error {
+	var n *problemas.NaoConcluivel
+	if !errors.As(err, &n) {
+		return err
+	}
+	if errors.Is(n.Causa, problemas.ErrSemCausaRaiz) {
+		return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("o problema #%d precisa da causa raiz antes de ser resolvido pela mudança", n.Numero)}
+	}
+	return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("o problema #%d está %s e não passa direto para resolvido", n.Numero, rotuloEstado(n.Estado, rotuloProblema))}
+}
+
+func rotuloEstado(estado string, tabela map[string]string) string {
+	if rotulo, ok := tabela[estado]; ok {
+		return rotulo
+	}
+	return estado
+}
+
+var rotuloSolicitacao = map[string]string{
+	"aberto": "aberta", "em_atendimento": "em atendimento",
+	"aguardando_servidor": "aguardando o servidor", "aguardando_terceiro": "aguardando terceiro",
+	"cancelado": "cancelada",
+}
+
+var rotuloProblema = map[string]string{
+	"registrado": "registrado", "em_analise": "em análise", "erro_conhecido": "como erro conhecido",
 }

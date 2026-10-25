@@ -318,3 +318,25 @@ func TestClassificarSolicitacao(t *testing.T) {
 		t.Fatal("comparação de ponteiros")
 	}
 }
+
+func TestAntecedenciaDeDuasHoras(t *testing.T) {
+	agora := time.Date(2026, 10, 23, 15, 0, 0, 0, time.UTC)
+	vence := agora.Add(90 * time.Minute)
+	longo := Relogio{MetaMin: 480, Estado: RelogioCorrendo, VenceEm: &vence}
+	if !longo.DentroDaAntecedencia(agora, AntecedenciaAlerta) {
+		t.Fatal("meta de 8 h com 90 min restantes avisa")
+	}
+	curto := Relogio{MetaMin: 90, Estado: RelogioCorrendo, VenceEm: &vence}
+	if curto.DentroDaAntecedencia(agora, AntecedenciaAlerta) {
+		t.Fatal("prazo que já nasce dentro da janela não avisa na abertura")
+	}
+	vencido := Relogio{MetaMin: 480, Estado: RelogioCorrendo}
+	if vencido.DentroDaAntecedencia(agora, AntecedenciaAlerta) {
+		t.Fatal("sem previsão não avisa")
+	}
+	parado := longo
+	parado.Estado = RelogioParado
+	if parado.DentroDaAntecedencia(agora, AntecedenciaAlerta) {
+		t.Fatal("relógio parado não avisa")
+	}
+}

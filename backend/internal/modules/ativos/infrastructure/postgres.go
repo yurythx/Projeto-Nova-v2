@@ -3,6 +3,7 @@ package infrastructure
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -22,12 +23,28 @@ func NewRepository() *Repository { return &Repository{} }
 
 var _ domain.Repository = (*Repository)(nil)
 
-const cols = `id, nome, tipo, estado, identificador, descricao, produto_id, unidade_id, created_at, updated_at`
+const cols = `id, nome, tipo, estado, identificador, descricao, produto_id, unidade_id, origem, inventario, created_at, updated_at`
 
 func scan(row interface{ Scan(...any) error }) (domain.Ativo, error) {
 	var a domain.Ativo
-	err := row.Scan(&a.ID, &a.Nome, &a.Tipo, &a.Estado, &a.Identificador, &a.Descricao, &a.ProdutoID, &a.UnidadeID, &a.CreatedAt, &a.UpdatedAt)
-	return a, err
+	var raw []byte
+	err := row.Scan(&a.ID, &a.Nome, &a.Tipo, &a.Estado, &a.Identificador, &a.Descricao, &a.ProdutoID, &a.UnidadeID, &a.Origem, &raw, &a.CreatedAt, &a.UpdatedAt)
+	if err != nil {
+		return domain.Ativo{}, err
+	}
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &a.Inventario); err != nil {
+			return domain.Ativo{}, fmt.Errorf("ativos: inventário ilegível: %w", err)
+		}
+	}
+	return a, nil
+}
+
+func inventarioJSON(inv *domain.Inventario) ([]byte, error) {
+	if inv == nil {
+		return nil, nil
+	}
+	return json.Marshal(inv)
 }
 
 func mapDB(err error) error {
@@ -90,9 +107,16 @@ func (r *Repository) Get(ctx context.Context, db database.DBTX, id uuid.UUID) (d
 
 // Insert grava o ativo.
 func (r *Repository) Insert(ctx context.Context, db database.DBTX, a domain.Ativo) (domain.Ativo, error) {
+	if a.Origem == "" {
+		a.Origem = domain.OrigemManual
+	}
+	inv, err := inventarioJSON(a.Inventario)
+	if err != nil {
+		return domain.Ativo{}, err
+	}
 	out, err := scan(db.QueryRow(ctx, `INSERT INTO ativos (`+cols+`)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING `+cols,
-		a.ID, a.Nome, a.Tipo, a.Estado, a.Identificador, a.Descricao, a.ProdutoID, a.UnidadeID, a.CreatedAt, a.UpdatedAt))
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING `+cols,
+		a.ID, a.Nome, a.Tipo, a.Estado, a.Identificador, a.Descricao, a.ProdutoID, a.UnidadeID, a.Origem, inv, a.CreatedAt, a.UpdatedAt))
 	if err != nil {
 		return domain.Ativo{}, mapDB(err)
 	}
@@ -101,12 +125,24 @@ func (r *Repository) Insert(ctx context.Context, db database.DBTX, a domain.Ativ
 
 // Update grava a edição.
 func (r *Repository) Update(ctx context.Context, db database.DBTX, a domain.Ativo) (domain.Ativo, error) {
+	inv, err := inventarioJSON(a.Inventario)
+	if err != nil {
+		return domain.Ativo{}, err
+	}
 	out, err := scan(db.QueryRow(ctx, `UPDATE ativos
-		SET nome = $2, tipo = $3, estado = $4, identificador = $5, descricao = $6, produto_id = $7, unidade_id = $8
+		SET nome = $2, tipo = $3, estado = $4, identificador = $5, descricao = $6, produto_id = $7, unidade_id = $8, inventario = $9
 		WHERE id = $1 RETURNING `+cols,
-		a.ID, a.Nome, a.Tipo, a.Estado, a.Identificador, a.Descricao, a.ProdutoID, a.UnidadeID))
+		a.ID, a.Nome, a.Tipo, a.Estado, a.Identificador, a.Descricao, a.ProdutoID, a.UnidadeID, inv))
 	if err != nil {
 		return domain.Ativo{}, mapDB(err)
 	}
 	return out, nil
+}
+
+func (r *Repository) PorIdentificador(ctx context.Context, db database.DBTX, identificador string) (domain.Ativo, error) {
+	a, err := scan(db.QueryRow(ctx, `SELECT `+cols+` FROM ativos WHERE identificador = $1`, identificador))
+	if err != nil {
+		return domain.Ativo{}, mapDB(err)
+	}
+	return a, nil
 }

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-import { Kanban } from "@/components/atendimento/Kanban";
+import { FAIXAS_FILA, Kanban, faixaDaFila } from "@/components/atendimento/Kanban";
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
+import { BarraFaixa, pontoFaixa, useAparencia, useFaixasRecolhidas } from "@/components/plataforma/Faixas";
 import { useRealtimeState, useTopics } from "@/components/realtime/RealtimeProvider";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -13,7 +14,7 @@ import { Pagination } from "@/components/plataforma/Pagination";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
 import {
@@ -50,13 +51,16 @@ export default function AtendimentoFilaPage() {
  * mais antigas para as mais novas, em lista ou em quadro. As duas vistas
  * leem a mesma consulta e mudam o estado pela mesma API. Quem está com a
  * fila aberta vê as mudanças dos colegas sem recarregar. A vista fica na
- * URL (?vista=quadro): sobrevive ao recarregar e pode ser compartilhada. */
+ * URL (?vista=lista ou ?vista=quadro). Sem parâmetro, abre o quadro. */
 function FilaDaEquipe() {
   const { can, me } = usePlataforma();
   const atende = can("atendimento:atender");
+  const abre = can("atendimento:abrir");
+  const { recolhidas, alternar } = useFaixasRecolhidas("nova-faixas:fila-lista");
+  const look = useAparencia("nova-faixas:fila");
   const params = useSearchParams();
   const router = useRouter();
-  const vista: Vista = params.get("vista") === "quadro" ? "kanban" : "lista";
+  const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
   const [responsavel, setResponsavel] = useState("");
   const [tipo, setTipo] = useState("");
   const [estado, setEstado] = useState("");
@@ -101,7 +105,9 @@ function FilaDaEquipe() {
   }
 
   function trocarVista(v: Vista) {
-    router.replace(v === "kanban" ? "/atendimento/fila?vista=quadro" : "/atendimento/fila");
+    router.replace(
+      v === "lista" ? "/atendimento/fila?vista=lista" : "/atendimento/fila?vista=quadro",
+    );
   }
 
   async function mover(s: Solicitacao, para: Estado) {
@@ -125,6 +131,15 @@ function FilaDaEquipe() {
 
   const itens = fila.data?.items ?? [];
 
+  function criarNaColuna(colunaId: string) {
+    if (colunaId !== "aberto" || !abre) return null;
+    return (
+      <Link href="/atendimento" className={buttonClass("secondary", "sm")}>
+        Nova solicitação
+      </Link>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -145,8 +160,8 @@ function FilaDaEquipe() {
         value={vista}
         onChange={trocarVista}
         tabs={[
-          { value: "lista", label: "Lista" },
           { value: "kanban", label: "Quadro" },
+          { value: "lista", label: "Lista" },
         ]}
       />
 
@@ -203,13 +218,16 @@ function FilaDaEquipe() {
         loading={fila.isLoading}
         error={fila.error}
         onRetry={() => void fila.mutate()}
-        empty={itens.length === 0}
-        emptyTitle="Fila vazia"
-        emptyDescription="Nenhuma solicitação neste recorte."
+        empty={false}
       >
         {kanban ? (
           <>
-            <Kanban itens={itens} onMover={(s, para) => void mover(s, para)} pending={pending} />
+            <Kanban
+              itens={itens}
+              onMover={(s, para) => void mover(s, para)}
+              pending={pending}
+              extra={criarNaColuna}
+            />
             {(fila.data?.meta?.total_items ?? 0) > itens.length && (
               <p className="text-sm text-muted">
                 O quadro mostra as {itens.length} mais antigas de {fila.data?.meta?.total_items}.
@@ -219,6 +237,26 @@ function FilaDaEquipe() {
           </>
         ) : (
           <>
+            <div className="flex flex-col gap-2">
+              {FAIXAS_FILA.map((coluna) => (
+                <BarraFaixa
+                  key={coluna.id}
+                  titulo={look.gravado.colunas[coluna.id]?.titulo || coluna.titulo}
+                  tituloId={`faixa-fila-${coluna.id}`}
+                  total={itens.filter((s) => faixaDaFila(s.estado) === coluna.id).length}
+                  tom={coluna.tom}
+                  cor={look.gravado.colunas[coluna.id]?.cor}
+                  recolhida={recolhidas.includes(coluna.id)}
+                  onAlternar={() => alternar(coluna.id)}
+                  onRenomear={(nome) => look.salvarColuna(coluna.id, { titulo: nome })}
+                  onCor={(cor) => look.salvarColuna(coluna.id, { cor })}
+                  extra={criarNaColuna(coluna.id)}
+                />
+              ))}
+            </div>
+            {itens.length === 0 ? (
+              <p className="text-sm text-muted">Fila vazia</p>
+            ) : (
             <Table caption="Solicitações da fila" className="min-w-[980px]">
               <TableHead>
                 <TableRow>
@@ -236,15 +274,28 @@ function FilaDaEquipe() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {itens.map((s) => (
+                {itens
+                  .filter((s) => !recolhidas.includes(faixaDaFila(s.estado)))
+                  .map((s) => {
+                    const faixa = faixaDaFila(s.estado);
+                    const cor =
+                      look.gravado.cartoes[s.id]?.cor || look.gravado.colunas[faixa]?.cor;
+                    return (
                   <TableRow key={s.id}>
-                    <TableCell className="tabular-nums text-muted">#{s.numero}</TableCell>
+                    <TableCell className="tabular-nums text-muted">
+                      <span
+                        className={`mr-2 inline-block size-2.5 rounded-full align-middle ${cor ? "" : pontoFaixa(tomEstado(s.estado))}`}
+                        style={cor ? { backgroundColor: cor } : undefined}
+                        aria-hidden
+                      />
+                      #{s.numero}
+                    </TableCell>
                     <TableCell>
                       <Link
                         href={`/atendimento/solicitacoes/${s.id}`}
                         className="font-medium text-primary hover:underline"
                       >
-                        {s.titulo}
+                        {look.gravado.cartoes[s.id]?.titulo || s.titulo}
                       </Link>
                       <p className="text-xs text-muted">{s.oferta_nome}</p>
                     </TableCell>
@@ -261,25 +312,35 @@ function FilaDaEquipe() {
                       <PrazoBadge prazo={s.prazo} />
                     </TableCell>
                     <TableCell>
-                      {!s.responsavel_id &&
-                        s.estado !== "encerrado" &&
-                        s.estado !== "cancelado" && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            disabled={pending}
-                            onClick={() => void assumir(s)}
-                            aria-label={`Assumir a solicitação #${s.numero}`}
-                          >
-                            Assumir
-                          </Button>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/atendimento/solicitacoes/${s.id}`}
+                          className="text-sm font-medium text-primary hover:underline"
+                        >
+                          Editar
+                        </Link>
+                        {!s.responsavel_id &&
+                          s.estado !== "encerrado" &&
+                          s.estado !== "cancelado" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              disabled={pending}
+                              onClick={() => void assumir(s)}
+                              aria-label={`Assumir a solicitação #${s.numero}`}
+                            >
+                              Assumir
+                            </Button>
+                          )}
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                    );
+                  })}
               </TableBody>
             </Table>
+            )}
             <Pagination meta={fila.data?.meta} onPage={setPagina} />
           </>
         )}

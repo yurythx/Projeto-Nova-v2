@@ -9,7 +9,7 @@ import { RISCO, type Risco } from "@/lib/servicos/servicos";
 
 interface MatrizRiscoCalculadoraProps {
   riscoAtual: Risco;
-  onAplicarRisco: (novoRisco: Risco, resumoCalculo: string) => void;
+  onAplicarRisco: (novoRisco: Risco, resumoCalculo: string, score: number) => void;
 }
 
 export function MatrizRiscoCalculadora({
@@ -50,7 +50,7 @@ export function MatrizRiscoCalculadora({
     const rotuloRollback = ["", "Imediato (< 15 min)", "Moderado (15-60 min)", "Complexo (> 1h)"][rollback];
 
     const resumo = `[Cálculo de Risco CAB: Score ${score}/15 - ${RISCO[riscoCalculado].label}]\n• Impacto: ${rotuloImpacto}\n• Complexidade: ${rotuloComplexidade}\n• Reversão: ${rotuloRollback}`;
-    onAplicarRisco(riscoCalculado, resumo);
+    onAplicarRisco(riscoCalculado, resumo, score);
     setAberto(false);
   }
 

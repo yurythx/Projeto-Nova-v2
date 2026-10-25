@@ -353,7 +353,7 @@ func TestAtendimentoPrazos(t *testing.T) {
 			}
 		}
 	}
-	if !slices.Equal(nomes, []string{"worker:alertas-de-prazo", "worker:retencao-da-localizacao"}) {
+	if !slices.Equal(nomes, []string{"worker:alertas-de-prazo", "worker:retencao-da-localizacao", "worker:serie-de-indicadores"}) {
 		t.Fatalf("workers do atendimento: %v", nomes)
 	}
 }

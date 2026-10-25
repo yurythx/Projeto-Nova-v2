@@ -58,13 +58,20 @@ const (
 	PermAtendimentoAtender Permission = "atendimento:atender"
 	// Ativos, problemas e mudanças (fases 6 e 7 da gestão de serviços).
 	PermAtivosManage    Permission = "ativos:manage"
+	PermAtivosReportar  Permission = "ativos:reportar"
 	PermProblemasRead   Permission = "problemas:read"
 	PermProblemasManage Permission = "problemas:manage"
 	PermMudancasManage  Permission = "mudancas:manage"
 	PermMudancasAprovar Permission = "mudancas:aprovar"
 	PermProjetosRead    Permission = "projetos:read"
 	PermProjetosManage  Permission = "projetos:manage"
-	PermExampleManage   Permission = "example:manage"
+	PermContratosManage Permission = "contratos:manage"
+	// Cofre de senhas. A lista não devolve o segredo; revelar é outra ação.
+	PermCofreRead     Permission = "cofre:read"
+	PermCofreReveal   Permission = "cofre:reveal"
+	PermCofreManage   Permission = "cofre:manage"
+	PermCofreGrant    Permission = "cofre:grant"
+	PermExampleManage Permission = "example:manage"
 	// PermIAManage: conexões de inteligência artificial (Configurações).
 	PermIAManage Permission = "ia:manage"
 )

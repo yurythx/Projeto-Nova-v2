@@ -18,13 +18,19 @@ const Key = "mudancas"
 
 // Module é o plugin.
 type Module struct {
+	svc      *application.Service
 	handlers *transport.Handlers
 }
 
 // New constrói o módulo.
 func New(deps modkit.Deps, portas domain.Portas, produtos domain.Produtos) *Module {
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, portas, produtos)
-	return &Module{handlers: transport.NewHandlers(svc, deps.Logger)}
+	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
+}
+
+// ComEfeitos liga a conclusão dos incidentes e problemas na mesma transação.
+func (m *Module) ComEfeitos(e domain.Efeitos) {
+	m.svc.ComEfeitos(e)
 }
 
 // Manifest implementa kernel.Plugin.

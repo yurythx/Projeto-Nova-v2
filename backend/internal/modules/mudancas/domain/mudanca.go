@@ -55,6 +55,8 @@ var (
 	ErrNaoEncontrado       = errors.New("mudancas: mudança não encontrada")
 	ErrEntradaInvalida     = errors.New("mudancas: dados inválidos")
 	ErrTipoInvalido        = errors.New("mudancas: tipo ou risco desconhecido")
+	ErrRiscoDivergente     = errors.New("mudancas: a nota não corresponde ao risco informado")
+	ErrCongelada           = errors.New("mudancas: a janela cai num período de congelamento")
 	ErrForaDoEscopo        = errors.New("mudancas: fora do seu escopo")
 	ErrUnidadeInexistente  = errors.New("mudancas: unidade inexistente")
 	ErrTransicaoInvalida   = errors.New("mudancas: passagem de estado inválida")
@@ -69,6 +71,7 @@ var (
 	ErrDeOutraUnidade      = errors.New("mudancas: o vínculo precisa ser da mesma unidade da mudança")
 	ErrIntegracaoDesligada = errors.New("mudancas: o módulo deste vínculo está desligado")
 	ErrMudancaEncerrada    = errors.New("mudancas: mudança encerrada")
+	ErrCascataIndisponivel = errors.New("mudancas: a conclusão dos vínculos está indisponível")
 )
 
 // Alvo é o que a mudança precisa saber de um item de outro plug-in.
@@ -84,6 +87,35 @@ type Alvo struct {
 type Portas interface {
 	Consultar(ctx context.Context, db database.DBTX, tipo string, id uuid.UUID) (Alvo, error)
 	Disponivel(tipo string) bool
+}
+
+// Resolucao é o que a conclusão da mudança leva aos vínculos.
+type Resolucao struct {
+	Autor  uuid.UUID
+	Texto  string
+	Numero int64
+	Titulo string
+}
+
+// Entrega publica o que foi gravado na transação, depois do commit.
+type Entrega func(ctx context.Context)
+
+// Efeitos conclui incidentes e problemas na mesma transação da mudança.
+type Efeitos interface {
+	Resolver(ctx context.Context, db database.DBTX, tipo string, alvo uuid.UUID, r Resolucao) (Entrega, error)
+}
+
+// VinculoRecusado é a recusa de concluir um vínculo, com texto seguro
+// para quem está na tela.
+type VinculoRecusado struct {
+	Mensagem string
+}
+
+func (e *VinculoRecusado) Error() string {
+	if e == nil {
+		return "mudancas: vínculo não concluído"
+	}
+	return e.Mensagem
 }
 
 // Produtos é a porta do plug-in de produtos.
@@ -118,6 +150,7 @@ type Mudanca struct {
 	Justificativa   string     `json:"justificativa"`
 	Tipo            string     `json:"tipo"`
 	Risco           string     `json:"risco"`
+	RiscoScore      *int       `json:"risco_score,omitempty"`
 	Estado          string     `json:"estado"`
 	PlanoReversao   string     `json:"plano_reversao"`
 	InicioPlanejado *time.Time `json:"inicio_planejado,omitempty"`
@@ -140,8 +173,20 @@ type Mudanca struct {
 // Entrada são os campos editáveis.
 type Entrada struct {
 	Titulo, Descricao, Justificativa, Tipo, Risco, PlanoReversao string
+	RiscoScore                                                   *int
 	InicioPlanejado, FimPlanejado                                *time.Time
 	ProdutoID, UnidadeID                                         *uuid.UUID
+}
+
+// Congelamento é uma janela em que não se agenda mudança. Unidade nil
+// vale para toda a instituição.
+type Congelamento struct {
+	ID        uuid.UUID  `json:"id"`
+	UnidadeID *uuid.UUID `json:"unidade_id,omitempty"`
+	Inicio    time.Time  `json:"inicio"`
+	Fim       time.Time  `json:"fim"`
+	Motivo    string     `json:"motivo"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
 // Dona é a posição da mudança para as permissões com escopo.
@@ -174,6 +219,21 @@ func validar(in Entrada) (Entrada, error) {
 	if !slices.Contains(Tipos, in.Tipo) || !slices.Contains(Riscos, in.Risco) {
 		return Entrada{}, ErrTipoInvalido
 	}
+	if in.RiscoScore != nil {
+		nota := *in.RiscoScore
+		if nota < 5 || nota > 15 {
+			return Entrada{}, ErrEntradaInvalida
+		}
+		faixa := "alto"
+		if nota <= 7 {
+			faixa = "baixo"
+		} else if nota <= 11 {
+			faixa = "medio"
+		}
+		if faixa != in.Risco {
+			return Entrada{}, ErrRiscoDivergente
+		}
+	}
 	return in, nil
 }
 
@@ -194,7 +254,7 @@ func Nova(in Entrada, solicitante uuid.UUID) (Mudanca, error) {
 }
 
 func (m *Mudanca) aplicar(in Entrada) {
-	m.Titulo, m.Descricao, m.Justificativa, m.Tipo, m.Risco = in.Titulo, in.Descricao, in.Justificativa, in.Tipo, in.Risco
+	m.Titulo, m.Descricao, m.Justificativa, m.Tipo, m.Risco, m.RiscoScore = in.Titulo, in.Descricao, in.Justificativa, in.Tipo, in.Risco, in.RiscoScore
 	m.PlanoReversao, m.InicioPlanejado, m.FimPlanejado = in.PlanoReversao, in.InicioPlanejado, in.FimPlanejado
 	m.ProdutoID, m.UnidadeID = in.ProdutoID, in.UnidadeID
 }
@@ -216,9 +276,16 @@ func (m Mudanca) Aplicar(in Entrada) (Mudanca, error) {
 // Igual ignora horários e listas: edição vazia não regrava.
 func (m Mudanca) Igual(o Mudanca) bool {
 	return m.Titulo == o.Titulo && m.Descricao == o.Descricao && m.Justificativa == o.Justificativa &&
-		m.Tipo == o.Tipo && m.Risco == o.Risco && m.PlanoReversao == o.PlanoReversao &&
+		m.Tipo == o.Tipo && m.Risco == o.Risco && mesmaNota(m.RiscoScore, o.RiscoScore) && m.PlanoReversao == o.PlanoReversao &&
 		iguais(m.InicioPlanejado, o.InicioPlanejado) && iguais(m.FimPlanejado, o.FimPlanejado) &&
 		MesmaUnidade(m.ProdutoID, o.ProdutoID) && MesmaUnidade(m.UnidadeID, o.UnidadeID)
+}
+
+func mesmaNota(a, b *int) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
 }
 
 func iguais(a, b *time.Time) bool {
@@ -353,4 +420,8 @@ type Repository interface {
 	Vinculos(ctx context.Context, db database.DBTX, mudanca uuid.UUID) ([]Vinculo, error)
 	Vincular(ctx context.Context, db database.DBTX, mudanca uuid.UUID, v Vinculo, autor uuid.UUID) (bool, error)
 	Desvincular(ctx context.Context, db database.DBTX, mudanca uuid.UUID, tipo string, alvo uuid.UUID) (bool, error)
+	JanelaOcupada(ctx context.Context, db database.DBTX, unidade *uuid.UUID, inicio, fim time.Time) (bool, error)
+	ListCongelamentos(ctx context.Context, db database.DBTX, f Filtro) ([]Congelamento, error)
+	InsertCongelamento(ctx context.Context, db database.DBTX, c Congelamento) (Congelamento, error)
+	DeleteCongelamento(ctx context.Context, db database.DBTX, id uuid.UUID) error
 }

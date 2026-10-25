@@ -2,6 +2,8 @@ package infrastructure
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,7 +19,7 @@ func nomeDe(alias string) string {
 
 var solicitacaoSelect = `SELECT s.id, s.numero, s.tipo, s.estado, s.titulo, s.descricao, s.oferta_id, s.produto_id,
 	s.unidade_id, s.solicitante_id, s.responsavel_id, s.resolvida_em, s.encerrada_em, s.created_at, s.updated_at,
-	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min,
+	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id,
 	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, '')
 	FROM atendimento_solicitacoes s
 	JOIN atendimento_ofertas o ON o.id = s.oferta_id
@@ -34,15 +36,41 @@ const solicitacaoWhere = `
 			WHEN $6 THEN true
 			ELSE s.estado NOT IN ('encerrado', 'cancelado') END)
 		AND ($7::uuid IS NULL OR s.responsavel_id = $7)
-		AND ($8 = false OR s.responsavel_id IS NULL)`
+		AND ($8 = false OR s.responsavel_id IS NULL)
+		AND ($9 = '' OR s.titulo ILIKE $9 ESCAPE E'\\'
+			OR s.descricao ILIKE $9 ESCAPE E'\\'
+			OR s.numero::text ILIKE $9 ESCAPE E'\\')`
+
+// padraoLike vazio não filtra. Com texto, casa o trecho e trata % e _ como
+// letra, não como curinga.
+func padraoLike(texto string) string {
+	texto = strings.TrimSpace(texto)
+	if texto == "" {
+		return ""
+	}
+	texto = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(texto)
+	return "%" + texto + "%"
+}
 
 func scanSolicitacao(row interface{ Scan(...any) error }) (domain.Solicitacao, error) {
 	var s domain.Solicitacao
+	var raw []byte
 	err := row.Scan(&s.ID, &s.Numero, &s.Tipo, &s.Estado, &s.Titulo, &s.Descricao, &s.OfertaID, &s.ProdutoID,
 		&s.UnidadeID, &s.SolicitanteID, &s.ResponsavelID, &s.ResolvidaEm, &s.EncerradaEm, &s.CreatedAt, &s.UpdatedAt,
-		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin,
+		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID,
 		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome)
-	return s, err
+	if err != nil {
+		return domain.Solicitacao{}, err
+	}
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &s.Respostas); err != nil {
+			return domain.Solicitacao{}, err
+		}
+	}
+	if s.Respostas == nil {
+		s.Respostas = map[string]string{}
+	}
+	return s, nil
 }
 
 func scanPassagem(row interface{ Scan(...any) error }) (domain.Passagem, error) {
@@ -90,14 +118,14 @@ func (r *Repository) ListOfertasAtivas(ctx context.Context, db database.DBTX) ([
 
 // ListSolicitacoes devolve a página do filtro e o total.
 func (r *Repository) ListSolicitacoes(ctx context.Context, db database.DBTX, f domain.FiltroSolicitacao) ([]domain.Solicitacao, int64, error) {
-	args := []any{f.Solicitante, f.Restrito, idsOrEmpty(f.Unidades), f.Tipo, f.Estado, f.Finalizadas, f.Responsavel, f.SemDono}
+	args := []any{f.Solicitante, f.Restrito, idsOrEmpty(f.Unidades), f.Tipo, f.Estado, f.Finalizadas, f.Responsavel, f.SemDono, padraoLike(f.Texto)}
 	var total int64
 	if err := db.QueryRow(ctx, `SELECT count(*) FROM atendimento_solicitacoes s`+solicitacaoWhere, args...).Scan(&total); err != nil {
 		return nil, 0, mapDB(err)
 	}
 	rows, err := db.Query(ctx, solicitacaoSelect+solicitacaoWhere+`
 		ORDER BY CASE WHEN $1::uuid IS NULL THEN s.created_at END ASC, s.created_at DESC, s.id
-		LIMIT $9 OFFSET $10`, append(args, f.Limit, f.Offset)...)
+		LIMIT $10 OFFSET $11`, append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, mapDB(err)
 	}
@@ -125,10 +153,10 @@ func (r *Repository) TravarSolicitacao(ctx context.Context, db database.DBTX, id
 func (r *Repository) InsertSolicitacao(ctx context.Context, db database.DBTX, s domain.Solicitacao) (domain.Solicitacao, error) {
 	_, err := db.Exec(ctx, `INSERT INTO atendimento_solicitacoes
 		(id, tipo, estado, titulo, descricao, oferta_id, produto_id, unidade_id, solicitante_id, responsavel_id,
-		 impacto, urgencia, prioridade, meta_resposta_min, meta_solucao_min, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+		 impacto, urgencia, prioridade, meta_resposta_min, meta_solucao_min, respostas, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
 		s.ID, s.Tipo, s.Estado, s.Titulo, s.Descricao, s.OfertaID, s.ProdutoID, s.UnidadeID, s.SolicitanteID,
-		s.ResponsavelID, s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin, s.CreatedAt, s.UpdatedAt)
+		s.ResponsavelID, s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin, respostasJSON(s.Respostas), s.CreatedAt, s.UpdatedAt)
 	if err != nil {
 		return domain.Solicitacao{}, mapDB(err)
 	}
@@ -143,6 +171,18 @@ func (r *Repository) UpdateSolicitacao(ctx context.Context, db database.DBTX, s 
 			impacto = $6, urgencia = $7, prioridade = $8, meta_resposta_min = $9, meta_solucao_min = $10
 		WHERE id = $1`, s.ID, s.Estado, s.ResponsavelID, s.ResolvidaEm, s.EncerradaEm,
 		s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin)
+	if err != nil {
+		return mapDB(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
+	}
+	return nil
+}
+
+// SetSegredo grava o id do cofre, ou limpa quando segredo é nulo.
+func (r *Repository) SetSegredo(ctx context.Context, db database.DBTX, id uuid.UUID, segredo *uuid.UUID, agora time.Time) error {
+	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes SET cofre_segredo_id = $2, updated_at = $3 WHERE id = $1`, id, segredo, agora)
 	if err != nil {
 		return mapDB(err)
 	}
@@ -241,4 +281,49 @@ func (r *Repository) IncidentesRecorrentes(ctx context.Context, db database.DBTX
 		err := row.Scan(&g.OfertaID, &g.OfertaNome, &g.UnidadeID, &g.Total, &g.UltimoEm, &g.Solicitacoes)
 		return g, err
 	})
+}
+
+func respostasJSON(m map[string]string) []byte {
+	if m == nil {
+		m = map[string]string{}
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return []byte("{}")
+	}
+	return b
+}
+
+// SolicitacaoPorNumero devolve a solicitação do número público.
+func (r *Repository) SolicitacaoPorNumero(ctx context.Context, db database.DBTX, numero int64) (domain.Solicitacao, error) {
+	s, err := scanSolicitacao(db.QueryRow(ctx, solicitacaoSelect+` WHERE s.numero = $1`, numero))
+	if err != nil {
+		return domain.Solicitacao{}, mapDB(err)
+	}
+	return s, nil
+}
+
+// EmailDe devolve o e-mail da conta, ou vazio se não houver.
+func (r *Repository) EmailDe(ctx context.Context, db database.DBTX, user uuid.UUID) (string, error) {
+	var email string
+	err := db.QueryRow(ctx, `SELECT email FROM users WHERE id = $1`, user).Scan(&email)
+	if database.IsNoRows(err) {
+		return "", nil
+	}
+	return email, mapDB(err)
+}
+
+// ReservarCorreio grava a marca da mensagem. false = ela já entrou.
+func (r *Repository) ReservarCorreio(ctx context.Context, db database.DBTX, messageID string, solicitacao uuid.UUID) (bool, error) {
+	tag, err := db.Exec(ctx, `INSERT INTO correio_recebidos (message_id, solicitacao_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, messageID, solicitacao)
+	if err != nil {
+		return false, mapDB(err)
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// LiberarCorreio desfaz a marca quando a gravação do comentário falha.
+func (r *Repository) LiberarCorreio(ctx context.Context, db database.DBTX, messageID string) error {
+	_, err := db.Exec(ctx, `DELETE FROM correio_recebidos WHERE message_id = $1`, messageID)
+	return mapDB(err)
 }

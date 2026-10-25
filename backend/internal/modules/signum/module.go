@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/yurythx/projeto-nova-v2/internal/modules/signum/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/signum/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/signum/infrastructure"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/signum/transport"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
@@ -20,16 +21,22 @@ const Key = "signum"
 type Module struct {
 	deps     modkit.Deps
 	svc      *application.Service
+	reauth   domain.Reauthenticator
 	handlers *transport.Handlers
 }
 
 // New constrói o módulo.
 func New(deps modkit.Deps, creds infrastructure.KeycloakCredentials, throttle application.Throttle) *Module {
+	reauth := infrastructure.NewReauthenticator(deps.Pool, creds)
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(),
-		infrastructure.NewReauthenticator(deps.Pool, creds), throttle, deps.Outbox,
+		reauth, throttle, deps.Outbox,
 		deps.Config.Security.ConfigEncryptionKey, deps.Config.Signum.ChallengeTTL, deps.Logger)
-	return &Module{deps: deps, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
+	return &Module{deps: deps, svc: svc, reauth: reauth, handlers: transport.NewHandlers(svc, deps.Logger)}
 }
+
+// Reautenticador confere a senha da pessoa. Outros plugins usam isto por uma
+// porta ligada em internal/app.
+func (m *Module) Reautenticador() domain.Reauthenticator { return m.reauth }
 
 // Service expõe o serviço para as portas de outros plugins (ligadas em
 // internal/app — nenhum plugin importa este pacote).

@@ -87,7 +87,7 @@ func NewRouter(d *Dependencies) chi.Router {
 
 		// ---------------- grupo AUTENTICADO ----------------
 		api.Group(func(authed chi.Router) {
-			authed.Use(auth.RequireAuthentication(d.Verifier, d.IAM.Enrich, d.Logger))
+			authed.Use(auth.RequireAuthentication(d.Verifier, d.IAM.Enrich, d.Logger, d.Credencial))
 			authed.Use(httpserver.RateLimit(d.Logger, d.RateLimiters.APIGlobal, identityRateLimitKey))
 			authed.Use(idempotency.Middleware(d.Idempotency, d.Logger))
 

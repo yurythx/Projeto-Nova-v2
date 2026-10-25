@@ -9,10 +9,10 @@ import (
 )
 
 type projetoResp struct {
-	ID        string `json:"id"`
-	Numero    int64  `json:"numero"`
-	Titulo    string `json:"titulo"`
-	Estado    string `json:"estado"`
+	ID     string `json:"id"`
+	Numero int64  `json:"numero"`
+	Titulo string `json:"titulo"`
+	Estado string `json:"estado"`
 }
 
 func TestProjetosRotas(t *testing.T) {

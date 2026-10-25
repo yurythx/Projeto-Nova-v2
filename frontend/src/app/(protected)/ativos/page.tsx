@@ -6,6 +6,7 @@ import { type FormEvent, Suspense, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
+import { ListaFaixas, NomeClicavel, type ColunaFaixa } from "@/components/plataforma/Faixas";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
@@ -21,7 +22,9 @@ import {
   ESTADO_ATIVO,
   TIPO_ATIVO,
   type Ativo,
+  type CredencialAgente,
   type EstadoAtivo,
+  type InventarioMaquina,
   type TipoAtivo,
 } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
@@ -29,6 +32,55 @@ import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 interface Produto {
   id: string;
   nome: string;
+}
+
+function textoBytes(n: number) {
+  const unidades = ["B", "KB", "MB", "GB", "TB"];
+  let valor = n;
+  let i = 0;
+  while (valor >= 1024 && i < unidades.length - 1) {
+    valor /= 1024;
+    i += 1;
+  }
+  const texto = valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return `${texto} ${unidades[i]}`;
+}
+
+function InventarioDaMaquina({ inventario }: { inventario: InventarioMaquina }) {
+  return (
+    <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+      <div>
+        <dt className="text-muted">Sistema</dt>
+        <dd>{inventario.sistema}</dd>
+      </div>
+      <div>
+        <dt className="text-muted">Processadores</dt>
+        <dd>{inventario.processadores}</dd>
+      </div>
+      {inventario.memoria_bytes ? (
+        <div>
+          <dt className="text-muted">Memória</dt>
+          <dd>{textoBytes(inventario.memoria_bytes)}</dd>
+        </div>
+      ) : null}
+      {(inventario.discos ?? []).length > 0 ? (
+        <div>
+          <dt className="text-muted">Discos locais</dt>
+          <dd>
+            {inventario.discos!.map((d) => `${d.nome} ${textoBytes(d.bytes)}`).join(" · ")}
+          </dd>
+        </div>
+      ) : null}
+      {(inventario.programas ?? []).length > 0 ? (
+        <div className="sm:col-span-2">
+          <dt className="text-muted">
+            Programas{inventario.programas_truncado ? " (lista parcial)" : ""}
+          </dt>
+          <dd>{inventario.programas!.map((p) => (p.versao ? `${p.nome} ${p.versao}` : p.nome)).join(" · ")}</dd>
+        </div>
+      ) : null}
+    </dl>
+  );
 }
 
 export default function AtivosPage() {
@@ -92,7 +144,44 @@ function Ativos() {
     }
   }
 
+  async function criarCard(colunaId: string, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.post("v1/ativos", {
+          nome: nome.slice(0, 160),
+          tipo: "outro",
+          estado: colunaId,
+          identificador: "",
+          descricao: "",
+        }),
+      "Ativo cadastrado",
+    );
+    if (ok) void ativos.mutate();
+  }
+
+  async function renomearAtivo(a: Ativo, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.put(`v1/ativos/${a.id}`, {
+          nome: nome.slice(0, 160),
+          tipo: a.tipo,
+          estado: a.estado,
+          identificador: a.identificador,
+          descricao: a.descricao,
+          produto_id: a.produto_id ?? null,
+          unidade_id: a.unidade_id ?? null,
+        }),
+      "Nome atualizado",
+    );
+    if (ok) void ativos.mutate();
+  }
+
   const lista = ativos.data ?? [];
+  const colunasAtivo: ColunaFaixa[] = (Object.keys(ESTADO_ATIVO) as EstadoAtivo[]).map((id) => ({
+    id,
+    titulo: ESTADO_ATIVO[id].label,
+    tom: ESTADO_ATIVO[id].tone,
+  }));
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -200,24 +289,50 @@ function Ativos() {
         loading={ativos.isLoading}
         error={ativos.error}
         onRetry={() => void ativos.mutate()}
-        empty={lista.length === 0}
-        emptyTitle="Nenhum ativo cadastrado"
+        empty={false}
       >
-        <ul className="flex flex-col divide-y divide-surface-border rounded-xl border border-surface-border bg-surface">
-          {lista.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
+        {lista.length === 0 && <p className="text-sm text-muted">Nenhum ativo cadastrado</p>}
+        <ListaFaixas
+          rotulo="Ativos cadastrados"
+          memoria="nova-faixas:ativos"
+          colunas={colunasAtivo}
+          itens={lista}
+          colunaDe={(a) => a.estado}
+          idDe={(a) => a.id}
+          nomeDe={(a) => a.nome}
+          extra={(colunaId) =>
+            colunaId === "em_uso" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => document.getElementById("ativo-nome")?.focus()}
+              >
+                Novo ativo
+              </Button>
+            ) : null
+          }
+          aoCriar={(coluna, nome) => void criarCard(coluna, nome)}
+          aoRenomear={(a, nome) => void renomearAtivo(a, nome)}
+          aoAbrir={(a) => {
+            setEditando(a);
+            document.getElementById("ativo-nome")?.focus();
+          }}
+          render={(a, vista) => (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium">{a.nome}</p>
+                <NomeClicavel
+                  nome={vista.titulo || a.nome}
+                  onSalvar={vista.salvarNome}
+                  className="text-left font-medium text-foreground hover:underline"
+                />
                 <p className="text-sm text-muted">
                   {TIPO_ATIVO[a.tipo]}
                   {a.identificador ? ` · ${a.identificador}` : ""}
-                  {a.produto_id
-                    ? ` · ${nomeDoProduto.get(a.produto_id) ?? "produto vinculado"}`
-                    : ""}
+                  {a.produto_id ? ` · ${nomeDoProduto.get(a.produto_id) ?? "produto vinculado"}` : ""}
+                  {a.origem === "agente" ? " · informado pela máquina" : ""}
                 </p>
+                {a.inventario ? <InventarioDaMaquina inventario={a.inventario} /> : null}
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone={ESTADO_ATIVO[a.estado].tone}>{ESTADO_ATIVO[a.estado].label}</Badge>
@@ -225,10 +340,160 @@ function Ativos() {
                   Editar {a.nome}
                 </Button>
               </div>
+            </div>
+          )}
+        />
+      </DataState>
+
+      <CredenciaisDaMaquina />
+
+      {lista.length >= 2 ? <Relacoes origemOpcoes={lista} onMudou={() => void ativos.mutate()} /> : null}
+    </div>
+  );
+}
+
+function CredenciaisDaMaquina() {
+  const lista = useApiQuery<CredencialAgente[]>("v1/ativos/credenciais");
+  const [segredo, setSegredo] = useState("");
+  const [erro, setErro] = useState("");
+
+  async function gerar(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setErro("");
+    try {
+      const res = await apiClient.post<CredencialAgente>("v1/ativos/credenciais", {
+        nome: String(fd.get("nome")).trim(),
+        unidade_id: String(fd.get("unidade_id")),
+      });
+      setSegredo(res.data.token ?? "");
+      e.currentTarget.reset();
+      await lista.mutate();
+    } catch {
+      setErro("Não foi possível gerar a credencial.");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle as="h2">Credencial da máquina</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pb-5">
+        <p className="text-sm text-muted">
+          O segredo aparece uma vez. A máquina usa esse token no lugar da senha de uma pessoa e só pode informar o próprio patrimônio.
+        </p>
+        {lista.error ? (
+          <p className="text-sm text-danger" role="alert">
+            Não foi possível carregar as credenciais.
+          </p>
+        ) : null}
+        <ul className="text-sm">
+          {(lista.data ?? []).map((c) => (
+            <li key={c.id}>{c.nome}</li>
+          ))}
+        </ul>
+        <form className="flex flex-col gap-3" onSubmit={(e) => void gerar(e)}>
+          <Input id="credencial-nome" name="nome" label="Nome da máquina" required maxLength={160} />
+          <UnidadeDonaSelect id="credencial-unidade" permission="ativos:manage" label="Unidade" />
+          {erro ? (
+            <p className="text-sm text-danger" role="alert">
+              {erro}
+            </p>
+          ) : null}
+          {segredo ? (
+            <p className="text-sm">
+              Copie agora. Este segredo não aparece de novo: <code>{segredo}</code>
+            </p>
+          ) : null}
+          <Button type="submit">Gerar credencial</Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Relacoes({
+  origemOpcoes,
+  onMudou,
+}: {
+  origemOpcoes: Ativo[];
+  onMudou: () => void;
+}) {
+  const [origem, setOrigem] = useState(origemOpcoes[0]?.id ?? "");
+  const relacoes = useApiQuery<{ id: string; destino_nome: string; tipo: string }[]>(
+    origem ? `v1/ativos/${origem}/relacoes` : null,
+  );
+  const { run, pending } = useAction();
+
+  async function ligar(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const ok = await run(
+      () =>
+        apiClient.post(`v1/ativos/${origem}/relacoes`, {
+          destino_id: String(fd.get("destino_id")),
+          tipo: String(fd.get("tipo")),
+        }),
+      "Relação registrada",
+    );
+    if (ok) {
+      e.currentTarget.reset();
+      void relacoes.mutate();
+      onMudou();
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle as="h2">Relações</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pb-5">
+        <p className="text-sm text-muted">
+          O que depende do quê, o que compõe um item e o que está conectado. Dependência em ciclo não entra.
+        </p>
+        <Select
+          id="relacao-origem"
+          label="A partir de"
+          value={origem}
+          onChange={(e) => setOrigem(e.target.value)}
+          options={origemOpcoes.map((a) => ({ value: a.id, label: a.nome }))}
+        />
+        <form onSubmit={ligar} className="grid gap-3 sm:grid-cols-2">
+          <Select
+            id="relacao-destino"
+            name="destino_id"
+            label="Aponta para *"
+            required
+            placeholder="Escolha o ativo"
+            options={origemOpcoes.filter((a) => a.id !== origem).map((a) => ({ value: a.id, label: a.nome }))}
+          />
+          <Select
+            id="relacao-tipo"
+            name="tipo"
+            label="Tipo da relação"
+            defaultValue="depende"
+            options={[
+              { value: "depende", label: "Depende" },
+              { value: "composto", label: "Compõe" },
+              { value: "conectado", label: "Conectado" },
+            ]}
+          />
+          <div>
+            <Button type="submit" loading={pending}>
+              Registrar relação
+            </Button>
+          </div>
+        </form>
+        <ul aria-label="Relações do ativo" className="text-sm">
+          {(relacoes.data ?? []).map((r) => (
+            <li key={r.id}>
+              {r.tipo} · {r.destino_nome}
             </li>
           ))}
         </ul>
-      </DataState>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

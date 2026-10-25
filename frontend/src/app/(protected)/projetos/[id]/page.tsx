@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
+import { NomeClicavel, Quadro, type ColunaFaixa } from "@/components/plataforma/Faixas";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
@@ -163,6 +164,36 @@ function ProjetoDetalheConteudo() {
           ordem: t.ordem,
         }),
       `Tarefa ${t.titulo}: ${ESTADO_TAREFA[novoEstado].label.toLowerCase()}`,
+    );
+    if (ok) void tarefas.mutate();
+  }
+
+  async function criarCardTarefa(colunaId: string, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.post(`v1/projetos/${id}/tarefas`, {
+          titulo: nome.slice(0, 200),
+          descricao: "",
+          responsavel_nome: "",
+          estado: colunaId,
+          ordem: listaTarefas.length + 1,
+        }),
+      "Tarefa adicionada",
+    );
+    if (ok) void tarefas.mutate();
+  }
+
+  async function renomearTarefa(t: Tarefa, nome: string) {
+    const ok = await run(
+      () =>
+        apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
+          titulo: nome.slice(0, 200),
+          descricao: t.descricao,
+          responsavel_nome: t.responsavel_nome,
+          estado: t.estado,
+          ordem: t.ordem,
+        }),
+      "Nome atualizado",
     );
     if (ok) void tarefas.mutate();
   }
@@ -400,57 +431,82 @@ function ProjetoDetalheConteudo() {
                   loading={tarefas.isLoading}
                   error={tarefas.error}
                   onRetry={() => void tarefas.mutate()}
-                  empty={listaTarefas.length === 0}
-                  emptyTitle="Nenhuma tarefa criada"
-                  emptyDescription="Adicione a primeira tarefa para estruturar as entregas deste projeto."
+                  empty={false}
                 >
-                  <div className="divide-y divide-surface-border">
-                    {listaTarefas.map((t) => {
+                  {listaTarefas.length === 0 && (
+                    <p className="mb-3 text-sm text-muted">
+                      Nenhuma tarefa criada. Adicione a primeira tarefa para estruturar as entregas deste projeto.
+                    </p>
+                  )}
+                  <Quadro
+                    rotulo="Quadro de tarefas"
+                    memoria={`nova-faixas:tarefas:${p.id}`}
+                    aparencia={`nova-faixas:tarefas:${p.id}`}
+                    colunas={(Object.keys(ESTADO_TAREFA) as EstadoTarefa[]).map(
+                      (estado): ColunaFaixa => ({
+                        id: estado,
+                        titulo: ESTADO_TAREFA[estado].label,
+                        tom: ESTADO_TAREFA[estado].tone,
+                      }),
+                    )}
+                    itens={listaTarefas}
+                    colunaDe={(t) => t.estado}
+                    idDe={(t) => t.id}
+                    nomeDe={(t) => t.titulo}
+                    pending={pending}
+                    arrastavel={() => gere && p.estado !== "cancelado"}
+                    podeSoltar={(t, coluna) => t.estado !== coluna}
+                    aoSoltar={(t, coluna) => void atualizarTarefaEstado(t, coluna as EstadoTarefa)}
+                    aoCriar={
+                      gere && p.estado !== "cancelado"
+                        ? (coluna, nome) => void criarCardTarefa(coluna, nome)
+                        : undefined
+                    }
+                    aoRenomear={
+                      gere && p.estado !== "cancelado"
+                        ? (t, nome) => void renomearTarefa(t, nome)
+                        : undefined
+                    }
+                    extra={(colunaId) =>
+                      colunaId === "a_fazer" && gere && p.estado !== "cancelado" ? (
+                        <Button
+                          size="sm"
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setModalTarefa(true)}
+                        >
+                          Criar tarefa
+                        </Button>
+                      ) : null
+                    }
+                    render={(t, vista) => {
                       const meta = ESTADO_TAREFA[t.estado];
                       return (
-                        <div
-                          key={t.id}
-                          className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                          data-testid={`tarefa-${t.id}`}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm text-foreground">
-                                {t.titulo}
-                              </span>
-                              <Badge tone={meta?.tone ?? "neutral"}>
-                                {meta?.label ?? t.estado}
-                              </Badge>
-                            </div>
-                            {t.descricao && (
-                              <p className="text-xs text-muted">
-                                {t.descricao}
-                              </p>
-                            )}
-                            {t.responsavel_nome && (
-                              <span className="text-[11px] text-muted">
-                                Atribuído a: {t.responsavel_nome}
-                              </span>
-                            )}
+                        <div className="flex flex-col gap-2" data-testid={`tarefa-${t.id}`}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <NomeClicavel
+                              nome={vista.titulo || t.titulo}
+                              onSalvar={vista.salvarNome}
+                              className="text-left text-sm font-medium text-foreground hover:underline"
+                            />
+                            <Badge tone={meta?.tone ?? "neutral"}>{meta?.label ?? t.estado}</Badge>
                           </div>
-
+                          {t.descricao && <p className="text-xs text-muted">{t.descricao}</p>}
+                          {t.responsavel_nome && (
+                            <span className="text-[11px] text-muted">Atribuído a: {t.responsavel_nome}</span>
+                          )}
                           {gere && p.estado !== "cancelado" && (
                             <div className="flex items-center gap-2">
                               <Select
                                 value={t.estado}
                                 onChange={(e) =>
-                                  void atualizarTarefaEstado(
-                                    t,
-                                    e.target.value as EstadoTarefa,
-                                  )
+                                  void atualizarTarefaEstado(t, e.target.value as EstadoTarefa)
                                 }
                                 aria-label={`Estado da tarefa ${t.titulo}`}
-                                options={Object.entries(ESTADO_TAREFA).map(
-                                  ([chave, info]) => ({
-                                    value: chave,
-                                    label: info.label,
-                                  }),
-                                )}
+                                options={Object.entries(ESTADO_TAREFA).map(([chave, info]) => ({
+                                  value: chave,
+                                  label: info.label,
+                                }))}
                               />
                               <Button
                                 size="sm"
@@ -464,8 +520,8 @@ function ProjetoDetalheConteudo() {
                           )}
                         </div>
                       );
-                    })}
-                  </div>
+                    }}
+                  />
                 </DataState>
               </CardContent>
             </Card>
@@ -830,7 +886,7 @@ function ProjetoDetalheConteudo() {
                   ]}
                 />
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Input
                     id="apontamento-data"
                     label="Data *"

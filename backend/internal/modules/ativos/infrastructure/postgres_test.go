@@ -31,10 +31,23 @@ func TestRepositorioPropagaFalhas(t *testing.T) {
 	ctx := context.Background()
 	a := domain.Ativo{ID: uuid.New()}
 	calls := map[string]func(database.DBTX) error{
-		"List":   func(db database.DBTX) error { _, err := r.List(ctx, db, domain.Filtro{}); return err },
-		"Get":    func(db database.DBTX) error { _, err := r.Get(ctx, db, a.ID); return err },
-		"Insert": func(db database.DBTX) error { _, err := r.Insert(ctx, db, a); return err },
-		"Update": func(db database.DBTX) error { _, err := r.Update(ctx, db, a); return err },
+		"List":         func(db database.DBTX) error { _, err := r.List(ctx, db, domain.Filtro{}); return err },
+		"Get":          func(db database.DBTX) error { _, err := r.Get(ctx, db, a.ID); return err },
+		"Insert":       func(db database.DBTX) error { _, err := r.Insert(ctx, db, a); return err },
+		"Update":       func(db database.DBTX) error { _, err := r.Update(ctx, db, a); return err },
+		"ListRelacoes": func(db database.DBTX) error { _, err := r.ListRelacoes(ctx, db, a.ID); return err },
+		"InsertRelacao": func(db database.DBTX) error {
+			return r.InsertRelacao(ctx, db, domain.Relacao{ID: a.ID, OrigemID: a.ID, DestinoID: uuid.New(), Tipo: "conectado"})
+		},
+		"DeleteRelacao":    func(db database.DBTX) error { return r.DeleteRelacao(ctx, db, a.ID, a.ID) },
+		"FechaCiclo":       func(db database.DBTX) error { _, err := r.FechaCiclo(ctx, db, a.ID, uuid.New()); return err },
+		"PorIdentificador": func(db database.DBTX) error { _, err := r.PorIdentificador(ctx, db, a.Identificador); return err },
+		"InsertCredencial": func(db database.DBTX) error {
+			return r.InsertCredencial(ctx, db, domain.Credencial{ID: a.ID, UnidadeID: a.ID, TokenHash: []byte("x")})
+		},
+		"ListCredenciais":   func(db database.DBTX) error { _, err := r.ListCredenciais(ctx, db, domain.Filtro{}); return err },
+		"RevogarCredencial": func(db database.DBTX) error { return r.RevogarCredencial(ctx, db, a.ID, domain.Filtro{}) },
+		"PorHash":           func(db database.DBTX) error { _, err := r.PorHash(ctx, db, []byte("x")); return err },
 	}
 	for nome, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {
@@ -84,8 +97,18 @@ func TestPersistenciaReal(t *testing.T) {
 		t.Fatalf("por produto: %v %v", lista, err)
 	}
 	salvo.Estado = "desativado"
-	if got, err := r.Update(ctx, pool, salvo); err != nil || got.Estado != "desativado" {
+	if got, err := r.Update(ctx, pool, salvo); err != nil || got.Estado != "desativado" || got.Origem != domain.OrigemManual {
 		t.Fatalf("update: %+v %v", got, err)
+	}
+	salvo.Inventario = &domain.Inventario{Sistema: "linux amd64", Processadores: 2, Discos: []domain.Disco{{Nome: "sda", Bytes: 10}}}
+	if got, err := r.Update(ctx, pool, salvo); err != nil || got.Inventario == nil || got.Inventario.Processadores != 2 || len(got.Inventario.Discos) != 1 {
+		t.Fatalf("inventário: %+v %v", got.Inventario, err)
+	}
+	if achado, err := r.PorIdentificador(ctx, pool, a.Identificador); err != nil || achado.ID != salvo.ID || achado.Inventario == nil {
+		t.Fatalf("por identificador: %+v %v", achado, err)
+	}
+	if _, err := r.PorIdentificador(ctx, pool, "nao-existe"); !errors.Is(err, domain.ErrNaoEncontrado) {
+		t.Fatal(err)
 	}
 	if _, err := r.Get(ctx, pool, uuid.New()); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Fatal(err)

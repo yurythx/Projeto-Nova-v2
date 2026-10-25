@@ -7,6 +7,8 @@ describe("rotas protegidas", () => {
     expect(PROTECTED_PREFIXES).toContain("/notificacoes");
     expect(PROTECTED_PREFIXES).toContain("/produtos");
     expect(PROTECTED_PREFIXES).toContain("/atendimento");
+    expect(PROTECTED_PREFIXES).toContain("/contratos");
+    expect(PROTECTED_PREFIXES).toContain("/cofre");
     expect(isProtectedPath("/produtos")).toBe(true);
     expect(isProtectedPath("/atendimento/ofertas")).toBe(true);
     expect(isProtectedPath("/notificacoes")).toBe(true);

@@ -15,6 +15,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/infrastructure"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 )
 
@@ -328,4 +329,86 @@ func (e enlatado) FeriadosVigentes(context.Context, database.DBTX, *uuid.UUID, s
 }
 func (e enlatado) Responsaveis(context.Context, database.DBTX, *uuid.UUID) ([]domain.Candidato, error) {
 	return []domain.Candidato{{ID: uuid.New()}}, nil
+}
+
+// prazoLongo mede uma solução de 4 h, para o aviso de 2 h sair antes dos 75%.
+type prazoLongo struct{ enlatado }
+
+func (p prazoLongo) PassagensDe(context.Context, database.DBTX, []uuid.UUID) (map[uuid.UUID][]domain.Passagem, error) {
+	return map[uuid.UUID][]domain.Passagem{p.sol.ID: {
+		{Para: domain.EstadoAberto, Em: p.sol.CreatedAt},
+		{Para: domain.EstadoEmAtendimento, Em: p.sol.CreatedAt},
+	}}, nil
+}
+
+func (p prazoLongo) ResolverPolitica(context.Context, database.DBTX, *uuid.UUID) (domain.Politica, error) {
+	in := politica24h(nil)
+	in.Metas = []domain.Meta{
+		{Prioridade: domain.PrioridadeCritica, RespostaMin: 10, SolucaoMin: 30},
+		{Prioridade: domain.PrioridadeMedia, RespostaMin: 30, SolucaoMin: 240},
+	}
+	return domain.NovaPolitica(nil, in.Fuso, in.Turnos, in.Matriz, in.Metas)
+}
+
+func TestAvisoDeDuasHoras(t *testing.T) {
+	ctx := context.Background()
+	c := novoCenario(t)
+	pol := politica24h(&c.unidade)
+	pol.Metas = []domain.Meta{
+		{Prioridade: domain.PrioridadeCritica, RespostaMin: 10, SolucaoMin: 30},
+		{Prioridade: domain.PrioridadeMedia, RespostaMin: 30, SolucaoMin: 240},
+	}
+	if _, err := c.base.SalvarPolitica(ctx, admin(), pol); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = c.pool.Exec(context.Background(), `DELETE FROM atendimento_politicas WHERE unidade_id = $1`, c.unidade)
+	})
+	inicio := time.Now()
+	agora := inicio
+	svc := c.com(infrastructure.NewRepository(), eventosFalham{}).
+		WithNotificacoes(notificacoes.NewService(c.pool, nil, silencio)).
+		WithRelogio(func() time.Time { return agora })
+	sol, err := svc.Abrir(ctx, c.servidor, application.AberturaEntrada{OfertaID: c.oferta.ID, Titulo: "Link lento"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Atribuir(ctx, c.tecnico, sol.ID, c.tecnico.UserID); err != nil {
+		t.Fatal(err)
+	}
+	colega := dbtest.User(t, c.pool)
+	if _, err := c.pool.Exec(ctx, `INSERT INTO atendimento_equipe_membros (equipe_id, user_id)
+		SELECT e.id, $2 FROM atendimento_equipes e WHERE e.unidade_id = $1 LIMIT 1`, c.unidade, colega); err != nil {
+		t.Fatal(err)
+	}
+	agora = inicio.Add(130 * time.Minute)
+	if err := svc.VerificarPrazos(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if c.avisos(t, sol.ID, c.tecnico.UserID, "solucao:2h") != 1 || c.avisos(t, sol.ID, c.tecnico.UserID, "solucao:75") != 0 {
+		t.Fatal("o aviso de 2 h sai antes dos 75% e uma vez só")
+	}
+	if c.avisos(t, sol.ID, colega, "solucao:2h") != 1 || c.avisos(t, sol.ID, colega, "solucao:75") != 0 {
+		t.Fatal("nas 2 h a equipe também é avisada; aos 75% não")
+	}
+	if err := svc.VerificarPrazos(ctx); err != nil || c.avisos(t, sol.ID, c.tecnico.UserID, "solucao:2h") != 1 {
+		t.Fatal(err)
+	}
+
+	media := domain.PrioridadeMedia
+	resp, solucao := 30, 240
+	quem := c.tecnico.UserID
+	longa := domain.Solicitacao{
+		ID: uuid.New(), Numero: 8, Estado: domain.EstadoEmAtendimento, CreatedAt: inicio,
+		Prioridade: &media, MetaRespostaMin: &resp, MetaSolucaoMin: &solucao,
+		UnidadeID: &c.unidade, ResponsavelID: &quem, OfertaNome: "E-mail", Titulo: "Lento",
+	}
+	cancelado, cancel := context.WithCancel(ctx)
+	cancel()
+	if err := c.com(prazoLongo{enlatado{sol: longa}}, eventosFalham{}).
+		WithNotificacoes(notificacoes.NewService(c.pool, nil, silencio)).
+		WithRelogio(func() time.Time { return inicio.Add(130 * time.Minute) }).
+		VerificarPrazos(cancelado); err == nil {
+		t.Fatal("aviso de 2 h que não grava")
+	}
 }

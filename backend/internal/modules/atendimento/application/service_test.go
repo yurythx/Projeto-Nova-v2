@@ -141,7 +141,9 @@ func TestMapError(t *testing.T) {
 		domain.ErrOfertaInexistente, domain.ErrOfertaInativa, domain.ErrSolicitacaoInvalida,
 		domain.ErrSolicitanteInvalido, domain.ErrTransicaoInvalida, domain.ErrSemResponsavel,
 		domain.ErrResponsavelInvalido, domain.ErrSolicitacaoFinalizada, domain.ErrComentarioInvalido,
-		domain.ErrNotaInternaNegada, domain.ErrPoliticaInvalida, domain.ErrFeriadoInvalido, domain.ErrFeriadoRepetido,
+		domain.ErrNotaInternaNegada, domain.ErrAvaliacaoInvalida, domain.ErrAvaliacaoForaDeHora,
+		domain.ErrAvaliacaoAlheia, domain.ErrAvaliacaoExistente,
+		domain.ErrPoliticaInvalida, domain.ErrFeriadoInvalido, domain.ErrFeriadoRepetido,
 		domain.ErrNivelInvalido, domain.ErrVisitaInvalida, domain.ErrLocalizacao, domain.ErrCapturaForaPrazo,
 		domain.ErrVisitaAberta, domain.ErrVisitaEncerrada, domain.ErrVisitaDeOutro, domain.ErrEvidenciaInvalida,
 	}

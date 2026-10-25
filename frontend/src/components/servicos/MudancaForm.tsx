@@ -24,6 +24,7 @@ export interface MudancaCorpo {
   justificativa: string;
   tipo: string;
   risco: string;
+  risco_score: number | null;
   plano_reversao: string;
   inicio_planejado: string | null;
   fim_planejado: string | null;
@@ -45,6 +46,7 @@ export function MudancaForm({
   onSalvar: (corpo: MudancaCorpo) => void;
 }) {
   const [risco, setRisco] = useState<Risco>(inicial?.risco ?? "medio");
+  const [nota, setNota] = useState<number | null>(inicial?.risco_score ?? null);
   const [justificativaCalculo, setJustificativaCalculo] = useState<string>("");
 
   function enviar(e: FormEvent<HTMLFormElement>) {
@@ -64,6 +66,7 @@ export function MudancaForm({
       justificativa: justFinal,
       tipo: texto("tipo"),
       risco: risco,
+      risco_score: nota,
       plano_reversao: texto("plano_reversao"),
       inicio_planejado: deCampoData(texto("inicio_planejado")),
       fim_planejado: deCampoData(texto("fim_planejado")),
@@ -100,14 +103,18 @@ export function MudancaForm({
         name="risco"
         label="Risco"
         value={risco}
-        onChange={(e) => setRisco(e.target.value as Risco)}
+        onChange={(e) => {
+          setRisco(e.target.value as Risco);
+          setNota(null);
+        }}
         options={(Object.keys(RISCO) as Risco[]).map((r) => ({ value: r, label: RISCO[r].label }))}
       />
       <div className="sm:col-span-2">
         <MatrizRiscoCalculadora
           riscoAtual={risco}
-          onAplicarRisco={(novoRisco, resumo) => {
+          onAplicarRisco={(novoRisco, resumo, score) => {
             setRisco(novoRisco);
+            setNota(score);
             setJustificativaCalculo(resumo);
           }}
         />

@@ -262,6 +262,7 @@ Há dois jeitos de alguém receber um perfil. Os dois resultam na mesma coisa:
 | `produtos:manage` | unidade provedora do produto digital |
 | `atendimento:manage`, `atendimento:atender` | unidade da oferta, da equipe e da solicitação |
 | `atendimento:abrir` | vale em qualquer concessão: abre pelo catálogo inteiro |
+| `cofre:read`, `cofre:reveal`, `cofre:manage`, `cofre:grant` | unidade dona do segredo |
 
 **Permissões de plataforma** (`modules:manage`, `keycloak:manage`, `ia:manage`,
 `branding:manage`, `monitoring:*`, `egress:manage`, `audit:verify`,
@@ -539,9 +540,38 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   solução; a conclusão a para, e a reabertura volta a contar.
 - **Semáforo:** no prazo, atenção (75%), crítico (90%), vencido (100%);
   com o relógio parado, cumprido ou descumprido. Só a equipe vê o prazo.
-- **Alertas** aos 75%, 90% e no vencimento, no sino do responsável ou,
-  sem ele, da equipe da unidade. Cada limiar avisa uma vez por
-  solicitação e relógio, mesmo com várias réplicas do worker.
+- **Alertas** aos 75%, 90% e no vencimento. Aos 75%, o sino é do
+  responsável ou, sem ele, da equipe da unidade. Aos 90%, nas duas horas
+  finais e no vencimento, a equipe da unidade recebe o mesmo aviso junto
+  com o responsável. O responsável não é trocado. Cada limiar avisa uma
+  vez por pessoa, solicitação e relógio, mesmo com várias réplicas do
+  worker.
+- **Busca:** número, título e descrição entram na Busca Global para quem
+  abriu a solicitação e para quem atende a unidade. O resultado mostra
+  número, título, oferta e estado. A descrição não aparece no trecho, e
+  a solicitação não vai para o índice público.
+- **Aviso de 2 horas:** com o relógio correndo, o vencimento marcado e a
+  meta maior que 2 horas, o sino avisa de novo o responsável e a equipe
+  da unidade quando falta no máximo 2 horas. A chave é outra (`…:2h`),
+  então o aviso de percentual continua valendo. Relógio parado, já
+  vencido ou com meta de até 2 horas não dispara esse aviso. O chamado
+  que nasce dentro da janela não alerta na abertura.
+- **Avaliação (CSAT):** só quem abriu, e só com a solicitação
+  `resolvido`, `atendido` ou `encerrado`. Uma nota de 1 a 5, comentário
+  opcional de até 4.000 caracteres, uma vez: a nota não se altera. A
+  avaliação não vira comentário. O responsável recebe o aviso. Entra no
+  "meus dados"; na eliminação fica como registro do serviço, ligada à
+  conta anonimizada, no mesmo critério dos comentários.
+- **Indicadores da central** (`GET /api/v1/atendimento/governanca`,
+  `atendimento:atender`, no escopo de quem atende): MTTR é a média do
+  tempo útil do relógio de solução dos incidentes concluídos com o
+  relógio parado; MTBF é o intervalo médio entre as aberturas de
+  incidentes não cancelados (precisa de pelo menos dois); SLA é a
+  parcela cumprida entre as soluções concluídas com prazo; FCR conta a
+  concluída que nunca esperou e entrou em atendimento no máximo uma vez.
+  Sem amostra o número vem nulo. A amostra para em 5.000 e a resposta
+  marca o truncamento. A média de satisfação usa todas as notas do
+  escopo e devolve as cinco mais recentes.
 - **Visita (atendimento externo):** quem atende a unidade registra a
   **chegada** (check-in) a partir da solicitação; junta **fotos** e a
   **assinatura** de quem recebeu; registra a **saída** (check-out) com o
@@ -572,6 +602,31 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   guardadas). A eliminação apaga as coordenadas das visitas da pessoa;
   solicitações, comentários e visitas ficam como registro da prestação do
   serviço, ligados à conta anonimizada.
+- **Perguntas da oferta:** até 20, cada uma com rótulo e tipo texto, número
+  ou lista. A lista exige opções. A chave sai do rótulo quando fica em
+  branco. A resposta entra na abertura e não muda depois. Chave
+  desconhecida, obrigatório vazio, número com letra ou opção fora da
+  lista recusam a abertura.
+- **Acompanhamento de quem pediu:** a lista diz o próximo passo em
+  português comum. A equipe está cuidando, pediu uma resposta, cabe
+  avaliar, o pedido encerrou ou foi cancelado. Não há outra tela para
+  a mesma pessoa.
+- **Série diária:** de hora em hora o worker grava o retrato do dia
+  civil de cada unidade que já teve chamado e uma linha de todo o
+  escopo. O dia segue o fuso da política da unidade; sem política, vale
+  Brasília. Quem cobre várias unidades lê a janela no fuso
+  institucional. O dia corrente é atualizado. Os dias anteriores ficam,
+  inclusive os que já foram gravados em UTC.
+  `atendimento:atender` lê até 366 dias. Sem amostra, o indicador fica
+  vazio. Quem cobre mais de uma unidade não recebe um intervalo entre
+  falhas misturado.
+- **Correio:** o aviso do atendimento (passagem e pedido de avaliação)
+  sai por e-mail depois do sino, se o SMTP estiver configurado. Falha
+  de envio não desfaz a solicitação. Os outros módulos continuam só no
+  sino. A resposta recebida vira comentário quando o assunto traz o
+  número do chamado e o remetente é o e-mail de quem abriu ou de quem
+  atende. A mesma mensagem não entra duas vezes. Remetente estranho,
+  chamado encerrado ou número ausente não geram comentário.
 
 ### Ativos
 - `ativos:manage` cadastra os itens da unidade que cobre: equipamento,
@@ -585,6 +640,21 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   produto seja da mesma unidade (produto institucional, só com ativo
   institucional). A tela de produtos leva
   aos ativos de cada produto.
+- **Relações:** um ativo aponta para outro como dependência, composição
+  ou conexão. Os dois precisam estar no escopo de quem cadastra. A
+  dependência não pode fechar ciclo. Não há varredura de rede.
+- **Agente:** `ativos:reportar` deixa a própria máquina informar
+  identificador, nome, sistema, processadores, memória, discos locais e
+  até 100 programas (nome e versão, sem caminho). Acima disso a lista é
+  parcial. A unidade é a do escopo quando há uma só; com várias, o
+  relato traz a unidade. Patrimônio cadastrado à mão não muda, e a
+  edição manual não apaga a medida já gravada. Desativado e em
+  manutenção conservam o estado. O mesmo relato não gera nova
+  auditoria. O programa não lista a rede nem compartilhamento.
+- **Credencial da máquina:** quem gerencia ativos emite um segredo para
+  a unidade. Ele aparece uma vez. O bearer `nova_agt_` só tem
+  `ativos:reportar` nessa unidade e não é uma conta de pessoa. Revogar
+  invalida o segredo e conserva o registro.
 
 ### Problemas e erros conhecidos
 - **Problema** é a causa por trás de um ou mais incidentes. `problemas:read`
@@ -629,6 +699,51 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   mudança (institucional com institucional). O rótulo é guardado no momento da ligação. Mudança
   cancelada não aceita nem desfaz vínculos; a concluída e a que falhou
   aceitam (para ligar a mudança ao problema que ela resolveu).
+- **Concluir vínculos junto** (`resolver_vinculos` na passagem para
+  `concluida`): na mesma transação, cada incidente vinculado vai para a
+  conclusão do tipo dele e cada problema vinculado vai para `resolvido`,
+  se a máquina de estados já permitir. Vínculo já concluído é ignorado.
+  Ativo não é resolvido. Se algum vínculo não puder ser concluído
+  (sem responsável, cancelado, fora do estado, problema sem causa raiz,
+  ou o módulo desligado), a mudança inteira permanece como estava. Os
+  avisos do sino saem só depois do commit. A folha da RFC imprime o que
+  está gravado (risco, justificativa, plano de reversão, decisões e
+  vínculos); o navegador gera o PDF.
+- **Nota de risco:** opcional, de 5 a 15. Até 7 é baixo, até 11 é médio,
+  acima é alto. Nota fora da faixa do risco escolhido é recusada. A
+  folha da RFC mostra a nota quando ela está gravada.
+- **Congelamento:** um período, da unidade ou de toda a instituição, em
+  que mudança nova não é criada com janela sobreposta nem enviada para
+  avaliação. A mudança já agendada não é cancelada.
+
+### Contratos e licenças
+- `contratos:manage` cadastra fornecedor, contrato e licença no escopo
+  da unidade. A licença guarda nome, fornecedor, quantidade de assentos
+  e vencimento. A chave secreta não é gravada.
+- O sino avisa uma vez em cada marco: 30 dias, 7 dias, no dia e depois
+  do vencimento. O aviso vai para quem administra ou tem
+  `contratos:manage` no alcance da unidade.
+
+### Cofre de senhas
+- O Keycloak autentica a pessoa. O grupo do AD vira um perfil com escopo,
+  como nas outras concessões. A senha do cofre não fica em atributo do
+  Keycloak nem numa role por segredo.
+- `cofre:read` vê nome e usuário. `cofre:reveal` revela a senha.
+  `cofre:manage` guarda, troca e exclui. `cofre:grant` move o segredo
+  para outra unidade que também alcança. Quem administra revela, e essa
+  revelação também fica na auditoria.
+- A lista e a busca não devolvem a senha nem o texto cifrado. Revelar é
+  um POST. A auditoria grava quem revelou, o segredo e a unidade — nunca
+  o valor.
+- Cada segredo tem a própria chave, embrulhada por `COFRE_MASTER_KEY`.
+  Essa chave não é a `CONFIG_ENCRYPTION_KEY`. O texto cifrado está
+  amarrado ao segredo, à versão e à unidade.
+- Revelar pede de novo a senha de acesso de quem está logado. Senha
+  errada conta no bloqueio do login. A auditoria não grava esse valor
+  nem a senha do cofre. Credencial de máquina não revela.
+- O chamado pode guardar o id do segredo. A senha não é copiada. Quem
+  abriu o pedido não vê o id. O cofre desligado e a solicitação
+  encerrada recusam o vínculo.
 
 ### Projetos
 - **Finalidade:** Gestão e acompanhamento de iniciativas, planos de ação, cronogramas e entregas estratégicas ou operacionais.
@@ -644,7 +759,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 
 ### Seção Assistência (Central de Serviços estilo ITIL/GLPI)
 - **Agrupamento unificado:** no menu lateral, a seção **Assistência** consolida:
-  - **Dashboard:** métricas operacionais consolidadas de Atendimento, Problemas, Mudanças e Projetos.
+  - **Dashboard:** fila, problemas, mudanças e projetos do escopo, mais a satisfação e os indicadores de `GET /api/v1/atendimento/governanca`. Sem amostra, o relatório escreve "sem amostra" — não preenche MTTR, MTBF, SLA nem FCR com constante. O sucesso das mudanças é concluídas sobre concluídas e falhas da lista carregada.
   - **Calendário Operacional:** visão cronológica integrada de janelas planejadas de mudanças (CAB), marcos de projetos e vencimentos de SLA de chamados em grade mensal e lista de prazos.
   - **Detecção de Sobreposições e Conflitos:** alerta proativo visual quando janelas de Mudanças de risco médio ou alto coincidem com outros eventos ou marcos na mesma data, prevenindo colisões operacionais em infraestrutura.
   - **Atendimento:** filas, chamados e quadro kanban de solicitações e incidentes.

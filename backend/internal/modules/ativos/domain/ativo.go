@@ -39,6 +39,12 @@ var (
 	ErrProdutoInexistente    = errors.New("ativos: produto não encontrado")
 	ErrProdutoIndisponivel   = errors.New("ativos: cadastro de produtos desligado")
 	ErrProdutoDeOutraUnidade = errors.New("ativos: o produto precisa ser da mesma unidade do ativo")
+	ErrCadastroManual        = errors.New("ativos: patrimônio cadastrado à mão")
+)
+
+const (
+	OrigemManual = "manual"
+	OrigemAgente = "agente"
 )
 
 // Produtos é a porta do plugin de produtos, ligada em internal/app.
@@ -48,16 +54,18 @@ type Produtos interface {
 
 // Ativo é um item de configuração posicionado numa unidade.
 type Ativo struct {
-	ID            uuid.UUID  `json:"id"`
-	Nome          string     `json:"nome"`
-	Tipo          string     `json:"tipo"`
-	Estado        string     `json:"estado"`
-	Identificador string     `json:"identificador"`
-	Descricao     string     `json:"descricao"`
-	ProdutoID     *uuid.UUID `json:"produto_id,omitempty"`
-	UnidadeID     *uuid.UUID `json:"unidade_id,omitempty"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID            uuid.UUID   `json:"id"`
+	Nome          string      `json:"nome"`
+	Tipo          string      `json:"tipo"`
+	Estado        string      `json:"estado"`
+	Identificador string      `json:"identificador"`
+	Descricao     string      `json:"descricao"`
+	ProdutoID     *uuid.UUID  `json:"produto_id,omitempty"`
+	UnidadeID     *uuid.UUID  `json:"unidade_id,omitempty"`
+	Origem        string      `json:"origem"`
+	Inventario    *Inventario `json:"inventario,omitempty"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
 }
 
 // Entrada são os campos de um ativo.
@@ -106,7 +114,7 @@ func Novo(in Entrada) (Ativo, error) {
 	now := time.Now().UTC()
 	return Ativo{
 		ID: uuid.New(), Nome: in.Nome, Tipo: in.Tipo, Estado: in.Estado, Identificador: in.Identificador,
-		Descricao: in.Descricao, ProdutoID: in.ProdutoID, UnidadeID: in.UnidadeID, CreatedAt: now, UpdatedAt: now,
+		Descricao: in.Descricao, ProdutoID: in.ProdutoID, UnidadeID: in.UnidadeID, Origem: OrigemManual, CreatedAt: now, UpdatedAt: now,
 	}, nil
 }
 
@@ -126,7 +134,8 @@ func (a Ativo) Aplicar(in Entrada) (Ativo, error) {
 func (a Ativo) Igual(o Ativo) bool {
 	return a.ID == o.ID && a.Nome == o.Nome && a.Tipo == o.Tipo && a.Estado == o.Estado &&
 		a.Identificador == o.Identificador && a.Descricao == o.Descricao &&
-		MesmaUnidade(a.ProdutoID, o.ProdutoID) && MesmaUnidade(a.UnidadeID, o.UnidadeID)
+		MesmaUnidade(a.ProdutoID, o.ProdutoID) && MesmaUnidade(a.UnidadeID, o.UnidadeID) &&
+		inventarioIgual(a.Inventario, o.Inventario)
 }
 
 // Filtro restringe a listagem ao escopo e, opcionalmente, a um produto.
@@ -142,4 +151,13 @@ type Repository interface {
 	Get(ctx context.Context, db database.DBTX, id uuid.UUID) (Ativo, error)
 	Insert(ctx context.Context, db database.DBTX, a Ativo) (Ativo, error)
 	Update(ctx context.Context, db database.DBTX, a Ativo) (Ativo, error)
+	PorIdentificador(ctx context.Context, db database.DBTX, identificador string) (Ativo, error)
+	InsertCredencial(ctx context.Context, db database.DBTX, c Credencial) error
+	ListCredenciais(ctx context.Context, db database.DBTX, f Filtro) ([]Credencial, error)
+	RevogarCredencial(ctx context.Context, db database.DBTX, id uuid.UUID, f Filtro) error
+	PorHash(ctx context.Context, db database.DBTX, hash []byte) (Credencial, error)
+	ListRelacoes(ctx context.Context, db database.DBTX, origem uuid.UUID) ([]Relacao, error)
+	InsertRelacao(ctx context.Context, db database.DBTX, r Relacao) error
+	DeleteRelacao(ctx context.Context, db database.DBTX, id, origem uuid.UUID) error
+	FechaCiclo(ctx context.Context, db database.DBTX, origem, destino uuid.UUID) (bool, error)
 }

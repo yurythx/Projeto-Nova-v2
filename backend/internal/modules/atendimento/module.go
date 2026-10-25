@@ -6,17 +6,22 @@ package atendimento
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/infrastructure"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/mail"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/messaging"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/search"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/ws"
 )
 
@@ -40,6 +45,7 @@ type Module struct {
 	repo     domain.Repository
 	svc      *application.Service
 	handlers *transport.Handlers
+	correio  bool
 }
 
 // New constrói o módulo. produtos confere a oferta que aponta para um
@@ -57,12 +63,28 @@ func New(deps modkit.Deps, produtos domain.Produtos) *Module {
 	if deps.Hub != nil {
 		svc.WithTempoReal(deps.Hub)
 	}
-	return &Module{repo: repo, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
+	correio := false
+	if deps.Config != nil && deps.Config.Mail.IMAPHost != "" {
+		correio = true
+		svc.WithCaixa(mail.IMAP{
+			Host: deps.Config.Mail.IMAPHost, Porta: deps.Config.Mail.IMAPPort,
+			Usuario: deps.Config.Mail.IMAPUser, Senha: deps.Config.Mail.IMAPPassword,
+		})
+	}
+	return &Module{repo: repo, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger), correio: correio}
 }
 
 // Repositorio é a porta usada por problemas e mudanças para conferir o
 // incidente sem importar este módulo.
 func (m *Module) Repositorio() domain.Repository { return m.repo }
+
+// ComSegredo liga a porta do cofre. Sem ela, o chamado não recebe segredo.
+func (m *Module) ComSegredo(segredos application.Segredos) { m.svc.WithSegredo(segredos) }
+
+// ConcluirPorMudanca conclui o incidente na transação de quem chama.
+func (m *Module) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uuid.UUID, numero int64, titulo, texto string) (func(context.Context), error) {
+	return m.svc.ConcluirPorMudanca(ctx, tx, id, autor, numero, titulo, texto)
+}
 
 // Manifest implementa kernel.Plugin.
 func (m *Module) Manifest() kernel.Manifest {
@@ -86,6 +108,34 @@ func (m *Module) RegisterRoutes(r kernel.Routes) {
 	m.handlers.RegisterRoutes(r.Authed)
 }
 
+// SearchProviders implementa kernel.SearchProvider. Não é search.Indexer:
+// solicitação tem dono e escopo, e o índice público não guarda isso.
+func (m *Module) SearchProviders() []search.Provider { return []search.Provider{provider{m.svc}} }
+
+type provider struct{ svc *application.Service }
+
+func (provider) Module() string { return Key }
+
+func (p provider) Search(ctx context.Context, identity auth.Identity, q string, limit int) ([]search.Result, error) {
+	itens, err := p.svc.Search(ctx, identity, q, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]search.Result, 0, len(itens))
+	for _, sol := range itens {
+		atualizado := sol.UpdatedAt
+		out = append(out, search.Result{
+			Module: Key, Type: "solicitacao", ID: sol.ID.String(),
+			Title:     fmt.Sprintf("#%d — %s", sol.Numero, sol.Titulo),
+			Snippet:   sol.OfertaNome + " · " + sol.Estado,
+			URL:       "/atendimento/solicitacoes/" + sol.ID.String(),
+			Score:     0.5,
+			UpdatedAt: &atualizado,
+		})
+	}
+	return out, nil
+}
+
 // Consumers implementa kernel.ConsumerProvider.
 func (m *Module) Consumers() []kernel.Consumer {
 	return []kernel.Consumer{{Queue: QueueTempoReal, Handler: m.svc.HandleEvento}}
@@ -100,10 +150,15 @@ func (m *Module) WSInbound() ws.InboundHandler { return nil }
 // Workers implementa kernel.WorkerProvider: o alerta de prazo e a
 // retenção da localização das visitas.
 func (m *Module) Workers() []kernel.Worker {
-	return []kernel.Worker{
+	out := []kernel.Worker{
 		{Name: "alertas-de-prazo", Process: kernel.ProcessWorker, Run: m.svc.RunAlertas},
 		{Name: "retencao-da-localizacao", Process: kernel.ProcessWorker, Run: m.svc.RunRetencao},
+		{Name: "serie-de-indicadores", Process: kernel.ProcessWorker, Run: m.svc.RunSerie},
 	}
+	if m.correio {
+		out = append(out, kernel.Worker{Name: "correio-do-atendimento", Process: kernel.ProcessWorker, Run: m.svc.RunCorreio})
+	}
+	return out
 }
 
 // ExportPersonalData implementa lgpd.PersonalData.

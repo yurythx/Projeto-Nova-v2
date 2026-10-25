@@ -149,6 +149,7 @@ describe("Atendimento — portal do servidor", () => {
 
 describe("Atendimento — fila da equipe", () => {
   it("filtra e assume", async () => {
+    resetNavigation({ id: "s1" }, "/atendimento/fila", "vista=lista");
     const user = userEvent.setup();
     const api = mockBackend({
       ...identityRoutes(perms("atendimento:atender")),
@@ -187,6 +188,7 @@ describe("Atendimento — fila da equipe", () => {
   });
 
   it("fila vazia e perfil sem atendimento", async () => {
+    resetNavigation({ id: "s1" }, "/atendimento/fila", "vista=lista");
     mockBackend({
       ...identityRoutes(perms("atendimento:atender")),
       "GET v1/atendimento/fila": page([]),

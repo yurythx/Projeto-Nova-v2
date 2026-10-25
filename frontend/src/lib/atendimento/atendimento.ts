@@ -16,6 +16,14 @@ export type Estado =
 
 export type Papel = "tecnico" | "solicitante";
 
+export interface CampoOferta {
+  chave: string;
+  rotulo: string;
+  tipo: "texto" | "numero" | "lista";
+  obrigatorio: boolean;
+  opcoes?: string[];
+}
+
 export interface Oferta {
   id: string;
   nome: string;
@@ -24,6 +32,7 @@ export interface Oferta {
   produto_id?: string;
   unidade_id?: string;
   ativa: boolean;
+  campos?: CampoOferta[];
 }
 
 export interface Solicitacao {
@@ -51,6 +60,9 @@ export interface Solicitacao {
   prioridade?: Prioridade;
   meta_resposta_min?: number;
   meta_solucao_min?: number;
+  respostas?: Record<string, string>;
+  /** Id no cofre. A senha não viaja com o chamado. */
+  cofre_segredo_id?: string;
   /** Medido na leitura, só para a equipe. */
   prazo?: Prazo;
 }
@@ -128,6 +140,44 @@ export interface Comentario {
   created_at: string;
 }
 
+export interface Avaliacao {
+  id: string;
+  solicitacao_id: string;
+  autor_id: string;
+  autor_nome: string;
+  nota: number;
+  comentario: string;
+  created_at: string;
+  numero?: number;
+  titulo?: string;
+}
+
+export interface PontoIndicador {
+  dia: string;
+  mttr_horas: number | null;
+  mtbf_horas: number | null;
+  sla_percentual: number | null;
+  fcr_percentual: number | null;
+  csat_media: number | null;
+  truncado: boolean;
+}
+
+export interface Governanca {
+  csat?: { media: number; total: number; recentes: Avaliacao[] } | null;
+  mttr_horas: number | null;
+  mtbf_horas: number | null;
+  sla_percentual: number | null;
+  fcr_percentual: number | null;
+  amostra: {
+    incidentes: number;
+    incidentes_resolvidos: number;
+    com_prazo_concluido: number;
+    concluidas: number;
+    fcr: number;
+    truncado: boolean;
+  };
+}
+
 export interface Detalhe {
   solicitacao: Solicitacao;
   papeis: Papel[];
@@ -136,6 +186,7 @@ export interface Detalhe {
   comentarios: Comentario[];
   /** Sem coordenadas: a posição só aparece na supervisão. */
   visitas: Visita[];
+  avaliacao?: Avaliacao | null;
 }
 
 export interface Ponto {
@@ -233,6 +284,23 @@ export const ESTADO: Record<Estado, { label: string; tone: Tone }> = {
  * tela conhecê-lo aparece pelo nome técnico, sem quebrar a página. */
 export function rotuloEstado(estado: string): string {
   return ESTADO[estado as Estado]?.label ?? estado;
+}
+
+/** O que a pessoa que abriu o pedido precisa saber, sem o vocabulário da fila. */
+export function proximoPasso(estado: string): string {
+  switch (estado) {
+    case "aguardando_servidor":
+      return "A equipe pediu uma resposta sua";
+    case "resolvido":
+    case "atendido":
+      return "Avalie o atendimento";
+    case "encerrado":
+      return "Este pedido foi encerrado";
+    case "cancelado":
+      return "Este pedido foi cancelado";
+    default:
+      return "A equipe está cuidando deste pedido";
+  }
 }
 
 export function tomEstado(estado: string): Tone {

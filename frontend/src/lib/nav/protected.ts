@@ -23,6 +23,8 @@ export const PROTECTED_PREFIXES = [
   "/problemas",
   "/mudancas",
   "/projetos",
+  "/contratos",
+  "/cofre",
   "/assistencia",
   "/notificacoes",
 ] as const;

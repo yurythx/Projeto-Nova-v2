@@ -17,7 +17,7 @@ func (s *Service) ExportPersonalData(ctx context.Context, db database.DBTX, user
 	if err != nil {
 		return nil, err
 	}
-	if len(d.Solicitacoes) == 0 && len(d.Comentarios) == 0 && len(d.Visitas) == 0 {
+	if len(d.Solicitacoes) == 0 && len(d.Comentarios) == 0 && len(d.Visitas) == 0 && len(d.Avaliacoes) == 0 {
 		return nil, nil
 	}
 	return d, nil

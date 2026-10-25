@@ -22,6 +22,7 @@ type MudancaRequest struct {
 	Justificativa   string     `json:"justificativa" validate:"max=4000"`
 	Tipo            string     `json:"tipo" validate:"required,oneof=padrao normal emergencial"`
 	Risco           string     `json:"risco" validate:"required,oneof=baixo medio alto"`
+	RiscoScore      *int       `json:"risco_score"`
 	PlanoReversao   string     `json:"plano_reversao" validate:"max=4000"`
 	InicioPlanejado *time.Time `json:"inicio_planejado"`
 	FimPlanejado    *time.Time `json:"fim_planejado"`
@@ -31,15 +32,16 @@ type MudancaRequest struct {
 
 func (req MudancaRequest) entrada() domain.Entrada {
 	return domain.Entrada{Titulo: req.Titulo, Descricao: req.Descricao, Justificativa: req.Justificativa, Tipo: req.Tipo,
-		Risco: req.Risco, PlanoReversao: req.PlanoReversao, InicioPlanejado: req.InicioPlanejado, FimPlanejado: req.FimPlanejado,
+		Risco: req.Risco, RiscoScore: req.RiscoScore, PlanoReversao: req.PlanoReversao, InicioPlanejado: req.InicioPlanejado, FimPlanejado: req.FimPlanejado,
 		ProdutoID: req.ProdutoID, UnidadeID: req.UnidadeID}
 }
 
 // EstadoRequest é a passagem pedida. Texto é o parecer (aprovar ou
 // rejeitar) ou o resultado (concluir ou registrar a falha).
 type EstadoRequest struct {
-	Estado string `json:"estado" validate:"required,oneof=em_avaliacao aprovada rejeitada em_execucao concluida falhou cancelada"`
-	Texto  string `json:"texto" validate:"max=4000"`
+	Estado           string `json:"estado" validate:"required,oneof=em_avaliacao aprovada rejeitada em_execucao concluida falhou cancelada"`
+	Texto            string `json:"texto" validate:"max=4000"`
+	ResolverVinculos bool   `json:"resolver_vinculos"`
 }
 
 // Handlers da API de mudanças.
@@ -57,6 +59,12 @@ func NewHandlers(svc *application.Service, logger *slog.Logger) *Handlers {
 // vê e muda o estado conforme o papel — o serviço decide. Criar, editar e
 // vincular são do gestor.
 func (h *Handlers) RegisterRoutes(r chi.Router) {
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RequirePermission(h.logger, auth.PermMudancasManage))
+		r.Get("/mudancas/congelamentos", h.ListarCongelamentos)
+		r.Post("/mudancas/congelamentos", h.CriarCongelamento)
+		r.Delete("/mudancas/congelamentos/{id}", h.ExcluirCongelamento)
+	})
 	r.Get("/mudancas", h.Listar)
 	r.Get("/mudancas/{id}", h.Obter)
 	r.Post("/mudancas/{id}/estado", h.Transicionar)
@@ -154,7 +162,7 @@ func (h *Handlers) Transicionar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	m, err := h.svc.Transicionar(r.Context(), identity, id, req.Estado, req.Texto)
+	m, err := h.svc.Transicionar(r.Context(), identity, id, req.Estado, req.Texto, req.ResolverVinculos)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -184,4 +192,51 @@ func (h *Handlers) vincular(w http.ResponseWriter, r *http.Request, ligar bool) 
 		return
 	}
 	httputil.WriteOK(w, m)
+}
+
+// CongelamentoRequest é a janela em que mudança não é agendada.
+type CongelamentoRequest struct {
+	UnidadeID *uuid.UUID `json:"unidade_id"`
+	Inicio    time.Time  `json:"inicio" validate:"required"`
+	Fim       time.Time  `json:"fim" validate:"required"`
+	Motivo    string     `json:"motivo" validate:"max=4000"`
+}
+
+func (h *Handlers) ListarCongelamentos(w http.ResponseWriter, r *http.Request) {
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarCongelamentos(r.Context(), identity)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+func (h *Handlers) CriarCongelamento(w http.ResponseWriter, r *http.Request) {
+	var req CongelamentoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	item, err := h.svc.CriarCongelamento(r.Context(), identity, req.UnidadeID, req.Inicio, req.Fim, req.Motivo)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteCreated(w, item)
+}
+
+func (h *Handlers) ExcluirCongelamento(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	if err := h.svc.ExcluirCongelamento(r.Context(), identity, id); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteNoContent(w)
 }

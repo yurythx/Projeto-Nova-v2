@@ -145,7 +145,7 @@ describe("Atendimento — quadro", () => {
     expect(api.to("POST v1/atendimento/solicitacoes/s2/estado")).toHaveLength(1);
 
     await user.click(screen.getByRole("tab", { name: "Lista" }));
-    expect(router.replace).toHaveBeenCalledWith("/atendimento/fila");
+    expect(router.replace).toHaveBeenCalledWith("/atendimento/fila?vista=lista");
   });
 
   it("recusa do domínio: o cartão fica e a fila recarrega", async () => {
@@ -177,7 +177,7 @@ describe("Atendimento — quadro", () => {
   });
 
   it("da lista para o quadro", async () => {
-    resetNavigation({}, "/atendimento/fila");
+    resetNavigation({}, "/atendimento/fila", "vista=lista");
     const user = userEvent.setup();
     mockBackend({
       ...identityRoutes(perms("atendimento:atender")),

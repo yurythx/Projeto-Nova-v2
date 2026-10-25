@@ -4,10 +4,13 @@
 package ativos
 
 import (
+	"context"
+
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/infrastructure"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
@@ -19,6 +22,7 @@ const Key = "ativos"
 type Module struct {
 	repo     domain.Repository
 	handlers *transport.Handlers
+	svc      *application.Service
 }
 
 // New constrói o módulo. produtos confere o produto que o ativo sustenta;
@@ -26,7 +30,15 @@ type Module struct {
 func New(deps modkit.Deps, produtos domain.Produtos) *Module {
 	repo := infrastructure.NewRepository()
 	svc := application.NewService(deps.Pool, repo, deps.Outbox, produtos)
-	return &Module{repo: repo, handlers: transport.NewHandlers(svc, deps.Logger)}
+	return &Module{repo: repo, handlers: transport.NewHandlers(svc, deps.Logger), svc: svc}
+}
+
+// Reconhecer autentica a credencial da máquina no middleware. Não é uma conta.
+func (m *Module) Reconhecer(ctx context.Context, token string) (auth.Identity, bool, error) {
+	if m == nil || m.svc == nil {
+		return auth.Identity{}, false, nil
+	}
+	return m.svc.Reconhecer(ctx, token)
 }
 
 // Repositorio é a porta usada por problemas e mudanças para conferir o
@@ -44,6 +56,7 @@ func (m *Module) Manifest() kernel.Manifest {
 		Route:          "/ativos",
 		Permissions: []kernel.PermissionInfo{
 			{Key: "ativos:manage", Description: "Cadastrar os ativos da unidade e ligá-los aos produtos"},
+			{Key: "ativos:reportar", Description: "A própria máquina informa patrimônio e capacidade, sem alterar o cadastro feito à mão"},
 		},
 	}
 }

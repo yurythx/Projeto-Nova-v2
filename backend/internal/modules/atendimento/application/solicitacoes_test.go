@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 	"time"
 
@@ -108,6 +109,30 @@ func (f falhaRepo) GetSolicitacao(ctx context.Context, db database.DBTX, id uuid
 	}
 	return f.Repository.GetSolicitacao(ctx, db, id)
 }
+func (f falhaRepo) GetAvaliacao(ctx context.Context, db database.DBTX, id uuid.UUID) (domain.Avaliacao, error) {
+	if f.falha["GetAvaliacao"] {
+		return domain.Avaliacao{}, errFalha
+	}
+	return f.Repository.GetAvaliacao(ctx, db, id)
+}
+func (f falhaRepo) InsertAvaliacao(ctx context.Context, db database.DBTX, a domain.Avaliacao) (domain.Avaliacao, error) {
+	if f.falha["InsertAvaliacao"] {
+		return domain.Avaliacao{}, errFalha
+	}
+	return f.Repository.InsertAvaliacao(ctx, db, a)
+}
+func (f falhaRepo) ResumoAvaliacoes(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, recentes int) (domain.ResumoAvaliacoes, error) {
+	if f.falha["ResumoAvaliacoes"] {
+		return domain.ResumoAvaliacoes{}, errFalha
+	}
+	return f.Repository.ResumoAvaliacoes(ctx, db, restrito, unidades, recentes)
+}
+func (f falhaRepo) ListarParaGovernanca(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, limite int) ([]domain.Solicitacao, error) {
+	if f.falha["ListarParaGovernanca"] {
+		return nil, errFalha
+	}
+	return f.Repository.ListarParaGovernanca(ctx, db, restrito, unidades, limite)
+}
 
 // eventosFalham recusa só o evento do tipo dado.
 type eventosFalham struct{ tipo string }
@@ -153,6 +178,44 @@ func novoCenario(t *testing.T) cenario {
 	tecnico := atendente(u)
 	tecnico.UserID = tec
 	return cenario{pool: pool, unidade: u, tecnico: tecnico, servidor: auth.Identity{UserID: serv}, oferta: o, base: base}
+}
+
+func TestBuscaDaSolicitacao(t *testing.T) {
+	ctx := context.Background()
+	c := novoCenario(t)
+	sol := c.abrir(t)
+	outro := auth.Identity{UserID: dbtest.User(t, c.pool)}
+
+	doSolicitante, err := c.base.Search(ctx, c.servidor, "Pedido", 5)
+	if err != nil || len(doSolicitante) != 1 || doSolicitante[0].ID != sol.ID {
+		t.Fatalf("quem abriu: %+v %v", doSolicitante, err)
+	}
+	if doTecnico, err := c.base.Search(ctx, c.tecnico, "Ped", 5); err != nil || len(doTecnico) != 1 {
+		t.Fatalf("fila: %+v %v", doTecnico, err)
+	}
+	if alheio, err := c.base.Search(ctx, outro, "Pedido", 5); err != nil || len(alheio) != 0 {
+		t.Fatalf("fora do escopo: %+v %v", alheio, err)
+	}
+	if curinga, err := c.base.Search(ctx, c.servidor, "%", 5); err != nil || len(curinga) != 0 {
+		t.Fatalf("curinga literal: %+v %v", curinga, err)
+	}
+	if porNumero, err := c.base.Search(ctx, c.servidor, fmtNumero(sol.Numero), 5); err != nil || len(porNumero) != 1 {
+		t.Fatalf("número: %+v %v", porNumero, err)
+	}
+}
+
+func fmtNumero(n int64) string {
+	return strconv.FormatInt(n, 10)
+}
+
+func TestBuscaPropagaFalha(t *testing.T) {
+	svc := application.NewService(nil, falhando("ListSolicitacoes"), eventosFalham{}, nil)
+	if _, err := svc.Search(context.Background(), auth.Identity{UserID: uuid.New()}, "pedido", 5); err == nil {
+		t.Fatal("falha da lista")
+	}
+	if lista, err := svc.Search(context.Background(), auth.Identity{}, "  ", 5); err != nil || lista != nil {
+		t.Fatalf("consulta em branco: %+v %v", lista, err)
+	}
 }
 
 func (c cenario) abrir(t *testing.T) domain.Solicitacao {

@@ -98,6 +98,11 @@ type SecurityConfig struct {
 	// qualquer outro segredo desta plataforma.
 	ConfigEncryptionKey string
 
+	// CofreMasterKey embrulha a chave de cada segredo do cofre. É outra
+	// chave, não a CONFIG_ENCRYPTION_KEY: as duas juntas no mesmo lugar
+	// abririam o cofre e a configuração. Base64 de 32 bytes.
+	CofreMasterKey string
+
 	// MetricsToken protege o endpoint /metrics do Prometheus (gap G-02 da
 	// auditoria de conformidade). Vazio = endpoint aberto (comportamento
 	// histórico, aceitável só em dev ou com a porta em rede interna
@@ -245,6 +250,21 @@ type MinIOConfig struct {
 	PublicUseSSL   bool
 }
 
+// MailConfig é o correio. Host vazio deixa o envio desligado; IMAPHost
+// vazio deixa a entrada desligada. A senha vem de SMTP_PASSWORD ou de
+// SMTP_PASSWORD_FILE.
+type MailConfig struct {
+	Host         string
+	Port         int
+	User         string
+	Password     string
+	From         string
+	IMAPHost     string
+	IMAPPort     int
+	IMAPUser     string
+	IMAPPassword string
+}
+
 // Config é a configuração da aplicação já totalmente validada.
 type Config struct {
 	App       AppConfig
@@ -261,6 +281,7 @@ type Config struct {
 	Typesense TypesenseConfig
 	Signum    SignumConfig
 	Upload    UploadConfig
+	Mail      MailConfig
 
 	AuditWORM AuditWORMConfig
 
@@ -454,6 +475,7 @@ func Load() (*Config, error) {
 		},
 		Security: SecurityConfig{
 			ConfigEncryptionKey: l.secret("CONFIG_ENCRYPTION_KEY", false, insecureConfigEncryptionKey),
+			CofreMasterKey:      l.secret("COFRE_MASTER_KEY", false, insecureCofreMasterKey),
 			MetricsToken:        l.secret("METRICS_SCRAPE_TOKEN", false, ""),
 			TrustedProxies:      splitCSV(l.str("TRUSTED_PROXIES", false, "")),
 		},
@@ -515,7 +537,18 @@ func Load() (*Config, error) {
 			MetricsHost: l.str("WORKER_METRICS_HOST", false, "0.0.0.0"),
 			MetricsPort: l.intVal("WORKER_METRICS_PORT", false, 9100),
 		},
-		MinIO:               minioConfig(l),
+		MinIO: minioConfig(l),
+		Mail: MailConfig{
+			Host:         l.str("SMTP_HOST", false, ""),
+			Port:         l.intVal("SMTP_PORT", false, 587),
+			User:         l.str("SMTP_USER", false, ""),
+			Password:     l.secret("SMTP_PASSWORD", false, ""),
+			From:         l.str("SMTP_FROM", false, ""),
+			IMAPHost:     l.str("IMAP_HOST", false, ""),
+			IMAPPort:     l.intVal("IMAP_PORT", false, 993),
+			IMAPUser:     l.str("IMAP_USER", false, ""),
+			IMAPPassword: l.secret("IMAP_PASSWORD", false, ""),
+		},
 		FrontendURL:         l.str("FRONTEND_URL", false, "http://localhost:3000"),
 		APIPublicURL:        l.str("API_PUBLIC_URL", false, "http://localhost:8000"),
 		WebSocketPublicURL:  l.str("WEBSOCKET_PUBLIC_URL", false, "ws://localhost:8000/ws"),
@@ -523,6 +556,12 @@ func Load() (*Config, error) {
 		MaxPageSize:         l.intVal("MAX_PAGE_SIZE", false, 100),
 	}
 
+	if cfg.Mail.Host != "" && cfg.Mail.From == "" {
+		l.errs = append(l.errs, "SMTP_FROM")
+	}
+	if cfg.Mail.IMAPHost != "" && cfg.Mail.IMAPUser == "" {
+		l.errs = append(l.errs, "IMAP_USER")
+	}
 	if len(l.errs) > 0 {
 		return nil, fmt.Errorf("config: missing or invalid required environment variables: %s", strings.Join(l.errs, ", "))
 	}
@@ -598,6 +637,12 @@ func Load() (*Config, error) {
 		if cfg.Security.ConfigEncryptionKey == insecureConfigEncryptionKey {
 			weak = append(weak, "CONFIG_ENCRYPTION_KEY")
 		}
+		if cfg.Security.CofreMasterKey == insecureCofreMasterKey {
+			weak = append(weak, "COFRE_MASTER_KEY")
+		}
+		if cfg.Security.CofreMasterKey == cfg.Security.ConfigEncryptionKey {
+			weak = append(weak, "COFRE_MASTER_KEY (igual a CONFIG_ENCRYPTION_KEY)")
+		}
 		if cfg.Typesense.APIKey == exampleTypesenseKey {
 			weak = append(weak, "TYPESENSE_API_KEY")
 		}
@@ -636,7 +681,21 @@ const (
 	// para produção: ver a checagem em Load(). Gere uma chave real com
 	// `openssl rand -base64 32`.
 	insecureConfigEncryptionKey = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+
+	// insecureCofreMasterKey é outra chave pública, só para dev e teste.
+	// 32 bytes de "1" em base64. Produção recusa este valor e também
+	// recusa usar a mesma chave da configuração.
+	insecureCofreMasterKey = "MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE="
 )
+
+// CofreMaster devolve a chave do cofre. Vazia (config montada à mão nos
+// testes) cai na chave pública de desenvolvimento.
+func (s SecurityConfig) CofreMaster() string {
+	if s.CofreMasterKey != "" {
+		return s.CofreMasterKey
+	}
+	return insecureCofreMasterKey
+}
 
 // splitCSV divide uma lista separada por vírgulas, descartando espaços em
 // branco e itens vazios. Usado para TRUSTED_PROXIES.

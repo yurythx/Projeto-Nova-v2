@@ -3,6 +3,7 @@ package infrastructure
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -22,7 +23,7 @@ func NewRepository() *Repository { return &Repository{} }
 
 var _ domain.Repository = (*Repository)(nil)
 
-const ofertaCols = `id, nome, descricao, tipo, produto_id, unidade_id, ativa, created_at, updated_at`
+const ofertaCols = `id, nome, descricao, tipo, produto_id, unidade_id, ativa, created_at, updated_at, campos`
 
 const equipeCols = `e.id, e.nome, e.unidade_id, e.created_at, e.updated_at,
 	COALESCE((SELECT array_agg(m.user_id ORDER BY m.user_id) FROM atendimento_equipe_membros m WHERE m.equipe_id = e.id), '{}')`
@@ -66,8 +67,34 @@ func idsOrEmpty(ids []uuid.UUID) []uuid.UUID {
 
 func scanOferta(row interface{ Scan(...any) error }) (domain.Oferta, error) {
 	var o domain.Oferta
-	err := row.Scan(&o.ID, &o.Nome, &o.Descricao, &o.Tipo, &o.ProdutoID, &o.UnidadeID, &o.Ativa, &o.CreatedAt, &o.UpdatedAt)
+	var raw []byte
+	err := row.Scan(&o.ID, &o.Nome, &o.Descricao, &o.Tipo, &o.ProdutoID, &o.UnidadeID, &o.Ativa, &o.CreatedAt, &o.UpdatedAt, &raw)
+	if err != nil {
+		return domain.Oferta{}, err
+	}
+	o.Campos, err = camposDe(raw)
 	return o, err
+}
+
+func camposDe(raw []byte) ([]domain.Campo, error) {
+	if len(raw) == 0 {
+		return []domain.Campo{}, nil
+	}
+	var out []domain.Campo
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, err
+	}
+	if out == nil {
+		out = []domain.Campo{}
+	}
+	return out, nil
+}
+
+func camposJSON(campos []domain.Campo) ([]byte, error) {
+	if campos == nil {
+		campos = []domain.Campo{}
+	}
+	return json.Marshal(campos)
 }
 
 func scanEquipe(row interface{ Scan(...any) error }) (domain.Equipe, error) {
@@ -119,9 +146,13 @@ func (r *Repository) GetOferta(ctx context.Context, db database.DBTX, id uuid.UU
 
 // InsertOferta grava a oferta.
 func (r *Repository) InsertOferta(ctx context.Context, db database.DBTX, o domain.Oferta) (domain.Oferta, error) {
+	campos, err := camposJSON(o.Campos)
+	if err != nil {
+		return domain.Oferta{}, err
+	}
 	out, err := scanOferta(db.QueryRow(ctx, `INSERT INTO atendimento_ofertas (`+ofertaCols+`)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING `+ofertaCols,
-		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, o.CreatedAt, o.UpdatedAt))
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING `+ofertaCols,
+		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, o.CreatedAt, o.UpdatedAt, campos))
 	if err != nil {
 		return domain.Oferta{}, mapDB(err)
 	}
@@ -130,10 +161,14 @@ func (r *Repository) InsertOferta(ctx context.Context, db database.DBTX, o domai
 
 // UpdateOferta grava a edição.
 func (r *Repository) UpdateOferta(ctx context.Context, db database.DBTX, o domain.Oferta) (domain.Oferta, error) {
+	campos, err := camposJSON(o.Campos)
+	if err != nil {
+		return domain.Oferta{}, err
+	}
 	out, err := scanOferta(db.QueryRow(ctx, `UPDATE atendimento_ofertas
-		SET nome = $2, descricao = $3, tipo = $4, produto_id = $5, unidade_id = $6, ativa = $7
+		SET nome = $2, descricao = $3, tipo = $4, produto_id = $5, unidade_id = $6, ativa = $7, campos = $8
 		WHERE id = $1 RETURNING `+ofertaCols,
-		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa))
+		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, campos))
 	if err != nil {
 		return domain.Oferta{}, mapDB(err)
 	}

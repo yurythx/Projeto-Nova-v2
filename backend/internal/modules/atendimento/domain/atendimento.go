@@ -25,6 +25,8 @@ const (
 var (
 	ErrNaoEncontrado         = errors.New("atendimento: registro não encontrado")
 	ErrEntradaInvalida       = errors.New("atendimento: dados inválidos")
+	ErrCofreDesligado        = errors.New("atendimento: cofre desligado")
+	ErrSegredoAusente        = errors.New("atendimento: segredo ausente")
 	ErrForaDoEscopo          = errors.New("atendimento: fora do seu escopo de gestão")
 	ErrProdutoInexistente    = errors.New("atendimento: produto não encontrado")
 	ErrProdutoIndisponivel   = errors.New("atendimento: cadastro de produtos desligado")
@@ -42,6 +44,10 @@ var (
 	ErrNotaInternaNegada     = errors.New("atendimento: só a equipe registra nota interna")
 	ErrOfertaInexistente     = errors.New("atendimento: oferta não encontrada")
 	ErrOfertaInativa         = errors.New("atendimento: oferta inativa")
+	ErrAvaliacaoInvalida     = errors.New("atendimento: avaliação inválida")
+	ErrAvaliacaoForaDeHora   = errors.New("atendimento: só se avalia o atendimento concluído")
+	ErrAvaliacaoAlheia       = errors.New("atendimento: só quem abriu avalia o atendimento")
+	ErrAvaliacaoExistente    = errors.New("atendimento: esta solicitação já foi avaliada")
 )
 
 // Produtos é a porta do plugin de produtos. Não há import entre plugins:
@@ -62,6 +68,7 @@ type Oferta struct {
 	ProdutoID *uuid.UUID `json:"produto_id,omitempty"`
 	UnidadeID *uuid.UUID `json:"unidade_id,omitempty"`
 	Ativa     bool       `json:"ativa"`
+	Campos    []Campo    `json:"campos"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }
@@ -115,7 +122,7 @@ func NovaOferta(nome, descricao, tipo string, produto, unidade *uuid.UUID, ativa
 	now := time.Now().UTC()
 	return Oferta{
 		ID: uuid.New(), Nome: nome, Descricao: descricao, Tipo: tipo, ProdutoID: produto, UnidadeID: unidade, Ativa: ativa,
-		CreatedAt: now, UpdatedAt: now,
+		Campos: []Campo{}, CreatedAt: now, UpdatedAt: now,
 	}, nil
 }
 
@@ -137,7 +144,19 @@ func (o Oferta) Aplicar(nome, descricao, tipo string, produto, unidade *uuid.UUI
 // Igual ignora os horários.
 func (o Oferta) Igual(other Oferta) bool {
 	return o.ID == other.ID && o.Nome == other.Nome && o.Descricao == other.Descricao && o.Tipo == other.Tipo && o.Ativa == other.Ativa &&
-		MesmaUnidade(o.ProdutoID, other.ProdutoID) && MesmaUnidade(o.UnidadeID, other.UnidadeID)
+		MesmaUnidade(o.ProdutoID, other.ProdutoID) && MesmaUnidade(o.UnidadeID, other.UnidadeID) && camposIguais(o.Campos, other.Campos)
+}
+
+func camposIguais(a, b []Campo) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Chave != b[i].Chave || a[i].Rotulo != b[i].Rotulo || a[i].Tipo != b[i].Tipo || a[i].Obrigatorio != b[i].Obrigatorio || !slices.Equal(a[i].Opcoes, b[i].Opcoes) {
+			return false
+		}
+	}
+	return true
 }
 
 // NovaEquipe valida e monta uma equipe. Membros repetidos contam uma vez.

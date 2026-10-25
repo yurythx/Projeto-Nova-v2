@@ -22,6 +22,7 @@ import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import {
   FRAME_SOLICITACAO,
+  proximoPasso,
   rotuloEstado,
   tomEstado,
   type Oferta,
@@ -98,11 +99,17 @@ export default function AtendimentoPortalPage() {
       descricaoFinal = detalhes ? `${cabecalho}\n\n${detalhes}` : cabecalho;
     }
 
-    const body = {
+    const respostas: Record<string, string> = {};
+    for (const campo of escolhida?.campos ?? []) {
+      const valor = String(fd.get(`campo_${campo.chave}`) ?? "").trim();
+      if (valor) respostas[campo.chave] = valor;
+    }
+    const body: Record<string, unknown> = {
       oferta_id: String(fd.get("oferta_id")),
       titulo: String(fd.get("titulo")).trim(),
       descricao: descricaoFinal,
     };
+    if (Object.keys(respostas).length > 0) body.respostas = respostas;
     const criada = await run(
       () => apiClient.post<Solicitacao>("v1/atendimento/solicitacoes", body),
       "Solicitação enviada",
@@ -153,6 +160,29 @@ export default function AtendimentoPortalPage() {
               {escolhida?.descricao ? (
                 <p className="text-sm text-muted">{escolhida.descricao}</p>
               ) : null}
+              {(escolhida?.campos ?? []).map((campo) =>
+                campo.tipo === "lista" ? (
+                  <Select
+                    key={campo.chave}
+                    id={`campo-${campo.chave}`}
+                    name={`campo_${campo.chave}`}
+                    label={`${campo.rotulo}${campo.obrigatorio ? " *" : ""}`}
+                    required={campo.obrigatorio}
+                    placeholder="Escolha"
+                    options={(campo.opcoes ?? []).map((o) => ({ value: o, label: o }))}
+                  />
+                ) : (
+                  <Input
+                    key={campo.chave}
+                    id={`campo-${campo.chave}`}
+                    name={`campo_${campo.chave}`}
+                    label={`${campo.rotulo}${campo.obrigatorio ? " *" : ""}`}
+                    required={campo.obrigatorio}
+                    inputMode={campo.tipo === "numero" ? "numeric" : undefined}
+                    autoComplete="off"
+                  />
+                ),
+              )}
               <Input
                 id="solicitacao-titulo"
                 name="titulo"
@@ -268,6 +298,7 @@ export default function AtendimentoPortalPage() {
                   <p className="text-sm text-muted">
                     {s.oferta_nome} · atualizada em {fmtDateTime(s.updated_at)}
                   </p>
+                  <p className="text-sm">{proximoPasso(s.estado)}</p>
                 </div>
                 <Badge tone={tomEstado(s.estado)}>{rotuloEstado(s.estado)}</Badge>
               </li>

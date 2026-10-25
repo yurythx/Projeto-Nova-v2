@@ -160,3 +160,13 @@ func TestPadraoEFalha(t *testing.T) {
 		t.Fatal("falhou")
 	}
 }
+
+func TestVinculoRecusado(t *testing.T) {
+	var vazio *VinculoRecusado
+	if vazio.Error() == "" {
+		t.Fatal("nil")
+	}
+	if (&VinculoRecusado{Mensagem: "parada"}).Error() != "parada" {
+		t.Fatal("mensagem")
+	}
+}

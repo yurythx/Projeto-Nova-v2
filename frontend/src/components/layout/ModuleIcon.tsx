@@ -11,6 +11,7 @@ import {
   FolderKanban,
   GitPullRequest,
   LayoutGrid,
+  Lock,
   Mail,
   MessagesSquare,
   Newspaper,
@@ -51,6 +52,7 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   bug: Bug,
   "git-pull-request": GitPullRequest,
   wallet: Wallet,
+  lock: Lock,
 };
 
 export function ModuleIcon({ name, ...props }: { name: string } & LucideProps) {
