@@ -34,7 +34,7 @@ export default function BlogPage() {
       <PageHeader
         eyebrow="Comunicação"
         title="Blog & comunicados"
-        description="Comunicados e notícias do Projeto-nova-v2."
+        description="Comunicados e notícias do Projeto Nova."
         actions={
           manage && (
             <Link href="/gestao/blog/novo" className={buttonClass("primary", "md")}>
@@ -118,7 +118,7 @@ export default function BlogPage() {
                             <Pencil size={12} aria-hidden="true" /> Gerenciar / Editar
                           </span>
                         ) : (
-                          <span className="text-muted">por {p.author_name || "Projeto-nova-v2"}</span>
+                          <span className="text-muted">por {p.author_name || "Projeto Nova"}</span>
                         )}
                         {manage && p.author_name && (
                           <span className="text-muted text-[11px]">por {p.author_name}</span>

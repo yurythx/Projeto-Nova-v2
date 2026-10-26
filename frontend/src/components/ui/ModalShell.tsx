@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-export type ModalSize = "sm" | "md" | "lg" | "xl";
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
 const sizeClass: Record<ModalSize, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-2xl",
   xl: "max-w-3xl",
+  full: "max-w-[96rem] min-h-[min(88dvh,calc(100dvh-2rem))]",
 };
 
 /**
@@ -35,6 +36,7 @@ export function ModalShell({
   describedBy,
   className = "",
   variant = "center",
+  amplitude = "media",
   children,
 }: {
   open: boolean;
@@ -43,8 +45,10 @@ export function ModalShell({
   labelledBy?: string;
   describedBy?: string;
   className?: string;
-  /** "drawer": painel encostado à direita, na altura toda (ex.: assistente). */
+  /** "drawer": painel encostado à direita, na altura toda. */
   variant?: "center" | "drawer";
+  /** No drawer, `larga` cabe o detalhe de um card sem esconder o quadro inteiro. */
+  amplitude?: "media" | "larga";
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -77,7 +81,9 @@ export function ModalShell({
       aria-describedby={describedBy}
       className={`${
         variant === "drawer"
-          ? `my-0 ml-auto mr-0 h-dvh max-h-dvh w-[min(100vw,30rem)] rounded-l-xl`
+          ? `my-0 ml-auto mr-0 h-dvh max-h-dvh rounded-l-xl max-md:rounded-none ${
+              amplitude === "larga" ? "w-[min(100vw,56rem)]" : "w-[min(100vw,30rem)]"
+            }`
           : `m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)] rounded-xl`
       } overflow-hidden border border-surface-border bg-surface p-0 text-foreground
         shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm ${className}`}

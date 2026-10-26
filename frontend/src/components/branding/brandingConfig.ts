@@ -9,6 +9,7 @@
 //    navegador.
 
 import { BRANDING_PREFS_COOKIE } from "@/lib/prefs/cookies";
+import { PRODUTO } from "@/lib/plataforma/conteudo";
 import type { Branding } from "@/lib/plataforma/types";
 
 export interface SystemBrandingConfig {
@@ -28,9 +29,9 @@ export interface SystemBrandingConfig {
 }
 
 export const DEFAULT_BRANDING: SystemBrandingConfig = {
-  appName: "Projeto-nova-v2",
-  appDescription: "Microkernel de plug-ins: identidade, auditoria e módulos que nascem desligados.",
-  orgName: "Projeto-nova-v2",
+  appName: PRODUTO.nome,
+  appDescription: PRODUTO.descricaoCurta,
+  orgName: PRODUTO.nome,
   logoUrl: "",
   faviconUrl: "",
   supportEmail: "",

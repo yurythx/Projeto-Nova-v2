@@ -23,6 +23,7 @@ type Repository interface {
 	Atualizar(ctx context.Context, db database.DBTX, id uuid.UUID, e EntradaProjeto) (*Projeto, error)
 	Transicionar(ctx context.Context, db database.DBTX, id uuid.UUID, novoEstado string) (*Projeto, error)
 
+	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error
 	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*Tarefa, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)

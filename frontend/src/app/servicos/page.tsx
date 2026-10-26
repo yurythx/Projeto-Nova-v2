@@ -10,7 +10,7 @@ import { ServicosCatalogClient } from "./ServicosCatalogClient";
 export const dynamic = "force-dynamic";
 
 const description =
-  "Serviços publicados pelo catálogo do Projeto-nova-v2. O módulo nasce desligado e só aparece aqui quando a instalação o liga.";
+  "Serviços publicados pelo catálogo do Projeto Nova. O módulo nasce desligado e só aparece aqui quando a instalação o liga.";
 
 export const metadata: Metadata = {
   title: "Carta de serviços",

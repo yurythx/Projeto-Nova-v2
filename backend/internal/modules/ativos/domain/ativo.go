@@ -90,7 +90,7 @@ func MesmaUnidade(a, b *uuid.UUID) bool {
 	return *a == *b
 }
 
-func validar(in Entrada) (Entrada, error) {
+func validar(in Entrada, livres []string) (Entrada, error) {
 	in.Nome, in.Identificador, in.Descricao = strings.TrimSpace(in.Nome), strings.TrimSpace(in.Identificador), strings.TrimSpace(in.Descricao)
 	if in.Nome == "" || utf8.RuneCountInString(in.Nome) > NomeMax ||
 		utf8.RuneCountInString(in.Identificador) > IdentificadorMax || utf8.RuneCountInString(in.Descricao) > TextoMax {
@@ -99,15 +99,15 @@ func validar(in Entrada) (Entrada, error) {
 	if !slices.Contains(Tipos, in.Tipo) {
 		return Entrada{}, ErrTipoInvalido
 	}
-	if !slices.Contains(Estados, in.Estado) {
+	if !slices.Contains(Estados, in.Estado) && !slices.Contains(livres, in.Estado) {
 		return Entrada{}, ErrEstadoInvalido
 	}
 	return in, nil
 }
 
 // Novo valida e monta um ativo.
-func Novo(in Entrada) (Ativo, error) {
-	in, err := validar(in)
+func Novo(in Entrada, livres ...string) (Ativo, error) {
+	in, err := validar(in, livres)
 	if err != nil {
 		return Ativo{}, err
 	}
@@ -119,8 +119,8 @@ func Novo(in Entrada) (Ativo, error) {
 }
 
 // Aplicar devolve a cópia editada.
-func (a Ativo) Aplicar(in Entrada) (Ativo, error) {
-	in, err := validar(in)
+func (a Ativo) Aplicar(in Entrada, livres ...string) (Ativo, error) {
+	in, err := validar(in, livres)
 	if err != nil {
 		return Ativo{}, err
 	}
@@ -136,6 +136,39 @@ func (a Ativo) Igual(o Ativo) bool {
 		a.Identificador == o.Identificador && a.Descricao == o.Descricao &&
 		MesmaUnidade(a.ProdutoID, o.ProdutoID) && MesmaUnidade(a.UnidadeID, o.UnidadeID) &&
 		inventarioIgual(a.Inventario, o.Inventario)
+}
+
+// PassagemDeAtivo libera os estados de fábrica entre si. A coluna nova só
+// entra ou sai por uma passagem deste quadro.
+func PassagemDeAtivo(atual, novo string, mapa map[string][]string) bool {
+	if atual == "" || atual == novo {
+		if slices.Contains(Estados, novo) {
+			return true
+		}
+		for _, destinos := range mapa {
+			if slices.Contains(destinos, novo) {
+				return true
+			}
+		}
+		return false
+	}
+	if slices.Contains(Estados, atual) && slices.Contains(Estados, novo) {
+		return true
+	}
+	return slices.Contains(mapa[atual], novo)
+}
+
+// EstadosLivres são as chaves novas que alguma passagem alcança.
+func EstadosLivres(mapa map[string][]string) []string {
+	var out []string
+	for _, destinos := range mapa {
+		for _, destino := range destinos {
+			if !slices.Contains(Estados, destino) && !slices.Contains(out, destino) {
+				out = append(out, destino)
+			}
+		}
+	}
+	return out
 }
 
 // Filtro restringe a listagem ao escopo e, opcionalmente, a um produto.

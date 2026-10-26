@@ -18,6 +18,13 @@ type Module struct {
 	service  *application.Service
 }
 
+// ComPassagens liga os caminhos acrescentados nos quadros de projetos e de tarefas.
+func (m *Module) ComPassagens(p application.Passagens) {
+	if m != nil && m.service != nil {
+		m.service.ComPassagens(p)
+	}
+}
+
 // New constrói o módulo.
 func New(deps modkit.Deps) *Module {
 	repo := infrastructure.NewRepository()

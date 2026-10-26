@@ -13,7 +13,11 @@ function perms(...p: string[]) {
   return { permissions: p, scopes: [{ perfil: "p", origem: "manual" as const, permissions: p }] };
 }
 
-beforeEach(() => resetNavigation({}, "/assistencia"));
+beforeEach(() => {
+  resetNavigation({}, "/assistencia");
+  localStorage.removeItem("nova-assistencia:painel");
+  localStorage.removeItem("nova-assistencia:estilo");
+});
 
 describe("Dashboard da Assistência", () => {
   it("renderiza métricas consolidadas de atendimento, problemas, mudanças e projetos", async () => {
@@ -69,12 +73,6 @@ describe("Dashboard da Assistência", () => {
     expect(screen.getByText("Janelas de Mudança")).toBeInTheDocument();
     expect(screen.getByText("Projetos Ativos")).toBeInTheDocument();
 
-    // Verificação de Gráficos Visuais (SVG nativo)
-    expect(screen.getByTestId("assistencia-graficos")).toBeInTheDocument();
-    expect(screen.getByText("Demandas de Atendimento")).toBeInTheDocument();
-    expect(screen.getByText("Matriz de Risco das Mudanças")).toBeInTheDocument();
-    expect(screen.getByText("Progresso Estratégico")).toBeInTheDocument();
-
     // Ações de exportação, calendário, impressão e relatório executivo
     expect(screen.getByRole("link", { name: /Calendário/i })).toHaveAttribute(
       "href",
@@ -118,5 +116,51 @@ describe("Dashboard da Assistência", () => {
       "href",
       "/projetos",
     );
+
+    await user.click(screen.getByRole("tab", { name: "Gráficos" }));
+    expect(await screen.findByTestId("assistencia-graficos")).toBeInTheDocument();
+    expect(screen.getByText("Demandas de Atendimento")).toBeInTheDocument();
+    expect(screen.getByText("Matriz de Risco das Mudanças")).toBeInTheDocument();
+    expect(screen.getByText("Progresso Estratégico")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Barras" })).toHaveAttribute("aria-checked", "true");
+    await user.click(screen.getByRole("radio", { name: "Rosca" }));
+    expect(screen.getByRole("radio", { name: "Rosca" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("assistencia-graficos").querySelector("[data-estilo='rosca']")).toBeTruthy();
+  });
+
+  it("filtra problemas e oculta um cartão neste navegador", async () => {
+    const user = userEvent.setup();
+    mockBackend({
+      ...identityRoutes(
+        perms("atendimento:atender", "problemas:read", "mudancas:manage", "projetos:read"),
+        [
+          moduleStatus("atendimento"),
+          moduleStatus("problemas"),
+          moduleStatus("mudancas"),
+          moduleStatus("projetos"),
+        ],
+      ),
+      "GET v1/atendimento/fila": page([]),
+      "GET v1/problemas": {
+        data: [
+          { id: "p1", numero: 1, estado: "em_analise" },
+          { id: "p2", numero: 2, estado: "erro_conhecido" },
+        ],
+      },
+      "GET v1/mudancas": { data: [] },
+      "GET v1/projetos": { data: [] },
+    });
+    renderApp(<AssistenciaDashboardPage />);
+    expect(await screen.findByText("1 erros conhecidos")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Filtros" }));
+    await user.selectOptions(screen.getByLabelText("Estado do problema"), "em_analise");
+    expect(screen.getByText("0 erros conhecidos")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Organizar painel" }));
+    await user.click(screen.getByRole("button", { name: "Ocultar Atendimento" }));
+    expect(screen.queryByRole("heading", { name: "Atendimento" })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("nova-assistencia:painel") ?? "{}").ocultos).toContain("atendimento");
+    await user.click(screen.getByRole("button", { name: "Mostrar Atendimento" }));
+    expect(screen.getByRole("heading", { name: "Atendimento" })).toBeInTheDocument();
   });
 });

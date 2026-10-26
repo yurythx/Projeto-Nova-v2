@@ -8,14 +8,17 @@ import { Download, FileSpreadsheet, Printer } from "lucide-react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
-import { ListaFaixas, NomeClicavel } from "@/components/plataforma/Faixas";
+import { ListaFaixas, NomeClicavel, ordenarColunas, useAparencia } from "@/components/plataforma/Faixas";
+import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
+import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
+import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetosCronograma } from "@/components/projetos/ProjetosCronograma";
 import { COLUNAS_PROJETO, ProjetosKanban } from "@/components/projetos/ProjetosKanban";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -33,6 +36,22 @@ import {
 
 type Vista = "lista" | "kanban" | "cronograma";
 
+/** Caminho legal a partir de planejado. O valor enviado é o id do estado. */
+function passosDoProjeto(alvo: EstadoProjeto): EstadoProjeto[] {
+  switch (alvo) {
+    case "planejado":
+      return [];
+    case "em_andamento":
+      return ["em_andamento"];
+    case "cancelado":
+      return ["cancelado"];
+    case "suspenso":
+      return ["em_andamento", "suspenso"];
+    case "concluido":
+      return ["em_andamento", "concluido"];
+  }
+}
+
 export default function ProjetosPage() {
   return (
     <Suspense fallback={null}>
@@ -45,6 +64,7 @@ function ProjetosConteudo() {
   const { can, loading: carregandoSessao } = usePlataforma();
   const router = useRouter();
   const params = useSearchParams();
+  const painel = usePainelNaUrl();
   const paramVista = params.get("vista");
   const vista: Vista =
     paramVista === "lista"
@@ -77,13 +97,15 @@ function ProjetosConteudo() {
   const [gerenteNome, setGerenteNome] = useState("");
   const [orcamento, setOrcamento] = useState("0");
   const [unidadeId, setUnidadeId] = useState("");
+  const [quadro, setQuadro] = useState<EstadoProjeto>("planejado");
+  const look = useAparencia("nova-faixas:projetos");
+  const catalogo = useQuadro("projetos", COLUNAS_PROJETO);
+  const controles = { oficial: catalogo.oficial };
 
   function trocarVista(proxima: string) {
-    const q = new URLSearchParams(params.toString());
-    if (proxima === "lista") q.set("vista", "lista");
-    else if (proxima === "cronograma") q.set("vista", "cronograma");
-    else q.set("vista", "quadro");
-    router.replace(q.toString() ? `/projetos?${q.toString()}` : "/projetos");
+    const vista =
+      proxima === "lista" ? "lista" : proxima === "cronograma" ? "cronograma" : "quadro";
+    router.replace(painel.href({ vista }));
   }
 
   function exportarCSV() {
@@ -113,6 +135,7 @@ function ProjetosConteudo() {
 
   async function criar(e: FormEvent) {
     e.preventDefault();
+    const alvo = quadro;
     const criado = await run(
       async () => {
         const res = await apiClient.post<Projeto>("v1/projetos", {
@@ -124,6 +147,9 @@ function ProjetosConteudo() {
           orcamento: Number(orcamento) || 0,
           unidade_id: unidadeId || undefined,
         });
+        for (const passo of passosDoProjeto(alvo)) {
+          await apiClient.post(`v1/projetos/${res.data.id}/estado`, { estado: passo });
+        }
         return res.data;
       },
       "Projeto criado com sucesso",
@@ -135,6 +161,7 @@ function ProjetosConteudo() {
       setObjetivo("");
       setGerenteNome("");
       setOrcamento("0");
+      setQuadro("planejado");
       void projetos.mutate();
       router.push(`/projetos/${criado.id}`);
     }
@@ -144,21 +171,6 @@ function ProjetosConteudo() {
     const ok = await run(
       () => apiClient.post(`v1/projetos/${p.id}/estado`, { estado: para }),
       `Projeto #${p.numero}: ${ESTADO_PROJETO[para].label.toLowerCase()}`,
-    );
-    if (ok) void projetos.mutate();
-  }
-
-  async function criarCard(nome: string) {
-    const ok = await run(
-      () =>
-        apiClient.post<Projeto>("v1/projetos", {
-          titulo: nome.slice(0, 160),
-          descricao: "",
-          objetivo: "",
-          prioridade: "media",
-          orcamento: 0,
-        }),
-      "Projeto criado",
     );
     if (ok) void projetos.mutate();
   }
@@ -187,6 +199,7 @@ function ProjetosConteudo() {
   }
 
   const lista = projetos.data ?? [];
+  const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
 
   return (
     <div className="flex flex-col gap-6">
@@ -206,6 +219,11 @@ function ProjetosConteudo() {
               <FileSpreadsheet className="h-4 w-4" />
               Exportar CSV
             </Button>
+            {gere && (
+              <Link href="/projetos/colunas" className={buttonClass("secondary")}>
+                Colunas
+              </Link>
+            )}
             {gere && (
               <Button
                 type="button"
@@ -274,15 +292,10 @@ function ProjetosConteudo() {
             itens={lista}
             onMover={mover}
             pending={pending}
-            extra={(colunaId) =>
-              colunaId === "planejado" && gere ? (
-                <Button type="button" size="sm" variant="secondary" onClick={() => setModalAberto(true)}>
-                  Adicionar projeto
-                </Button>
-              ) : null
-            }
-            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
             aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
+            aoAbrir={(p) => painel.abrir(p.id)}
+            colunas={colunas}
+            controles={controles}
           />
         ) : vista === "cronograma" ? (
           <ProjetosCronograma projetos={lista} />
@@ -291,21 +304,14 @@ function ProjetosConteudo() {
             rotulo="Lista de projetos"
             memoria="nova-faixas:projetos-lista"
             aparencia="nova-faixas:projetos"
-            colunas={COLUNAS_PROJETO}
+            colunas={colunas}
+            {...controles}
             itens={lista}
             colunaDe={(p) => p.estado}
             idDe={(p) => p.id}
             nomeDe={(p) => p.titulo}
-            extra={(colunaId) =>
-              colunaId === "planejado" && gere ? (
-                <Button type="button" size="sm" variant="secondary" onClick={() => setModalAberto(true)}>
-                  Adicionar projeto
-                </Button>
-              ) : null
-            }
-            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
             aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
-            aoAbrir={(p) => router.push(`/projetos/${p.id}`)}
+            aoAbrir={(p) => painel.abrir(p.id)}
             render={(p, vista) => {
               const estadoMeta = ESTADO_PROJETO[p.estado];
               const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
@@ -343,9 +349,13 @@ function ProjetosConteudo() {
                     <span>
                       Criado em: <strong>{new Date(p.created_at).toLocaleDateString("pt-BR")}</strong>
                     </span>
-                    <Link href={`/projetos/${p.id}`} className="font-medium text-primary hover:underline">
+                    <button
+                      type="button"
+                      className="font-medium text-primary hover:underline"
+                      onClick={() => painel.abrir(p.id)}
+                    >
                       Editar
-                    </Link>
+                    </button>
                   </div>
                 </div>
               );
@@ -359,7 +369,8 @@ function ProjetosConteudo() {
         open={modalAberto}
         onClose={() => setModalAberto(false)}
         title="Novo Projeto"
-        description="Cadastre as informações iniciais do projeto para dar início ao planejamento."
+        description="O projeto entra no quadro escolhido. O nome da coluna é só o rótulo; o sistema guarda o estado."
+        size="full"
       >
         <form onSubmit={criar} className="mt-3 grid gap-3">
           <Input
@@ -378,7 +389,8 @@ function ProjetosConteudo() {
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Contexto, escopo e premissas gerais..."
-            rows={3}
+            rows={8}
+            className="min-h-48"
             maxLength={4000}
           />
 
@@ -388,8 +400,20 @@ function ProjetosConteudo() {
             value={objetivo}
             onChange={(e) => setObjetivo(e.target.value)}
             placeholder="Resultados esperados e valor entregue..."
-            rows={2}
+            rows={8}
+            className="min-h-48"
             maxLength={4000}
+          />
+
+          <Select
+            id="proj-quadro"
+            label="Quadro"
+            value={quadro}
+            onChange={(e) => setQuadro(e.target.value as EstadoProjeto)}
+            options={ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => ({
+              value: coluna.id,
+              label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
+            }))}
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -446,6 +470,15 @@ function ProjetosConteudo() {
           </div>
         </form>
       </Dialog>
+      <PainelDoQuadro
+        aberto={painel.id !== null}
+        id={painel.id}
+        titulo="Detalhe do projeto"
+        href={painel.id ? `/projetos/${painel.id}` : "/projetos"}
+        onClose={painel.fechar}
+      >
+        {painel.id && <ProjetoDetalheConteudo />}
+      </PainelDoQuadro>
     </div>
   );
 }

@@ -19,9 +19,9 @@ type Module struct {
 	handlers *transport.Handlers
 }
 
-// New constrói o módulo.
-func New(deps modkit.Deps) *Module {
-	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox).WithNotificacoes(deps.Notificacoes)
+// New constrói o módulo. programas nil não compara a licença com o inventário.
+func New(deps modkit.Deps, programas application.Programas) *Module {
+	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox).WithNotificacoes(deps.Notificacoes).WithProgramas(programas)
 	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
 }
 

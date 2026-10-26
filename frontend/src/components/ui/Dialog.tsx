@@ -45,8 +45,8 @@ export function Dialog({
       labelledBy={titleId}
       describedBy={description ? descId : undefined}
     >
-      <div className="flex max-h-[calc(100dvh-2rem)] flex-col p-5">
-        <h2 id={titleId} className="shrink-0 text-base font-semibold">
+      <div className={`flex max-h-[calc(100dvh-2rem)] flex-col ${size === "full" ? "min-h-[min(88dvh,calc(100dvh-2rem))] p-8" : "p-5"}`}>
+        <h2 id={titleId} className={`shrink-0 font-semibold ${size === "full" ? "text-2xl" : "text-base"}`}>
           {title}
         </h2>
         {description && (

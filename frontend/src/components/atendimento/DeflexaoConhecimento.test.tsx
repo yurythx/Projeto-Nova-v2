@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-const { get } = vi.hoisted(() => ({ get: vi.fn() }));
+const { get, post } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 
-vi.mock("@/lib/api/client", () => ({ apiClient: { get } }));
+vi.mock("@/lib/api/client", () => ({ apiClient: { get, post } }));
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 
@@ -28,6 +28,8 @@ describe("DeflexaoConhecimento", () => {
 
   it("mostra o artigo que a busca devolve e deixa de abrir o chamado", async () => {
     get.mockReset();
+    post.mockReset();
+    post.mockResolvedValue({});
     get.mockResolvedValue({ data: { query: "senha", results: [artigo], modules: ["wiki"], degraded: [], took_ms: 1 } });
     const user = userEvent.setup();
     const onResolvido = vi.fn();
@@ -35,11 +37,15 @@ describe("DeflexaoConhecimento", () => {
     render(<DeflexaoConhecimento termo="não lembro minha senha" onResolvido={onResolvido} />);
 
     expect(await screen.findByTestId("deflexao-conhecimento")).toBeInTheDocument();
+    await vi.waitFor(() =>
+      expect(post).toHaveBeenCalledWith("v1/atendimento/deflexao", { artigos: ["p1"], resolveu: false }),
+    );
     expect(screen.getByRole("link", { name: artigo.title })).toHaveAttribute("href", "/wiki/senha");
     expect(get).toHaveBeenCalledWith(expect.stringContaining("module=wiki"));
 
     await user.click(screen.getByRole("button", { name: "Não preciso mais abrir" }));
     expect(onResolvido).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith("v1/atendimento/deflexao", { artigos: ["p1"], resolveu: true });
     expect(screen.getByRole("status")).toHaveTextContent("não foi enviada");
   });
 

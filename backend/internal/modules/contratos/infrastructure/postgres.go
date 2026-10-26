@@ -128,7 +128,7 @@ func (r *Repository) DeleteContrato(ctx context.Context, db database.DBTX, id uu
 }
 
 func (r *Repository) ListLicencas(ctx context.Context, db database.DBTX, f domain.Filtro) ([]domain.Licenca, error) {
-	rows, err := db.Query(ctx, `SELECT l.id, l.nome, l.fornecedor_id, f.nome, l.fim, l.quantidade, l.unidade_id, l.created_at, l.updated_at
+	rows, err := db.Query(ctx, `SELECT l.id, l.nome, l.fornecedor_id, f.nome, l.fim, l.quantidade, l.programa, l.unidade_id, l.created_at, l.updated_at
 		FROM contratos_licencas l JOIN contratos_fornecedores f ON f.id = l.fornecedor_id
 		WHERE ($1 = false OR l.unidade_id = ANY($2::uuid[])) ORDER BY l.nome, l.id`, f.Restrito, idsOrEmpty(f.Unidades))
 	if err != nil {
@@ -138,7 +138,7 @@ func (r *Repository) ListLicencas(ctx context.Context, db database.DBTX, f domai
 	out := []domain.Licenca{}
 	for rows.Next() {
 		var item domain.Licenca
-		if err := rows.Scan(&item.ID, &item.Nome, &item.FornecedorID, &item.FornecedorNome, &item.Fim, &item.Quantidade, &item.UnidadeID, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Nome, &item.FornecedorID, &item.FornecedorNome, &item.Fim, &item.Quantidade, &item.Programa, &item.UnidadeID, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, mapDB(err)
 		}
 		out = append(out, item)
@@ -147,9 +147,9 @@ func (r *Repository) ListLicencas(ctx context.Context, db database.DBTX, f domai
 }
 
 func (r *Repository) InsertLicenca(ctx context.Context, db database.DBTX, item domain.Licenca) (domain.Licenca, error) {
-	err := db.QueryRow(ctx, `INSERT INTO contratos_licencas (id, nome, fornecedor_id, fim, quantidade, unidade_id, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-		item.ID, item.Nome, item.FornecedorID, item.Fim, item.Quantidade, item.UnidadeID, item.CreatedAt, item.UpdatedAt).Scan(&item.ID)
+	err := db.QueryRow(ctx, `INSERT INTO contratos_licencas (id, nome, fornecedor_id, fim, quantidade, programa, unidade_id, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+		item.ID, item.Nome, item.FornecedorID, item.Fim, item.Quantidade, item.Programa, item.UnidadeID, item.CreatedAt, item.UpdatedAt).Scan(&item.ID)
 	if err != nil {
 		return domain.Licenca{}, mapDB(err)
 	}

@@ -65,7 +65,7 @@ export function BlogCoverImage({ coverUrl, title, slug, aspect = "card" }: BlogC
       </div>
 
       <div className="relative z-10 mt-auto flex flex-col gap-1">
-        <span className="text-xs font-mono font-medium text-muted">PROJETO-NOVA-V2</span>
+        <span className="text-xs font-mono font-medium text-muted">PROJETO NOVA</span>
         <h3 className="line-clamp-2 text-base font-bold tracking-tight text-foreground sm:text-lg">
           {title}
         </h3>

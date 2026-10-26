@@ -39,6 +39,7 @@ type LicencaRequest struct {
 	FornecedorID uuid.UUID  `json:"fornecedor_id" validate:"required"`
 	Fim          *time.Time `json:"fim"`
 	Quantidade   int        `json:"quantidade" validate:"required,min=1"`
+	Programa     string     `json:"programa" validate:"max=80"`
 	UnidadeID    *uuid.UUID `json:"unidade_id"`
 }
 
@@ -158,7 +159,7 @@ func (h *Handlers) criarLicenca(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	item, err := h.svc.CriarLicenca(r.Context(), identity, req.Nome, req.FornecedorID, req.Fim, req.Quantidade, req.UnidadeID)
+	item, err := h.svc.CriarLicenca(r.Context(), identity, req.Nome, req.FornecedorID, req.Fim, req.Quantidade, req.Programa, req.UnidadeID)
 	if err != nil {
 		h.fail(w, r, err)
 		return

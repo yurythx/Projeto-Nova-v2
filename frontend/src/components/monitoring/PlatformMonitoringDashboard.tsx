@@ -100,7 +100,9 @@ export function PlatformMonitoringDashboard() {
     mutate();
   };
 
-  const isHealthy = !error && health?.status !== "unhealthy";
+  const situacao: "saudavel" | "degradado" | "indisponivel" =
+    error || !health ? "indisponivel" : health.status === "ok" ? "saudavel" : health.status === "degraded" ? "degradado" : "indisponivel";
+  const situacaoOk = situacao === "saudavel";
 
   // Status DE VERDADE, derivado do /ready do backend (via /api/health) —
   // antes deste conserto, os quatro cartões abaixo mostravam "online" fixo
@@ -186,18 +188,20 @@ export function PlatformMonitoringDashboard() {
             <span className="dateline">Telemetria & Infraestrutura</span>
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                isHealthy
+                situacaoOk
                   ? "bg-success/10 text-success"
-                  : "bg-warning/10 text-warning"
+                  : situacao === "degradado"
+                    ? "bg-warning/10 text-warning"
+                    : "bg-danger/10 text-danger"
               }`}
             >
-              {isHealthy ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-              {isHealthy ? "SISTEMA OPERACIONAL" : "ATENÇÃO"}
+              {situacaoOk ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+              {situacaoOk ? "Saudável" : situacao === "degradado" ? "Degradado" : "Indisponível"}
             </span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Monitoramento da Plataforma</h1>
           <p className="text-sm text-muted">
-            Status dos microsserviços, barramento de eventos Outbox e saúdes dos componentes em tempo real.
+            Estado dos serviços e da fila de eventos. O selo usa a checagem real: saudável, degradado ou indisponível.
           </p>
         </div>
 
@@ -212,15 +216,6 @@ export function PlatformMonitoringDashboard() {
           >
             <RefreshCw size={14} className={isValidating ? "animate-spin" : ""} />
             Atualizar
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => window.open("http://192.168.1.42:3005", "_blank")}
-            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
-          >
-            <Activity size={14} />
-            Abrir Grafana
           </Button>
           <Button
             size="sm"
@@ -279,44 +274,9 @@ export function PlatformMonitoringDashboard() {
       {activeTab === "observabilidade" && (
         <>
           {/* Banner de Acesso à Stack de Observabilidade */}
-          <Card className="border-primary/30 bg-gradient-to-r from-primary/10 via-surface/40 to-surface/20">
-            <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
-                  <Activity size={22} />
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold text-foreground text-sm flex items-center gap-2">
-                    Stack de Observabilidade Dedicada (Prometheus + Grafana)
-                    <span className="inline-flex items-center rounded-full bg-success/20 px-2 py-0.5 text-[10px] font-bold text-success">
-                      Ativo
-                    </span>
-                  </span>
-                  <span className="text-xs text-muted">
-                    Dashboard executivo pré-carregado no nó com métricas em tempo real de latência P99, vazão req/s e pool do PostgreSQL.
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
-                <a
-                  href="http://192.168.1.42:9090"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-surface-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted hover:text-foreground transition-colors"
-                >
-                  <Layers size={13} />
-                  Prometheus (:9090)
-                </a>
-                <a
-                  href="http://192.168.1.42:3005"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary-hover transition-colors"
-                >
-                  <Activity size={13} />
-                  Painel Grafana (:3005)
-                </a>
-              </div>
+          <Card>
+            <CardContent className="py-4 text-sm leading-relaxed text-muted">
+              Prometheus e Grafana não fazem parte desta instalação. O estado desta tela vem da checagem dos serviços e da fila de eventos.
             </CardContent>
           </Card>
 
@@ -329,13 +289,13 @@ export function PlatformMonitoringDashboard() {
               <span className="text-xl font-bold text-foreground">
                 {Math.round((onlineCount / infrastructureServices.length) * 100)}% Online
               </span>
-              <span className={`text-[11px] ${isHealthy ? "text-success" : "text-warning"}`}>
-                {onlineCount} de {infrastructureServices.length} serviços verificados como ativos
+              <span className={`text-[11px] ${situacaoOk ? "text-success" : "text-warning"}`}>
+                {onlineCount} de {infrastructureServices.length} serviços com checagem ok
               </span>
             </div>
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                isHealthy ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                situacaoOk ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
               }`}
             >
               <Activity size={20} />
@@ -346,7 +306,7 @@ export function PlatformMonitoringDashboard() {
         <Card className="bg-surface/50">
           <CardContent className="pt-4 flex items-center justify-between">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Outbox Event Queue</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Fila de eventos</span>
               <span className="text-xl font-bold text-foreground">
                 {outboxStats ? `${outboxStats.pending} Pendentes` : "—"}
               </span>
@@ -355,7 +315,9 @@ export function PlatformMonitoringDashboard() {
                   ? "GET /api/v1/monitoring/outbox-stats"
                   : outboxStats.failed > 0
                     ? `${outboxStats.failed} com falha (Dead Letter)`
-                    : "EventBus processado sem atraso"}
+                    : outboxStats.pending > 0
+                      ? `${outboxStats.pending} na fila, sem falha registrada`
+                      : "Nada pendente"}
               </span>
               {outboxStats && outboxStats.failed > 0 && can("monitoring:manage") && (
                 <OutboxRequeueButton failed={outboxStats.failed} onDone={() => void refreshOutbox()} />

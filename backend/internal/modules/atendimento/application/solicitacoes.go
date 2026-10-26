@@ -112,11 +112,20 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in Abertura
 	}
 	var enviadas []notificacoes.Enviada
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
-		// O prazo começa na abertura, com impacto e urgência médios; a
-		// equipe reclassifica na triagem.
+		// O prazo começa na abertura. Sem regra, impacto e urgência ficam
+		// médios. A primeira regra que casa ajusta os dois pela matriz.
 		p, err := s.politicaDe(ctx, tx, sol.UnidadeID)
 		if err != nil {
 			return err
+		}
+		regra, err := s.regraDaAbertura(ctx, tx, sol, identity)
+		if err != nil {
+			return err
+		}
+		if regra != nil && regra.Prioridade != "" && p != nil {
+			if impacto, urgencia, ok := p.Niveis(regra.Prioridade); ok {
+				sol.Impacto, sol.Urgencia = impacto, urgencia
+			}
 		}
 		sol = sol.AplicarPolitica(p)
 		if sol, err = s.repo.InsertSolicitacao(ctx, tx, sol); err != nil {
@@ -125,16 +134,16 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in Abertura
 		if _, err = s.passar(ctx, tx, sol, nil, identity.UserID); err != nil {
 			return err
 		}
-		if err = s.registrar(ctx, tx, EventoSolicitacaoAberta, "solicitacao", sol.ID, payloadDe(sol), sol, nil); err != nil {
+		corpo := payloadDe(sol)
+		if regra != nil {
+			corpo["regra_id"] = regra.ID.String()
+		}
+		if err = s.registrar(ctx, tx, EventoSolicitacaoAberta, "solicitacao", sol.ID, corpo, sol, nil); err != nil {
 			return err
 		}
-		equipe, err := s.repo.Responsaveis(ctx, tx, sol.UnidadeID)
+		ids, err := s.destinosDaAbertura(ctx, tx, sol, regra)
 		if err != nil {
 			return err
-		}
-		ids := make([]uuid.UUID, 0, len(equipe))
-		for _, c := range equipe {
-			ids = append(ids, c.ID)
 		}
 		enviadas, err = s.avisar(ctx, tx, sol, ids, identity.UserID, "aberta",
 			fmt.Sprintf("Nova solicitação #%d", sol.Numero), sol.OfertaNome+": "+sol.Titulo)
@@ -184,10 +193,15 @@ func (s *Service) ListarFila(ctx context.Context, identity auth.Identity, f Filt
 	if err != nil {
 		return nil, 0, err
 	}
+	mapa, err := s.mapaFila(ctx, s.pool)
+	if err != nil {
+		return nil, 0, err
+	}
 	// O Kanban move o cartão só para onde a máquina deixa: as passagens
 	// vêm daqui, não de uma cópia da regra no navegador.
 	for i := range lista {
 		ps := papeis(identity, lista[i])
+		lista[i] = lista[i].ComPassagens(extrasDaFila(lista[i], mapa))
 		lista[i].PodeIrPara = lista[i].Proximos(ps...)
 		ocultarSegredo(&lista[i], ps)
 	}
@@ -232,6 +246,11 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	for i := range visitas {
 		visitas[i] = visitas[i].SemCoordenadas()
 	}
+	mapa, err := s.mapaFila(ctx, s.pool)
+	if err != nil {
+		return Detalhe{}, MapError(err)
+	}
+	sol = sol.ComPassagens(extrasDaFila(sol, mapa))
 	detalhe := Detalhe{Solicitacao: sol, Papeis: ps, Proximos: sol.Proximos(ps...), Passagens: passagens, Comentarios: comentarios, Visitas: visitas}
 	avaliacao, err := s.repo.GetAvaliacao(ctx, s.pool, id)
 	if err != nil && !errors.Is(err, domain.ErrNaoEncontrado) {
@@ -286,6 +305,24 @@ func (s *Service) VincularSegredo(ctx context.Context, identity auth.Identity, i
 	return s.Obter(ctx, identity, id)
 }
 
+func extrasDaFila(sol domain.Solicitacao, mapa map[string][]string) []string {
+	chaves := []string{sol.Estado}
+	if sol.Estado == domain.EstadoResolvido || sol.Estado == domain.EstadoAtendido {
+		chaves = append(chaves, "concluida")
+	}
+	var out []string
+	for _, de := range chaves {
+		for _, para := range mapa[de] {
+			if para == "concluida" {
+				out = append(out, domain.Conclusao(sol.Tipo))
+				continue
+			}
+			out = append(out, para)
+		}
+	}
+	return out
+}
+
 func ocultarSegredo(sol *domain.Solicitacao, ps []string) {
 	if !slices.Contains(ps, domain.PapelTecnico) {
 		sol.CofreSegredoID = nil
@@ -296,6 +333,11 @@ func ocultarSegredo(sol *domain.Solicitacao, ps []string) {
 // Repetir o estado atual não grava nada.
 func (s *Service) Transicionar(ctx context.Context, identity auth.Identity, id uuid.UUID, para string) (Detalhe, error) {
 	err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, ps []string) ([]notificacoes.Enviada, error) {
+		mapa, err := s.mapaFila(ctx, tx)
+		if err != nil {
+			return nil, err
+		}
+		sol = sol.ComPassagens(extrasDaFila(sol, mapa))
 		next, mudou, err := sol.Transicionar(para, ps...)
 		if err != nil || !mudou {
 			return nil, err

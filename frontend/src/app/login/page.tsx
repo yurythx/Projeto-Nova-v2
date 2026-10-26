@@ -8,20 +8,9 @@ import { LoginCard } from "@/components/auth/LoginCard";
 import { getServerBranding } from "@/lib/branding/server";
 import { AccessibilityBar } from "@/components/layout/AccessibilityBar";
 import { Logo } from "@/components/ui/Logo";
-import { Seal } from "@/components/ui/Seal";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { THEME_COOKIE } from "@/lib/prefs/cookies";
-
-// O painel de marca descreve exatamente o que a plataforma faz para um
-// fiscal de contrato — sem linguagem de vendedor ("enterprise", "a
-// tecnologia mais avançada do mercado"), que a versão anterior tinha
-// herdado de um template.
-const capabilities = [
-  "Núcleo de identidade (IAM) e trilha de auditoria, sempre ligados.",
-  "Plug-ins que nascem desligados e entram quando a instalação liga.",
-  "Cada módulo fala com os outros só pelos contratos do núcleo.",
-  "Acessibilidade e-MAG e proteção de dados pessoais (LGPD).",
-];
+import { ACESSO, PRODUTO } from "@/lib/plataforma/conteudo";
 
 export default async function LoginPage() {
   await connection();
@@ -41,27 +30,21 @@ export default async function LoginPage() {
       <div
         className="relative hidden overflow-hidden bg-brand-panel text-white lg:flex lg:w-[44%] lg:flex-col lg:justify-between lg:p-12"
       >
-        <Seal
-          size={520}
-          decorative
-          className="pointer-events-none absolute -bottom-40 -right-40 text-white/[0.06]"
-        />
-
         <div className="relative flex items-center gap-2.5 text-lg font-semibold tracking-wide">
           <Logo size={32} />
-          {brand.appName || "Projeto-nova-v2"}
+          {brand.appName || PRODUTO.nome}
         </div>
 
         <div className="relative flex flex-col gap-6">
-          <p className="dateline text-accent font-semibold tracking-wider text-xs uppercase">{brand.orgName || "Projeto-nova-v2"}</p>
+          <p className="dateline text-accent font-semibold tracking-wider text-xs uppercase">{brand.orgName || PRODUTO.nome}</p>
           <h1 className="max-w-md text-3xl font-extrabold leading-tight text-white sm:text-4xl">
-            Acesso ao microkernel
+            Gestão de serviços
           </h1>
           <p className="max-w-sm text-sm text-white/75 leading-relaxed">
-            {brand.appDescription || "Entre com sua conta corporativa unificada (SSO Keycloak) ou credencial administrativa local."}
+            {brand.appDescription || PRODUTO.descricaoCurta}
           </p>
           <ul className="mt-2 flex flex-col gap-3.5 text-sm text-white/90">
-            {capabilities.map((item) => (
+            {ACESSO.map((item) => (
               <li key={item} className="flex items-start gap-3 leading-snug">
                 <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent shadow-xs" />
                 <span>{item}</span>

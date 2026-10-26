@@ -44,6 +44,14 @@ type Contrato struct {
 	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
+// Uso é a conta dos ativos em que o agente viu o programa.
+// Parcial avisa que a lista da máquina parou em 100.
+type Uso struct {
+	Instalados    int  `json:"instalados"`
+	ComInventario int  `json:"com_inventario"`
+	Parcial       bool `json:"parcial"`
+}
+
 // Licenca é um direito de uso, com quantidade de assentos.
 type Licenca struct {
 	ID             uuid.UUID  `json:"id"`
@@ -52,6 +60,8 @@ type Licenca struct {
 	FornecedorNome string     `json:"fornecedor_nome"`
 	Fim            *time.Time `json:"fim,omitempty"`
 	Quantidade     int        `json:"quantidade"`
+	Programa       string     `json:"programa,omitempty"`
+	Uso            *Uso       `json:"uso,omitempty"`
 	UnidadeID      *uuid.UUID `json:"unidade_id,omitempty"`
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
@@ -136,4 +146,13 @@ func NovaLicenca(nome string, fornecedor uuid.UUID, fim *time.Time, quantidade i
 	}
 	now := time.Now().UTC()
 	return Licenca{ID: uuid.New(), Nome: nome, FornecedorID: fornecedor, Fim: fim, Quantidade: quantidade, UnidadeID: unidade, CreatedAt: now, UpdatedAt: now}, nil
+}
+
+// ProgramaDe normaliza o nome que o agente informa. Vazio não compara.
+func ProgramaDe(s string) (string, error) {
+	s = strings.TrimSpace(s)
+	if utf8.RuneCountInString(s) > 80 {
+		return "", EntradaInvalida{"o nome do programa cabe em 80 caracteres"}
+	}
+	return s, nil
 }

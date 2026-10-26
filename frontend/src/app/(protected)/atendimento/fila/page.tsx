@@ -6,7 +6,10 @@ import { Suspense, useState } from "react";
 
 import { FAIXAS_FILA, Kanban, faixaDaFila } from "@/components/atendimento/Kanban";
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
-import { BarraFaixa, pontoFaixa, useAparencia, useFaixasRecolhidas } from "@/components/plataforma/Faixas";
+import { BarraFaixa, ordenarColunas, pontoFaixa, useAparencia, useFaixasRecolhidas } from "@/components/plataforma/Faixas";
+import { colunasVisiveis, useQuadro } from "@/components/plataforma/useQuadro";
+import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
+import { SolicitacaoDetalhe } from "@/app/(protected)/atendimento/solicitacoes/[id]/page";
 import { useRealtimeState, useTopics } from "@/components/realtime/RealtimeProvider";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -56,10 +59,14 @@ function FilaDaEquipe() {
   const { can, me } = usePlataforma();
   const atende = can("atendimento:atender");
   const abre = can("atendimento:abrir");
+  const gereColunas = can("atendimento:manage");
   const { recolhidas, alternar } = useFaixasRecolhidas("nova-faixas:fila-lista");
   const look = useAparencia("nova-faixas:fila");
+  const catalogo = useQuadro("fila", FAIXAS_FILA);
+  const controles = { oficial: catalogo.oficial };
   const params = useSearchParams();
   const router = useRouter();
+  const painel = usePainelNaUrl();
   const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
   const [responsavel, setResponsavel] = useState("");
   const [tipo, setTipo] = useState("");
@@ -105,9 +112,7 @@ function FilaDaEquipe() {
   }
 
   function trocarVista(v: Vista) {
-    router.replace(
-      v === "lista" ? "/atendimento/fila?vista=lista" : "/atendimento/fila?vista=quadro",
-    );
+    router.replace(painel.href({ vista: v === "lista" ? "lista" : "quadro" }));
   }
 
   async function mover(s: Solicitacao, para: Estado) {
@@ -130,15 +135,15 @@ function FilaDaEquipe() {
   }
 
   const itens = fila.data?.items ?? [];
-
-  function criarNaColuna(colunaId: string) {
-    if (colunaId !== "aberto" || !abre) return null;
-    return (
-      <Link href="/atendimento" className={buttonClass("secondary", "sm")}>
-        Nova solicitação
-      </Link>
-    );
-  }
+  const colunasQuadro = colunasVisiveis(
+    catalogo.colunas.filter((coluna) => coluna.id !== "encerrado" && coluna.id !== "cancelado"),
+    itens,
+    (s) => {
+      const faixa = faixaDaFila(s.estado);
+      return faixa === "encerrado" || faixa === "cancelado" ? null : faixa;
+    },
+  );
+  const colunasLista = colunasVisiveis(catalogo.colunas, itens, (s) => faixaDaFila(s.estado));
 
   return (
     <div className="flex flex-col gap-6">
@@ -147,11 +152,23 @@ function FilaDaEquipe() {
         title="Fila da equipe"
         description="Solicitações das unidades que você atende. Assumir uma solicitação aberta já a coloca em atendimento."
         actions={
-          <span className="text-xs text-muted" role="status">
-            {conexao === "open"
-              ? "Atualização automática ligada"
-              : "Atualização automática indisponível"}
-          </span>
+          <div className="flex items-center gap-2">
+            {gereColunas && (
+              <Link href="/atendimento/fila/colunas" className={buttonClass("secondary", "sm")}>
+                Colunas
+              </Link>
+            )}
+            {abre && (
+              <Link href="/atendimento" className={buttonClass("primary", "sm")}>
+                Nova solicitação
+              </Link>
+            )}
+            <span className="text-xs text-muted" role="status">
+              {conexao === "open"
+                ? "Atualização automática ligada"
+                : "Atualização automática indisponível"}
+            </span>
+          </div>
         }
       />
 
@@ -226,7 +243,9 @@ function FilaDaEquipe() {
               itens={itens}
               onMover={(s, para) => void mover(s, para)}
               pending={pending}
-              extra={criarNaColuna}
+              aoAbrir={(s) => painel.abrir(s.id)}
+              colunas={colunasQuadro}
+              controles={controles}
             />
             {(fila.data?.meta?.total_items ?? 0) > itens.length && (
               <p className="text-sm text-muted">
@@ -238,21 +257,27 @@ function FilaDaEquipe() {
         ) : (
           <>
             <div className="flex flex-col gap-2">
-              {FAIXAS_FILA.map((coluna) => (
+              {ordenarColunas(colunasLista).map((coluna) => {
+                const titulo = catalogo.oficial ? coluna.titulo : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
+                const cor = catalogo.oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
+                const total = itens.filter((s) => faixaDaFila(s.estado) === coluna.id).length;
+                return (
                 <BarraFaixa
                   key={coluna.id}
-                  titulo={look.gravado.colunas[coluna.id]?.titulo || coluna.titulo}
+                  titulo={titulo}
                   tituloId={`faixa-fila-${coluna.id}`}
-                  total={itens.filter((s) => faixaDaFila(s.estado) === coluna.id).length}
+                  total={total}
                   tom={coluna.tom}
-                  cor={look.gravado.colunas[coluna.id]?.cor}
+                  cor={cor}
                   recolhida={recolhidas.includes(coluna.id)}
+                  ordem={coluna.ordem}
+                  corImediata={!catalogo.oficial}
                   onAlternar={() => alternar(coluna.id)}
-                  onRenomear={(nome) => look.salvarColuna(coluna.id, { titulo: nome })}
-                  onCor={(cor) => look.salvarColuna(coluna.id, { cor })}
-                  extra={criarNaColuna(coluna.id)}
+                  onRenomear={catalogo.oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })}
+                  onCor={catalogo.oficial ? undefined : (valor) => look.salvarColuna(coluna.id, { cor: valor })}
                 />
-              ))}
+                );
+              })}
             </div>
             {itens.length === 0 ? (
               <p className="text-sm text-muted">Fila vazia</p>
@@ -276,10 +301,19 @@ function FilaDaEquipe() {
               <TableBody>
                 {itens
                   .filter((s) => !recolhidas.includes(faixaDaFila(s.estado)))
-                  .map((s) => {
+                  .map((s, indice) => ({ s, indice }))
+                  .sort((a, b) => {
+                    const ordemDe = (estado: string) =>
+                      catalogo.colunas.find((coluna) => coluna.id === faixaDaFila(estado as Estado))?.ordem ?? 999;
+                    return ordemDe(a.s.estado) - ordemDe(b.s.estado) || a.indice - b.indice;
+                  })
+                  .map(({ s }) => {
                     const faixa = faixaDaFila(s.estado);
                     const cor =
-                      look.gravado.cartoes[s.id]?.cor || look.gravado.colunas[faixa]?.cor;
+                      look.gravado.cartoes[s.id]?.cor ||
+                      (catalogo.oficial
+                        ? catalogo.colunas.find((coluna) => coluna.id === faixa)?.cor
+                        : look.gravado.colunas[faixa]?.cor);
                     return (
                   <TableRow key={s.id}>
                     <TableCell className="tabular-nums text-muted">
@@ -291,12 +325,13 @@ function FilaDaEquipe() {
                       #{s.numero}
                     </TableCell>
                     <TableCell>
-                      <Link
-                        href={`/atendimento/solicitacoes/${s.id}`}
+                      <button
+                        type="button"
                         className="font-medium text-primary hover:underline"
+                        onClick={() => painel.abrir(s.id)}
                       >
                         {look.gravado.cartoes[s.id]?.titulo || s.titulo}
-                      </Link>
+                      </button>
                       <p className="text-xs text-muted">{s.oferta_nome}</p>
                     </TableCell>
                     <TableCell>{rotuloTipo(s.tipo)}</TableCell>
@@ -313,12 +348,13 @@ function FilaDaEquipe() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/atendimento/solicitacoes/${s.id}`}
+                        <button
+                          type="button"
                           className="text-sm font-medium text-primary hover:underline"
+                          onClick={() => painel.abrir(s.id)}
                         >
                           Editar
-                        </Link>
+                        </button>
                         {!s.responsavel_id &&
                           s.estado !== "encerrado" &&
                           s.estado !== "cancelado" && (
@@ -345,6 +381,15 @@ function FilaDaEquipe() {
           </>
         )}
       </DataState>
+      <PainelDoQuadro
+        aberto={painel.id !== null}
+        id={painel.id}
+        titulo="Detalhe da solicitação"
+        href={painel.id ? `/atendimento/solicitacoes/${painel.id}` : "/atendimento/fila"}
+        onClose={painel.fechar}
+      >
+        {painel.id && <SolicitacaoDetalhe />}
+      </PainelDoQuadro>
     </div>
   );
 }

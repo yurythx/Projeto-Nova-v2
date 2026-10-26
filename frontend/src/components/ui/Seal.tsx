@@ -10,8 +10,8 @@
 export function Seal({
   size = 220,
   className = "",
-  topText = "PROJETO-NOVA-V2",
-  bottomText = "MICROKERNEL",
+  topText = "PROJETO NOVA",
+  bottomText = "GESTAO DE SERVICOS",
   decorative = false,
 }: {
   size?: number;
@@ -29,7 +29,7 @@ export function Seal({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role={decorative ? undefined : "img"}
-      aria-label={decorative ? undefined : "Selo do Projeto-nova-v2"}
+      aria-label={decorative ? undefined : "Selo do Projeto Nova"}
       aria-hidden={decorative || undefined}
       focusable="false"
       className={`shrink-0 ${className}`}

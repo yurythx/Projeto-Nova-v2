@@ -168,6 +168,8 @@ type Mudanca struct {
 	Aprovacoes []Aprovacao `json:"aprovacoes"`
 	Vinculos   []Vinculo   `json:"vinculos"`
 	Proximos   []string    `json:"proximos"`
+	// passagens são caminhos acrescentados neste quadro. Quem gere conduz.
+	passagens []string
 }
 
 // Entrada são os campos editáveis.
@@ -328,7 +330,20 @@ func (m Mudanca) PodeIrPara(autor uuid.UUID, papeis ...string) []string {
 			}
 		}
 	}
+	if slices.Contains(papeis, PapelGestor) {
+		for _, d := range m.passagens {
+			if d != "" && d != m.Estado && !slices.Contains(out, d) {
+				out = append(out, d)
+			}
+		}
+	}
 	return out
+}
+
+// ComPassagens devolve a cópia com os caminhos acrescentados neste quadro.
+func (m Mudanca) ComPassagens(extras []string) Mudanca {
+	m.passagens = append([]string{}, extras...)
+	return m
 }
 
 // Transicao é a passagem pedida, com o que cada uma exige.

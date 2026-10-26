@@ -9,7 +9,7 @@ import { SegredoVinculadoCard } from "./SegredoVinculadoCard";
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
 
 describe("Senha de serviço no chamado", () => {
-  it("vincula o id e só revela depois da senha de acesso", async () => {
+  it("vincula o id e revela sem pedir a senha de acesso de novo", async () => {
     const user = userEvent.setup();
     const api = mockBackend({
       ...identityRoutes({}, [moduleStatus("cofre", { enabled: true, name: "Cofre" })]),
@@ -29,10 +29,8 @@ describe("Senha de serviço no chamado", () => {
     await waitFor(() => expect(api.to("PUT v1/atendimento/solicitacoes/t1/segredo")).toHaveLength(1));
     expect(api.to("PUT v1/atendimento/solicitacoes/t1/segredo")[0]!.body).toEqual({ segredo_id: "s1" });
 
-    await user.type(screen.getByLabelText("Sua senha de acesso"), "acesso");
     await user.click(screen.getByRole("button", { name: "Revelar senha do chamado" }));
     expect(await screen.findByDisplayValue("chave-da-rede")).toBeInTheDocument();
-    expect(api.to("POST v1/cofre/segredos/s1/revelar")[0]!.body).toEqual({ senha_de_acesso: "acesso" });
-    expect(screen.queryByDisplayValue("acesso")).not.toBeInTheDocument();
+    expect(api.to("POST v1/cofre/segredos/s1/revelar")[0]!.body).toEqual({});
   });
 });

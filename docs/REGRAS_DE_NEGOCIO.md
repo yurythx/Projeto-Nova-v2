@@ -1,5 +1,10 @@
 # Estrutura, funcionamento e regras de negócio
 
+O nome público do produto é **Projeto Nova**. A operação de serviços segue o
+ITIL (Version 5) nas práticas que o código implementa: incidente e requisição,
+problema, mudança e projeto. O repositório e os pacotes técnicos conservam o
+identificador histórico.
+
 Referência funcional da plataforma. Serve para quem **implanta e administra**
 (como modelar a organização, quem pode o quê) e para quem **desenvolve**
 (quais regras cada módulo garante). Tudo aqui reflete o código em
@@ -491,6 +496,17 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 - **Abrir** (`atendimento:abrir`): o servidor escolhe uma oferta ativa e
   descreve o pedido. A solicitação herda da oferta o tipo, a unidade que
   atende e o produto, e ganha um número sequencial.
+- **Triagem:** até 30 regras por unidade, em ordem. A primeira que casa
+  (oferta, palavra no título, unidade de quem pede — o que estiver
+  preenchido) define a prioridade pela matriz já gravada e avisa só a
+  equipe escolhida. Não marca responsável. Sem regra, o chamado segue
+  com impacto e urgência médios.
+- **Resposta pronta:** uma resposta pública e uma nota interna por
+  oferta. Quem cadastra vê o texto já gravado da oferta. A equipe cola
+  o texto na caixa. O envio não é automático.
+- **Chamado mensal:** no dia 1 a 28, no fuso da política (ou Brasília),
+  uma vez naquele mês. Quem criou a marca é o solicitante. O prazo
+  começa na abertura, como em qualquer chamado.
 - **Quem vê:** quem abriu e quem tem `atendimento:atender` na unidade da
   solicitação. Para os demais, ela não existe (404).
 - **Responsável:** só um membro ativo de uma equipe da unidade.
@@ -718,8 +734,11 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 
 ### Contratos e licenças
 - `contratos:manage` cadastra fornecedor, contrato e licença no escopo
-  da unidade. A licença guarda nome, fornecedor, quantidade de assentos
-  e vencimento. A chave secreta não é gravada.
+  da unidade. A licença guarda nome, fornecedor, quantidade de assentos,
+  vencimento e, se informado, o nome do programa. A chave secreta não é
+  gravada. A conta de instalações lê ativos em uso ou manutenção. Sem
+  inventário, a tela diz que nenhum ativo informou programas. Se o
+  agente cortou a lista em 100, a conta fica marcada como parcial.
 - O sino avisa uma vez em cada marco: 30 dias, 7 dias, no dia e depois
   do vencimento. O aviso vai para quem administra ou tem
   `contratos:manage` no alcance da unidade.
@@ -728,7 +747,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 - O Keycloak autentica a pessoa. O grupo do AD vira um perfil com escopo,
   como nas outras concessões. A senha do cofre não fica em atributo do
   Keycloak nem numa role por segredo.
-- `cofre:read` vê nome e usuário. `cofre:reveal` revela a senha.
+- `cofre:read` vê nome, usuário, tipo e endereço. `cofre:reveal` revela a senha.
   `cofre:manage` guarda, troca e exclui. `cofre:grant` move o segredo
   para outra unidade que também alcança. Quem administra revela, e essa
   revelação também fica na auditoria.
@@ -738,9 +757,32 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 - Cada segredo tem a própria chave, embrulhada por `COFRE_MASTER_KEY`.
   Essa chave não é a `CONFIG_ENCRYPTION_KEY`. O texto cifrado está
   amarrado ao segredo, à versão e à unidade.
-- Revelar pede de novo a senha de acesso de quem está logado. Senha
-  errada conta no bloqueio do login. A auditoria não grava esse valor
-  nem a senha do cofre. Credencial de máquina não revela.
+- Revelar usa a sessão de quem já entrou e tem `cofre:reveal`. Não pede
+  a senha de acesso de novo. A auditoria grava quem revelou, nunca a
+  senha. Credencial de máquina não revela. Retirar o segredo, que
+  reserva o item, continua pedindo a senha de acesso.
+- O item é da organização: máquina, aplicação, painel ou outro. Máquina
+  é VM ou container: o endereço é o IP e o acesso mostrado é SSH
+  (IP, usuário e senha). Aplicação mostra o usuário e a senha de
+  administrador. A senha não aparece na lista. Um painel aponta as
+  máquinas que administra, pelo identificador, sem copiar a senha delas.
+- Quem revela pode retirar o segredo por um prazo, de 15 minutos a 8
+  horas. Enquanto a retirada vale, outra pessoa não revela nem retira.
+  Quem retirou, ou quem administra, devolve antes do prazo. A lista
+  mostra quem retirou e até quando, sem a senha.
+- Um segredo marcado rotaciona ao devolver, ao vencer a retirada e a
+  cada 30 dias. A senha nova fica só no cofre. O endereço não muda
+  sozinho: a lista avisa até alguém com `cofre:manage` registrar que
+  aplicou. Segredo sem a marca, e senha trocada à mão, não rotacionam.
+- A pasta é da unidade e tem a própria lista de pessoas. Quem não está
+  nela não vê o segredo, mesmo com `cofre:read` na unidade. Revelar
+  continua pedindo `cofre:reveal` na unidade e a marca de revelar na
+  pasta. Quem tem `cofre:manage` na unidade vê a
+  pasta, troca a lista de pessoas e coloca o segredo nela na criação
+  ou depois, sem mudar a senha. Apagar a pasta só vale quando ela está
+  vazia: senha dentro dela impede a exclusão, e a senha não sai junto.
+  Mover de unidade tira o segredo da pasta. Não é role do
+  Keycloak.
 - O chamado pode guardar o id do segredo. A senha não é copiada. Quem
   abriu o pedido não vê o id. O cofre desligado e a solicitação
   encerrada recusam o vínculo.
@@ -757,9 +799,18 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 - **Visões integradas:** interface em lista, quadro Kanban e Cronograma / Linha do Tempo (Gantt) de 90 dias.
 - **Apontamento de Horas & Timesheet:** registro de esforço técnico por tarefa ou projeto (data, horas entre 0 e 24h, custo/hora e descrição das atividades). Cálculo automático do total de horas realizadas, custo acumulado e acompanhamento visual da taxa de queima do orçamento previsto.
 
+### Quadros (kanban e lista)
+- **O mesmo catálogo:** problemas, mudanças, projetos, tarefas, ativos e a fila leem nome, cor e ordem em `GET /api/v1/quadros/{quadro}`. O quadro e a lista usam essa ordem, a partir de zero. O nome é rótulo. A chave da coluna é o estado do registro e não muda quando o nome muda.
+- **Quem altera:** a permissão de gestão que o módulo já tem (`problemas:manage`, `mudancas:manage`, `projetos:manage`, `ativos:manage`, `atendimento:manage`). Quem só consulta lê o catálogo e não grava. Não há permissão nova.
+- **Onde se configura:** cada quadro tem a página Colunas (`/problemas/colunas`, `/mudancas/colunas`, `/projetos/colunas`, `/projetos/tarefas/colunas`, `/ativos/colunas`, `/atendimento/fila/colunas`). Lá ficam o nome (até 80), a cor (`#rrggbb`) e a posição a partir de zero. A posição define o lugar da coluna no quadro e na lista. A barra da coluna não sobe, não desce e não retira. Recolher a coluna continua neste navegador.
+- **Retirar:** só nessa página, e só quando a coluna está vazia. A coluna inicial do fluxo (por onde o registro nasce: registrado, rascunho, planejado, a fazer, planejado do ativo, aberto) não sai. Coluna com registro não sai — a mensagem pede para esvaziar. Retirar não apaga a chave: o estado antigo continua legível e devolver coloca a coluna no fim da ordem.
+- **Coluna nova:** nasce só no quadro em que foi pedida, em `POST /api/v1/quadros/{quadro}`. A chave é gerada e não muda com o nome. É preciso dizer de quais colunas daquele quadro o card entra e para quais pode sair. Sem entrada, a coluna não nasce. O fluxo de fábrica continua e soma com essas passagens. Em mudanças, quem gere conduz a coluna nova; aprovar e rejeitar continuam com quem aprova. Na fila, quem atende conduz; quem abriu o pedido não ganha caminho novo. Entrar num estado que já exige causa, contorno, janela ou parecer continua exigindo. A coluna nova não pede campo próprio.
+- **O que não muda na tela:** mover o card continua na API de estado do módulo. Na mudança, a coluna fechada conta rejeitada, falhou e cancelada. Na fila, concluídas conta resolvido e atendido; encerrada e cancelada ficam na lista, fora do quadro.
+- **Auditoria:** cada alteração grava, na mesma transação, quem mudou, a chave e a ordem anterior e a nova. O nome novo não é escrito no lugar do estado.
+
 ### Seção Assistência (Central de Serviços estilo ITIL/GLPI)
 - **Agrupamento unificado:** no menu lateral, a seção **Assistência** consolida:
-  - **Dashboard:** fila, problemas, mudanças e projetos do escopo, mais a satisfação e os indicadores de `GET /api/v1/atendimento/governanca`. Sem amostra, o relatório escreve "sem amostra" — não preenche MTTR, MTBF, SLA nem FCR com constante. O sucesso das mudanças é concluídas sobre concluídas e falhas da lista carregada.
+  - **Dashboard:** fila, problemas, mudanças e projetos do escopo, mais a satisfação e os indicadores de `GET /api/v1/atendimento/governanca`. Sem amostra, o relatório escreve "sem amostra" — não preenche MTTR, MTBF, SLA nem FCR com constante. A deflexão, no mesmo retorno, conta pessoas que viram artigo e não abriram pedido em 30 dias; sem vista, o campo não vem. O sucesso das mudanças é concluídas sobre concluídas e falhas da lista carregada.
   - **Calendário Operacional:** visão cronológica integrada de janelas planejadas de mudanças (CAB), marcos de projetos e vencimentos de SLA de chamados em grade mensal e lista de prazos.
   - **Detecção de Sobreposições e Conflitos:** alerta proativo visual quando janelas de Mudanças de risco médio ou alto coincidem com outros eventos ou marcos na mesma data, prevenindo colisões operacionais em infraestrutura.
   - **Atendimento:** filas, chamados e quadro kanban de solicitações e incidentes.

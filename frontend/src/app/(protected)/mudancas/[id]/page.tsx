@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, type ReactNode, useState } from "react";
 
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
@@ -47,8 +47,9 @@ function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   );
 }
 
-export default function MudancaPage() {
-  const { id } = useParams<{ id: string }>();
+export function MudancaDetalhe() {
+  const id = useIdDaRota();
+  const embutido = usePainelEmbutido();
   const { can } = usePlataforma();
   const mudanca = useApiQuery<Mudanca>(id ? `v1/mudancas/${id}` : null);
   const m = mudanca.data;
@@ -122,13 +123,15 @@ export default function MudancaPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href="/mudancas"
-        className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
-      >
-        <ArrowLeft aria-hidden className="h-4 w-4" />
-        Voltar para as mudanças
-      </Link>
+      {!embutido && (
+        <Link
+          href="/mudancas"
+          className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <ArrowLeft aria-hidden className="h-4 w-4" />
+          Voltar para as mudanças
+        </Link>
+      )}
       <DataState
         loading={mudanca.isLoading}
         error={mudanca.error}
@@ -237,7 +240,8 @@ export default function MudancaPage() {
                           label={textoDe.obrigatorio ? `${textoDe.rotulo} *` : textoDe.rotulo}
                           required={textoDe.obrigatorio}
                           maxLength={4000}
-                          rows={2}
+                          rows={8}
+                          className="min-h-48"
                         />
                         {pedindo === "concluida" &&
                           m.vinculos.some((v) => v.tipo === "incidente" || v.tipo === "problema") && (
@@ -393,4 +397,8 @@ export default function MudancaPage() {
       </DataState>
     </div>
   );
+}
+
+export default function MudancaPage() {
+  return <MudancaDetalhe />;
 }

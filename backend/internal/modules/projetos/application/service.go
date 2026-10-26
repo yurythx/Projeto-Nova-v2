@@ -24,14 +24,30 @@ const (
 )
 
 type Service struct {
-	pool   *pgxpool.Pool
-	repo   domain.Repository
-	outbox *outbox.Writer
-	logger *slog.Logger
+	pool      *pgxpool.Pool
+	repo      domain.Repository
+	outbox    *outbox.Writer
+	logger    *slog.Logger
+	passagens Passagens
+}
+
+// Passagens lê os caminhos acrescentados no quadro. Nil mantém só o fluxo de fábrica.
+type Passagens interface {
+	Mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error)
 }
 
 func NewService(pool *pgxpool.Pool, repo domain.Repository, ob *outbox.Writer, logger *slog.Logger) *Service {
 	return &Service{pool: pool, repo: repo, outbox: ob, logger: logger}
+}
+
+// ComPassagens liga os caminhos acrescentados nos quadros de projetos e de tarefas.
+func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+func (s *Service) mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error) {
+	if s.passagens == nil {
+		return map[string][]string{}, nil
+	}
+	return s.passagens.Mapa(ctx, db, quadro)
 }
 
 func MapError(err error) error {
@@ -46,6 +62,8 @@ func MapError(err error) error {
 		return apperrors.Validation("informe um título válido (até 160 caracteres)")
 	case errors.Is(err, domain.ErrTransicaoInvalida):
 		return apperrors.Conflict("passagem de estado não permitida para o estado atual")
+	case errors.Is(err, domain.ErrEstadoInvalido):
+		return apperrors.Validation("esse estado não está entre as colunas ativas da tarefa")
 	case errors.Is(err, domain.ErrProjetoEncerrado):
 		return apperrors.Conflict("projeto cancelado não aceita alterações")
 	case errors.Is(err, domain.ErrPrioridadeInvalida):
@@ -100,7 +118,11 @@ func (s *Service) Criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 }
 
 func (s *Service) Obter(ctx context.Context, idt auth.Identity, id uuid.UUID) (*domain.Projeto, error) {
-	return s.repo.Obter(ctx, s.pool, id)
+	p, err := s.repo.Obter(ctx, s.pool, id)
+	if err != nil {
+		return nil, err
+	}
+	return s.comProximos(ctx, s.pool, p)
 }
 
 func (s *Service) Listar(ctx context.Context, idt auth.Identity, estado, busca string) ([]domain.Projeto, error) {
@@ -108,7 +130,30 @@ func (s *Service) Listar(ctx context.Context, idt auth.Identity, estado, busca s
 		Estado: estado,
 		Busca:  busca,
 	}
-	return s.repo.Listar(ctx, s.pool, f)
+	lista, err := s.repo.Listar(ctx, s.pool, f)
+	if err != nil {
+		return nil, err
+	}
+	mapa, err := s.mapa(ctx, s.pool, "projetos")
+	if err != nil {
+		return nil, err
+	}
+	for i := range lista {
+		lista[i].Proximos = domain.ProximosEstados(lista[i].Estado, mapa[lista[i].Estado]...)
+	}
+	return lista, nil
+}
+
+func (s *Service) comProximos(ctx context.Context, db database.DBTX, p *domain.Projeto) (*domain.Projeto, error) {
+	if p == nil {
+		return nil, nil
+	}
+	mapa, err := s.mapa(ctx, db, "projetos")
+	if err != nil {
+		return nil, err
+	}
+	p.Proximos = domain.ProximosEstados(p.Estado, mapa[p.Estado]...)
+	return p, nil
 }
 
 func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID, e domain.EntradaProjeto) (*domain.Projeto, error) {
@@ -152,7 +197,11 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 			return err
 		}
 
-		if !domain.ValidarTransicao(p.Estado, novoEstado) {
+		mapa, err := s.mapa(ctx, tx, "projetos")
+		if err != nil {
+			return err
+		}
+		if !domain.ValidarTransicao(p.Estado, novoEstado, mapa[p.Estado]...) {
 			return domain.ErrTransicaoInvalida
 		}
 
@@ -175,6 +224,13 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 }
 
 func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*domain.Tarefa, error) {
+	mapa, err := s.mapa(ctx, s.pool, "tarefas")
+	if err != nil {
+		return nil, err
+	}
+	if !domain.EstadoDeTarefaAceito("", estado, mapa) {
+		return nil, domain.ErrEstadoInvalido
+	}
 	t := &domain.Tarefa{
 		ID:              uuid.New(),
 		ProjetoID:       projetoID,
@@ -191,6 +247,17 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 }
 
 func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*domain.Tarefa, error) {
+	atual, err := s.repo.EstadoDaTarefa(ctx, s.pool, id)
+	if err != nil {
+		return nil, err
+	}
+	mapa, err := s.mapa(ctx, s.pool, "tarefas")
+	if err != nil {
+		return nil, err
+	}
+	if !domain.EstadoDeTarefaAceito(atual, estado, mapa) {
+		return nil, domain.ErrEstadoInvalido
+	}
 	return s.repo.AtualizarTarefa(ctx, s.pool, id, titulo, descricao, responsavel, estado, ordem)
 }
 

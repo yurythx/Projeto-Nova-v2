@@ -176,6 +176,7 @@ export interface Governanca {
     fcr: number;
     truncado: boolean;
   };
+  deflexao?: { viram: number; sem_pedido: number; taxa: number } | null;
 }
 
 export interface Detalhe {

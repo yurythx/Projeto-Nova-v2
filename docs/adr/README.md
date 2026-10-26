@@ -31,4 +31,12 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [051](051-fuso-da-serie-e-inventario-local.md) | Dia da série no fuso da unidade e inventário da própria máquina | Aceito e implementado |
 | [052](052-programas-e-credencial-de-agente.md) | Programas da máquina e credencial que não é de pessoa | Aceito e implementado |
 | [053](053-cofre-de-senhas.md) | Cofre de senhas no escopo da unidade, com revelação auditada | Aceito e implementado |
-| [054](054-revelacao-e-segredo-no-chamado.md) | Revelar pede a senha de acesso de novo; o chamado guarda só o id | Aceito e implementado |
+| [054](054-revelacao-e-segredo-no-chamado.md) | O chamado guarda só o id do segredo; a confirmação ao revelar foi substituída pelo 059 | Aceito e implementado |
+| [055](055-endereco-e-painel-no-cofre.md) | Endereço à vista e painel que aponta as máquinas que administra | Aceito e implementado |
+| [056](056-retirada-com-prazo.md) | Retirada exclusiva com prazo; devolver não troca a senha | Aceito e implementado |
+| [057](057-rotacao-do-cofre.md) | Rotação da senha guardada ao devolver, ao vencer e a cada 30 dias | Aceito e implementado |
+| [058](058-fila-curta-e-pasta-do-cofre.md) | Triagem curta, resposta pronta, chamado mensal, licença contra programa, pasta do cofre e deflexão | Aceito e implementado |
+| [059](059-revelar-sem-senha-de-acesso.md) | Revelar usa a sessão; retirar continua pedindo a senha de acesso | Aceito e implementado |
+| [060](060-pasta-vazia-para-apagar.md) | Pasta com senha não apaga; exclusão de pasta e de senha pede confirmação | Aceito e implementado |
+| [061](061-catalogo-de-colunas.md) | Nome, cor e ordem das colunas no banco; a chave continua o estado | Aceito e implementado |
+| [062](062-coluna-nova-no-quadro.md) | Coluna nova nasce só no quadro pedido, com chave gerada e passagens próprias | Aceito e implementado |

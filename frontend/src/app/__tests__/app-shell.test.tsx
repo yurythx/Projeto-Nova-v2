@@ -74,7 +74,7 @@ describe("layouts de servidor", () => {
     expect(JSON.stringify(html.props.children)).toContain("--primary:#003366");
 
     publicGetOr.mockResolvedValue(null);
-    expect(await generateMetadata()).toMatchObject({ title: { default: "Projeto-nova-v2" } });
+    expect(await generateMetadata()).toMatchObject({ title: { default: "Projeto Nova" } });
     cookieJar.values = { "projeto-nova-theme": "roxo" };
     const plain = (await RootLayout({ children: null })) as unknown as { props: Record<string, unknown> };
     expect(plain.props["data-theme"]).toBeUndefined();
@@ -111,9 +111,9 @@ describe("layouts de servidor", () => {
 
   it("getServerBranding com e sem API", async () => {
     publicGetOr.mockResolvedValueOnce({ app_name: "", org_name: "Órgão", app_description: "d", support_email: "e", support_phone: "p" });
-    expect(await getServerBranding()).toEqual({ appName: "Projeto-nova-v2", appDescription: "d", orgName: "Órgão", supportEmail: "e", supportPhone: "p" });
+    expect(await getServerBranding()).toEqual({ appName: "Projeto Nova", appDescription: "d", orgName: "Órgão", supportEmail: "e", supportPhone: "p" });
     publicGetOr.mockResolvedValueOnce(null);
-    expect(await getServerBranding()).toMatchObject({ orgName: "Projeto-nova-v2", supportEmail: "" });
+    expect(await getServerBranding()).toMatchObject({ orgName: "Projeto Nova", supportEmail: "" });
   });
 
   it("rota do NextAuth exporta o mesmo handler para GET e POST", () => {

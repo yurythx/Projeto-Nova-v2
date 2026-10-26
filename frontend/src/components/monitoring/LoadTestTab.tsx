@@ -261,7 +261,7 @@ const TARGETS: TargetItem[] = [
     pipeline: ["Caddy (Proxy TLS)", "Next.js BFF Auth", "Go Core REST", "PostgreSQL (outbox_events)", "RabbitMQ 3.13"],
     testExplanation: {
       overview:
-        "Avalia a integridade do padrão Transactional Outbox do Projeto-nova-v2 sob concorrência, verificando o status de publicação assíncrona para o RabbitMQ.",
+        "Avalia a integridade do padrão Transactional Outbox do Projeto Nova sob concorrência, verificando o status de publicação assíncrona para o RabbitMQ.",
       subsystems: [
         "PostgreSQL 16: Contagem atômica de eventos pendentes, publicados e em Dead Letter (DLQ)",
         "RabbitMQ 3.13: Disponibilidade dos canais AMQP e estabilidade do broker de mensagens",
@@ -402,7 +402,7 @@ export function LoadTestTab() {
       return `🛡️ Defesa Ativa Confirmada: O limitador Redis atuou com precisão interceptando ${rateLimited} requisições em excesso (HTTP 429) com cabeçalho Retry-After: 60, preservando a integridade do banco de dados.`;
     }
     if (p95 < 40) {
-      return `🚀 Desempenho Excepcional (P95: ${p95}ms): A stack do Projeto-nova-v2 operou com latência baixa, atendendo 100% das requisições com folga em relação ao SLA (${target.performanceGuide.slaTarget}).`;
+      return `🚀 Desempenho Excepcional (P95: ${p95}ms): A stack do Projeto Nova operou com latência baixa, atendendo 100% das requisições com folga em relação ao SLA (${target.performanceGuide.slaTarget}).`;
     }
     if (p95 < 150) {
       return `⚡ Desempenho Saudável (P95: ${p95}ms): Respostas entregues dentro da faixa ótima para navegação web interativa sob concorrência.`;

@@ -6,11 +6,12 @@ import { type FormEvent, Suspense, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
-import { ListaFaixas, NomeClicavel, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { ListaFaixas, NomeClicavel, colunasEmOrdem, ordenarColunas, seloDoEstado, useAparencia, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
@@ -103,6 +104,16 @@ function Ativos() {
   const produtos = useApiQuery<Produto[]>(gere && can("produtos:manage") ? "v1/produtos" : null);
   const [editando, setEditando] = useState<Ativo | null>(null);
   const { run, pending } = useAction();
+  const look = useAparencia("nova-faixas:ativos");
+  const fabricaAtivo: ColunaFaixa[] = colunasEmOrdem(
+    (Object.keys(ESTADO_ATIVO) as EstadoAtivo[]).map((id) => ({
+      id,
+      titulo: ESTADO_ATIVO[id].label,
+      tom: ESTADO_ATIVO[id].tone,
+    })),
+  );
+  const catalogo = useQuadro("ativos", fabricaAtivo);
+  const controles = { oficial: catalogo.oficial };
 
   if (!gere) {
     return (
@@ -144,21 +155,6 @@ function Ativos() {
     }
   }
 
-  async function criarCard(colunaId: string, nome: string) {
-    const ok = await run(
-      () =>
-        apiClient.post("v1/ativos", {
-          nome: nome.slice(0, 160),
-          tipo: "outro",
-          estado: colunaId,
-          identificador: "",
-          descricao: "",
-        }),
-      "Ativo cadastrado",
-    );
-    if (ok) void ativos.mutate();
-  }
-
   async function renomearAtivo(a: Ativo, nome: string) {
     const ok = await run(
       () =>
@@ -177,17 +173,31 @@ function Ativos() {
   }
 
   const lista = ativos.data ?? [];
-  const colunasAtivo: ColunaFaixa[] = (Object.keys(ESTADO_ATIVO) as EstadoAtivo[]).map((id) => ({
-    id,
-    titulo: ESTADO_ATIVO[id].label,
-    tom: ESTADO_ATIVO[id].tone,
-  }));
+  const colunasAtivo = colunasVisiveis(catalogo.colunas, lista, (a) => a.estado);
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Gestão de serviços"
         title="Ativos"
         description="Equipamentos, sistemas, licenças, links e serviços contratados que sustentam os produtos digitais."
+        actions={
+          <>
+            {gere && (
+              <Link href="/ativos/colunas" className={buttonClass("secondary")}>
+                Colunas
+              </Link>
+            )}
+            <Button
+              type="button"
+              onClick={() => {
+                setEditando(null);
+                requestAnimationFrame(() => document.getElementById("ativo-nome")?.focus());
+              }}
+            >
+              Novo ativo
+            </Button>
+          </>
+        }
       />
       {produto && (
         <p role="status" className="text-sm">
@@ -240,9 +250,9 @@ function Ativos() {
               name="estado"
               label="Estado"
               defaultValue={editando?.estado ?? "em_uso"}
-              options={(Object.keys(ESTADO_ATIVO) as EstadoAtivo[]).map((e) => ({
-                value: e,
-                label: ESTADO_ATIVO[e].label,
+              options={ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false || coluna.id === editando?.estado)).map((coluna) => ({
+                value: coluna.id,
+                label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
               }))}
             />
             <Select
@@ -296,23 +306,11 @@ function Ativos() {
           rotulo="Ativos cadastrados"
           memoria="nova-faixas:ativos"
           colunas={colunasAtivo}
+          {...controles}
           itens={lista}
           colunaDe={(a) => a.estado}
           idDe={(a) => a.id}
           nomeDe={(a) => a.nome}
-          extra={(colunaId) =>
-            colunaId === "em_uso" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => document.getElementById("ativo-nome")?.focus()}
-              >
-                Novo ativo
-              </Button>
-            ) : null
-          }
-          aoCriar={(coluna, nome) => void criarCard(coluna, nome)}
           aoRenomear={(a, nome) => void renomearAtivo(a, nome)}
           aoAbrir={(a) => {
             setEditando(a);
@@ -335,7 +333,9 @@ function Ativos() {
                 {a.inventario ? <InventarioDaMaquina inventario={a.inventario} /> : null}
               </div>
               <div className="flex items-center gap-2">
-                <Badge tone={ESTADO_ATIVO[a.estado].tone}>{ESTADO_ATIVO[a.estado].label}</Badge>
+                <Badge tone={seloDoEstado(catalogo.colunas, a.estado, ESTADO_ATIVO[a.estado]).tone}>
+                  {seloDoEstado(catalogo.colunas, a.estado, ESTADO_ATIVO[a.estado]).label}
+                </Badge>
                 <Button type="button" variant="secondary" onClick={() => setEditando(a)}>
                   Editar {a.nome}
                 </Button>

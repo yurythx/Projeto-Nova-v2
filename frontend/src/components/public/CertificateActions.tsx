@@ -89,7 +89,7 @@ export function CertificateActions({ envelopeId }: CertificateActionsProps) {
       {/* Bloco exclusivo para Impressão da Certidão (@media print) */}
       <div className="hidden print:flex flex-row items-center justify-between border-t border-b border-surface-border py-4 mt-6">
         <div className="flex flex-col gap-1 text-xs">
-          <p className="font-bold">PROJETO-NOVA-V2 · MICROKERNEL</p>
+          <p className="font-bold">PROJETO NOVA · GESTÃO DE SERVIÇOS</p>
           <p>Validação Oficial via Lei Federal nº 14.063/2020 e MP nº 2.200-2/2001</p>
           <p className="font-mono text-[10px]">URL: {verifyUrl}</p>
         </div>

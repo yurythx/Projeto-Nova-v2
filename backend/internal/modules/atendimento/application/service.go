@@ -65,6 +65,12 @@ type Service struct {
 	arquivos  *Armazenamento   // fotos e assinaturas (WithArmazenamento)
 	caixa     mail.Caixa       // entrada de e-mail (WithCaixa); nil = desligada
 	segredos  Segredos         // nome do segredo no cofre; nil recusa o vínculo
+	passagens Passagens        // caminhos acrescentados na fila; nil = só o fluxo de fábrica
+}
+
+// Passagens lê os caminhos acrescentados no quadro.
+type Passagens interface {
+	Mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error)
 }
 
 // NewService cria o serviço. produtos pode ser nil: oferta sem produto
@@ -81,6 +87,16 @@ type Segredos interface {
 
 // WithSegredo liga a porta do cofre.
 func (s *Service) WithSegredo(segredos Segredos) *Service { s.segredos = segredos; return s }
+
+// ComPassagens liga os caminhos acrescentados na fila.
+func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+func (s *Service) mapaFila(ctx context.Context, db database.DBTX) (map[string][]string, error) {
+	if s.passagens == nil {
+		return map[string][]string{}, nil
+	}
+	return s.passagens.Mapa(ctx, db, "fila")
+}
 
 // WithLogger troca o logger do serviço.
 func (s *Service) WithLogger(l *slog.Logger) *Service {
@@ -176,6 +192,10 @@ func MapError(err error) error {
 		var campo domain.CampoInvalido
 		if errors.As(err, &campo) {
 			return causa(err, apperrors.Validation(campo.Msg))
+		}
+		var recusa domain.Recusa
+		if errors.As(err, &recusa) {
+			return causa(err, apperrors.Validation(recusa.Msg))
 		}
 		return err
 	}

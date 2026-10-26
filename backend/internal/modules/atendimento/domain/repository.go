@@ -85,6 +85,30 @@ type SolicitacaoRepository interface {
 	Responsaveis(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Candidato, error)
 	ResponsavelValido(ctx context.Context, db database.DBTX, user uuid.UUID, unidade *uuid.UUID) (bool, error)
 
+	ListarRegras(ctx context.Context, db database.DBTX, f Filtro) ([]Regra, error)
+	ListarRegrasDaUnidade(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Regra, error)
+	ContarRegras(ctx context.Context, db database.DBTX, unidade *uuid.UUID) (int, error)
+	InserirRegra(ctx context.Context, db database.DBTX, r Regra) error
+	ExcluirRegra(ctx context.Context, db database.DBTX, id uuid.UUID) error
+	ObterRegra(ctx context.Context, db database.DBTX, id uuid.UUID) (Regra, error)
+
+	ObterResposta(ctx context.Context, db database.DBTX, oferta uuid.UUID) (RespostaPronta, error)
+	SalvarResposta(ctx context.Context, db database.DBTX, r RespostaPronta) error
+	ExcluirResposta(ctx context.Context, db database.DBTX, oferta uuid.UUID) error
+
+	ListarRecorrencias(ctx context.Context, db database.DBTX, f Filtro) ([]ChamadoMensal, error)
+	ListarRecorrenciasAtivas(ctx context.Context, db database.DBTX) ([]ChamadoMensal, error)
+	InserirRecorrencia(ctx context.Context, db database.DBTX, r ChamadoMensal) error
+	ExcluirRecorrencia(ctx context.Context, db database.DBTX, id uuid.UUID) error
+	ObterRecorrencia(ctx context.Context, db database.DBTX, id uuid.UUID) (ChamadoMensal, error)
+	// ReivindicarAbertura reserva o mês. false significa que ele já foi aberto.
+	ReivindicarAbertura(ctx context.Context, db database.DBTX, id uuid.UUID, ano, mes int) (bool, error)
+	LigarAbertura(ctx context.Context, db database.DBTX, id uuid.UUID, ano, mes int, solicitacao uuid.UUID) error
+	SolicitacaoDoMes(ctx context.Context, db database.DBTX, oferta, solicitante uuid.UUID, titulo string, inicio time.Time) (uuid.UUID, error)
+
+	RegistrarDeflexao(ctx context.Context, db database.DBTX, usuario uuid.UUID, artigo string, dia string, unidade *uuid.UUID, resolveu bool) error
+	MedirDeflexao(ctx context.Context, db database.DBTX, desde string, restrito bool, unidades []uuid.UUID) (int, int, error)
+
 	ListApontamentos(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Apontamento, error)
 	InsertApontamento(ctx context.Context, db database.DBTX, a Apontamento) (Apontamento, error)
 	DeleteApontamento(ctx context.Context, db database.DBTX, solicitacaoID, apontamentoID uuid.UUID) error

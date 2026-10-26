@@ -37,18 +37,42 @@ type Portas struct {
 	Produtos   domain.Produtos
 }
 
+// Passagens lê os caminhos acrescentados no quadro. Nil mantém só o fluxo de fábrica.
+type Passagens interface {
+	Mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error)
+}
+
 // Service implementa os casos de uso.
 type Service struct {
-	pool    *pgxpool.Pool
-	repo    domain.Repository
-	eventos Eventos
-	portas  Portas
-	agora   func() time.Time
+	pool      *pgxpool.Pool
+	repo      domain.Repository
+	eventos   Eventos
+	portas    Portas
+	passagens Passagens
+	agora     func() time.Time
 }
 
 // NewService cria o serviço.
 func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos, portas Portas) *Service {
 	return &Service{pool: pool, repo: repo, eventos: eventos, portas: portas, agora: time.Now}
+}
+
+// ComPassagens liga os caminhos acrescentados no quadro de problemas.
+func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+func (s *Service) mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error) {
+	if s.passagens == nil {
+		return map[string][]string{}, nil
+	}
+	return s.passagens.Mapa(ctx, db, quadro)
+}
+
+func (s *Service) destinos(ctx context.Context, db database.DBTX, quadro, de string) ([]string, error) {
+	mapa, err := s.mapa(ctx, db, quadro)
+	if err != nil {
+		return nil, err
+	}
+	return mapa[de], nil
 }
 
 // MapError traduz erros de domínio para a API e preserva a causa.
@@ -129,7 +153,19 @@ func (s *Service) Listar(ctx context.Context, identity auth.Identity, f FiltroEn
 	}
 	lista, err := s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !todas, Unidades: unidades, Estado: f.Estado,
 		SolicitacaoID: f.SolicitacaoID, Busca: f.Busca})
-	return lista, MapError(err)
+	if err != nil {
+		return nil, MapError(err)
+	}
+	mapa, err := s.mapa(ctx, s.pool, "problemas")
+	if err != nil {
+		return nil, MapError(err)
+	}
+	for i := range lista {
+		if gere(identity, lista[i].UnidadeID) {
+			lista[i].Proximos = lista[i].PodeIrPara(mapa[lista[i].Estado]...)
+		}
+	}
+	return lista, nil
 }
 
 // Obter devolve o problema com os vínculos e as passagens de quem gere.
@@ -155,7 +191,11 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	}
 	p.Proximos = []string{}
 	if gere(identity, p.UnidadeID) {
-		p.Proximos = p.PodeIrPara()
+		extras, err := s.destinos(ctx, s.pool, "problemas", p.Estado)
+		if err != nil {
+			return domain.Problema{}, MapError(err)
+		}
+		p.Proximos = p.PodeIrPara(extras...)
 	}
 	return p, nil
 }
@@ -233,7 +273,11 @@ func (s *Service) Atualizar(ctx context.Context, identity auth.Identity, id uuid
 // Transicionar muda o estado com as exigências de cada um.
 func (s *Service) Transicionar(ctx context.Context, identity auth.Identity, id uuid.UUID, para string) (domain.Problema, error) {
 	return s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, p domain.Problema) error {
-		next, mudou, err := p.Transicionar(para)
+		extras, err := s.destinos(ctx, tx, "problemas", p.Estado)
+		if err != nil {
+			return err
+		}
+		next, mudou, err := p.Transicionar(para, extras...)
 		if err != nil || !mudou {
 			return err
 		}

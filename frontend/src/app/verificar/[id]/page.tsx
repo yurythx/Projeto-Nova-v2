@@ -150,7 +150,7 @@ export default async function VerificarPage({ params }: { params: Promise<{ id: 
         {/* Respaldo Jurídico para Auditoria */}
         <div className="rounded-xl border border-surface-border/60 bg-surface-subtle/50 p-4 text-xs text-muted leading-relaxed">
           <p>
-            <strong>Nota de fé pública:</strong> Este registro atesta que o documento com o hash criptográfico acima foi submetido à cerimônia de assinatura eletrônica do Projeto-nova-v2, com carimbo de tempo e custódia na trilha de auditoria.
+            <strong>Nota de fé pública:</strong> Este registro atesta que o documento com o hash criptográfico acima foi submetido à cerimônia de assinatura eletrônica do Projeto Nova, com carimbo de tempo e custódia na trilha de auditoria.
           </p>
         </div>
       </div>

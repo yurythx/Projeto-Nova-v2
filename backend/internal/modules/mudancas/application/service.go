@@ -34,12 +34,18 @@ type Eventos interface {
 
 // Service implementa os casos de uso.
 type Service struct {
-	pool     *pgxpool.Pool
-	repo     domain.Repository
-	eventos  Eventos
-	portas   domain.Portas
-	produtos domain.Produtos
-	efeitos  domain.Efeitos
+	pool      *pgxpool.Pool
+	repo      domain.Repository
+	eventos   Eventos
+	portas    domain.Portas
+	produtos  domain.Produtos
+	efeitos   domain.Efeitos
+	passagens Passagens
+}
+
+// Passagens lê os caminhos acrescentados no quadro. Nil mantém só o fluxo de fábrica.
+type Passagens interface {
+	Mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error)
 }
 
 // NewService cria o serviço. portas e produtos podem ser nil: o vínculo
@@ -53,6 +59,16 @@ func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos, por
 func (s *Service) ComEfeitos(e domain.Efeitos) *Service {
 	s.efeitos = e
 	return s
+}
+
+// ComPassagens liga os caminhos acrescentados no quadro de mudanças.
+func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+func (s *Service) mapa(ctx context.Context, db database.DBTX) (map[string][]string, error) {
+	if s.passagens == nil {
+		return map[string][]string{}, nil
+	}
+	return s.passagens.Mapa(ctx, db, "mudancas")
 }
 
 // MapError traduz erros de domínio para a API e preserva a causa.
@@ -154,7 +170,23 @@ func (s *Service) Listar(ctx context.Context, identity auth.Identity, f FiltroEn
 	}
 	lista, err := s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !todas, Unidades: unidades, Estado: f.Estado,
 		AlvoTipo: f.AlvoTipo, AlvoID: f.AlvoID})
-	return lista, MapError(err)
+	if err != nil {
+		return nil, MapError(err)
+	}
+	mapa, err := s.mapa(ctx, s.pool)
+	if err != nil {
+		return nil, MapError(err)
+	}
+	for i := range lista {
+		ps := papeis(identity, lista[i].UnidadeID)
+		if slices.Contains(ps, domain.PapelGestor) {
+			lista[i] = lista[i].ComPassagens(mapa[lista[i].Estado])
+		}
+		if len(ps) > 0 {
+			lista[i].Proximos = lista[i].PodeIrPara(identity.UserID, ps...)
+		}
+	}
+	return lista, nil
 }
 
 // Obter devolve a mudança com as decisões, os vínculos e o que identity
@@ -173,6 +205,13 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	}
 	if m.Vinculos, err = s.repo.Vinculos(ctx, s.pool, id); err != nil {
 		return domain.Mudanca{}, MapError(err)
+	}
+	if slices.Contains(ps, domain.PapelGestor) {
+		mapa, err := s.mapa(ctx, s.pool)
+		if err != nil {
+			return domain.Mudanca{}, MapError(err)
+		}
+		m = m.ComPassagens(mapa[m.Estado])
 	}
 	m.Proximos = m.PodeIrPara(identity.UserID, ps...)
 	return m, nil
@@ -262,6 +301,13 @@ func (s *Service) Atualizar(ctx context.Context, identity auth.Identity, id uuid
 func (s *Service) Transicionar(ctx context.Context, identity auth.Identity, id uuid.UUID, para, texto string, resolverVinculos bool) (domain.Mudanca, error) {
 	var depois []domain.Entrega
 	m, err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, m domain.Mudanca, ps []string) error {
+		if slices.Contains(ps, domain.PapelGestor) {
+			mapa, err := s.mapa(ctx, tx)
+			if err != nil {
+				return err
+			}
+			m = m.ComPassagens(mapa[m.Estado])
+		}
 		next, decisao, mudou, err := m.Transicionar(domain.Transicao{Para: para, Autor: identity.UserID, Texto: texto}, ps...)
 		if err != nil || !mudou {
 			return err

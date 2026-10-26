@@ -239,14 +239,14 @@ func (p Problema) exigencias(estado string) error {
 }
 
 // Transicionar muda o estado. O mesmo estado não é mudança.
-func (p Problema) Transicionar(para string) (Problema, bool, error) {
+func (p Problema) Transicionar(para string, extras ...string) (Problema, bool, error) {
 	if para == p.Estado {
 		return p, false, nil
 	}
 	if p.Estado == Encerrado {
 		return Problema{}, false, ErrEncerrado
 	}
-	if !slices.Contains(transicoes[p.Estado], para) {
+	if !slices.Contains(p.PodeIrPara(extras...), para) {
 		return Problema{}, false, ErrTransicaoInvalida
 	}
 	if err := p.exigencias(para); err != nil {
@@ -264,8 +264,17 @@ func (p Problema) Transicionar(para string) (Problema, bool, error) {
 }
 
 // PodeIrPara são as passagens possíveis agora.
-func (p Problema) PodeIrPara() []string {
-	return append([]string{}, transicoes[p.Estado]...)
+func (p Problema) PodeIrPara(extras ...string) []string {
+	if p.Estado == Encerrado {
+		return nil
+	}
+	out := append([]string{}, transicoes[p.Estado]...)
+	for _, extra := range extras {
+		if extra != "" && extra != p.Estado && !slices.Contains(out, extra) {
+			out = append(out, extra)
+		}
+	}
+	return out
 }
 
 // Igual ignora horários e vínculos: edição vazia não regrava.

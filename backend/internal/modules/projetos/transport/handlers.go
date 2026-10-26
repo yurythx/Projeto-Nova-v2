@@ -49,14 +49,14 @@ func (req ProjetoRequest) entrada() domain.EntradaProjeto {
 }
 
 type EstadoRequest struct {
-	Estado string `json:"estado" validate:"required,oneof=planejado em_andamento suspenso concluido cancelado"`
+	Estado string `json:"estado" validate:"required,min=1,max=40"`
 }
 
 type TarefaRequest struct {
 	Titulo          string `json:"titulo" validate:"required,max=200"`
 	Descricao       string `json:"descricao" validate:"max=2000"`
 	ResponsavelNome string `json:"responsavel_nome" validate:"max=200"`
-	Estado          string `json:"estado" validate:"omitempty,oneof=a_fazer em_andamento concluida bloqueada"`
+	Estado          string `json:"estado" validate:"omitempty,min=1,max=40"`
 	Ordem           int    `json:"ordem"`
 }
 
@@ -369,4 +369,3 @@ func (h *Handlers) ExcluirApontamento(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteNoContent(w)
 }
-

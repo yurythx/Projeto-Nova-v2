@@ -15,6 +15,7 @@ interface Segredo {
   id: string;
   nome: string;
   usuario: string;
+  endereco?: string;
 }
 
 interface Revelado extends Segredo {
@@ -22,7 +23,7 @@ interface Revelado extends Segredo {
   notas: string;
 }
 
-/** O chamado guarda o id. A senha só volta pelo cofre, com a senha de acesso. */
+/** O chamado guarda o id. A senha só volta pelo cofre, para quem já está autenticado. */
 export function SegredoVinculadoCard({
   solicitacaoId,
   segredoId,
@@ -61,19 +62,12 @@ export function SegredoVinculadoCard({
     setSenha(null);
   }
 
-  async function revelar(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function revelar() {
     if (!segredoId) return;
-    const form = e.currentTarget;
-    const senhaDeAcesso = String(new FormData(form).get("senha_de_acesso") ?? "");
     const item = await run(
-      () =>
-        apiClient
-          .post<Revelado>(`v1/cofre/segredos/${segredoId}/revelar`, { senha_de_acesso: senhaDeAcesso })
-          .then((res) => res.data),
+      () => apiClient.post<Revelado>(`v1/cofre/segredos/${segredoId}/revelar`, {}).then((res) => res.data),
       "Senha revelada. A consulta ficou na auditoria.",
     );
-    form.reset();
     if (!item) return;
     setSenha(item.senha);
   }
@@ -91,19 +85,11 @@ export function SegredoVinculadoCard({
           <Input id={`senha-do-chamado-${solicitacaoId}`} label="Senha revelada" readOnly value={senha} autoComplete="off" />
         )}
         {revela && segredoId && !senha && (
-          <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void revelar(e)}>
-            <Input
-              id={`acesso-chamado-${solicitacaoId}`}
-              name="senha_de_acesso"
-              type="password"
-              label="Sua senha de acesso"
-              required
-              autoComplete="current-password"
-            />
-            <Button type="submit" variant="secondary" loading={pending}>
+          <div>
+            <Button type="button" variant="secondary" loading={pending} onClick={() => void revelar()}>
               Revelar senha do chamado
             </Button>
-          </form>
+          </div>
         )}
         {ve && !finalizada && (
           <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void vincular(e)}>
@@ -115,7 +101,7 @@ export function SegredoVinculadoCard({
               onChange={(e) => setEscolhido(e.target.value)}
               options={(lista.data ?? []).map((item) => ({
                 value: item.id,
-                label: item.usuario ? `${item.nome} · ${item.usuario}` : item.nome,
+                label: [item.nome, item.endereco || item.usuario].filter(Boolean).join(" · "),
               }))}
             />
             <Button type="submit" variant="secondary" loading={pending}>

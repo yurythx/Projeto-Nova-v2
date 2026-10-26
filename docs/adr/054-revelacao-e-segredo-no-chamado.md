@@ -1,6 +1,6 @@
 # 054 — Revelação confirmada e segredo no chamado
 
-- **Status:** Aceito e implementado
+- **Status:** Aceito e implementado. O item 1 foi substituído pelo [ADR 059](059-revelar-sem-senha-de-acesso.md): revelar não pede a senha de acesso de novo.
 - **Data:** 2026-10-24
 - **Relacionado:** [ADR 053](053-cofre-de-senhas.md), [ADR 011](011-borda-unica-ip-confiavel-e-busca-por-prefixo.md), [ADR 013](013-permissao-com-escopo-e-heranca.md)
 

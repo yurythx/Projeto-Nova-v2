@@ -3,12 +3,12 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ListaFaixas, NomeClicavel, Quadro, type ColunaFaixa } from "./Faixas";
+import { ListaFaixas, NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa } from "./Faixas";
 
-const COLUNAS: ColunaFaixa[] = [
+const COLUNAS: ColunaFaixa[] = colunasEmOrdem([
   { id: "aberta", titulo: "Abertas", tom: "info" },
   { id: "feita", titulo: "Concluídas", tom: "success" },
-];
+]);
 
 interface Card {
   id: string;
@@ -96,6 +96,31 @@ describe("Quadro da assistência", () => {
     expect(faixa("Abertas").className).toContain("md:min-w-56");
     semDizeres(quadro);
     expect(within(quadro).getByLabelText("Cor de Abertas")).toHaveAttribute("type", "color");
+    expect(faixa("Abertas")).toHaveAttribute("data-ordem", "0");
+    expect(faixa("Concluídas")).toHaveAttribute("data-ordem", "1");
+  });
+
+  it("a posição numérica manda, mesmo com a lista fora de ordem", () => {
+    const memoria = memoriaNova();
+    render(
+      <Quadro
+        rotulo="Quadro de teste"
+        memoria={memoria}
+        colunas={[
+          { id: "feita", titulo: "Concluídas", tom: "success", ordem: 1 },
+          { id: "aberta", titulo: "Abertas", tom: "info", ordem: 0 },
+        ]}
+        itens={[]}
+        colunaDe={() => null}
+        idDe={(item: Card) => item.id}
+        render={() => null}
+      />,
+    );
+    const primeira = faixa("Abertas");
+    const segunda = faixa("Concluídas");
+    expect(primeira).toHaveAttribute("data-ordem", "0");
+    expect(segunda).toHaveAttribute("data-ordem", "1");
+    expect(primeira.compareDocumentPosition(segunda) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("renomeia a coluna pelo próprio título e lembra neste navegador", async () => {
@@ -222,6 +247,22 @@ describe("Quadro da assistência", () => {
   });
 });
 
+describe("Selo de um estado", () => {
+  const colunas = [{ id: "c01234567", titulo: "Fornecedor", tom: "info" as const }];
+
+  it("prefere o catálogo, depois o rótulo conhecido e por fim a chave", () => {
+    expect(seloDoEstado(colunas, "c01234567", { label: "Chave crua", tone: "danger" })).toMatchObject({
+      label: "Fornecedor",
+      tone: "info",
+    });
+    expect(seloDoEstado([], "resolvido", { label: "Resolvidos", tone: "success" })).toMatchObject({
+      label: "Resolvidos",
+      tone: "success",
+    });
+    expect(seloDoEstado([], "c89abcdef")).toMatchObject({ label: "c89abcdef", tone: "neutral" });
+  });
+});
+
 describe("Lista da assistência", () => {
   it("recolhe na largura da tela, com o nome na horizontal", async () => {
     const user = userEvent.setup();
@@ -230,6 +271,8 @@ describe("Lista da assistência", () => {
     semDizeres(quadro);
     await user.click(screen.getByRole("button", { name: "Recolher Abertas" }));
     const secao = faixa("Abertas");
+    expect(secao).toHaveAttribute("data-ordem", "0");
+    expect(faixa("Concluídas")).toHaveAttribute("data-ordem", "1");
     expect(secao.className).toBe("w-full");
     expect(within(secao).getByRole("heading", { name: /^Abertas/ }).className).not.toContain(
       "writing-mode",

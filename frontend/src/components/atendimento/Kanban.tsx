@@ -1,12 +1,11 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
-import { NomeClicavel, Quadro, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { NomeClicavel, Quadro, colunasEmOrdem, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
 import {
   relogioEmFoco,
@@ -23,21 +22,21 @@ type Coluna =
   | "aguardando_terceiro"
   | "concluida";
 
-const COLUNAS: ColunaFaixa[] = [
+/** A mesma numeração no quadro e na lista, a partir de zero. O quadro fica
+ * no fluxo em andamento; a lista segue com encerradas (5) e canceladas (6). */
+export const FAIXAS_FILA: ColunaFaixa[] = colunasEmOrdem([
   { id: "aberto", titulo: "Abertas", tom: "info" },
   { id: "em_atendimento", titulo: "Em atendimento", tom: "info" },
   { id: "aguardando_servidor", titulo: "Aguardando o servidor", tom: "warning" },
   { id: "aguardando_terceiro", titulo: "Aguardando terceiro", tom: "warning" },
   { id: "concluida", titulo: "Concluídas", tom: "success" },
-];
-
-/** Faixas da lista: o quadro junta os dois fins; a lista também mostra
- * encerradas e canceladas, que o filtro pode incluir. */
-export const FAIXAS_FILA: ColunaFaixa[] = [
-  ...COLUNAS,
   { id: "encerrado", titulo: "Encerradas", tom: "neutral" },
   { id: "cancelado", titulo: "Canceladas", tom: "danger" },
-];
+]);
+
+const COLUNAS_QUADRO = FAIXAS_FILA.filter(
+  (coluna) => coluna.id !== "encerrado" && coluna.id !== "cancelado",
+);
 
 /** A coluna de conclusão junta os dois fins: resolvido (incidente) e
  * atendido (requisição). */
@@ -52,8 +51,9 @@ function destino(s: Solicitacao, coluna: string): Estado {
 }
 
 /** A coluna aceita o cartão só se a máquina deixa (as passagens vêm da API). */
-function aceita(s: Solicitacao, coluna: string): boolean {
-  if (!COLUNAS.some((c) => c.id === coluna)) return false;
+function aceita(colunas: ColunaFaixa[], s: Solicitacao, coluna: string): boolean {
+  const alvo = colunas.find((c) => c.id === coluna);
+  if (!alvo || alvo.ativa === false) return false;
   return faixaDaFila(s.estado) !== coluna && (s.proximos ?? []).includes(destino(s, coluna));
 }
 
@@ -78,33 +78,44 @@ export function Kanban({
   onMover,
   pending,
   extra,
+  aoAbrir,
+  colunas = COLUNAS_QUADRO,
+  controles,
 }: {
   itens: Solicitacao[];
   onMover: (s: Solicitacao, para: Estado) => void;
   pending: boolean;
   extra?: (colunaId: string) => ReactNode;
+  aoAbrir?: (s: Solicitacao) => void;
+  colunas?: ColunaFaixa[];
+  controles?: ControlesColuna;
 }) {
   const router = useRouter();
+  function abrir(s: Solicitacao) {
+    if (aoAbrir) aoAbrir(s);
+    else router.push(`/atendimento/solicitacoes/${s.id}`);
+  }
   return (
     <Quadro
       rotulo="Quadro da fila"
       memoria="nova-faixas:fila-quadro"
       aparencia="nova-faixas:fila"
-      colunas={COLUNAS}
+      colunas={colunas}
       itens={itens}
       colunaDe={(s) => {
         const faixa = faixaDaFila(s.estado);
-        return COLUNAS.some((c) => c.id === faixa) ? faixa : null;
+        return colunas.some((c) => c.id === faixa) ? faixa : null;
       }}
       idDe={(s) => s.id}
       nomeDe={(s) => s.titulo}
       pending={pending}
       extra={extra}
       arrastavel={(s) => (s.proximos ?? []).some((p) => p !== "cancelado")}
-      podeSoltar={aceita}
+      podeSoltar={(s, coluna) => aceita(colunas, s, coluna)}
+      {...controles}
       aoSoltar={(s, coluna) => onMover(s, destino(s, coluna as Coluna))}
       moldura={moldura}
-      aoAbrir={(s) => router.push(`/atendimento/solicitacoes/${s.id}`)}
+      aoAbrir={abrir}
       render={(s, vista) => {
         const moves = (s.proximos ?? []).filter((p) => p !== "cancelado");
         const foco = s.prazo ? relogioEmFoco(s.prazo) : null;
@@ -154,12 +165,13 @@ export function Kanban({
                 </div>
               </div>
             )}
-            <Link
-              href={`/atendimento/solicitacoes/${s.id}`}
-              className="text-xs font-medium text-primary hover:underline"
+            <button
+              type="button"
+              className="text-left text-xs font-medium text-primary hover:underline"
+              onClick={() => abrir(s)}
             >
               Editar
-            </Link>
+            </button>
             {moves.length > 0 && (
               <label className="flex flex-col gap-1 text-xs">
                 <span className="sr-only">Mover a solicitação #{s.numero} para</span>
@@ -174,7 +186,7 @@ export function Kanban({
                   <option value="">Mover para…</option>
                   {moves.map((p) => (
                     <option key={p} value={p}>
-                      {rotuloEstado(p)}
+                      {colunas.find((coluna) => coluna.id === p)?.titulo ?? rotuloEstado(p)}
                     </option>
                   ))}
                 </select>

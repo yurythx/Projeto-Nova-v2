@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"math"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -18,12 +19,13 @@ var TetoGovernanca = 5000
 
 // Governanca é o que a central mostra sem recalcular no navegador.
 type Governanca struct {
-	CSAT          *CSAT    `json:"csat,omitempty"`
-	MTTRHoras     *float64 `json:"mttr_horas"`
-	MTBFHoras     *float64 `json:"mtbf_horas"`
-	SLAPercentual *float64 `json:"sla_percentual"`
-	FCRPercentual *float64 `json:"fcr_percentual"`
-	Amostra       Amostra  `json:"amostra"`
+	CSAT          *CSAT            `json:"csat,omitempty"`
+	MTTRHoras     *float64         `json:"mttr_horas"`
+	MTBFHoras     *float64         `json:"mtbf_horas"`
+	SLAPercentual *float64         `json:"sla_percentual"`
+	FCRPercentual *float64         `json:"fcr_percentual"`
+	Amostra       Amostra          `json:"amostra"`
+	Deflexao      *domain.Deflexao `json:"deflexao,omitempty"`
 }
 
 // CSAT é a média das notas de 1 a 5 e as avaliações mais recentes.
@@ -85,6 +87,11 @@ func (s *Service) Governanca(ctx context.Context, identity auth.Identity) (Gover
 		media := math.Round(float64(resumo.Soma)/float64(resumo.Total)*10) / 10
 		out.CSAT = &CSAT{Media: media, Total: resumo.Total, Recentes: resumo.Recentes}
 	}
+	viram, sem, err := s.repo.MedirDeflexao(ctx, s.pool, s.agora().AddDate(0, 0, -30).In(fusoBrasilia()).Format(time.DateOnly), restrito, cob.Unidades)
+	if err != nil {
+		return Governanca{}, MapError(err)
+	}
+	out.Deflexao = domain.ResumirDeflexao(viram, sem)
 	return out, nil
 }
 

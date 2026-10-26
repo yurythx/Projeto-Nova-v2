@@ -6,11 +6,14 @@ package ativos
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/infrastructure"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ativos/transport"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
@@ -33,6 +36,13 @@ func New(deps modkit.Deps, produtos domain.Produtos) *Module {
 	return &Module{repo: repo, handlers: transport.NewHandlers(svc, deps.Logger), svc: svc}
 }
 
+// ComPassagens liga os caminhos acrescentados no quadro.
+func (m *Module) ComPassagens(p application.Passagens) {
+	if m != nil && m.svc != nil {
+		m.svc.ComPassagens(p)
+	}
+}
+
 // Reconhecer autentica a credencial da máquina no middleware. Não é uma conta.
 func (m *Module) Reconhecer(ctx context.Context, token string) (auth.Identity, bool, error) {
 	if m == nil || m.svc == nil {
@@ -44,6 +54,22 @@ func (m *Module) Reconhecer(ctx context.Context, token string) (auth.Identity, b
 // Repositorio é a porta usada por problemas e mudanças para conferir o
 // ativo sem importar este módulo.
 func (m *Module) Repositorio() domain.Repository { return m.repo }
+
+// ContagemPrograma é a conta do nome que o agente viu.
+type ContagemPrograma struct {
+	Instalados    int
+	ComInventario int
+	Parcial       bool
+}
+
+// ContarPrograma lê o inventário. O módulo de contratos não importa este pacote.
+func (m *Module) ContarPrograma(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, nome string) (ContagemPrograma, error) {
+	c, err := infrastructure.ContarPrograma(ctx, db, restrito, unidades, nome)
+	if err != nil {
+		return ContagemPrograma{}, err
+	}
+	return ContagemPrograma{Instalados: c.Instalados, ComInventario: c.ComInventario, Parcial: c.Parcial}, nil
+}
 
 // Manifest implementa kernel.Plugin.
 func (m *Module) Manifest() kernel.Manifest {

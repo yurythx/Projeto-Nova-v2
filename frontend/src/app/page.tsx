@@ -6,7 +6,7 @@ import { PublicShell } from "@/components/layout/PublicShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { getServerBranding } from "@/lib/branding/server";
 import { APP_URL } from "@/lib/env";
-import { PILARES, PRODUTO } from "@/lib/plataforma/conteudo";
+import { FUNDAMENTOS, PRATICAS, PRODUTO, REGRAS_PUBLICAS } from "@/lib/plataforma/conteudo";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Início",
   description,
   alternates: { canonical: `${APP_URL}` },
-  openGraph: { title: "Início — Projeto-nova-v2", description, type: "website", url: `${APP_URL}` },
+  openGraph: { title: `Início — ${PRODUTO.nome}`, description, type: "website", url: `${APP_URL}` },
 };
 
 export default async function HomePage() {
@@ -45,26 +45,67 @@ export default async function HomePage() {
                 href="/sobre"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface px-6 py-3.5 text-base font-semibold text-foreground shadow-xs hover:bg-surface-2"
               >
-                <Boxes size={18} aria-hidden="true" /> Como o núcleo funciona
+                <Boxes size={18} aria-hidden="true" /> Como funciona
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="pilares">
+        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="praticas">
           <div className="flex flex-col gap-2">
-            <p className="dateline">Microkernel</p>
-            <h2 id="pilares" className="text-3xl font-bold tracking-tight text-foreground">
-              O que a plataforma entrega
+            <p className="dateline">ITIL (Version 5)</p>
+            <h2 id="praticas" className="text-3xl font-bold tracking-tight text-foreground">
+              Como o serviço funciona
+            </h2>
+            <p className="max-w-3xl text-sm leading-relaxed text-muted">
+              Quatro práticas carregam a operação. O incidente e a requisição atendem o agora. O problema trata a causa. A mudança altera com controle. O projeto conduz a iniciativa.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {PRATICAS.map((pratica) => (
+              <Card key={pratica.nome}>
+                <CardHeader>
+                  <CardTitle>{pratica.nome}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm leading-relaxed text-muted">{pratica.descricao}</CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="fundamentos">
+          <div className="flex flex-col gap-2">
+            <p className="dateline">Fundamentos</p>
+            <h2 id="fundamentos" className="text-3xl font-bold tracking-tight text-foreground">
+              Objetivo, princípios e ciclo
             </h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {PILARES.map((pilar) => (
-              <Card key={pilar.nome}>
+          <div className="grid gap-4 md:grid-cols-2">
+            {FUNDAMENTOS.map((item) => (
+              <Card key={item.nome}>
                 <CardHeader>
-                  <CardTitle>{pilar.nome}</CardTitle>
+                  <CardTitle>{item.nome}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm leading-relaxed text-muted">{pilar.descricao}</CardContent>
+                <CardContent className="text-sm leading-relaxed text-muted">{item.descricao}</CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="regras">
+          <div className="flex flex-col gap-2">
+            <p className="dateline">Política de uso</p>
+            <h2 id="regras" className="text-3xl font-bold tracking-tight text-foreground">
+              Regras que a operação segue
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {REGRAS_PUBLICAS.map((regra) => (
+              <Card key={regra.nome}>
+                <CardHeader>
+                  <CardTitle>{regra.nome}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm leading-relaxed text-muted">{regra.descricao}</CardContent>
               </Card>
             ))}
           </div>

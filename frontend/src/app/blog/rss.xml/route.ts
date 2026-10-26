@@ -28,9 +28,9 @@ export async function GET() {
   const rssFeed = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Blog &amp; Novidades — Projeto-nova-v2</title>
+    <title>Blog &amp; Novidades — Projeto Nova</title>
     <link>${APP_URL}/blog</link>
-    <description>Notícias e comunicados do Projeto-nova-v2.</description>
+    <description>Notícias e comunicados do Projeto Nova.</description>
     <language>pt-BR</language>
     <atom:link href="${APP_URL}/blog/rss.xml" rel="self" type="application/rss+xml"/>
 ${itemsXml}

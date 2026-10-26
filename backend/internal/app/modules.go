@@ -17,6 +17,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/cofre"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/contact"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/contratos"
+	contratosapp "github.com/yurythx/projeto-nova-v2/internal/modules/contratos/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/directory"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/egress"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/example"
@@ -28,11 +29,13 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/quadros"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/signum"
 	signumApp "github.com/yurythx/projeto-nova-v2/internal/modules/signum/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite"
 	tramiteDomain "github.com/yurythx/projeto-nova-v2/internal/modules/tramite/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/wiki"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/lgpd"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
@@ -75,6 +78,12 @@ func registerPlugins(d *Dependencies) {
 	mudancasModule := mudancas.New(deps, alvos, produtoDaMudanca)
 	mudancasModule.ComEfeitos(efeitosCascata{atend: atendimentoModule, prob: problemasModule, ligado: ligado})
 	projetosModule := projetos.New(deps)
+	quadrosModule := quadros.New(deps)
+	problemasModule.ComPassagens(quadrosModule)
+	mudancasModule.ComPassagens(quadrosModule)
+	projetosModule.ComPassagens(quadrosModule)
+	ativosModule.ComPassagens(quadrosModule)
+	atendimentoModule.ComPassagens(quadrosModule)
 	cofreModule := cofre.New(deps)
 	cofreModule.ComConfirmacao(confirmaSenha{reauth: signumModule.Reautenticador()}, d.RateLimiters.Lockout)
 	atendimentoModule.ComSegredo(portaSegredo{svc: cofreModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(cofre.Key) }})
@@ -102,7 +111,8 @@ func registerPlugins(d *Dependencies) {
 		problemasModule,
 		mudancasModule,
 		projetosModule,
-		contratos.New(deps),
+		quadrosModule,
+		contratos.New(deps, programasDoAtivo{mod: ativosModule, ativo: func() bool { return d.Kernel.Enabled(ativos.Key) }}),
 		cofreModule,
 		example.New(deps),
 	)
@@ -167,6 +177,23 @@ func (p *signaturePort) OpenEnvelope(ctx context.Context, tx pgx.Tx, req tramite
 		return uuid.Nil, err
 	}
 	return env.ID, nil
+}
+
+// programasDoAtivo liga a licença ao inventário sem os plugins se importarem.
+type programasDoAtivo struct {
+	mod   *ativos.Module
+	ativo func() bool
+}
+
+func (p programasDoAtivo) Contar(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, nome string) (contratosapp.UsoDePrograma, error) {
+	if p.mod == nil || (p.ativo != nil && !p.ativo()) {
+		return contratosapp.UsoDePrograma{}, contratosapp.ErrProgramasIndisponiveis
+	}
+	c, err := p.mod.ContarPrograma(ctx, db, restrito, unidades, nome)
+	if err != nil {
+		return contratosapp.UsoDePrograma{}, err
+	}
+	return contratosapp.UsoDePrograma{Instalados: c.Instalados, ComInventario: c.ComInventario, Parcial: c.Parcial}, nil
 }
 
 // pluginsOnInTests liga os plug-ins quando APP_ENV=test. No produto eles

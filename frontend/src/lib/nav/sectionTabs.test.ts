@@ -73,6 +73,7 @@ describe("submenus dos módulos", () => {
       "/atendimento/campo",
       "/atendimento/cadastro",
       "/atendimento/prazos",
+      "/atendimento/regras",
     ]);
   });
 

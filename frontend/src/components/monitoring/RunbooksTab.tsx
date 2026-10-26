@@ -7,12 +7,9 @@ import {
   Users,
   Copy,
   Check,
-  ExternalLink,
   Layers,
   Archive,
   FolderLock,
-  Radio,
-  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
@@ -76,7 +73,7 @@ export function RunbooksTab() {
             <div>
               <CardTitle className="text-xl">Disaster Recovery (DR) & Procedimentos de Restauração</CardTitle>
               <CardDescription>
-                Diretrizes de recuperação a frio (Cold Standby) e continuidade do Projeto-nova-v2.
+                Diretrizes de recuperação a frio (Cold Standby) e continuidade do Projeto Nova.
               </CardDescription>
             </div>
           </div>
@@ -264,67 +261,16 @@ export function RunbooksTab() {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <FileCode2 size={18} className="text-primary" />
-              <CardTitle className="text-base">Catálogo de APIs & Documentação Interativa</CardTitle>
+              <CardTitle className="text-base">Contrato da API</CardTitle>
             </div>
-            <CardDescription className="text-xs">Acesso rápido aos contratos e especificações técnicas de integração</CardDescription>
+            <CardDescription className="text-xs">Onde está o contrato desta instalação</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <a
-              href="https://192.168.1.42:8443/docs"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between p-3 rounded-lg border border-surface-border hover:border-primary/50 hover:bg-surface-elevated transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/10 text-primary">
-                  <FileText size={18} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-foreground">Swagger UI Interativo (/docs)</h4>
-                  <p className="text-xs text-muted">Navegue e teste endpoints REST protegidos e públicos com Bearer Auth</p>
-                </div>
-              </div>
-              <ExternalLink size={14} className="text-muted" />
-            </a>
-
-            <a
-              href="https://192.168.1.42:8443/openapi.json"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between p-3 rounded-lg border border-surface-border hover:border-primary/50 hover:bg-surface-elevated transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/10 text-primary">
-                  <FileCode2 size={18} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-foreground">Especificação OpenAPI 3.0 (openapi.json)</h4>
-                  <p className="text-xs text-muted">Contrato de esquemas, validações JSON Schema e DTOs da plataforma</p>
-                </div>
-              </div>
-              <ExternalLink size={14} className="text-muted" />
-            </a>
-
-            <a
-              href="https://192.168.1.42:8443/metrics"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between p-3 rounded-lg border border-surface-border hover:border-primary/50 hover:bg-surface-elevated transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/10 text-primary">
-                  <Radio size={18} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-foreground">Endpoint Prometheus (/metrics)</h4>
-                  <p className="text-xs text-muted">Telemetria de contadores HTTP, latência e estatísticas do runtime Go</p>
-                </div>
-              </div>
-              <ExternalLink size={14} className="text-muted" />
-            </a>
-
+            <p className="text-sm leading-relaxed text-muted">
+              O contrato do Projeto Nova está na API desta instalação, em /docs e /openapi.json. Não há um painel em outro endereço, nem um coletor Prometheus publicado aqui.
+            </p>
             <div className="p-3 rounded-lg bg-surface-elevated/40 border border-surface-border text-xs text-muted">
-              <span className="font-semibold text-foreground">Nota de Governança:</span> A autenticação nas chamadas Swagger requer o token JWT emitido pelo Keycloak ou login local (`/api/v1/auth/login`).
+              <span className="font-semibold text-foreground">Nota:</span> a leitura protegida da API usa o token da sessão, emitido pelo login local ou pelo Keycloak quando ele está configurado.
             </div>
           </CardContent>
         </Card>

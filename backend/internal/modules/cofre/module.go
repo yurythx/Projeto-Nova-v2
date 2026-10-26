@@ -3,6 +3,10 @@
 package cofre
 
 import (
+	"context"
+	"log/slog"
+	"time"
+
 	"github.com/yurythx/projeto-nova-v2/internal/modules/cofre/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/cofre/caixa"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/cofre/infrastructure"
@@ -18,6 +22,7 @@ const Key = "cofre"
 type Module struct {
 	svc      *application.Service
 	handlers *transport.Handlers
+	logger   *slog.Logger
 }
 
 // New constrói o módulo. Chave mestra inválida impede o processo de subir.
@@ -27,7 +32,7 @@ func New(deps modkit.Deps) *Module {
 		panic("cofre: " + err.Error())
 	}
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, cifra)
-	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
+	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger), logger: deps.Logger}
 }
 
 // Servico é a porta que o atendimento consulta sem importar este pacote.
@@ -48,7 +53,7 @@ func (m *Module) Manifest() kernel.Manifest {
 		Icon:           "lock",
 		Route:          "/cofre",
 		Permissions: []kernel.PermissionInfo{
-			{Key: "cofre:read", Description: "Ver nome e usuário dos segredos da unidade"},
+			{Key: "cofre:read", Description: "Ver nome, tipo e endereço dos segredos da unidade"},
 			{Key: "cofre:reveal", Description: "Revelar a senha, com registro na auditoria"},
 			{Key: "cofre:manage", Description: "Guardar, trocar e excluir segredos da unidade"},
 			{Key: "cofre:grant", Description: "Mover o segredo para outra unidade do seu alcance"},
@@ -58,3 +63,27 @@ func (m *Module) Manifest() kernel.Manifest {
 
 // RegisterRoutes implementa kernel.RouteProvider.
 func (m *Module) RegisterRoutes(r kernel.Routes) { m.handlers.RegisterRoutes(r.Authed) }
+
+// Workers implementa kernel.WorkerProvider. Só corre com o módulo ligado.
+func (m *Module) Workers() []kernel.Worker {
+	return []kernel.Worker{{
+		Name:    "rotacao-do-cofre",
+		Process: kernel.ProcessWorker,
+		Run:     m.runRotacao,
+	}}
+}
+
+func (m *Module) runRotacao(ctx context.Context) error {
+	t := time.NewTicker(time.Hour)
+	defer t.Stop()
+	for {
+		if err := m.svc.RotacionarDevidas(ctx); err != nil && ctx.Err() == nil && m.logger != nil {
+			m.logger.WarnContext(ctx, "cofre: rotação falhou", slog.Any("error", err))
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-t.C:
+		}
+	}
+}

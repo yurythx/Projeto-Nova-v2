@@ -81,6 +81,7 @@ describe("Problemas — lista", () => {
       api.calls.filter((c) => c.method === "PUT").map((c) => c.path.split("/").at(-1)),
     ).toEqual(["s1", "s2", "s3"]);
 
+    await user.click(screen.getByRole("button", { name: "Novo problema" }));
     await user.type(screen.getByLabelText("Título *"), "Lentidão");
     await user.click(screen.getByRole("button", { name: "Registrar problema" }));
     await waitFor(() => expect(api.to("POST v1/problemas")).toHaveLength(2));
@@ -106,7 +107,7 @@ describe("Problemas — lista", () => {
     });
     const leitor = renderApp(<ProblemasPage />);
     expect(await screen.findByText("Nenhum problema neste recorte")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Registrar problema" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Novo problema" })).not.toBeInTheDocument();
     expect(api.to("GET v1/problemas/sugestoes")).toHaveLength(0);
     leitor.unmount();
 

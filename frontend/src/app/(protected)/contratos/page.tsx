@@ -37,11 +37,23 @@ interface Licenca {
   nome: string;
   fornecedor_nome: string;
   quantidade: number;
+  programa?: string;
+  uso?: { instalados: number; com_inventario: number; parcial: boolean };
   fim?: string;
 }
 
 function dia(valor: string) {
   return valor ? `${valor}T00:00:00Z` : "";
+}
+
+function textoUso(licenca: Licenca) {
+  if (!licenca.programa) return "";
+  if (!licenca.uso) return ` · programa ${licenca.programa}`;
+  if (licenca.uso.com_inventario === 0) {
+    return ` · ${licenca.programa}: nenhum ativo informou programas`;
+  }
+  const parcial = licenca.uso.parcial ? " · a lista do agente parou em 100" : "";
+  return ` · ${licenca.uso.instalados} com ${licenca.programa}${parcial}`;
 }
 
 /** Fornecedores, contratos e licenças. A licença não pede chave secreta. */
@@ -124,6 +136,7 @@ export default function ContratosPage() {
           nome: String(fd.get("nome")).trim(),
           fornecedor_id: String(fd.get("fornecedor_id")),
           quantidade: Number(fd.get("quantidade")),
+          programa: String(fd.get("programa") ?? "").trim(),
           fim: fim ? dia(fim) : null,
           unidade_id: String(fd.get("unidade_id") || "") || null,
         }),
@@ -146,7 +159,7 @@ export default function ContratosPage() {
       <PageHeader
         eyebrow="Gestão de serviços"
         title="Contratos e licenças"
-        description="Fornecedor, vigência e quantidade de assentos. A chave da licença não é gravada aqui. O sino avisa 30 dias, 7 dias, no dia e depois do vencimento."
+        description="Fornecedor, vigência e quantidade de assentos. O programa, se informado, é comparado com o que o agente viu no ativo. A chave da licença não é gravada aqui."
       />
 
       <Card>
@@ -254,6 +267,7 @@ export default function ContratosPage() {
               <Input id="licenca-nome" name="nome" label="Nome *" required maxLength={160} />
               <Select id="licenca-fornecedor" name="fornecedor_id" label="Fornecedor *" required options={opcoes} />
               <Input id="licenca-quantidade" name="quantidade" type="number" min={1} label="Assentos *" required defaultValue={1} />
+              <Input id="licenca-programa" name="programa" label="Programa no ativo" maxLength={80} placeholder="Nome que o agente informa" />
               <Input id="licenca-fim" name="fim" type="date" label="Vencimento" />
               <UnidadeDonaSelect id="licenca-unidade" permission="contratos:manage" label="Unidade" />
               <div>
@@ -276,6 +290,7 @@ export default function ContratosPage() {
                   <span>
                     {l.nome} · {l.quantidade} assentos · {l.fornecedor_nome}
                     {l.fim ? ` · até ${l.fim.slice(0, 10)}` : ""}
+                    {textoUso(l)}
                   </span>
                   <Button type="button" variant="secondary" onClick={() => void excluir(`v1/contratos/licencas/${l.id}`, () => void licencas.mutate())}>
                     Remover {l.nome}

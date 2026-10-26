@@ -8,13 +8,15 @@ import { Congelamentos } from "@/components/servicos/Congelamentos";
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
 import { COLUNAS_MUDANCA, MudancasKanban, faixaDaMudanca } from "@/components/servicos/MudancasKanban";
 import { DataState } from "@/components/plataforma/DataState";
-import { ListaFaixas, NomeClicavel } from "@/components/plataforma/Faixas";
+import { ListaFaixas, NomeClicavel, useAparencia } from "@/components/plataforma/Faixas";
+import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
+import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
+import { MudancaDetalhe } from "@/app/(protected)/mudancas/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
@@ -46,12 +48,18 @@ function MudancasConteudo() {
   const { can } = usePlataforma();
   const router = useRouter();
   const params = useSearchParams();
+  const painel = usePainelNaUrl();
   const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
   const kanban = vista === "kanban";
 
   const gere = can("mudancas:manage");
   const ve = gere || can("mudancas:aprovar");
   const [estado, setEstado] = useState("");
+  const [formAberto, setFormAberto] = useState(false);
+  const [quadro, setQuadro] = useState<"rascunho" | "em_avaliacao" | "cancelada">("rascunho");
+  const look = useAparencia("nova-faixas:mudancas");
+  const catalogo = useQuadro("mudancas", COLUNAS_MUDANCA);
+  const controles = { oficial: catalogo.oficial };
   const mudancas = useApiQuery<Mudanca[]>(
     ve
       ? withQuery("v1/mudancas", {
@@ -81,36 +89,22 @@ function MudancasConteudo() {
   }
 
   function trocarVista(v: Vista) {
-    router.replace(v === "lista" ? "/mudancas?vista=lista" : "/mudancas?vista=quadro");
+    router.replace(painel.href({ vista: v === "lista" ? "lista" : "quadro" }));
   }
 
   async function criar(corpo: MudancaCorpo) {
-    const criada = await run(
-      () => apiClient.post<Mudanca>("v1/mudancas", corpo),
-      "Mudança registrada",
-    );
-    if (criada) router.push(`/mudancas/${criada.data.id}`);
-  }
-
-  async function criarCard(nome: string) {
-    const ok = await run(
-      () =>
-        apiClient.post<Mudanca>("v1/mudancas", {
-          titulo: nome.slice(0, 160),
-          descricao: "",
-          justificativa: "",
-          tipo: "normal",
-          risco: "medio",
-          risco_score: null,
-          plano_reversao: "",
-          inicio_planejado: null,
-          fim_planejado: null,
-          produto_id: null,
-          unidade_id: null,
-        }),
-      "Mudança registrada",
-    );
-    if (ok) void mudancas.mutate();
+    const alvo = quadro;
+    const criada = await run(async () => {
+      const res = await apiClient.post<Mudanca>("v1/mudancas", corpo);
+      if (alvo !== "rascunho") {
+        await apiClient.post(`v1/mudancas/${res.data.id}/estado`, { estado: alvo });
+      }
+      return res.data;
+    }, "Mudança registrada");
+    if (criada) {
+      setFormAberto(false);
+      router.push(`/mudancas/${criada.id}`);
+    }
   }
 
   async function renomearMudanca(m: Mudanca, nome: string) {
@@ -164,20 +158,20 @@ function MudancasConteudo() {
   }
 
   const lista = mudancas.data ?? [];
-
-  function novaMudanca(colunaId: string) {
-    if (colunaId !== "rascunho" || !gere) return null;
-    return (
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        onClick={() => document.getElementById("mudanca-titulo")?.focus()}
-      >
-        Nova mudança
-      </Button>
-    );
-  }
+  const colunas = colunasVisiveis(catalogo.colunas, lista, (m) => faixaDaMudanca(m.estado));
+  const quadrosMudanca = (
+    [
+      ["rascunho", "rascunho"],
+      ["em_avaliacao", "em_avaliacao"],
+      ["cancelada", "fechada"],
+    ] as const
+  ).filter(([, colunaId]) => catalogo.colunas.find((coluna) => coluna.id === colunaId)?.ativa !== false).map(([estadoId, colunaId]) => ({
+    value: estadoId,
+    label:
+      estadoId === "cancelada"
+        ? `Cancelada (${rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, colunaId)})`
+        : rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, colunaId),
+  }));
 
   const reqTexto = pedindoTexto ? TEXTO_DA_PASSAGEM[pedindoTexto.para] : undefined;
 
@@ -187,6 +181,24 @@ function MudancasConteudo() {
         eyebrow="Assistência"
         title="Mudanças"
         description="A mudança padrão é pré-aprovada. A normal e a emergencial passam pela aprovação de outra pessoa, com a janela e o plano de reversão definidos."
+        actions={
+          gere ? (
+            <>
+              <Link href="/mudancas/colunas" className={buttonClass("secondary")}>
+                Colunas
+              </Link>
+              <Button
+                type="button"
+                onClick={() => {
+                  setQuadro("rascunho");
+                  setFormAberto(true);
+                }}
+              >
+                Nova mudança
+              </Button>
+            </>
+          ) : undefined
+        }
       />
 
       <SectionTabsInline
@@ -231,24 +243,24 @@ function MudancasConteudo() {
             itens={lista}
             onMover={mover}
             pending={pending}
-            extra={novaMudanca}
-            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
             aoRenomear={gere ? (m, nome) => void renomearMudanca(m, nome) : undefined}
+            aoAbrir={(m) => painel.abrir(m.id)}
+            colunas={colunas}
+            controles={controles}
           />
         ) : (
           <ListaFaixas
             rotulo="Lista de mudanças"
             memoria="nova-faixas:mudancas-lista"
             aparencia="nova-faixas:mudancas"
-            colunas={COLUNAS_MUDANCA}
+            colunas={colunas}
+            {...controles}
             itens={lista}
             colunaDe={(m) => faixaDaMudanca(m.estado)}
             idDe={(m) => m.id}
             nomeDe={(m) => m.titulo}
-            extra={novaMudanca}
-            aoCriar={gere ? (_coluna, nome) => void criarCard(nome) : undefined}
             aoRenomear={gere ? (m, nome) => void renomearMudanca(m, nome) : undefined}
-            aoAbrir={(m) => router.push(`/mudancas/${m.id}`)}
+            aoAbrir={(m) => painel.abrir(m.id)}
             render={(m, vista) => (
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -265,12 +277,13 @@ function MudancasConteudo() {
                       : "Sem janela"}{" "}
                     · pedida por {m.solicitante_nome}
                   </p>
-                  <Link
-                    href={`/mudancas/${m.id}`}
-                    className="text-xs font-medium text-primary hover:underline"
+                  <button
+                    type="button"
+                    className="text-left text-xs font-medium text-primary hover:underline"
+                    onClick={() => painel.abrir(m.id)}
                   >
                     Editar
-                  </Link>
+                  </button>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={RISCO[m.risco].tone}>{RISCO[m.risco].label}</Badge>
@@ -284,19 +297,30 @@ function MudancasConteudo() {
         )}
       </DataState>
 
-      {gere && (
-        <Card>
-          <CardHeader>
-            <CardTitle as="h2">Nova mudança</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-5">
-            <MudancaForm
-              rotulo="Registrar rascunho"
-              pending={pending}
-              onSalvar={(c) => void criar(c)}
+      {gere && formAberto && (
+        <Dialog
+          open
+          size="full"
+          onClose={() => setFormAberto(false)}
+          title="Nova mudança"
+          description="A mudança entra no quadro escolhido. Aprovação e execução continuam no fluxo, e o nome da coluna não vira estado."
+        >
+          <div className="mb-3 grid gap-3">
+            <Select
+              id="mudanca-quadro"
+              label="Quadro"
+              value={quadro}
+              onChange={(e) => setQuadro(e.target.value as typeof quadro)}
+              options={quadrosMudanca}
             />
-          </CardContent>
-        </Card>
+            {quadro === "em_avaliacao" && (
+              <p className="text-xs text-muted">
+                Para ir à avaliação, informe a janela (início antes do fim) e, na mudança normal ou emergencial, o plano de reversão.
+              </p>
+            )}
+          </div>
+          <MudancaForm rotulo="Registrar mudança" pending={pending} onSalvar={(c) => void criar(c)} />
+        </Dialog>
       )}
 
       {gere ? <Congelamentos /> : null}
@@ -305,6 +329,7 @@ function MudancasConteudo() {
       {pedindoTexto && reqTexto && (
         <Dialog
           open={true}
+          size="full"
           onClose={() => setPedindoTexto(null)}
           title={`Mudança #${pedindoTexto.mudanca.numero}: ${ESTADO_MUDANCA[pedindoTexto.para].acao}`}
           description={`Informe ${reqTexto.rotulo.toLowerCase()} para confirmar esta passagem de estado:`}
@@ -329,7 +354,8 @@ function MudancasConteudo() {
               id="modal-mudanca-parecer"
               label={reqTexto.obrigatorio ? `${reqTexto.rotulo} *` : reqTexto.rotulo}
               required={reqTexto.obrigatorio}
-              rows={3}
+              rows={12}
+              className="min-h-[50vh]"
               value={textoDecisao}
               onChange={(e) => setTextoDecisao(e.target.value)}
               placeholder="Digite suas observações..."
@@ -337,6 +363,15 @@ function MudancasConteudo() {
           </form>
         </Dialog>
       )}
+      <PainelDoQuadro
+        aberto={painel.id !== null}
+        id={painel.id}
+        titulo="Detalhe da mudança"
+        href={painel.id ? `/mudancas/${painel.id}` : "/mudancas"}
+        onClose={painel.fechar}
+      >
+        {painel.id && <MudancaDetalhe />}
+      </PainelDoQuadro>
     </div>
   );
 }

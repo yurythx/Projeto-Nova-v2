@@ -54,6 +54,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtendimentoAbrir))
 		r.Get("/atendimento/catalogo", h.Catalogo)
 		r.Post("/atendimento/solicitacoes", h.Abrir)
+		r.Post("/atendimento/deflexao", h.RegistrarDeflexao)
 		r.Get("/atendimento/minhas", h.ListarMinhas)
 	})
 	r.Group(func(r chi.Router) {
@@ -76,6 +77,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Delete("/atendimento/solicitacoes/{id}/apontamentos/{apontamentoId}", h.ExcluirApontamento)
 	})
 	r.Get("/atendimento/solicitacoes/{id}", h.ObterSolicitacao)
+	r.Get("/atendimento/ofertas/{id}/respostas", h.ObterResposta)
 	r.Get("/atendimento/solicitacoes/{id}/apontamentos", h.ListarApontamentos)
 	r.Post("/atendimento/solicitacoes/{id}/estado", h.Transicionar)
 	r.Post("/atendimento/solicitacoes/{id}/comentarios", h.Comentar)
@@ -98,6 +100,13 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/atendimento/feriados", h.ListarFeriados)
 		r.Post("/atendimento/feriados", h.CriarFeriado)
 		r.Delete("/atendimento/feriados/{id}", h.ExcluirFeriado)
+		r.Get("/atendimento/regras", h.ListarRegras)
+		r.Post("/atendimento/regras", h.CriarRegra)
+		r.Delete("/atendimento/regras/{id}", h.ExcluirRegra)
+		r.Put("/atendimento/ofertas/{id}/respostas", h.SalvarResposta)
+		r.Get("/atendimento/recorrencias", h.ListarRecorrencias)
+		r.Post("/atendimento/recorrencias", h.CriarRecorrencia)
+		r.Delete("/atendimento/recorrencias/{id}", h.ExcluirRecorrencia)
 	})
 }
 

@@ -503,6 +503,58 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoChamadoMensal": {
+        "properties": {
+          "ativa": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "criado_por": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "dia": {
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "oferta_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativa",
+          "created_at",
+          "criado_por",
+          "dia",
+          "id",
+          "oferta_id",
+          "titulo",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoCheckinRequest": {
         "properties": {
           "capturada_em": {
@@ -631,6 +683,46 @@
         },
         "required": [
           "texto"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoDeflexao": {
+        "properties": {
+          "sem_pedido": {
+            "type": "integer"
+          },
+          "taxa": {
+            "type": "number"
+          },
+          "viram": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sem_pedido",
+          "taxa",
+          "viram"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoDeflexaoRequest": {
+        "properties": {
+          "artigos": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "type": "array"
+          },
+          "resolveu": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "artigos"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -962,6 +1054,9 @@
           },
           "csat": {
             "$ref": "#/components/schemas/AtendimentoCSAT"
+          },
+          "deflexao": {
+            "$ref": "#/components/schemas/AtendimentoDeflexao"
           },
           "fcr_percentual": {
             "nullable": true,
@@ -1311,6 +1406,142 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoRecorrenciaRequest": {
+        "properties": {
+          "descricao": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "dia": {
+            "maximum": 28,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "oferta_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titulo": {
+            "maxLength": 160,
+            "type": "string"
+          }
+        },
+        "required": [
+          "dia",
+          "oferta_id",
+          "titulo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoRegra": {
+        "properties": {
+          "ativa": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "equipe_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "oferta_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "palavra": {
+            "type": "string"
+          },
+          "prioridade": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unidade_solicitante_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativa",
+          "created_at",
+          "id",
+          "nome",
+          "ordem",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoRegraRequest": {
+        "properties": {
+          "equipe_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 160,
+            "type": "string"
+          },
+          "oferta_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "ordem": {
+            "maximum": 999,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "palavra": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "prioridade": {
+            "enum": [
+              "critica",
+              "alta",
+              "media",
+              "baixa"
+            ],
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "unidade_solicitante_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoRelogio": {
         "properties": {
           "estado": {
@@ -1353,6 +1584,41 @@
         "required": [
           "responsavel_id"
         ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoRespostaPronta": {
+        "properties": {
+          "interna": {
+            "type": "string"
+          },
+          "oferta_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "publico": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "interna",
+          "oferta_id",
+          "publico"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoRespostaRequest": {
+        "properties": {
+          "interna": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "publico": {
+            "maxLength": 4000,
+            "type": "string"
+          }
+        },
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -3146,6 +3412,22 @@
       },
       "CofreAtualizarRequest": {
         "properties": {
+          "administra": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "endereco": {
+            "maxLength": 500,
+            "nullable": true,
+            "type": "string"
+          },
+          "mover_pasta": {
+            "type": "boolean"
+          },
           "mover_unidade": {
             "type": "boolean"
           },
@@ -3158,8 +3440,26 @@
             "nullable": true,
             "type": "string"
           },
+          "pasta_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "rotaciona": {
+            "type": "boolean"
+          },
           "senha": {
             "maxLength": 2000,
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "maquina",
+              "aplicacao",
+              "painel",
+              "outro"
+            ],
             "nullable": true,
             "type": "string"
           },
@@ -3179,10 +3479,183 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
-      "CofreRevelado": {
+      "CofreMembro": {
+        "properties": {
+          "pode_revelar": {
+            "type": "boolean"
+          },
+          "usuario_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pode_revelar",
+          "usuario_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofreMembroInput": {
+        "properties": {
+          "pode_revelar": {
+            "type": "boolean"
+          },
+          "usuario_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofreMembrosRequest": {
+        "properties": {
+          "membros": {
+            "items": {
+              "$ref": "#/components/schemas/CofreMembroInput"
+            },
+            "maxItems": 50,
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofrePasta": {
         "properties": {
           "created_at": {
             "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "membros": {
+            "items": {
+              "$ref": "#/components/schemas/CofreMembro"
+            },
+            "type": "array"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "nome",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofrePastaRequest": {
+        "properties": {
+          "membros": {
+            "items": {
+              "$ref": "#/components/schemas/CofreMembroInput"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "nome": {
+            "maxLength": 160,
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofrePessoa": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofreRetirada": {
+        "properties": {
+          "ate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "usuario_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ate",
+          "nome",
+          "usuario_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofreRetirarRequest": {
+        "properties": {
+          "minutos": {
+            "maximum": 480,
+            "minimum": 15,
+            "type": "integer"
+          },
+          "senha_de_acesso": {
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        "required": [
+          "minutos",
+          "senha_de_acesso"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CofreRevelado": {
+        "properties": {
+          "administra": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "endereco": {
             "type": "string"
           },
           "id": {
@@ -3195,7 +3668,27 @@
           "notas": {
             "type": "string"
           },
+          "pasta_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "proxima_rotacao": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "retirada": {
+            "$ref": "#/components/schemas/CofreRetirada"
+          },
+          "rotacao_pendente": {
+            "type": "boolean"
+          },
+          "rotaciona": {
+            "type": "boolean"
+          },
           "senha": {
+            "type": "string"
+          },
+          "tipo": {
             "type": "string"
           },
           "unidade_id": {
@@ -3215,10 +3708,14 @@
         },
         "required": [
           "created_at",
+          "endereco",
           "id",
           "nome",
           "notas",
+          "rotacao_pendente",
+          "rotaciona",
           "senha",
+          "tipo",
           "updated_at",
           "usuario",
           "versao"
@@ -3228,8 +3725,18 @@
       },
       "CofreSegredo": {
         "properties": {
+          "administra": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
           "created_at": {
             "format": "date-time",
+            "type": "string"
+          },
+          "endereco": {
             "type": "string"
           },
           "id": {
@@ -3237,6 +3744,26 @@
             "type": "string"
           },
           "nome": {
+            "type": "string"
+          },
+          "pasta_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "proxima_rotacao": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "retirada": {
+            "$ref": "#/components/schemas/CofreRetirada"
+          },
+          "rotacao_pendente": {
+            "type": "boolean"
+          },
+          "rotaciona": {
+            "type": "boolean"
+          },
+          "tipo": {
             "type": "string"
           },
           "unidade_id": {
@@ -3256,8 +3783,12 @@
         },
         "required": [
           "created_at",
+          "endereco",
           "id",
           "nome",
+          "rotacao_pendente",
+          "rotaciona",
+          "tipo",
           "updated_at",
           "usuario",
           "versao"
@@ -3267,6 +3798,17 @@
       },
       "CofreSegredoRequest": {
         "properties": {
+          "administra": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "endereco": {
+            "maxLength": 500,
+            "type": "string"
+          },
           "nome": {
             "maxLength": 160,
             "type": "string"
@@ -3275,8 +3817,25 @@
             "maxLength": 4000,
             "type": "string"
           },
+          "pasta_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "rotaciona": {
+            "type": "boolean"
+          },
           "senha": {
             "maxLength": 2000,
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "maquina",
+              "aplicacao",
+              "painel",
+              "outro"
+            ],
             "type": "string"
           },
           "unidade_id": {
@@ -3291,7 +3850,8 @@
         },
         "required": [
           "nome",
-          "senha"
+          "senha",
+          "tipo"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -3689,6 +4249,9 @@
           "nome": {
             "type": "string"
           },
+          "programa": {
+            "type": "string"
+          },
           "quantidade": {
             "type": "integer"
           },
@@ -3699,6 +4262,9 @@
           "updated_at": {
             "format": "date-time",
             "type": "string"
+          },
+          "uso": {
+            "$ref": "#/components/schemas/ContratosUso"
           }
         },
         "required": [
@@ -3728,6 +4294,10 @@
             "maxLength": 160,
             "type": "string"
           },
+          "programa": {
+            "maxLength": 80,
+            "type": "string"
+          },
           "quantidade": {
             "minimum": 1,
             "type": "integer"
@@ -3742,6 +4312,26 @@
           "fornecedor_id",
           "nome",
           "quantidade"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ContratosUso": {
+        "properties": {
+          "com_inventario": {
+            "type": "integer"
+          },
+          "instalados": {
+            "type": "integer"
+          },
+          "parcial": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "com_inventario",
+          "instalados",
+          "parcial"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -7254,13 +7844,8 @@
       "ProjetosEstadoRequest": {
         "properties": {
           "estado": {
-            "enum": [
-              "planejado",
-              "em_andamento",
-              "suspenso",
-              "concluido",
-              "cancelado"
-            ],
+            "maxLength": 40,
+            "minLength": 1,
             "type": "string"
           }
         },
@@ -7545,12 +8130,8 @@
             "type": "string"
           },
           "estado": {
-            "enum": [
-              "a_fazer",
-              "em_andamento",
-              "concluida",
-              "bloqueada"
-            ],
+            "maxLength": 40,
+            "minLength": 1,
             "type": "string"
           },
           "ordem": {
@@ -7634,6 +8215,123 @@
         "required": [
           "alvo_id",
           "tipo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "QuadrosAtualizarRequest": {
+        "properties": {
+          "ativa": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "cor": {
+            "maxLength": 7,
+            "nullable": true,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 80,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string"
+          },
+          "ordem": {
+            "maximum": 99,
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "QuadrosColuna": {
+        "properties": {
+          "ativa": {
+            "type": "boolean"
+          },
+          "chave": {
+            "type": "string"
+          },
+          "cor": {
+            "type": "string"
+          },
+          "de": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "entrada": {
+            "type": "boolean"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "para": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "quadro": {
+            "type": "string"
+          },
+          "tom": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativa",
+          "chave",
+          "cor",
+          "entrada",
+          "nome",
+          "ordem",
+          "quadro",
+          "tom"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "QuadrosCriarRequest": {
+        "properties": {
+          "cor": {
+            "maxLength": 7,
+            "type": "string"
+          },
+          "de": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "nome": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          },
+          "ordem": {
+            "maximum": 99,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "para": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "cor",
+          "de",
+          "nome"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -9325,6 +10023,58 @@
         ]
       }
     },
+    "/api/v1/atendimento/deflexao": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtendimentoDeflexao",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoDeflexaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Criar /atendimento/deflexao",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/equipes": {
       "get": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -10445,6 +11195,144 @@
         ]
       }
     },
+    "/api/v1/atendimento/ofertas/{id}/respostas": {
+      "get": {
+        "operationId": "getAtendimentoOfertasIdRespostas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoRespostaPronta"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Listar/consultar /atendimento/ofertas/{id}/respostas",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putAtendimentoOfertasIdRespostas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoRespostaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoRespostaPronta"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Salvar /atendimento/ofertas/{id}/respostas",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/politica": {
       "get": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -10581,6 +11469,352 @@
           }
         ],
         "summary": "Atendimento — Salvar /atendimento/politica",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/recorrencias": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtendimentoRecorrencias",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoChamadoMensal"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Listar/consultar /atendimento/recorrencias",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtendimentoRecorrencias",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoRecorrenciaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoChamadoMensal"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Criar /atendimento/recorrencias",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/recorrencias/{id}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteAtendimentoRecorrenciasId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Excluir /atendimento/recorrencias/{id}",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/regras": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtendimentoRegras",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoRegra"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Listar/consultar /atendimento/regras",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtendimentoRegras",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoRegraRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoRegra"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Criar /atendimento/regras",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/regras/{id}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteAtendimentoRegrasId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Excluir /atendimento/regras/{id}",
         "tags": [
           "atendimento"
         ]
@@ -15633,6 +16867,327 @@
         ]
       }
     },
+    "/api/v1/cofre/pastas": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getCofrePastas",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/CofrePasta"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Listar/consultar /cofre/pastas",
+        "tags": [
+          "cofre"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postCofrePastas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CofrePastaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CofrePasta"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Criar /cofre/pastas",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
+    "/api/v1/cofre/pastas/{id}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteCofrePastasId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Excluir /cofre/pastas/{id}",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
+    "/api/v1/cofre/pastas/{id}/membros": {
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putCofrePastasIdMembros",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CofreMembrosRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CofrePasta"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Salvar /cofre/pastas/{id}/membros",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
+    "/api/v1/cofre/pessoas": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getCofrePessoas",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unidade_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/CofrePessoa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Listar/consultar /cofre/pessoas",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
     "/api/v1/cofre/segredos": {
       "get": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -15883,10 +17438,59 @@
         ]
       }
     },
-    "/api/v1/cofre/segredos/{id}/revelar": {
+    "/api/v1/cofre/segredos/{id}/devolver": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
-        "operationId": "postCofreSegredosIdRevelar",
+        "operationId": "postCofreSegredosIdDevolver",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Executar ação /cofre/segredos/{id}/devolver",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
+    "/api/v1/cofre/segredos/{id}/retirar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postCofreSegredosIdRetirar",
         "parameters": [
           {
             "in": "path",
@@ -15904,16 +17508,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "properties": {
-                  "senha_de_acesso": {
-                    "maxLength": 1024,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "senha_de_acesso"
-                ],
-                "type": "object"
+                "$ref": "#/components/schemas/CofreRetirarRequest"
               }
             }
           },
@@ -15965,7 +17560,124 @@
             "bearerAuth": []
           }
         ],
+        "summary": "Cofre — Executar ação /cofre/segredos/{id}/retirar",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
+    "/api/v1/cofre/segredos/{id}/revelar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postCofreSegredosIdRevelar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CofreRevelado"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "summary": "Cofre — Executar ação /cofre/segredos/{id}/revelar",
+        "tags": [
+          "cofre"
+        ]
+      }
+    },
+    "/api/v1/cofre/segredos/{id}/rotacao/aplicada": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postCofreSegredosIdRotacaoAplicada",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cofre — Executar ação /cofre/segredos/{id}/rotacao/aplicada",
         "tags": [
           "cofre"
         ]
@@ -24681,6 +26393,227 @@
         ]
       }
     },
+    "/api/v1/quadros/{quadro}": {
+      "get": {
+        "operationId": "getQuadrosQuadro",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quadro",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/QuadrosColuna"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Colunas dos quadros — Obter /quadros/{quadro}",
+        "tags": [
+          "quadros"
+        ]
+      },
+      "post": {
+        "description": "Cria uma coluna só neste quadro. A chave é gerada. O corpo traz nome, cor, posição, de onde o card entra e para onde pode sair.",
+        "operationId": "postQuadrosQuadro",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quadro",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuadrosCriarRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/QuadrosColuna"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Colunas dos quadros — Criar coluna em /quadros/{quadro}",
+        "tags": [
+          "quadros"
+        ]
+      }
+    },
+    "/api/v1/quadros/{quadro}/{chave}": {
+      "put": {
+        "operationId": "putQuadrosQuadroChave",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quadro",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chave",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuadrosAtualizarRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/QuadrosColuna"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Colunas dos quadros — Salvar /quadros/{quadro}/{chave}",
+        "tags": [
+          "quadros"
+        ]
+      }
+    },
     "/api/v1/search": {
       "get": {
         "operationId": "getSearch",
@@ -28225,6 +30158,10 @@
     {
       "description": "Projetos. Plug-in — Gestão de projetos e planos de ação da organização.",
       "name": "projetos"
+    },
+    {
+      "description": "Colunas dos quadros. Plug-in — Nome, cor e ordem das colunas dos quadros kanban. A chave continua sendo o estado do registro.",
+      "name": "quadros"
     },
     {
       "description": "Busca Global. Plug-in — Busca unificada sobre os módulos ativos.",

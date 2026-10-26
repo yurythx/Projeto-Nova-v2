@@ -60,11 +60,11 @@ export default async function DashboardOverviewPage() {
 
       <section aria-labelledby="indicadores" className="flex flex-col gap-3">
         <h2 id="indicadores" className="text-xs font-semibold uppercase tracking-widest text-muted">
-          Projeto-nova-v2
+          Projeto Nova
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCell label="Núcleo" value="IAM" hint="Identidade, sempre ligado" icon={Shield} />
-          <StatCell label="Plug-ins" value="Desligados" hint="Entram quando a instalação liga" icon={Puzzle} />
+          <StatCell label="Módulos" value="Na grade" hint="Ativos e desativados aparecem abaixo" icon={Puzzle} />
           <StatCell label="Rastreio" value="Auditoria" hint="Cadeia SHA-256 e cópia WORM" icon={Shield} />
           <StatCell
             label="Estado do núcleo"

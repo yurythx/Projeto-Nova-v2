@@ -29,16 +29,32 @@ type Eventos interface {
 
 // Service implementa os casos de uso.
 type Service struct {
-	pool     *pgxpool.Pool
-	repo     domain.Repository
-	eventos  Eventos
-	produtos domain.Produtos
+	pool      *pgxpool.Pool
+	repo      domain.Repository
+	eventos   Eventos
+	produtos  domain.Produtos
+	passagens Passagens
+}
+
+// Passagens lê os caminhos acrescentados no quadro. Nil mantém só os estados de fábrica.
+type Passagens interface {
+	Mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error)
 }
 
 // NewService cria o serviço. produtos nil: ativo sem produto continua
 // possível; informar produto devolve indisponível.
 func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos, produtos domain.Produtos) *Service {
 	return &Service{pool: pool, repo: repo, eventos: eventos, produtos: produtos}
+}
+
+// ComPassagens liga os caminhos acrescentados no quadro de ativos.
+func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+func (s *Service) mapa(ctx context.Context, db database.DBTX) (map[string][]string, error) {
+	if s.passagens == nil {
+		return map[string][]string{}, nil
+	}
+	return s.passagens.Mapa(ctx, db, "ativos")
 }
 
 // MapError traduz erros de domínio para a API e preserva a causa.
@@ -110,9 +126,16 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 
 // Criar persiste o ativo, o evento e a auditoria na mesma transação.
 func (s *Service) Criar(ctx context.Context, identity auth.Identity, in domain.Entrada) (domain.Ativo, error) {
-	a, err := domain.Novo(in)
+	mapa, err := s.mapa(ctx, s.pool)
 	if err != nil {
 		return domain.Ativo{}, MapError(err)
+	}
+	a, err := domain.Novo(in, domain.EstadosLivres(mapa)...)
+	if err != nil {
+		return domain.Ativo{}, MapError(err)
+	}
+	if !domain.PassagemDeAtivo("", a.Estado, mapa) {
+		return domain.Ativo{}, MapError(domain.ErrEstadoInvalido)
 	}
 	if !pode(identity, a.UnidadeID) {
 		return domain.Ativo{}, MapError(domain.ErrForaDoEscopo)
@@ -138,9 +161,16 @@ func (s *Service) Atualizar(ctx context.Context, identity auth.Identity, id uuid
 	if !pode(identity, prev.UnidadeID) {
 		return domain.Ativo{}, MapError(domain.ErrNaoEncontrado)
 	}
-	next, err := prev.Aplicar(in)
+	mapa, err := s.mapa(ctx, s.pool)
 	if err != nil {
 		return domain.Ativo{}, MapError(err)
+	}
+	next, err := prev.Aplicar(in, domain.EstadosLivres(mapa)...)
+	if err != nil {
+		return domain.Ativo{}, MapError(err)
+	}
+	if !domain.PassagemDeAtivo(prev.Estado, next.Estado, mapa) {
+		return domain.Ativo{}, MapError(domain.ErrEstadoInvalido)
 	}
 	if !pode(identity, next.UnidadeID) {
 		return domain.Ativo{}, MapError(domain.ErrForaDoEscopo)

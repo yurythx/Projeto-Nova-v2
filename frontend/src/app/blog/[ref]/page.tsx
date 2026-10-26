@@ -79,11 +79,11 @@ export default async function PublicPostPage({ params }: Props) {
     dateModified: post.updated_at,
     author: {
       "@type": "Organization",
-      name: post.author_name || "Projeto-nova-v2",
+      name: post.author_name || "Projeto Nova",
     },
     publisher: {
       "@type": "Organization",
-      name: "Projeto-nova-v2",
+      name: "Projeto Nova",
       url: APP_URL,
     },
     mainEntityOfPage: {
@@ -177,7 +177,7 @@ export default async function PublicPostPage({ params }: Props) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-accent">
-                    Projeto-nova-v2
+                    Projeto Nova
                   </span>
                   <h3 className="text-lg font-bold text-foreground">Precisa de um serviço?</h3>
                   <p className="text-sm text-muted">Veja a carta de serviços publicada no site.</p>

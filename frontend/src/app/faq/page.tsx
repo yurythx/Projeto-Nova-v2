@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { APP_URL } from "@/lib/env";
 import { FAQ } from "@/lib/plataforma/conteudo";
 
-const description = "Perguntas frequentes sobre o Projeto-nova-v2, o microkernel e os plug-ins que nascem desligados.";
+const description = "Perguntas sobre o Projeto Nova: objetivo do ITIL 5, incidente e requisição, problema, mudança, projeto e as regras de uso.";
 
 export const metadata: Metadata = {
   title: "Perguntas Frequentes (FAQ)",
@@ -63,7 +63,7 @@ export default function FAQPage() {
         <div className="rounded-xl border border-surface-border bg-surface-2 p-6 sm:p-8 text-center sm:text-left sm:flex sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1">
             <h3 className="text-lg font-bold text-foreground">Ainda tem dúvidas?</h3>
-            <p className="text-sm text-muted">Entre na plataforma ou leia como o núcleo e os plug-ins se organizam.</p>
+            <p className="text-sm text-muted">Entre na plataforma ou leia como o serviço, as regras e o núcleo se organizam.</p>
           </div>
           <div className="mt-4 sm:mt-0 flex flex-wrap shrink-0 items-center justify-center sm:justify-start gap-3">
             <Link
@@ -73,7 +73,7 @@ export default function FAQPage() {
               <MessageSquare size={16} aria-hidden="true" /> Entrar
             </Link>
             <Link href="/sobre" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
-              Sobre o núcleo <ArrowRight size={14} aria-hidden="true" />
+              Sobre o Projeto Nova <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
         </div>

@@ -139,7 +139,8 @@ export function MudancaForm({
           name="descricao"
           label="O que muda"
           maxLength={4000}
-          rows={2}
+          rows={8}
+          className="min-h-48"
           defaultValue={inicial?.descricao}
         />
       </div>
@@ -149,7 +150,8 @@ export function MudancaForm({
           name="justificativa"
           label="Por que mudar"
           maxLength={4000}
-          rows={2}
+          rows={8}
+          className="min-h-48"
           defaultValue={inicial?.justificativa}
         />
       </div>
@@ -159,7 +161,8 @@ export function MudancaForm({
           name="plano_reversao"
           label="Plano de reversão (exigido na normal e na emergencial)"
           maxLength={4000}
-          rows={2}
+          rows={8}
+          className="min-h-48"
           defaultValue={inicial?.plano_reversao}
         />
       </div>

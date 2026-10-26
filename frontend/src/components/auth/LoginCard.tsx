@@ -89,8 +89,8 @@ export function LoginCard() {
       <div>
         {/* h2, não h1 (A-01): o h1 da página é o do painel de marca em
             app/login/page.tsx. */}
-        <h2 className="text-2xl font-bold text-foreground">Bem-vindo de volta</h2>
-        <p className="mt-1 text-sm text-muted">Informe seu usuário e senha para continuar.</p>
+        <h2 className="text-2xl font-bold text-foreground">Entrar no Projeto Nova</h2>
+        <p className="mt-1 text-sm text-muted">Informe seu usuário e senha para continuar na gestão de serviços.</p>
       </div>
 
       {oauthError === "NaoPertenceAssistenciaSocial" ? (

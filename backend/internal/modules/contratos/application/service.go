@@ -31,14 +31,30 @@ type Eventos interface {
 	Write(ctx context.Context, tx pgx.Tx, eventType, aggregateType, aggregateID string, correlationID uuid.UUID, payload any) error
 }
 
+// ErrProgramasIndisponiveis omite a comparação quando o inventário não está ligado.
+var ErrProgramasIndisponiveis = errors.New("contratos: inventário desligado")
+
+// UsoDePrograma é a conta que o inventário devolve. Sem amostra, ComInventario é zero.
+type UsoDePrograma struct {
+	Instalados    int
+	ComInventario int
+	Parcial       bool
+}
+
+// Programas conta instalações no inventário da máquina. Nil não compara.
+type Programas interface {
+	Contar(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, nome string) (UsoDePrograma, error)
+}
+
 // Service implementa os casos de uso.
 type Service struct {
-	pool    *pgxpool.Pool
-	repo    domain.Repository
-	eventos Eventos
-	avisos  *notificacoes.Service
-	logger  *slog.Logger
-	agora   func() time.Time
+	pool      *pgxpool.Pool
+	repo      domain.Repository
+	eventos   Eventos
+	avisos    *notificacoes.Service
+	programas Programas
+	logger    *slog.Logger
+	agora     func() time.Time
 }
 
 // NewService cria o serviço.
@@ -48,6 +64,9 @@ func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos) *Se
 
 // WithNotificacoes liga o sino do vencimento.
 func (s *Service) WithNotificacoes(n *notificacoes.Service) *Service { s.avisos = n; return s }
+
+// WithProgramas liga a conta de instalações. Sem ela, a licença não inventa número.
+func (s *Service) WithProgramas(p Programas) *Service { s.programas = p; return s }
 
 // WithRelogio fixa o dia do aviso nos testes.
 func (s *Service) WithRelogio(agora func() time.Time) *Service { s.agora = agora; return s }
@@ -177,12 +196,48 @@ func (s *Service) ListarLicencas(ctx context.Context, identity auth.Identity) ([
 		return []domain.Licenca{}, nil
 	}
 	lista, err := s.repo.ListLicencas(ctx, s.pool, f)
-	return lista, MapError(err)
+	if err != nil {
+		return nil, MapError(err)
+	}
+	for i := range lista {
+		uso, ok, err := s.usoDaLicenca(ctx, f, lista[i])
+		if err != nil {
+			return nil, MapError(err)
+		}
+		if ok {
+			lista[i].Uso = &domain.Uso{Instalados: uso.Instalados, ComInventario: uso.ComInventario, Parcial: uso.Parcial}
+		}
+	}
+	return lista, nil
+}
+
+func (s *Service) usoDaLicenca(ctx context.Context, f domain.Filtro, item domain.Licenca) (UsoDePrograma, bool, error) {
+	if s.programas == nil || item.Programa == "" {
+		return UsoDePrograma{}, false, nil
+	}
+	restrito := true
+	unidades := []uuid.UUID{}
+	if item.UnidadeID != nil {
+		unidades = []uuid.UUID{*item.UnidadeID}
+	} else if !f.Restrito {
+		restrito = false
+	} else {
+		unidades = f.Unidades
+	}
+	uso, err := s.programas.Contar(ctx, s.pool, restrito, unidades, item.Programa)
+	if errors.Is(err, ErrProgramasIndisponiveis) {
+		return UsoDePrograma{}, false, nil
+	}
+	return uso, err == nil, err
 }
 
 // CriarLicenca grava a licença. A chave secreta não é pedida.
-func (s *Service) CriarLicenca(ctx context.Context, identity auth.Identity, nome string, fornecedor uuid.UUID, fim *time.Time, quantidade int, unidade *uuid.UUID) (domain.Licenca, error) {
+func (s *Service) CriarLicenca(ctx context.Context, identity auth.Identity, nome string, fornecedor uuid.UUID, fim *time.Time, quantidade int, programa string, unidade *uuid.UUID) (domain.Licenca, error) {
 	item, err := domain.NovaLicenca(nome, fornecedor, fim, quantidade, unidade)
+	if err != nil {
+		return domain.Licenca{}, MapError(err)
+	}
+	item.Programa, err = domain.ProgramaDe(programa)
 	if err != nil {
 		return domain.Licenca{}, MapError(err)
 	}

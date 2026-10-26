@@ -25,7 +25,7 @@ describe("brandingStore", () => {
   it("sem cookie, o snapshot é o DEFAULT", async () => {
     const store = await freshStore();
     expect(store.getBrandingSnapshot()).toEqual(DEFAULT_BRANDING);
-    expect(store.getBrandingSnapshot().appName).toBe("Projeto-nova-v2");
+    expect(store.getBrandingSnapshot().appName).toBe("Projeto Nova");
   });
 
   it("prime aplica a identidade do servidor mantendo as preferências do cookie", async () => {

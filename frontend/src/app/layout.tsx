@@ -49,10 +49,10 @@ const geistMono = localFont({
 
 export async function generateMetadata(): Promise<Metadata> {
   const b = await publicGetOr<Branding | null>("branding", null, 60, [BRANDING_TAG]);
-  const name = b?.app_name || "Projeto-nova-v2";
+  const name = b?.app_name || "Projeto Nova";
   const desc =
     b?.app_description ||
-    "Microkernel de plug-ins: identidade, auditoria e módulos que nascem desligados.";
+    "Gestão de produtos e serviços no ITIL 5: incidente, requisição, problema, mudança e projeto.";
 
   return {
     metadataBase: new URL(APP_URL),

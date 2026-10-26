@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { fmtDateTime } from "@/components/plataforma/useAction";
-import { NomeClicavel, Quadro, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
 import {
   ESTADO_MUDANCA,
@@ -23,14 +22,14 @@ type ColunaMudanca =
   | "concluida"
   | "fechada";
 
-export const COLUNAS_MUDANCA: ColunaFaixa[] = [
+export const COLUNAS_MUDANCA: ColunaFaixa[] = colunasEmOrdem([
   { id: "rascunho", titulo: "Rascunho", tom: "neutral" },
   { id: "em_avaliacao", titulo: "Em avaliação", tom: "info" },
   { id: "aprovada", titulo: "Aprovadas", tom: "success" },
   { id: "em_execucao", titulo: "Em execução", tom: "info" },
   { id: "concluida", titulo: "Concluídas", tom: "success" },
   { id: "fechada", titulo: "Rejeitada / Falhou", tom: "danger" },
-];
+]);
 
 export function faixaDaMudanca(estado: EstadoMudanca): string {
   if (estado === "rejeitada" || estado === "falhou" || estado === "cancelada") return "fechada";
@@ -43,7 +42,8 @@ function destino(m: Mudanca, coluna: ColunaMudanca): EstadoMudanca | null {
   return valid ?? null;
 }
 
-function aceita(m: Mudanca, coluna: string): boolean {
+function aceita(colunas: ColunaFaixa[], m: Mudanca, coluna: string): boolean {
+  if (colunas.find((item) => item.id === coluna)?.ativa === false) return false;
   const id = coluna as ColunaMudanca;
   if (faixaDaMudanca(m.estado) === id) return false;
   const d = destino(m, id);
@@ -57,6 +57,9 @@ export function MudancasKanban({
   extra,
   aoCriar,
   aoRenomear,
+  aoAbrir,
+  colunas = COLUNAS_MUDANCA,
+  controles,
 }: {
   itens: Mudanca[];
   onMover: (m: Mudanca, para: EstadoMudanca) => void;
@@ -64,14 +67,21 @@ export function MudancasKanban({
   extra?: (colunaId: string) => ReactNode;
   aoCriar?: (colunaId: string, nome: string) => void;
   aoRenomear?: (m: Mudanca, nome: string) => void;
+  aoAbrir?: (m: Mudanca) => void;
+  colunas?: ColunaFaixa[];
+  controles?: ControlesColuna;
 }) {
   const router = useRouter();
+  function abrir(m: Mudanca) {
+    if (aoAbrir) aoAbrir(m);
+    else router.push(`/mudancas/${m.id}`);
+  }
   return (
     <Quadro
       rotulo="Quadro de mudanças"
       memoria="nova-faixas:mudancas-quadro"
       aparencia="nova-faixas:mudancas"
-      colunas={COLUNAS_MUDANCA}
+      colunas={colunas}
       itens={itens}
       colunaDe={(m) => faixaDaMudanca(m.estado)}
       idDe={(m) => m.id}
@@ -80,9 +90,10 @@ export function MudancasKanban({
       extra={extra}
       aoCriar={aoCriar}
       aoRenomear={aoRenomear}
-      aoAbrir={(m) => router.push(`/mudancas/${m.id}`)}
+      aoAbrir={abrir}
       arrastavel={(m) => (m.proximos ?? []).length > 0}
-      podeSoltar={aceita}
+      podeSoltar={(m, coluna) => aceita(colunas, m, coluna)}
+      {...controles}
       aoSoltar={(m, coluna) => {
         const d = destino(m, coluna as ColunaMudanca);
         if (d) onMover(m, d);
@@ -95,7 +106,9 @@ export function MudancasKanban({
               <span className="font-semibold tabular-nums text-foreground">#{m.numero}</span>
               <div className="flex items-center gap-1">
                 <Badge tone={RISCO[m.risco].tone}>{RISCO[m.risco].label}</Badge>
-                <Badge tone={ESTADO_MUDANCA[m.estado].tone}>{ESTADO_MUDANCA[m.estado].label}</Badge>
+                <Badge tone={seloDoEstado(colunas, m.estado, ESTADO_MUDANCA[m.estado as EstadoMudanca]).tone}>
+                  {seloDoEstado(colunas, m.estado, ESTADO_MUDANCA[m.estado as EstadoMudanca]).label}
+                </Badge>
               </div>
             </div>
             <NomeClicavel
@@ -118,9 +131,9 @@ export function MudancasKanban({
                 </span>
               )}
             </div>
-            <Link href={`/mudancas/${m.id}`} className="text-xs font-medium text-primary hover:underline">
+            <button type="button" className="text-left text-xs font-medium text-primary hover:underline" onClick={() => abrir(m)}>
               Editar
-            </Link>
+            </button>
             {moves.length > 0 && (
               <label className="mt-1 flex flex-col gap-1 text-xs">
                 <span className="sr-only">Mover a mudança #{m.numero} para</span>
@@ -135,7 +148,7 @@ export function MudancasKanban({
                   <option value="">Mover para…</option>
                   {moves.map((s) => (
                     <option key={s} value={s}>
-                      {ESTADO_MUDANCA[s].acao}
+                      {seloDoEstado(colunas, s, ESTADO_MUDANCA[s as EstadoMudanca]).acao}
                     </option>
                   ))}
                 </select>

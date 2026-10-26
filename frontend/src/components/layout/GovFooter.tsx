@@ -89,7 +89,7 @@ export function GovFooter() {
             </li>
             <li>
               <Link href="/sobre" className="underline-offset-2 hover:underline">
-                Sobre o núcleo
+                Sobre o Projeto Nova
               </Link>
             </li>
           </ul>
@@ -100,7 +100,7 @@ export function GovFooter() {
           <p>
             © {year} {branding.orgName}
           </p>
-          <p>Projeto-nova-v2 · Microkernel · Padrão Digital de Governo (DSGov)</p>
+          <p>{branding.appName} · Gestão de serviços · Padrão Digital de Governo (DSGov)</p>
         </div>
       </div>
     </footer>

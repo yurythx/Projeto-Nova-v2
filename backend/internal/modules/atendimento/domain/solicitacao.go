@@ -64,6 +64,8 @@ type Solicitacao struct {
 
 	// PodeIrPara são as passagens de quem consulta a fila; vazio fora dela.
 	PodeIrPara []string `json:"proximos,omitempty"`
+	// passagens são caminhos acrescentados na fila. Quem atende conduz.
+	passagens []string
 	// Prazo é medido na leitura, só para a equipe.
 	Prazo *Prazo `json:"prazo,omitempty"`
 }
@@ -229,7 +231,20 @@ func (s Solicitacao) Proximos(papeis ...string) []string {
 			}
 		}
 	}
+	if slices.Contains(papeis, PapelTecnico) && !s.Finalizada() {
+		for _, destino := range s.passagens {
+			if destino != "" && destino != s.Estado && !slices.Contains(out, destino) {
+				out = append(out, destino)
+			}
+		}
+	}
 	return out
+}
+
+// ComPassagens devolve a cópia com os caminhos acrescentados na fila.
+func (s Solicitacao) ComPassagens(extras []string) Solicitacao {
+	s.passagens = append([]string{}, extras...)
+	return s
 }
 
 // NovoComentario valida a resposta ou a nota. Solicitação finalizada não

@@ -70,10 +70,11 @@ describe("Mudanças — lista", () => {
     );
     expect(screen.getByText(/Sem janela · pedida por Ana/)).toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: "Nova mudança" }));
     await user.type(screen.getByLabelText("Título *"), "Atualizar servidor");
     await user.selectOptions(screen.getByLabelText("Tipo"), "padrao");
     await user.type(screen.getByLabelText("Início planejado"), "2026-10-23T10:00");
-    await user.click(screen.getByRole("button", { name: "Registrar rascunho" }));
+    await user.click(screen.getByRole("button", { name: "Registrar mudança" }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/mudancas/m1"));
     const corpo = api.to("POST v1/mudancas")[0]!.body as Record<string, unknown>;
     expect(corpo).toMatchObject({
@@ -101,7 +102,8 @@ describe("Mudanças — lista", () => {
     });
     renderApp(<MudancasPage />);
 
-    await user.type(await screen.findByLabelText("Título *"), "Migração do Cluster Kubernetes");
+    await user.click(await screen.findByRole("button", { name: "Nova mudança" }));
+    await user.type(screen.getByLabelText("Título *"), "Migração do Cluster Kubernetes");
     // Abre a calculadora de risco do CAB
     await user.click(screen.getByRole("button", { name: /Calculadora de Risco ITIL/i }));
 
@@ -116,7 +118,7 @@ describe("Mudanças — lista", () => {
     // O seletor de risco foi automaticamente atualizado para alto
     expect(screen.getByLabelText("Risco")).toHaveValue("alto");
 
-    await user.click(screen.getByRole("button", { name: "Registrar rascunho" }));
+    await user.click(screen.getByRole("button", { name: "Registrar mudança" }));
     await waitFor(() => expect(api.to("POST v1/mudancas")).toHaveLength(1));
 
     const corpo = api.to("POST v1/mudancas")[0]!.body as Record<string, unknown>;
@@ -131,7 +133,7 @@ describe("Mudanças — lista", () => {
     mockBackend({ ...identityRoutes(perms("mudancas:aprovar")), "GET v1/mudancas": { data: [] } });
     const ap = renderApp(<MudancasPage />);
     expect(await screen.findByText("Nenhuma mudança neste recorte")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Registrar rascunho" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Nova mudança" })).not.toBeInTheDocument();
     ap.unmount();
 
     const erro = mockBackend({

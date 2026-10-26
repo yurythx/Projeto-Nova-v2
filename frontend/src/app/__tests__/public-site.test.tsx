@@ -102,14 +102,16 @@ describe("páginas institucionais estáticas", () => {
     }
     api.routes = {}; // branding fora: cai no padrão
     const { container } = render(await AboutPage());
-    expect(container.textContent).toContain("Projeto-nova-v2");
+    expect(container.textContent).toContain("Projeto Nova");
   });
 
-  it("início apresenta o microkernel", async () => {
+  it("início apresenta o ciclo de serviço", async () => {
     render(await LandingPage());
-    expect(screen.getByRole("heading", { name: "O que a plataforma entrega" })).toBeInTheDocument();
-    expect(screen.getByText("Núcleo")).toBeInTheDocument();
-    expect(screen.getByText(/nascem desligados|começam desativados/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Como o serviço funciona" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Incidente e requisição" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Problema" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mudança" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Projeto" })).toBeInTheDocument();
   });
 
   it("login mostra a marca e o cartão", async () => {

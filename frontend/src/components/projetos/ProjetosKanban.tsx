@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { NomeClicavel, Quadro, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
 import {
   ESTADO_PROJETO,
@@ -13,13 +12,13 @@ import {
   type Projeto,
 } from "@/lib/projetos/projetos";
 
-export const COLUNAS_PROJETO: ColunaFaixa[] = [
+export const COLUNAS_PROJETO: ColunaFaixa[] = colunasEmOrdem([
   { id: "planejado", titulo: "Planejados", tom: "info" },
   { id: "em_andamento", titulo: "Em andamento", tom: "warning" },
   { id: "suspenso", titulo: "Suspensos", tom: "danger" },
   { id: "concluido", titulo: "Concluídos", tom: "success" },
   { id: "cancelado", titulo: "Cancelados", tom: "neutral" },
-];
+]);
 
 const TRANSOES: Record<EstadoProjeto, EstadoProjeto[]> = {
   planejado: ["em_andamento", "cancelado"],
@@ -29,7 +28,8 @@ const TRANSOES: Record<EstadoProjeto, EstadoProjeto[]> = {
   cancelado: [],
 };
 
-function aceita(p: Projeto, coluna: string): boolean {
+function aceita(colunas: ColunaFaixa[], p: Projeto, coluna: string): boolean {
+  if (colunas.find((item) => item.id === coluna)?.ativa === false) return false;
   if (p.estado === coluna) return false;
   return TRANSOES[p.estado]?.includes(coluna as EstadoProjeto) ?? false;
 }
@@ -41,6 +41,9 @@ export function ProjetosKanban({
   extra,
   aoCriar,
   aoRenomear,
+  aoAbrir,
+  colunas = COLUNAS_PROJETO,
+  controles,
 }: {
   itens: Projeto[];
   onMover: (p: Projeto, para: EstadoProjeto) => void;
@@ -48,14 +51,21 @@ export function ProjetosKanban({
   extra?: (colunaId: string) => ReactNode;
   aoCriar?: (colunaId: string, nome: string) => void;
   aoRenomear?: (p: Projeto, nome: string) => void;
+  aoAbrir?: (p: Projeto) => void;
+  colunas?: ColunaFaixa[];
+  controles?: ControlesColuna;
 }) {
   const router = useRouter();
+  function abrir(p: Projeto) {
+    if (aoAbrir) aoAbrir(p);
+    else router.push(`/projetos/${p.id}`);
+  }
   return (
     <Quadro
       rotulo="Quadro de projetos"
       memoria="nova-faixas:projetos-quadro"
       aparencia="nova-faixas:projetos"
-      colunas={COLUNAS_PROJETO}
+      colunas={colunas}
       itens={itens}
       colunaDe={(p) => p.estado}
       idDe={(p) => p.id}
@@ -64,10 +74,11 @@ export function ProjetosKanban({
       extra={extra}
       aoCriar={aoCriar}
       aoRenomear={aoRenomear}
-      aoAbrir={(p) => router.push(`/projetos/${p.id}`)}
+      aoAbrir={abrir}
       testeId="projetos-kanban"
       arrastavel={(p) => (TRANSOES[p.estado] ?? []).length > 0}
-      podeSoltar={aceita}
+      podeSoltar={(p, coluna) => aceita(colunas, p, coluna)}
+      {...controles}
       aoSoltar={(p, coluna) => onMover(p, coluna as EstadoProjeto)}
       render={(p, vista) => {
         const moves = TRANSOES[p.estado] ?? [];
@@ -78,7 +89,9 @@ export function ProjetosKanban({
               <span className="font-semibold tabular-nums text-foreground">#{p.numero}</span>
               <div className="flex items-center gap-1">
                 {prioridadeMeta && <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>}
-                <Badge tone={ESTADO_PROJETO[p.estado].tone}>{ESTADO_PROJETO[p.estado].label}</Badge>
+                <Badge tone={seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).tone}>
+                  {seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).label}
+                </Badge>
               </div>
             </div>
             <NomeClicavel
@@ -95,9 +108,9 @@ export function ProjetosKanban({
                 </span>
               )}
             </div>
-            <Link href={`/projetos/${p.id}`} className="text-xs font-medium text-primary hover:underline">
+            <button type="button" className="text-left text-xs font-medium text-primary hover:underline" onClick={() => abrir(p)}>
               Editar
-            </Link>
+            </button>
             {moves.length > 0 && (
               <label className="mt-1 flex flex-col gap-1 text-xs">
                 <span className="sr-only">Mudar estado de {p.titulo}</span>
@@ -113,7 +126,7 @@ export function ProjetosKanban({
                   <option value="">Mover para…</option>
                   {moves.map((m) => (
                     <option key={m} value={m}>
-                      {ESTADO_PROJETO[m].label}
+                      {seloDoEstado(colunas, m, ESTADO_PROJETO[m as EstadoProjeto]).label}
                     </option>
                   ))}
                 </select>

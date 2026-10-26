@@ -28,6 +28,13 @@ func New(deps modkit.Deps, portas domain.Portas, produtos domain.Produtos) *Modu
 	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
 }
 
+// ComPassagens liga os caminhos acrescentados no quadro.
+func (m *Module) ComPassagens(p application.Passagens) {
+	if m != nil && m.svc != nil {
+		m.svc.ComPassagens(p)
+	}
+}
+
 // ComEfeitos liga a conclusão dos incidentes e problemas na mesma transação.
 func (m *Module) ComEfeitos(e domain.Efeitos) {
 	m.svc.ComEfeitos(e)

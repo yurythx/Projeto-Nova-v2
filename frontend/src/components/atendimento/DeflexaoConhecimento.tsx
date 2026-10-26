@@ -33,7 +33,13 @@ export function DeflexaoConhecimento({
         .get<SearchResponse>(`v1/search?${params}`)
         .then((resposta) => {
           if (!vivo) return;
-          setArtigos((resposta.data.results ?? []).filter((item) => item.module === "wiki").slice(0, 4));
+          const vistos = (resposta.data.results ?? []).filter((item) => item.module === "wiki").slice(0, 4);
+          setArtigos(vistos);
+          if (vistos.length > 0) {
+            void apiClient
+              .post("v1/atendimento/deflexao", { artigos: vistos.map((item) => item.id), resolveu: false })
+              .catch(() => undefined);
+          }
         })
         .catch(() => {
           if (vivo) setArtigos([]);
@@ -74,6 +80,9 @@ export function DeflexaoConhecimento({
         type="button"
         className="self-start text-sm text-muted underline-offset-2 hover:underline"
         onClick={() => {
+          void apiClient
+            .post("v1/atendimento/deflexao", { artigos: artigos.map((item) => item.id), resolveu: true })
+            .catch(() => undefined);
           setDispensado(true);
           onResolvido?.();
         }}

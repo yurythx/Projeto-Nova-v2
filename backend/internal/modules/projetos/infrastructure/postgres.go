@@ -191,6 +191,15 @@ func (r *Repository) Transicionar(ctx context.Context, db database.DBTX, id uuid
 	return &p, nil
 }
 
+func (r *Repository) EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error) {
+	var estado string
+	err := db.QueryRow(ctx, `SELECT estado FROM projetos_tarefas WHERE id = $1`, id).Scan(&estado)
+	if err != nil {
+		return "", mapDB(err)
+	}
+	return estado, nil
+}
+
 func (r *Repository) CriarTarefa(ctx context.Context, db database.DBTX, t *domain.Tarefa) error {
 	now := time.Now().UTC()
 	t.CreatedAt = now

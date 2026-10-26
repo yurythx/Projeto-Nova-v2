@@ -2,16 +2,17 @@
 
 import { ArrowLeft, Clock, DollarSign, GitCommit, Link2, Plus, Printer, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, Suspense, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
-import { NomeClicavel, Quadro, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { NomeClicavel, Quadro, colunasEmOrdem, ordenarColunas, seloDoEstado, useAparencia, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
@@ -43,13 +44,24 @@ export default function ProjetoDetalhePage() {
   );
 }
 
-function ProjetoDetalheConteudo() {
-  const { id } = useParams<{ id: string }>();
+export function ProjetoDetalheConteudo() {
+  const id = useIdDaRota();
+  const embutido = usePainelEmbutido();
   const { can } = usePlataforma();
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
 
   const { run, pending } = useAction();
+  const lookTarefas = useAparencia(id ? `nova-faixas:tarefas:${id}` : "nova-faixas:tarefas:sem");
+  const fabricaTarefa: ColunaFaixa[] = colunasEmOrdem(
+    (Object.keys(ESTADO_TAREFA) as EstadoTarefa[]).map((estado) => ({
+      id: estado,
+      titulo: ESTADO_TAREFA[estado].label,
+      tom: ESTADO_TAREFA[estado].tone,
+    })),
+  );
+  const catalogoTarefas = useQuadro("tarefas", fabricaTarefa);
+  const controlesTarefas = { oficial: catalogoTarefas.oficial };
 
   const projeto = useApiQuery<Projeto>(id && le ? `v1/projetos/${id}` : null);
   const tarefas = useApiQuery<Tarefa[]>(id && le ? `v1/projetos/${id}/tarefas` : null);
@@ -60,6 +72,7 @@ function ProjetoDetalheConteudo() {
 
   const p = projeto.data;
   const listaTarefas = tarefas.data ?? [];
+  const colunasTarefa = colunasVisiveis(catalogoTarefas.colunas, listaTarefas, (t) => t.estado);
   const listaVinculos = vinculos.data ?? [];
   const listaApontamentos = apontamentos.data?.items ?? [];
   const resumoHoras = apontamentos.data?.resumo ?? {
@@ -163,22 +176,7 @@ function ProjetoDetalheConteudo() {
           estado: novoEstado,
           ordem: t.ordem,
         }),
-      `Tarefa ${t.titulo}: ${ESTADO_TAREFA[novoEstado].label.toLowerCase()}`,
-    );
-    if (ok) void tarefas.mutate();
-  }
-
-  async function criarCardTarefa(colunaId: string, nome: string) {
-    const ok = await run(
-      () =>
-        apiClient.post(`v1/projetos/${id}/tarefas`, {
-          titulo: nome.slice(0, 200),
-          descricao: "",
-          responsavel_nome: "",
-          estado: colunaId,
-          ordem: listaTarefas.length + 1,
-        }),
-      "Tarefa adicionada",
+      `Tarefa ${t.titulo}: ${seloDoEstado(catalogoTarefas.colunas, novoEstado, ESTADO_TAREFA[novoEstado]).label.toLowerCase()}`,
     );
     if (ok) void tarefas.mutate();
   }
@@ -239,15 +237,17 @@ function ProjetoDetalheConteudo() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href="/projetos"
-          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Voltar para Projetos
-        </Link>
-      </div>
+      {!embutido && (
+        <div>
+          <Link
+            href="/projetos"
+            className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Voltar para Projetos
+          </Link>
+        </div>
+      )}
 
       <DataState
         loading={projeto.isLoading}
@@ -402,7 +402,6 @@ function ProjetoDetalheConteudo() {
               projeto={p}
               tarefas={listaTarefas}
               vinculos={listaVinculos}
-              onAdicionarTarefa={() => setModalTarefa(true)}
               podeEditar={gere && p.estado !== "cancelado"}
             />
 
@@ -416,14 +415,19 @@ function ProjetoDetalheConteudo() {
                   </p>
                 </div>
                 {gere && p.estado !== "cancelado" && (
-                  <Button
-                    size="sm"
-                    type="button"
-                    onClick={() => setModalTarefa(true)}
-                    data-testid="adicionar-tarefa-btn"
-                  >
-                    Nova tarefa
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Link href="/projetos/tarefas/colunas" className={buttonClass("secondary", "sm")}>
+                      Colunas
+                    </Link>
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => setModalTarefa(true)}
+                      data-testid="adicionar-tarefa-btn"
+                    >
+                      Nova tarefa
+                    </Button>
+                  </div>
                 )}
               </CardHeader>
               <CardContent className="pb-5">
@@ -442,45 +446,25 @@ function ProjetoDetalheConteudo() {
                     rotulo="Quadro de tarefas"
                     memoria={`nova-faixas:tarefas:${p.id}`}
                     aparencia={`nova-faixas:tarefas:${p.id}`}
-                    colunas={(Object.keys(ESTADO_TAREFA) as EstadoTarefa[]).map(
-                      (estado): ColunaFaixa => ({
-                        id: estado,
-                        titulo: ESTADO_TAREFA[estado].label,
-                        tom: ESTADO_TAREFA[estado].tone,
-                      }),
-                    )}
+                    colunas={colunasTarefa}
+                    {...controlesTarefas}
                     itens={listaTarefas}
                     colunaDe={(t) => t.estado}
                     idDe={(t) => t.id}
                     nomeDe={(t) => t.titulo}
                     pending={pending}
                     arrastavel={() => gere && p.estado !== "cancelado"}
-                    podeSoltar={(t, coluna) => t.estado !== coluna}
-                    aoSoltar={(t, coluna) => void atualizarTarefaEstado(t, coluna as EstadoTarefa)}
-                    aoCriar={
-                      gere && p.estado !== "cancelado"
-                        ? (coluna, nome) => void criarCardTarefa(coluna, nome)
-                        : undefined
+                    podeSoltar={(t, coluna) =>
+                      t.estado !== coluna && catalogoTarefas.colunas.find((item) => item.id === coluna)?.ativa !== false
                     }
+                    aoSoltar={(t, coluna) => void atualizarTarefaEstado(t, coluna as EstadoTarefa)}
                     aoRenomear={
                       gere && p.estado !== "cancelado"
                         ? (t, nome) => void renomearTarefa(t, nome)
                         : undefined
                     }
-                    extra={(colunaId) =>
-                      colunaId === "a_fazer" && gere && p.estado !== "cancelado" ? (
-                        <Button
-                          size="sm"
-                          type="button"
-                          variant="secondary"
-                          onClick={() => setModalTarefa(true)}
-                        >
-                          Criar tarefa
-                        </Button>
-                      ) : null
-                    }
                     render={(t, vista) => {
-                      const meta = ESTADO_TAREFA[t.estado];
+                      const meta = seloDoEstado(catalogoTarefas.colunas, t.estado, ESTADO_TAREFA[t.estado]);
                       return (
                         <div className="flex flex-col gap-2" data-testid={`tarefa-${t.id}`}>
                           <div className="flex flex-wrap items-center gap-2">
@@ -503,9 +487,9 @@ function ProjetoDetalheConteudo() {
                                   void atualizarTarefaEstado(t, e.target.value as EstadoTarefa)
                                 }
                                 aria-label={`Estado da tarefa ${t.titulo}`}
-                                options={Object.entries(ESTADO_TAREFA).map(([chave, info]) => ({
-                                  value: chave,
-                                  label: info.label,
+                                options={ordenarColunas(catalogoTarefas.colunas.filter((coluna) => coluna.ativa !== false || coluna.id === t.estado)).map((coluna) => ({
+                                  value: coluna.id,
+                                  label: rotuloQuadro(catalogoTarefas.oficial, catalogoTarefas.colunas, lookTarefas.gravado, coluna.id),
                                 }))}
                               />
                               <Button
@@ -529,6 +513,7 @@ function ProjetoDetalheConteudo() {
             {/* Modal de Nova Tarefa */}
             <Dialog
               open={modalTarefa}
+              size="full"
               onClose={() => setModalTarefa(false)}
               title="Nova Tarefa"
               description="Adicione uma atividade ou marco ao cronograma do projeto."
@@ -550,7 +535,8 @@ function ProjetoDetalheConteudo() {
                   value={tarefaDescricao}
                   onChange={(e) => setTarefaDescricao(e.target.value)}
                   placeholder="Instruções ou critérios de aceite..."
-                  rows={2}
+                  rows={8}
+                  className="min-h-48"
                   maxLength={4000}
                 />
 
@@ -565,12 +551,12 @@ function ProjetoDetalheConteudo() {
 
                   <Select
                     id="tarefa-estado"
-                    label="Estado inicial"
+                    label="Quadro"
                     value={tarefaEstado}
                     onChange={(e) => setTarefaEstado(e.target.value as EstadoTarefa)}
-                    options={Object.entries(ESTADO_TAREFA).map(([key, info]) => ({
-                      value: key,
-                      label: info.label,
+                    options={ordenarColunas(catalogoTarefas.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => ({
+                      value: coluna.id,
+                      label: rotuloQuadro(catalogoTarefas.oficial, catalogoTarefas.colunas, lookTarefas.gravado, coluna.id),
                     }))}
                   />
                 </div>
@@ -687,6 +673,7 @@ function ProjetoDetalheConteudo() {
             {/* Modal de Novo Vínculo */}
             <Dialog
               open={modalVinculo}
+              size="full"
               onClose={() => setModalVinculo(false)}
               title="Vincular Item da Assistência"
               description="Conecte este projeto a uma mudança, problema ou ativo de TI."
@@ -867,6 +854,7 @@ function ProjetoDetalheConteudo() {
             {/* Modal de Lançar Horas */}
             <Dialog
               open={modalApontamento}
+              size="full"
               onClose={() => setModalApontamento(false)}
               title="Lançar Horas no Projeto"
               description="Registre o esforço despendido em tarefas ou marcos do projeto."
@@ -927,7 +915,8 @@ function ProjetoDetalheConteudo() {
                   onChange={(e) => setApontamentoDescricao(e.target.value)}
                   placeholder="Descreva o que foi desenvolvido, configurado ou homologado..."
                   required
-                  rows={3}
+                  rows={8}
+                  className="min-h-48"
                   maxLength={2000}
                 />
 

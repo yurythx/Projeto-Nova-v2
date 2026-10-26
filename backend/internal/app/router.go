@@ -139,7 +139,7 @@ func swaggerUI(w http.ResponseWriter, _ *http.Request) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Projeto-nova-v2 — API (OpenAPI 3)</title>
+  <title>Projeto Nova — API (OpenAPI 3)</title>
   <link rel="stylesheet" href="/docs/assets/swagger-ui.css" />
 </head>
 <body>

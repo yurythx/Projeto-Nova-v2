@@ -273,6 +273,16 @@ func normalizarMetas(metas []Meta, usadas []string) ([]Meta, error) {
 	return out, nil
 }
 
+// Niveis devolve o primeiro par da matriz que produz a prioridade.
+func (p Politica) Niveis(prioridade string) (int, int, bool) {
+	for _, c := range p.Matriz {
+		if c.Prioridade == prioridade {
+			return c.Impacto, c.Urgencia, true
+		}
+	}
+	return 0, 0, false
+}
+
 // Classificar diz a prioridade e a meta de impacto e urgência.
 func (p Politica) Classificar(impacto, urgencia int) (string, Meta) {
 	for _, c := range p.Matriz {

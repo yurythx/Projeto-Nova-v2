@@ -20,7 +20,7 @@ export function Logo({ size = 32, className = "" }: { size?: number; className?:
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Projeto-nova-v2"
+      aria-label="Projeto Nova"
       className={`shrink-0 ${className}`}
     >
       <rect x="1" y="1" width="26" height="26" rx="8" fill="#16305a" />

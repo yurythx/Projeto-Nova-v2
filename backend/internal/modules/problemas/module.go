@@ -39,6 +39,13 @@ func (m *Module) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uu
 	return m.svc.ConcluirPorMudanca(ctx, tx, id, autor, texto)
 }
 
+// ComPassagens liga os caminhos acrescentados no quadro.
+func (m *Module) ComPassagens(p application.Passagens) {
+	if m != nil && m.svc != nil {
+		m.svc.ComPassagens(p)
+	}
+}
+
 // Repositorio é a porta usada pelas mudanças para conferir o problema.
 func (m *Module) Repositorio() domain.Repository { return m.repo }
 

@@ -4,11 +4,11 @@ import { getServerBranding } from "@/lib/branding/server";
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const brand = await getServerBranding().catch(() => null);
-  const name = brand?.appName || "Projeto-nova-v2";
-  const shortName = "Nova v2";
+  const name = brand?.appName || "Projeto Nova";
+  const shortName = "Nova";
   const description =
     brand?.appDescription ||
-    "Microkernel de plug-ins: identidade, auditoria e módulos que nascem desligados.";
+    "Gestão de produtos e serviços no ITIL 5: incidente, requisição, problema, mudança e projeto.";
 
   return {
     name,

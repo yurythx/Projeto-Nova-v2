@@ -2,14 +2,15 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { type FormEvent, type ReactNode, useCallback, useState } from "react";
+import { usePainelEmbutido, useIdDaRota } from "@/components/plataforma/PainelDoQuadro";
+import { type FormEvent, type ReactNode, useCallback, useRef, useState } from "react";
 
 import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
 import { SegredoVinculadoCard } from "@/components/atendimento/SegredoVinculadoCard";
 import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAtendimentoCard";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
+import { RespostasProntas } from "@/components/atendimento/RespostasProntas";
 import { ProblemasDoIncidente } from "@/components/atendimento/ProblemasDoIncidente";
 import { VisitasCard } from "@/components/atendimento/VisitasCard";
 import { useTopic } from "@/components/realtime/RealtimeProvider";
@@ -44,8 +45,9 @@ function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   );
 }
 
-export default function SolicitacaoPage() {
-  const { id } = useParams<{ id: string }>();
+export function SolicitacaoDetalhe() {
+  const id = useIdDaRota();
+  const embutido = usePainelEmbutido();
   const { me } = usePlataforma();
   const detalhe = useApiQuery<Detalhe>(id ? `v1/atendimento/solicitacoes/${id}` : null);
   const d = detalhe.data;
@@ -57,6 +59,8 @@ export default function SolicitacaoPage() {
     tecnico && !finalizada ? `v1/atendimento/solicitacoes/${id}/responsaveis` : null,
   );
   const [escolhido, setEscolhido] = useState("");
+  const textoRef = useRef<HTMLTextAreaElement>(null);
+  const internoRef = useRef<HTMLInputElement>(null);
   const { mutate } = detalhe;
   const recarregar = useCallback(() => void mutate(), [mutate]);
   // A equipe ouve também as notas internas; quem abriu, só o que pode ver.
@@ -119,13 +123,15 @@ export default function SolicitacaoPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href={voltar}
-        className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
-      >
-        <ArrowLeft aria-hidden className="h-4 w-4" />
-        {tecnico ? "Voltar para a fila" : "Voltar para minhas solicitações"}
-      </Link>
+      {!embutido && (
+        <Link
+          href={voltar}
+          className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <ArrowLeft aria-hidden className="h-4 w-4" />
+          {tecnico ? "Voltar para a fila" : "Voltar para minhas solicitações"}
+        </Link>
+      )}
 
       <DataState
         loading={detalhe.isLoading}
@@ -340,17 +346,23 @@ export default function SolicitacaoPage() {
                     onSubmit={comentar}
                     className="grid gap-3 border-t border-surface-border pt-4"
                   >
+                    {tecnico && s?.oferta_id ? (
+                      <RespostasProntas ofertaId={s.oferta_id} texto={textoRef} interno={internoRef} />
+                    ) : null}
                     <Textarea
+                      ref={textoRef}
                       id="comentario-texto"
                       name="texto"
                       label={tecnico ? "Mensagem" : "Sua resposta"}
                       required
                       maxLength={4000}
-                      rows={3}
+                      rows={10}
+                      className="min-h-56"
                     />
                     {tecnico && (
                       <label className="flex items-center gap-2 text-sm">
                         <input
+                          ref={internoRef}
                           id="comentario-interno"
                           name="interno"
                           type="checkbox"
@@ -392,4 +404,8 @@ export default function SolicitacaoPage() {
       </DataState>
     </div>
   );
+}
+
+export default function SolicitacaoPage() {
+  return <SolicitacaoDetalhe />;
 }

@@ -25,8 +25,9 @@ export function ModulesGrid() {
     );
   }
 
-  const active = modules.filter((m) => m.enabled);
-  const inactive = modules.filter((m) => !m.enabled);
+  const visiveis = modules.filter((m) => m.key !== "quadros");
+  const active = visiveis.filter((m) => m.enabled);
+  const inactive = visiveis.filter((m) => !m.enabled);
 
   return (
     <div className="flex flex-col gap-4">

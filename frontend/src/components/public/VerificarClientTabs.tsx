@@ -102,7 +102,7 @@ export function VerificarClientTabs({ children }: VerificarClientTabsProps) {
               <span className="font-medium text-primary">Impressão Digital Calculada com Sucesso:</span>
               <code className="break-all font-mono text-[11px] select-all bg-surface p-2 rounded border border-surface-border">{fileHash}</code>
               <p className="text-muted">
-                Caso possua o código de verificação impresso no cabeçalho ou rodapé do documento, acerte o código na aba &quot;Digitar Código&quot; para conferir o selo deste arquivo contra a base do Projeto-nova-v2.
+                Caso possua o código de verificação impresso no cabeçalho ou rodapé do documento, acerte o código na aba &quot;Digitar Código&quot; para conferir o selo deste arquivo contra a base do Projeto Nova.
               </p>
             </div>
           )}

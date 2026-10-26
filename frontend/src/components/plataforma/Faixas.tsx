@@ -11,6 +11,47 @@ export interface ColunaFaixa {
   id: string;
   titulo: string;
   tom: TomFaixa;
+  /** Posição no fluxo, a partir de zero. O nome da coluna não muda isto. */
+  ordem: number;
+  /** Cor da organização, no formato #rrggbb. Sem isto, vale o tom. */
+  cor?: string;
+  /** Coluna em que o fluxo começa. Não sai do quadro. */
+  entrada?: boolean;
+  /** false: retirada do quadro. Ausente vale como no quadro. */
+  ativa?: boolean;
+  /** Colunas de onde o card entra nesta. Só a coluna criada na tela. */
+  de?: string[];
+  /** Colunas para onde o card sai desta. Só a coluna criada na tela. */
+  para?: string[];
+}
+
+/** Rótulo do estado. A coluna do catálogo ganha do nome de fábrica. */
+export function seloDoEstado(
+  colunas: readonly { id: string; titulo: string; tom: TomFaixa }[],
+  id: string,
+  conhecido?: { label?: string; tone?: TomFaixa; acao?: string },
+) {
+  const coluna = colunas.find((item) => item.id === id);
+  return {
+    label: coluna?.titulo || conhecido?.label || id,
+    tone: coluna?.tom || conhecido?.tone || ("neutral" as TomFaixa),
+    acao: conhecido?.acao || coluna?.titulo || id,
+  };
+}
+
+/** O catálogo responde: o nome e a cor da coluna vêm do servidor. */
+export interface ControlesColuna {
+  oficial?: boolean;
+}
+
+/** A posição nasce na ordem da lista: a primeira coluna é 0. */
+export function colunasEmOrdem(colunas: Omit<ColunaFaixa, "ordem">[]): ColunaFaixa[] {
+  return colunas.map((coluna, ordem) => ({ ...coluna, ordem }));
+}
+
+/** A posição numérica manda. O nome fica de fora. */
+export function ordenarColunas<T extends { ordem: number }>(colunas: readonly T[]): T[] {
+  return [...colunas].sort((a, b) => a.ordem - b.ordem);
 }
 
 const ESTILO: Record<TomFaixa, { barra: string; cartao: string; ponto: string }> = {
@@ -102,8 +143,15 @@ interface Gravado {
   cartoes: Record<string, Aparencia>;
 }
 
+const APARENCIA_EVENTO = "nova-faixas-aparencia";
+
 function vazio(): Gravado {
   return { colunas: {}, cartoes: {} };
+}
+
+function publicarAparencia(memoria: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(APARENCIA_EVENTO, { detail: memoria }));
 }
 
 function lerAparencia(memoria: string): Gravado {
@@ -135,6 +183,15 @@ export function useAparencia(memoria: string) {
     });
   }, [memoria]);
 
+  useEffect(() => {
+    function ouvir(e: Event) {
+      if ((e as CustomEvent<string>).detail !== memoria) return;
+      setGravado(lerAparencia(memoria));
+    }
+    window.addEventListener(APARENCIA_EVENTO, ouvir);
+    return () => window.removeEventListener(APARENCIA_EVENTO, ouvir);
+  }, [memoria]);
+
   function salvarColuna(id: string, parcial: Aparencia) {
     setGravado((atual) => {
       const proximo = {
@@ -146,6 +203,7 @@ export function useAparencia(memoria: string) {
       } catch {
         // Ignora cota ou modo privado.
       }
+      queueMicrotask(() => publicarAparencia(memoria));
       return proximo;
     });
   }
@@ -161,11 +219,21 @@ export function useAparencia(memoria: string) {
       } catch {
         // Ignora cota ou modo privado.
       }
+      queueMicrotask(() => publicarAparencia(memoria));
       return proximo;
     });
   }
 
   return { gravado, salvarColuna, salvarCartao };
+}
+
+/** Rótulo que a pessoa vê. O id da coluna continua sendo o estado. */
+export function rotuloDaColuna(
+  colunas: readonly { id: string; titulo: string }[],
+  id: string,
+  gravado: { colunas: Record<string, { titulo?: string } | undefined> },
+): string {
+  return gravado.colunas[id]?.titulo || colunas.find((coluna) => coluna.id === id)?.titulo || id;
 }
 
 function pintura(cor: string | undefined, tom: TomFaixa, tipo: "barra" | "cartao"): { className: string; style?: { borderLeftColor: string; backgroundColor: string } } {
@@ -191,6 +259,8 @@ export function BarraFaixa({
   onRenomear,
   onCor,
   extra,
+  ordem,
+  corImediata = true,
 }: {
   titulo: string;
   tituloId: string;
@@ -203,7 +273,11 @@ export function BarraFaixa({
   onAlternar: () => void;
   onRenomear?: (nome: string) => void;
   onCor?: (cor: string) => void;
+  /** false grava a cor ao soltar o seletor, em vez de a cada mudança. */
+  corImediata?: boolean;
   extra?: ReactNode;
+  /** Posição no fluxo, a partir de zero. */
+  ordem: number;
 }) {
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState(titulo);
@@ -233,12 +307,23 @@ export function BarraFaixa({
           <ChevronDown className="size-4" aria-hidden />
         )}
       </button>
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded bg-black/5 px-1 text-[11px] font-semibold tabular-nums text-muted dark:bg-white/10"
+        aria-hidden
+      >
+        {ordem}
+      </span>
       {onCor && (
         <input
           type="color"
           aria-label={`Cor de ${titulo}`}
           value={cor || COR_PADRAO[tom]}
-          onChange={(e) => onCor(e.target.value)}
+          onChange={(e) => {
+            if (corImediata) onCor(e.target.value);
+          }}
+          onBlur={(e) => {
+            if (!corImediata) onCor(e.target.value);
+          }}
           className={swatch}
         />
       )}
@@ -280,9 +365,13 @@ export function BarraFaixa({
           id={tituloId}
           className={`min-w-0 text-sm font-semibold ${vertical ? "[writing-mode:vertical-lr]" : "break-words"}`}
         >
-          <button type="button" className="max-w-full break-words text-left hover:underline" onClick={comecar}>
-            {titulo}
-          </button>
+          {onRenomear ? (
+            <button type="button" className="max-w-full break-words text-left hover:underline" onClick={comecar}>
+              {titulo}
+            </button>
+          ) : (
+            titulo
+          )}
         </h2>
       )}
       <span className="text-xs font-normal text-muted">{total}</span>
@@ -425,6 +514,8 @@ interface FaixasProps<T> {
   /** Abre o card para edição. O nome e a cor não disparam isto. */
   aoAbrir?: (item: T) => void;
   testeId?: string;
+  /** Nome, cor e ordem vêm das colunas. O navegador só guarda o recolher e o card. */
+  oficial?: boolean;
 }
 
 /** Lista em faixas na largura da tela. Cada estado aparece, mesmo sem item,
@@ -444,23 +535,26 @@ export function ListaFaixas<T>({
   aoRenomear,
   aoAbrir,
   testeId,
+  oficial = false,
 }: FaixasProps<T>) {
   const { recolhidas, alternar } = useFaixasRecolhidas(memoria);
   const look = useAparencia(aparencia ?? memoria);
+  const faixas = ordenarColunas(colunas);
   return (
     <div className="flex min-w-0 max-w-full flex-col gap-2" role="list" aria-label={rotulo} data-testid={testeId}>
-      {colunas.map((coluna) => {
+      {faixas.map((coluna) => {
         const cartoes = itens.filter((item) => colunaDe(item) === coluna.id);
         const recolhida = recolhidas.includes(coluna.id);
         const tituloId = `faixa-${memoria}-${coluna.id}`;
-        const titulo = look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
-        const corColuna = look.gravado.colunas[coluna.id]?.cor;
+        const titulo = oficial ? coluna.titulo : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
+        const corColuna = oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
         return (
           <section
             key={coluna.id}
             role="listitem"
             aria-labelledby={tituloId}
             data-coluna={coluna.id}
+            data-ordem={coluna.ordem}
             className="w-full"
           >
             <BarraFaixa
@@ -470,9 +564,11 @@ export function ListaFaixas<T>({
               tom={coluna.tom}
               cor={corColuna}
               recolhida={recolhida}
+              ordem={coluna.ordem}
+              corImediata={!oficial}
               onAlternar={() => alternar(coluna.id)}
-              onRenomear={(nome) => look.salvarColuna(coluna.id, { titulo: nome })}
-              onCor={(cor) => look.salvarColuna(coluna.id, { cor })}
+              onRenomear={oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })}
+              onCor={oficial ? undefined : (cor) => look.salvarColuna(coluna.id, { cor })}
               extra={extra?.(coluna.id)}
             />
             {!recolhida && (
@@ -569,6 +665,7 @@ export function Quadro<T>({
   aoRenomear,
   aoAbrir,
   testeId,
+  oficial = false,
   pending = false,
   arrastavel,
   podeSoltar,
@@ -584,6 +681,7 @@ export function Quadro<T>({
 }) {
   const { recolhidas, alternar } = useFaixasRecolhidas(memoria);
   const look = useAparencia(aparencia ?? memoria);
+  const faixas = ordenarColunas(colunas);
   const [arrastado, setArrastado] = useState<T | null>(null);
   const [sobre, setSobre] = useState<string | null>(null);
   const move = arrastavel !== undefined && aoSoltar !== undefined;
@@ -602,19 +700,20 @@ export function Quadro<T>({
       aria-label={rotulo}
       data-testid={testeId}
     >
-      {colunas.map((coluna) => {
+      {faixas.map((coluna) => {
         const cartoes = itens.filter((item) => colunaDe(item) === coluna.id);
         const recolhida = recolhidas.includes(coluna.id);
         const alvo = arrastado !== null && (podeSoltar?.(arrastado, coluna.id) ?? false);
         const tituloId = `coluna-${memoria}-${coluna.id}`;
-        const titulo = look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
-        const corColuna = look.gravado.colunas[coluna.id]?.cor;
+        const titulo = oficial ? coluna.titulo : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
+        const corColuna = oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
         return (
           <section
             key={coluna.id}
             role="listitem"
             aria-labelledby={tituloId}
             data-coluna={coluna.id}
+            data-ordem={coluna.ordem}
             onDragOver={(e) => {
               if (!alvo) return;
               e.preventDefault();
@@ -642,10 +741,12 @@ export function Quadro<T>({
               cor={corColuna}
               recolhida={recolhida}
               vertical={recolhida}
+              ordem={coluna.ordem}
+              corImediata={!oficial}
               onAlternar={() => alternar(coluna.id)}
-              onRenomear={(nome) => look.salvarColuna(coluna.id, { titulo: nome })}
-              onCor={(cor) => look.salvarColuna(coluna.id, { cor })}
-              extra={extra?.(coluna.id)}
+              onRenomear={oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })}
+              onCor={oficial ? undefined : (cor) => look.salvarColuna(coluna.id, { cor })}
+              extra={!recolhida ? extra?.(coluna.id) : undefined}
             />
             {!recolhida && (
               <>

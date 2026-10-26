@@ -8,7 +8,7 @@ import { PublicBlogListClient } from "./PublicBlogListClient";
 export const dynamic = "force-dynamic";
 
 const description =
-  "Notícias e comunicados publicados pelo Projeto-nova-v2. O blog nasce desligado e só aparece quando a instalação o liga.";
+  "Notícias e comunicados do Projeto Nova. O blog nasce desligado e só aparece quando a instalação o liga.";
 
 export const metadata: Metadata = {
   title: "Blog & Novidades",

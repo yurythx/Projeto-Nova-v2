@@ -48,6 +48,13 @@ type Module struct {
 	correio  bool
 }
 
+// ComPassagens liga os caminhos acrescentados na fila.
+func (m *Module) ComPassagens(p application.Passagens) {
+	if m != nil && m.svc != nil {
+		m.svc.ComPassagens(p)
+	}
+}
+
 // New constrói o módulo. produtos confere a oferta que aponta para um
 // produto digital; nil deixa a oferta sem esse vínculo.
 func New(deps modkit.Deps, produtos domain.Produtos) *Module {
@@ -154,6 +161,7 @@ func (m *Module) Workers() []kernel.Worker {
 		{Name: "alertas-de-prazo", Process: kernel.ProcessWorker, Run: m.svc.RunAlertas},
 		{Name: "retencao-da-localizacao", Process: kernel.ProcessWorker, Run: m.svc.RunRetencao},
 		{Name: "serie-de-indicadores", Process: kernel.ProcessWorker, Run: m.svc.RunSerie},
+		{Name: "recorrencias", Process: kernel.ProcessWorker, Run: m.svc.RunRecorrencias},
 	}
 	if m.correio {
 		out = append(out, kernel.Worker{Name: "correio-do-atendimento", Process: kernel.ProcessWorker, Run: m.svc.RunCorreio})

@@ -1,256 +1,283 @@
 "use client";
 
-import { useMemo } from "react";
-import { AlertTriangle, CheckCircle, Clock, ShieldAlert, TrendingUp } from "lucide-react";
-
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import type { Mudanca } from "@/lib/servicos/servicos";
-import type { Projeto } from "@/lib/projetos/projetos";
+import type { PontoIndicador } from "@/lib/atendimento/atendimento";
+import { ESTILOS_GRAFICO, type EstiloGrafico } from "@/lib/servicos/painelAssistencia";
 
-interface Props {
-  incidentes: number;
-  requisicoes: number;
-  mudancas: Mudanca[];
-  projetos: Projeto[];
+export interface PontoGrafico {
+  rotulo: string;
+  valor: number;
+}
+
+const CORES = ["text-primary", "text-warning", "text-success", "text-info", "text-danger"];
+
+function contar(itens: { estado: string }[], rotulos: Record<string, string>): PontoGrafico[] {
+  const mapa = new Map<string, number>();
+  for (const item of itens) mapa.set(item.estado, (mapa.get(item.estado) ?? 0) + 1);
+  return [...mapa.entries()].map(([estado, valor]) => ({ rotulo: rotulos[estado] ?? estado, valor }));
+}
+
+function diasComValor(serie: PontoIndicador[] | undefined, campo: keyof PontoIndicador): PontoGrafico[] {
+  return (serie ?? [])
+    .filter((ponto) => typeof ponto[campo] === "number")
+    .map((ponto) => ({ rotulo: ponto.dia.slice(0, 10), valor: ponto[campo] as number }));
+}
+
+function Figura({
+  titulo,
+  descricao,
+  pontos,
+  estilo,
+  nota,
+}: {
+  titulo: string;
+  descricao: string;
+  pontos: PontoGrafico[];
+  estilo: EstiloGrafico;
+  nota?: string;
+}) {
+  const total = pontos.reduce((soma, ponto) => soma + ponto.valor, 0);
+  const maximo = Math.max(1, ...pontos.map((ponto) => ponto.valor));
+  return (
+    <Card data-estilo={estilo}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle as="h3" className="text-sm font-semibold">
+            {titulo}
+          </CardTitle>
+          <Badge tone="neutral">{pontos.length === 0 ? "sem amostra" : String(total)}</Badge>
+        </div>
+        <p className="text-xs text-muted">{descricao}</p>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pt-2">
+        {pontos.length === 0 ? <p className="text-sm">Sem amostra neste recorte.</p> : <Desenho pontos={pontos} estilo={estilo} total={total} maximo={maximo} />}
+        {nota ? <p className="text-xs text-muted">{nota}</p> : null}
+        {pontos.length > 0 ? (
+          <ul className="flex flex-col gap-1 text-xs">
+            {pontos.map((ponto, indice) => (
+              <li key={ponto.rotulo} className="flex items-center justify-between gap-2">
+                <span className={`flex items-center gap-1.5 ${CORES[indice % CORES.length]}`}>
+                  <span className="h-2.5 w-2.5 rounded-full bg-current" />
+                  <span className="text-muted">{ponto.rotulo}</span>
+                </span>
+                <span className="font-semibold text-foreground">{ponto.valor.toLocaleString("pt-BR")}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Desenho({
+  pontos,
+  estilo,
+  total,
+  maximo,
+}: {
+  pontos: PontoGrafico[];
+  estilo: EstiloGrafico;
+  total: number;
+  maximo: number;
+}) {
+  if (estilo === "barras" || estilo === "horizontal") {
+    const deitado = estilo === "horizontal";
+    return (
+      <div className={`flex gap-2 overflow-x-auto ${deitado ? "flex-col" : "h-36 items-end"}`} role="img" aria-label="Gráfico">
+        {pontos.map((ponto, indice) => {
+          const fracao = `${Math.round((ponto.valor / maximo) * 100)}%`;
+          return deitado ? (
+            <div key={ponto.rotulo} className="grid grid-cols-[7rem_1fr] items-center gap-2">
+              <span className="truncate text-xs text-muted">{ponto.rotulo}</span>
+              <div className="h-3 rounded-full bg-surface-border">
+                <div className={`h-3 rounded-full bg-current ${CORES[indice % CORES.length]}`} style={{ width: fracao }} />
+              </div>
+            </div>
+          ) : (
+            <div key={ponto.rotulo} className="flex h-full min-w-8 flex-1 flex-col justify-end gap-1">
+              <div className={`w-full rounded-t bg-current ${CORES[indice % CORES.length]}`} style={{ height: fracao }} />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (estilo === "rosca") {
+    const raio = 40;
+    const perimetro = 2 * Math.PI * raio;
+    let cursou = 0;
+    return (
+      <div className="flex items-center justify-center" role="img" aria-label="Gráfico">
+        <svg width="120" height="120" viewBox="0 0 100 100" className="-rotate-90">
+          <circle cx="50" cy="50" r={raio} fill="transparent" stroke="currentColor" strokeWidth="14" className="text-surface-border" />
+          {total > 0
+            ? pontos.map((ponto, indice) => {
+                const trecho = (ponto.valor / total) * perimetro;
+                const inicio = cursou;
+                cursou += trecho;
+                return (
+                  <circle
+                    key={ponto.rotulo}
+                    cx="50"
+                    cy="50"
+                    r={raio}
+                    fill="transparent"
+                    stroke="currentColor"
+                    strokeWidth="14"
+                    strokeDasharray={`${trecho} ${perimetro - trecho}`}
+                    strokeDashoffset={-inicio}
+                    className={CORES[indice % CORES.length]}
+                  />
+                );
+              })
+            : null}
+        </svg>
+      </div>
+    );
+  }
+
+  const coordenadas = pontos.map((ponto, indice) => {
+    const x = pontos.length === 1 ? 50 : (indice / (pontos.length - 1)) * 100;
+    const y = 38 - (ponto.valor / maximo) * 34;
+    return `${x},${y}`;
+  });
+  const linha = coordenadas.join(" ");
+  return (
+    <svg viewBox="0 0 100 40" className="h-36 w-full text-primary" role="img" aria-label="Gráfico">
+      {estilo === "area" ? <polygon points={`0,40 ${linha} 100,40`} className="fill-current opacity-20" /> : null}
+      <polyline points={linha} fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
 }
 
 export function AssistenciaGraficos({
+  estilo,
+  onEstilo,
   incidentes,
   requisicoes,
+  solicitacoes,
+  problemas,
   mudancas,
   projetos,
-}: Props) {
-  const totalDemandas = incidentes + requisicoes;
-  const pctIncidentes = totalDemandas > 0 ? Math.round((incidentes / totalDemandas) * 100) : 0;
-  const pctRequisicoes = totalDemandas > 0 ? Math.round((requisicoes / totalDemandas) * 100) : 0;
+  serie,
+  notaFila,
+}: {
+  estilo: EstiloGrafico;
+  onEstilo: (estilo: EstiloGrafico) => void;
+  incidentes: number;
+  requisicoes: number;
+  solicitacoes: { estado: string }[];
+  problemas: { estado: string }[];
+  mudancas: { estado: string; risco?: string }[];
+  projetos: { estado: string }[];
+  serie?: PontoIndicador[];
+  notaFila?: string;
+}) {
+  const riscos = ["baixo", "medio", "alto"].map((risco) => ({
+    rotulo: risco === "baixo" ? "Baixo" : risco === "medio" ? "Médio" : "Alto",
+    valor: mudancas.filter((item) => item.risco === risco).length,
+  }));
+  const semRisco = mudancas.filter((item) => !["baixo", "medio", "alto"].includes(item.risco ?? "")).length;
+  if (semRisco > 0) riscos.push({ rotulo: "Sem faixa", valor: semRisco });
 
-  // Mudanças por risco
-  const mudBaixo = mudancas.filter((m) => m.risco === "baixo").length;
-  const mudMedio = mudancas.filter((m) => m.risco === "medio").length;
-  const mudAlto = mudancas.filter((m) => m.risco === "alto").length;
-  const totalMudancas = mudancas.length;
-
-  const pctBaixo = totalMudancas > 0 ? (mudBaixo / totalMudancas) * 100 : 0;
-  const pctMedio = totalMudancas > 0 ? (mudMedio / totalMudancas) * 100 : 0;
-  const pctAlto = totalMudancas > 0 ? (mudAlto / totalMudancas) * 100 : 0;
-
-  // Circunferência do Donut (raio 40 => perímetro ~ 251.3)
-  const perimetro = 251.3;
-  const dashBaixo = (pctBaixo / 100) * perimetro;
-  const dashMedio = (pctMedio / 100) * perimetro;
-  const dashAlto = (pctAlto / 100) * perimetro;
-
-  // Projetos por estado
-  const projConcluidos = projetos.filter((p) => p.estado === "concluido").length;
-  const projEmAndamento = projetos.filter((p) => p.estado === "em_andamento").length;
-  const projPlanejados = projetos.filter((p) => p.estado === "planejado").length;
-  const totalProjetos = projetos.length;
-  const taxaConclusaoProjetos =
-    totalProjetos > 0 ? Math.round((projConcluidos / totalProjetos) * 100) : 0;
+  const figuras: { titulo: string; descricao: string; pontos: PontoGrafico[]; nota?: string }[] = [
+    {
+      titulo: "Demandas de Atendimento",
+      descricao: "Incidentes e requisições do recorte da fila.",
+      pontos: [
+        { rotulo: "Incidentes", valor: incidentes },
+        { rotulo: "Requisições", valor: requisicoes },
+      ],
+      nota: notaFila,
+    },
+    {
+      titulo: "Estados da fila",
+      descricao: "Como os chamados deste recorte estão agora.",
+      pontos: contar(solicitacoes, {
+        aberto: "Aberto",
+        em_atendimento: "Em atendimento",
+        aguardando_servidor: "Aguardando quem pediu",
+        aguardando_terceiro: "Aguardando terceiro",
+        resolvido: "Resolvido",
+        atendido: "Atendido",
+        encerrado: "Encerrado",
+        cancelado: "Cancelado",
+      }),
+      nota: notaFila,
+    },
+    {
+      titulo: "Problemas",
+      descricao: "Estados dos problemas do recorte.",
+      pontos: contar(problemas, {
+        registrado: "Registrado",
+        em_analise: "Em análise",
+        erro_conhecido: "Erro conhecido",
+        resolvido: "Resolvido",
+        encerrado: "Encerrado",
+      }),
+    },
+    {
+      titulo: "Matriz de Risco das Mudanças",
+      descricao: "Faixa de risco das mudanças do recorte.",
+      pontos: riscos,
+    },
+    {
+      titulo: "Progresso Estratégico",
+      descricao: "Estados dos projetos do recorte.",
+      pontos: contar(projetos, {
+        planejado: "Planejado",
+        em_andamento: "Em andamento",
+        suspenso: "Suspenso",
+        concluido: "Concluído",
+        cancelado: "Cancelado",
+      }),
+    },
+    {
+      titulo: "Resolução no período",
+      descricao: "Horas úteis médias de resolução, nos dias em que houve amostra.",
+      pontos: diasComValor(serie, "mttr_horas"),
+      nota: "Dias sem amostra ficam de fora.",
+    },
+    {
+      titulo: "Prazo no período",
+      descricao: "Parcela do prazo cumprido, nos dias em que houve amostra.",
+      pontos: diasComValor(serie, "sla_percentual"),
+      nota: "Dias sem amostra ficam de fora.",
+    },
+    {
+      titulo: "Satisfação no período",
+      descricao: "Média das notas, nos dias em que houve avaliação.",
+      pontos: diasComValor(serie, "csat_media"),
+      nota: "Dias sem amostra ficam de fora.",
+    },
+  ];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-testid="assistencia-graficos">
-      {/* Gráfico 1: Proporção de Incidentes vs Requisições */}
-      <Card className="flex flex-col justify-between">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle as="h3" className="text-sm font-semibold">
-              Demandas de Atendimento
-            </CardTitle>
-            <Badge tone={incidentes > requisicoes ? "warning" : "info"}>
-              {totalDemandas} chamados
-            </Badge>
-          </div>
-          <p className="text-xs text-muted">
-            Distribuição entre incidentes corretivos e requisições de serviço.
-          </p>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 pt-2">
-          {/* Barra proporcional horizontal */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs font-medium">
-              <span className="text-warning flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                Incidentes ({pctIncidentes}%)
-              </span>
-              <span className="text-primary flex items-center gap-1">
-                Requisições ({pctRequisicoes}%)
-              </span>
-            </div>
-            <div className="h-4 w-full rounded-full bg-surface-border overflow-hidden flex">
-              <div
-                className="h-full bg-warning transition-all"
-                style={{ width: `${pctIncidentes}%` }}
-                title={`Incidentes: ${incidentes}`}
-              />
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${pctRequisicoes}%` }}
-                title={`Requisições: ${requisicoes}`}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-center text-xs">
-            <div className="rounded-lg border border-surface-border p-2 bg-black/[0.01] dark:bg-white/[0.01]">
-              <span className="block text-lg font-bold text-warning">{incidentes}</span>
-              <span className="text-muted">Incidentes</span>
-            </div>
-            <div className="rounded-lg border border-surface-border p-2 bg-black/[0.01] dark:bg-white/[0.01]">
-              <span className="block text-lg font-bold text-primary">{requisicoes}</span>
-              <span className="text-muted">Requisições</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Gráfico 2: Donut de Riscos de Mudança */}
-      <Card className="flex flex-col justify-between">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle as="h3" className="text-sm font-semibold">
-              Matriz de Risco das Mudanças
-            </CardTitle>
-            <Badge tone="neutral">{totalMudancas} mudanças</Badge>
-          </div>
-          <p className="text-xs text-muted">
-            Perfil de criticidade e risco das janelas submetidas ao CAB.
-          </p>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between gap-4 pt-2">
-          {/* SVG Donut */}
-          <div className="relative flex items-center justify-center shrink-0">
-            <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
-              {/* Círculo base */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="transparent"
-                stroke="currentColor"
-                strokeWidth="14"
-                className="text-surface-border"
-              />
-              {/* Baixo */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="transparent"
-                stroke="#10b981"
-                strokeWidth="14"
-                strokeDasharray={`${dashBaixo} ${perimetro - dashBaixo}`}
-                strokeDashoffset="0"
-                className="transition-all"
-              />
-              {/* Médio */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="transparent"
-                stroke="#f59e0b"
-                strokeWidth="14"
-                strokeDasharray={`${dashMedio} ${perimetro - dashMedio}`}
-                strokeDashoffset={`${-dashBaixo}`}
-                className="transition-all"
-              />
-              {/* Alto */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="transparent"
-                stroke="#ef4444"
-                strokeWidth="14"
-                strokeDasharray={`${dashAlto} ${perimetro - dashAlto}`}
-                strokeDashoffset={`${-(dashBaixo + dashMedio)}`}
-                className="transition-all"
-              />
-            </svg>
-            <div className="absolute text-center">
-              <span className="block text-sm font-bold text-foreground">
-                {totalMudancas}
-              </span>
-              <span className="text-[9px] uppercase tracking-wider text-muted">
-                Total
-              </span>
-            </div>
-          </div>
-
-          {/* Legenda de Riscos */}
-          <div className="flex flex-col gap-1.5 text-xs flex-1">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-muted">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Baixo risco
-              </span>
-              <span className="font-semibold text-foreground">{mudBaixo}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-muted">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                Médio risco
-              </span>
-              <span className="font-semibold text-foreground">{mudMedio}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-muted">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                Alto risco
-              </span>
-              <span className="font-semibold text-foreground">{mudAlto}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Gráfico 3: Progresso e Conclusão de Projetos */}
-      <Card className="flex flex-col justify-between">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle as="h3" className="text-sm font-semibold">
-              Progresso Estratégico
-            </CardTitle>
-            <Badge tone="success">{taxaConclusaoProjetos}% concluído</Badge>
-          </div>
-          <p className="text-xs text-muted">
-            Taxa de avanço das iniciativas e projetos da organização.
-          </p>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 pt-2">
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs font-medium text-muted">
-              <span>Execução de Projetos</span>
-              <span className="font-semibold text-foreground">
-                {projConcluidos} de {totalProjetos} entregues
-              </span>
-            </div>
-            <div className="h-3 w-full rounded-full bg-surface-border overflow-hidden">
-              <div
-                className="h-full bg-success transition-all duration-500"
-                style={{ width: `${taxaConclusaoProjetos}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-            <div className="rounded-lg border border-surface-border p-2 bg-black/[0.01] dark:bg-white/[0.01]">
-              <span className="block font-bold text-accent">{projPlanejados}</span>
-              <span className="text-[10px] text-muted">Planejados</span>
-            </div>
-            <div className="rounded-lg border border-surface-border p-2 bg-black/[0.01] dark:bg-white/[0.01]">
-              <span className="block font-bold text-primary">{projEmAndamento}</span>
-              <span className="text-[10px] text-muted">Em curso</span>
-            </div>
-            <div className="rounded-lg border border-surface-border p-2 bg-black/[0.01] dark:bg-white/[0.01]">
-              <span className="block font-bold text-success">{projConcluidos}</span>
-              <span className="text-[10px] text-muted">Entregues</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4" data-testid="assistencia-graficos">
+      <div role="radiogroup" aria-label="Estilo dos gráficos" className="flex flex-wrap gap-2">
+        {ESTILOS_GRAFICO.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="radio"
+            aria-checked={estilo === item.id}
+            onClick={() => onEstilo(item.id)}
+            className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+              estilo === item.id ? "border-primary bg-primary/10 text-primary" : "border-surface-border text-muted hover:text-foreground"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {figuras.map((figura) => (
+          <Figura key={figura.titulo} {...figura} estilo={estilo} />
+        ))}
+      </div>
     </div>
   );
 }

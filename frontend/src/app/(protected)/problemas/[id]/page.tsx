@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
@@ -26,8 +26,9 @@ import {
 } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
-export default function ProblemaPage() {
-  const { id } = useParams<{ id: string }>();
+export function ProblemaDetalhe() {
+  const id = useIdDaRota();
+  const embutido = usePainelEmbutido();
   const { can } = usePlataforma();
   const problema = useApiQuery<Problema>(id ? `v1/problemas/${id}` : null);
   const p = problema.data;
@@ -73,6 +74,7 @@ export default function ProblemaPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {!embutido && (
       <Link
         href="/problemas"
         className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
@@ -80,6 +82,7 @@ export default function ProblemaPage() {
         <ArrowLeft aria-hidden className="h-4 w-4" />
         Voltar para os problemas
       </Link>
+      )}
       <DataState
         loading={problema.isLoading}
         error={problema.error}
@@ -127,7 +130,8 @@ export default function ProblemaPage() {
                       name="descricao"
                       label="O que se observa"
                       maxLength={4000}
-                      rows={2}
+                      rows={8}
+                      className="min-h-48"
                       defaultValue={p.descricao}
                     />
                     <Textarea
@@ -135,7 +139,8 @@ export default function ProblemaPage() {
                       name="contorno"
                       label="Solução de contorno (exigida no erro conhecido)"
                       maxLength={4000}
-                      rows={2}
+                      rows={8}
+                      className="min-h-48"
                       defaultValue={p.contorno}
                     />
                     <Textarea
@@ -143,7 +148,8 @@ export default function ProblemaPage() {
                       name="causa_raiz"
                       label="Causa raiz (exigida para resolver)"
                       maxLength={4000}
-                      rows={2}
+                      rows={8}
+                      className="min-h-48"
                       defaultValue={p.causa_raiz}
                     />
                     <div>
@@ -365,4 +371,8 @@ export default function ProblemaPage() {
       </DataState>
     </div>
   );
+}
+
+export default function ProblemaPage() {
+  return <ProblemaDetalhe />;
 }
