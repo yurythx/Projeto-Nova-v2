@@ -303,7 +303,7 @@ func (s *Service) Relacionar(ctx context.Context, identity auth.Identity, origem
 			return domain.Relacao{}, MapError(err)
 		}
 		if ciclo {
-			return domain.Relacao{}, MapError(domain.RelacaoInvalida{"essa dependência fecharia um ciclo"})
+			return domain.Relacao{}, MapError(domain.RelacaoInvalida{Msg: "essa dependência fecharia um ciclo"})
 		}
 	}
 	item := domain.Relacao{ID: uuid.New(), OrigemID: origem, DestinoID: destino, Tipo: tipo}

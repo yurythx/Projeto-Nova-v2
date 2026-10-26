@@ -32,7 +32,7 @@ func (r *Repository) InsertRelacao(ctx context.Context, db database.DBTX, item d
 	_, err := db.Exec(ctx, `INSERT INTO ativo_relacoes (id, origem_id, destino_id, tipo) VALUES ($1,$2,$3,$4)`,
 		item.ID, item.OrigemID, item.DestinoID, item.Tipo)
 	if database.IsUniqueViolation(err) {
-		return domain.RelacaoInvalida{"essa relação já existe"}
+		return domain.RelacaoInvalida{Msg: "essa relação já existe"}
 	}
 	return mapDB(err)
 }

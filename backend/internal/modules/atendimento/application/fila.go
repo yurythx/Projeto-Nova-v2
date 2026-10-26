@@ -74,7 +74,7 @@ func (s *Service) conferirAlvos(ctx context.Context, unidade *uuid.UUID, ofertaI
 			return err
 		}
 		if !domain.MesmaUnidade(oferta.UnidadeID, unidade) {
-			return domain.Recusa{"a oferta precisa ser da mesma unidade da regra"}
+			return domain.Recusa{Msg: "a oferta precisa ser da mesma unidade da regra"}
 		}
 	}
 	if equipeID != nil {
@@ -83,7 +83,7 @@ func (s *Service) conferirAlvos(ctx context.Context, unidade *uuid.UUID, ofertaI
 			return err
 		}
 		if !domain.MesmaUnidade(equipe.UnidadeID, unidade) {
-			return domain.Recusa{"a equipe precisa ser da mesma unidade da regra"}
+			return domain.Recusa{Msg: "a equipe precisa ser da mesma unidade da regra"}
 		}
 	}
 	return nil
@@ -118,7 +118,7 @@ func (s *Service) CriarRegra(ctx context.Context, identity auth.Identity, in dom
 			return err
 		}
 		if n >= tetoRegras {
-			return domain.Recusa{"esta unidade já tem 30 regras"}
+			return domain.Recusa{Msg: "esta unidade já tem 30 regras"}
 		}
 		if err := s.repo.InserirRegra(ctx, tx, regra); err != nil {
 			return err
@@ -249,7 +249,7 @@ func (s *Service) RegistrarDeflexao(ctx context.Context, identity auth.Identity,
 		return MapError(domain.ErrSolicitanteInvalido)
 	}
 	if len(artigos) == 0 || len(artigos) > 4 {
-		return MapError(domain.Recusa{"informe até 4 artigos"})
+		return MapError(domain.Recusa{Msg: "informe até 4 artigos"})
 	}
 	dia := s.agora().In(fusoBrasilia()).Format(time.DateOnly)
 	var unidade *uuid.UUID
@@ -262,7 +262,7 @@ func (s *Service) RegistrarDeflexao(ctx context.Context, identity auth.Identity,
 			artigo = strings.TrimSpace(artigo)
 			if artigo == "" || utf8.RuneCountInString(artigo) > 80 || vistos[artigo] {
 				if utf8.RuneCountInString(artigo) > 80 {
-					return domain.Recusa{"o artigo cabe em 80 caracteres"}
+					return domain.Recusa{Msg: "o artigo cabe em 80 caracteres"}
 				}
 				continue
 			}
@@ -272,7 +272,7 @@ func (s *Service) RegistrarDeflexao(ctx context.Context, identity auth.Identity,
 			}
 		}
 		if len(vistos) == 0 {
-			return domain.Recusa{"informe o artigo"}
+			return domain.Recusa{Msg: "informe o artigo"}
 		}
 		return nil
 	}))

@@ -25,9 +25,9 @@ func mapDB(err error) error {
 	case database.IsNoRows(err):
 		return domain.ErrNaoEncontrado
 	case database.IsForeignKeyViolation(err):
-		return domain.EntradaInvalida{"o fornecedor ou a unidade não existe, ou ainda há contrato ou licença ligado a este fornecedor"}
+		return domain.EntradaInvalida{Msg: "o fornecedor ou a unidade não existe, ou ainda há contrato ou licença ligado a este fornecedor"}
 	case database.IsCheckViolation(err):
-		return domain.EntradaInvalida{"dados fora do cadastro"}
+		return domain.EntradaInvalida{Msg: "dados fora do cadastro"}
 	default:
 		return fmt.Errorf("contratos: %w", err)
 	}

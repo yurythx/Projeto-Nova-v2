@@ -262,7 +262,7 @@ func (s *Service) Criar(ctx context.Context, identity auth.Identity, e Entrada) 
 		return domain.Segredo{}, MapError(err)
 	}
 	if tipo != domain.TipoPainel && len(e.Administra) > 0 {
-		return domain.Segredo{}, MapError(domain.EntradaInvalida{"só um painel administra máquinas"})
+		return domain.Segredo{}, MapError(domain.EntradaInvalida{Msg: "só um painel administra máquinas"})
 	}
 	if !pode(identity, auth.PermCofreManage, e.Unidade) {
 		return domain.Segredo{}, MapError(domain.ErrForaDoEscopo)
@@ -551,7 +551,7 @@ func (s *Service) Revelar(ctx context.Context, identity auth.Identity, id uuid.U
 
 func (s *Service) confirmarAcesso(ctx context.Context, identity auth.Identity, segredo uuid.UUID, unidade *uuid.UUID, senha string) error {
 	if strings.TrimSpace(senha) == "" {
-		return domain.EntradaInvalida{"informe a sua senha de acesso"}
+		return domain.EntradaInvalida{Msg: "informe a sua senha de acesso"}
 	}
 	if s.confirmador == nil {
 		return domain.ErrSemConfirmacao
@@ -903,7 +903,7 @@ func (s *Service) anexar(ctx context.Context, tx pgx.Tx, f domain.Filtro, itens 
 func (s *Service) aplicarAdministracao(ctx context.Context, tx pgx.Tx, f domain.Filtro, id uuid.UUID, tipo string, maquinas []uuid.UUID) ([]uuid.UUID, error) {
 	if tipo != domain.TipoPainel {
 		if len(maquinas) > 0 {
-			return nil, domain.EntradaInvalida{"só um painel administra máquinas"}
+			return nil, domain.EntradaInvalida{Msg: "só um painel administra máquinas"}
 		}
 		return nil, s.repo.SubstituirAdministracao(ctx, tx, id, nil, f)
 	}
@@ -922,7 +922,7 @@ func (s *Service) conferirMaquinas(ctx context.Context, tx pgx.Tx, f domain.Filt
 	var limpas []uuid.UUID
 	for _, id := range ids {
 		if id == painel {
-			return nil, domain.EntradaInvalida{"o painel não administra a si mesmo"}
+			return nil, domain.EntradaInvalida{Msg: "o painel não administra a si mesmo"}
 		}
 		if _, ok := visto[id]; ok {
 			continue
@@ -931,12 +931,12 @@ func (s *Service) conferirMaquinas(ctx context.Context, tx pgx.Tx, f domain.Filt
 		item, err := s.repo.Get(ctx, tx, id, f)
 		if err != nil {
 			if errors.Is(err, domain.ErrNaoEncontrado) {
-				return nil, domain.EntradaInvalida{"máquina não encontrada no seu cofre"}
+				return nil, domain.EntradaInvalida{Msg: "máquina não encontrada no seu cofre"}
 			}
 			return nil, err
 		}
 		if item.Tipo != domain.TipoMaquina {
-			return nil, domain.EntradaInvalida{"o painel só administra máquinas"}
+			return nil, domain.EntradaInvalida{Msg: "o painel só administra máquinas"}
 		}
 		limpas = append(limpas, id)
 	}

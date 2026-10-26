@@ -26,9 +26,9 @@ func mapDB(err error) error {
 	case database.IsNoRows(err):
 		return domain.ErrNaoEncontrado
 	case database.IsForeignKeyViolation(err):
-		return domain.EntradaInvalida{"a unidade não existe"}
+		return domain.EntradaInvalida{Msg: "a unidade não existe"}
 	case database.IsCheckViolation(err):
-		return domain.EntradaInvalida{"dados fora do cadastro"}
+		return domain.EntradaInvalida{Msg: "dados fora do cadastro"}
 	default:
 		return fmt.Errorf("cofre: %w", err)
 	}

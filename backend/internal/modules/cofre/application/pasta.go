@@ -33,12 +33,12 @@ func (s *Service) conferirPasta(ctx context.Context, db database.DBTX, id uuid.U
 	pasta, err := s.repo.ObterPasta(ctx, db, id)
 	if err != nil {
 		if errors.Is(err, domain.ErrNaoEncontrado) {
-			return domain.EntradaInvalida{"a pasta não existe"}
+			return domain.EntradaInvalida{Msg: "a pasta não existe"}
 		}
 		return err
 	}
 	if !mesmaUnidade(pasta.UnidadeID, unidade) {
-		return domain.EntradaInvalida{"a pasta precisa ser da mesma unidade do segredo"}
+		return domain.EntradaInvalida{Msg: "a pasta precisa ser da mesma unidade do segredo"}
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func (s *Service) ExcluirPasta(ctx context.Context, identity auth.Identity, id u
 			return err
 		}
 		if n > 0 {
-			return domain.EntradaInvalida{"a pasta ainda tem senha; esvazie antes de apagar"}
+			return domain.EntradaInvalida{Msg: "a pasta ainda tem senha; esvazie antes de apagar"}
 		}
 		if err := s.repo.ExcluirPasta(ctx, tx, id); err != nil {
 			return err
@@ -166,7 +166,7 @@ func (s *Service) conferirMembros(ctx context.Context, db database.DBTX, membros
 		return err
 	}
 	if !ok {
-		return domain.EntradaInvalida{"há uma pessoa que não está cadastrada"}
+		return domain.EntradaInvalida{Msg: "há uma pessoa que não está cadastrada"}
 	}
 	return nil
 }
