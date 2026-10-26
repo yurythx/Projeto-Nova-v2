@@ -10,7 +10,7 @@
     path: "{{ app_dir }}/.git"
   register: app_checkout
 
-- name: Clonar o repositório só na primeira vez (depois: sincronizar-vm, sem force)
+- name: "Clonar o repositório só na primeira vez (depois: sincronizar-vm, sem force)"
   ansible.builtin.git:
     repo: "{{ app_git_repo }}"
     dest: "{{ app_dir }}"
