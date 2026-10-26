@@ -5,7 +5,6 @@ import {
   Award,
   CheckCircle2,
   Clock,
-  Download,
   FileSpreadsheet,
   FolderKanban,
   GitCommit,
@@ -78,14 +77,52 @@ export function RelatorioExecutivoModal({
   function exportarCsvExecutivo() {
     const cabecalho = ["Indicador", "Valor", "Meta_ITIL", "Status_Governanca"];
     const dados = [
-      ["MTTR (Tempo Médio de Resolução)", mttr, "tempo útil do relógio de solução", governanca?.amostra.incidentes_resolvidos ? `${governanca.amostra.incidentes_resolvidos} incidentes` : "sem amostra"],
-      ["MTBF (Tempo Médio Entre Falhas)", mtbf, "intervalo entre aberturas", governanca?.amostra.incidentes ? `${governanca.amostra.incidentes} incidentes` : "sem amostra"],
-      ["Conformidade de SLA", taxaSla, "solução cumprida entre as concluídas com prazo", governanca?.amostra.com_prazo_concluido ? `${governanca.amostra.com_prazo_concluido} com prazo` : "sem amostra"],
-      ["Taxa de Resolução no 1º Contato (FCR)", fcr, "sem espera e sem reabertura", governanca?.amostra.concluidas ? `${governanca.amostra.fcr} de ${governanca.amostra.concluidas}` : "sem amostra"],
-      ["Sucesso em Mudanças (RFC CAB)", taxaSucessoMudancas == null ? "sem amostra" : `${taxaSucessoMudancas}%`, "concluídas sobre concluídas e falhas", `${mudConcluidas + mudFalhas} encerradas`],
+      [
+        "MTTR (Tempo Médio de Resolução)",
+        mttr,
+        "tempo útil do relógio de solução",
+        governanca?.amostra.incidentes_resolvidos
+          ? `${governanca.amostra.incidentes_resolvidos} incidentes`
+          : "sem amostra",
+      ],
+      [
+        "MTBF (Tempo Médio Entre Falhas)",
+        mtbf,
+        "intervalo entre aberturas",
+        governanca?.amostra.incidentes
+          ? `${governanca.amostra.incidentes} incidentes`
+          : "sem amostra",
+      ],
+      [
+        "Conformidade de SLA",
+        taxaSla,
+        "solução cumprida entre as concluídas com prazo",
+        governanca?.amostra.com_prazo_concluido
+          ? `${governanca.amostra.com_prazo_concluido} com prazo`
+          : "sem amostra",
+      ],
+      [
+        "Taxa de Resolução no 1º Contato (FCR)",
+        fcr,
+        "sem espera e sem reabertura",
+        governanca?.amostra.concluidas
+          ? `${governanca.amostra.fcr} de ${governanca.amostra.concluidas}`
+          : "sem amostra",
+      ],
+      [
+        "Sucesso em Mudanças (RFC CAB)",
+        taxaSucessoMudancas == null ? "sem amostra" : `${taxaSucessoMudancas}%`,
+        "concluídas sobre concluídas e falhas",
+        `${mudConcluidas + mudFalhas} encerradas`,
+      ],
       ["Chamados Concluídos", `${concluidas} de ${totalSolicitacoes}`, "-", "Ativo"],
       ["Problemas / Erros Conhecidos", `${problemas.length} mapeados`, "-", "Controlado"],
-      ["Projetos em Execução", `${projAndamento} ativos (${projConcluidos} concluídos)`, "-", "Em Dia"],
+      [
+        "Projetos em Execução",
+        `${projAndamento} ativos (${projConcluidos} concluídos)`,
+        "-",
+        "Em Dia",
+      ],
       ["Investimento em Projetos (R$)", totalOrcamento.toFixed(2), "-", "Alocado"],
     ];
 
@@ -114,7 +151,8 @@ export function RelatorioExecutivoModal({
       footer={
         <div className="flex w-full items-center justify-between">
           <span className="text-xs text-muted">
-            Emitido em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            Emitido em {new Date().toLocaleDateString("pt-BR")} às{" "}
+            {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -144,7 +182,10 @@ export function RelatorioExecutivoModal({
         </div>
       }
     >
-      <div className="flex flex-col gap-6 text-foreground print:text-black" data-testid="relatorio-executivo-conteudo">
+      <div
+        className="flex flex-col gap-6 text-foreground print:text-black"
+        data-testid="relatorio-executivo-conteudo"
+      >
         {/* Cabeçalho Institucional */}
         <div className="rounded-xl border border-surface-border bg-black/[0.02] p-4 dark:bg-white/[0.02]">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -270,7 +311,9 @@ export function RelatorioExecutivoModal({
                   </td>
                   <td className="px-3.5 py-2.5 text-muted">Janela pré-aprovada com rollback</td>
                   <td className="px-3.5 py-2.5 text-right font-medium text-success">
-                    {taxaSucessoMudancas == null ? "sem amostra" : `${taxaSucessoMudancas}% de sucesso`}
+                    {taxaSucessoMudancas == null
+                      ? "sem amostra"
+                      : `${taxaSucessoMudancas}% de sucesso`}
                   </td>
                 </tr>
                 <tr>
@@ -279,7 +322,8 @@ export function RelatorioExecutivoModal({
                     Portfólio de Projetos
                   </td>
                   <td className="px-3.5 py-2.5 text-muted">
-                    {projetos.length} projetos (R$ {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})
+                    {projetos.length} projetos (R${" "}
+                    {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})
                   </td>
                   <td className="px-3.5 py-2.5 text-muted">Aderência a marcos e entregáveis</td>
                   <td className="px-3.5 py-2.5 text-right font-medium text-primary">
@@ -299,10 +343,11 @@ export function RelatorioExecutivoModal({
           </h4>
           <p className="text-xs leading-relaxed text-muted">
             MTTR, MTBF, SLA e resolução no primeiro contato saem dos relógios de prazo e das
-            passagens das solicitações do seu escopo. Sem chamados concluídos com prazo, o
-            indicador fica em branco. O sucesso das mudanças conta só as concluídas e as que
-            falharam.
-            {governanca?.csat ? ` Satisfação média: ${governanca.csat.media} de 5 (${governanca.csat.total} avaliações).` : ""}
+            passagens das solicitações do seu escopo. Sem chamados concluídos com prazo, o indicador
+            fica em branco. O sucesso das mudanças conta só as concluídas e as que falharam.
+            {governanca?.csat
+              ? ` Satisfação média: ${governanca.csat.media} de 5 (${governanca.csat.total} avaliações).`
+              : ""}
           </p>
         </div>
       </div>

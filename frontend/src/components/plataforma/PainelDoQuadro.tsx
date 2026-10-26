@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { createContext, useContext, useId, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useId, useState, type ReactNode } from "react";
 
 import { ModalShell } from "@/components/ui/ModalShell";
 
@@ -34,10 +34,11 @@ export function usePainelNaUrl() {
   const params = useSearchParams();
   const idUrl = params.get("painel");
   const [escolha, setEscolha] = useState<string | null>(idUrl);
-  const urlVista = useRef(idUrl);
-  if (urlVista.current !== idUrl) {
-    urlVista.current = idUrl;
-    if (escolha !== idUrl) setEscolha(idUrl);
+  // Voltar e avançar do navegador trocam a URL: a escolha acompanha.
+  const [urlVista, setUrlVista] = useState(idUrl);
+  if (urlVista !== idUrl) {
+    setUrlVista(idUrl);
+    setEscolha(idUrl);
   }
 
   function href(extra: Record<string, string | null> = {}) {

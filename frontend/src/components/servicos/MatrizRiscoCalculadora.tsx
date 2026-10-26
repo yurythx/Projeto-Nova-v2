@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Calculator, Check, ShieldAlert, Sparkles } from "lucide-react";
+import { Calculator, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -45,9 +45,18 @@ export function MatrizRiscoCalculadora({
   }, [riscoCalculado]);
 
   function aplicar() {
-    const rotuloImpacto = ["", "Baixo (usuário/equipe)", "Médio (setor)", "Alto (institucional)"][impacto];
-    const rotuloComplexidade = ["", "Baixa (procedimento testado)", "Média (múltiplos passos)", "Alta (nova arquitetura)"][complexidade];
-    const rotuloRollback = ["", "Imediato (< 15 min)", "Moderado (15-60 min)", "Complexo (> 1h)"][rollback];
+    const rotuloImpacto = ["", "Baixo (usuário/equipe)", "Médio (setor)", "Alto (institucional)"][
+      impacto
+    ];
+    const rotuloComplexidade = [
+      "",
+      "Baixa (procedimento testado)",
+      "Média (múltiplos passos)",
+      "Alta (nova arquitetura)",
+    ][complexidade];
+    const rotuloRollback = ["", "Imediato (< 15 min)", "Moderado (15-60 min)", "Complexo (> 1h)"][
+      rollback
+    ];
 
     const resumo = `[Cálculo de Risco CAB: Score ${score}/15 - ${RISCO[riscoCalculado].label}]\n• Impacto: ${rotuloImpacto}\n• Complexidade: ${rotuloComplexidade}\n• Reversão: ${rotuloRollback}`;
     onAplicarRisco(riscoCalculado, resumo, score);
@@ -85,7 +94,10 @@ export function MatrizRiscoCalculadora({
           <div className="grid gap-3 sm:grid-cols-3">
             {/* Impacto */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="calculadora-impacto" className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="calculadora-impacto"
+                className="text-xs font-semibold text-foreground"
+              >
                 1. Impacto no Serviço
               </label>
               <select
@@ -103,7 +115,10 @@ export function MatrizRiscoCalculadora({
 
             {/* Complexidade / Probabilidade */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="calculadora-complexidade" className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="calculadora-complexidade"
+                className="text-xs font-semibold text-foreground"
+              >
                 2. Complexidade / Testes
               </label>
               <select
@@ -121,7 +136,10 @@ export function MatrizRiscoCalculadora({
 
             {/* Plano de Rollback */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="calculadora-rollback" className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="calculadora-rollback"
+                className="text-xs font-semibold text-foreground"
+              >
                 3. Plano de Reversão
               </label>
               <select
@@ -237,7 +255,13 @@ export function MatrizRiscoCalculadora({
             </p>
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {riscoAtual !== riscoCalculado ? (
+              <p role="status" className="mr-auto text-xs text-warning">
+                A mudança está como {RISCO[riscoAtual].label.toLowerCase()}; a matriz sugere{" "}
+                {RISCO[riscoCalculado].label.toLowerCase()}.
+              </p>
+            ) : null}
             <Button
               type="button"
               variant="secondary"

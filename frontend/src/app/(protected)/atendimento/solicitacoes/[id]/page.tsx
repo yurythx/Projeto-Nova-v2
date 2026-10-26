@@ -347,7 +347,14 @@ export function SolicitacaoDetalhe() {
                     className="grid gap-3 border-t border-surface-border pt-4"
                   >
                     {tecnico && s?.oferta_id ? (
-                      <RespostasProntas ofertaId={s.oferta_id} texto={textoRef} interno={internoRef} />
+                      <RespostasProntas
+                        ofertaId={s.oferta_id}
+                        onColocar={(valor, interna) => {
+                          if (textoRef.current) textoRef.current.value = valor;
+                          if (internoRef.current) internoRef.current.checked = interna;
+                          textoRef.current?.focus();
+                        }}
+                      />
                     ) : null}
                     <Textarea
                       ref={textoRef}

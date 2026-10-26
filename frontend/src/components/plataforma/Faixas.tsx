@@ -1,7 +1,9 @@
 "use client";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { type DragEvent, type ReactNode, useEffect, useId, useState } from "react";
+import { type DragEvent, type ReactNode, useId, useMemo, useState } from "react";
+
+import { gravarArmazenado, useArmazenado } from "@/lib/prefs/armazenado";
 
 /** Cor da faixa. Os mesmos cinco tons do selo, para a lista e o quadro
  * falarem a mesma língua. */
@@ -86,10 +88,9 @@ export function pontoFaixa(tom: TomFaixa): string {
   return ESTILO[tom].ponto;
 }
 
-function lerRecolhidas(memoria: string): string[] {
+function lerRecolhidas(cru: string | null): string[] {
+  if (!cru) return [];
   try {
-    const cru = localStorage.getItem(memoria);
-    if (!cru) return [];
     const lista = JSON.parse(cru) as unknown;
     return Array.isArray(lista) ? lista.filter((item): item is string => typeof item === "string") : [];
   } catch {
@@ -97,29 +98,15 @@ function lerRecolhidas(memoria: string): string[] {
   }
 }
 
-/** Lembra quais faixas a pessoa recolheu neste navegador. Só redesenha
- * quando há algo gravado, para a primeira pintura não ser descartada. */
+/** Lembra quais faixas a pessoa recolheu neste navegador. A primeira
+ * pintura sai sem nada recolhido e o gravado entra em seguida. */
 export function useFaixasRecolhidas(memoria: string) {
-  const [recolhidas, setRecolhidas] = useState<string[]>([]);
-
-  useEffect(() => {
-    const carregadas = lerRecolhidas(memoria);
-    setRecolhidas((atual) => {
-      if (atual.length === carregadas.length && atual.every((id, i) => id === carregadas[i])) return atual;
-      return carregadas;
-    });
-  }, [memoria]);
+  const cru = useArmazenado(memoria);
+  const recolhidas = useMemo(() => lerRecolhidas(cru), [cru]);
 
   function alternar(id: string) {
-    setRecolhidas((atual) => {
-      const proxima = atual.includes(id) ? atual.filter((item) => item !== id) : [...atual, id];
-      try {
-        localStorage.setItem(memoria, JSON.stringify(proxima));
-      } catch {
-        // Ignora cota ou modo privado.
-      }
-      return proxima;
-    });
+    const proxima = recolhidas.includes(id) ? recolhidas.filter((item) => item !== id) : [...recolhidas, id];
+    gravarArmazenado(memoria, JSON.stringify(proxima));
   }
 
   return { recolhidas, alternar };
@@ -143,21 +130,13 @@ interface Gravado {
   cartoes: Record<string, Aparencia>;
 }
 
-const APARENCIA_EVENTO = "nova-faixas-aparencia";
-
 function vazio(): Gravado {
   return { colunas: {}, cartoes: {} };
 }
 
-function publicarAparencia(memoria: string) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(APARENCIA_EVENTO, { detail: memoria }));
-}
-
-function lerAparencia(memoria: string): Gravado {
+function lerAparencia(cru: string | null): Gravado {
+  if (!cru) return vazio();
   try {
-    const cru = localStorage.getItem(`${memoria}:aparencia`);
-    if (!cru) return vazio();
     const dado = JSON.parse(cru) as Partial<Gravado>;
     return {
       colunas: dado.colunas && typeof dado.colunas === "object" ? dado.colunas : {},
@@ -168,60 +147,21 @@ function lerAparencia(memoria: string): Gravado {
   }
 }
 
-/** Nome e cor escolhidos neste navegador. A primeira pintura não muda
- * quando ainda não há nada gravado. */
+/** Nome e cor escolhidos neste navegador. Todo quadro aberto com a mesma
+ * memória redesenha junto quando um deles grava. */
 export function useAparencia(memoria: string) {
-  const [gravado, setGravado] = useState<Gravado>(vazio);
-
-  useEffect(() => {
-    const lido = lerAparencia(memoria);
-    setGravado((atual) => {
-      if (Object.keys(lido.colunas).length === 0 && Object.keys(lido.cartoes).length === 0 && Object.keys(atual.colunas).length === 0 && Object.keys(atual.cartoes).length === 0) {
-        return atual;
-      }
-      return lido;
-    });
-  }, [memoria]);
-
-  useEffect(() => {
-    function ouvir(e: Event) {
-      if ((e as CustomEvent<string>).detail !== memoria) return;
-      setGravado(lerAparencia(memoria));
-    }
-    window.addEventListener(APARENCIA_EVENTO, ouvir);
-    return () => window.removeEventListener(APARENCIA_EVENTO, ouvir);
-  }, [memoria]);
+  const chave = `${memoria}:aparencia`;
+  const cru = useArmazenado(chave);
+  const gravado = useMemo(() => lerAparencia(cru), [cru]);
 
   function salvarColuna(id: string, parcial: Aparencia) {
-    setGravado((atual) => {
-      const proximo = {
-        ...atual,
-        colunas: { ...atual.colunas, [id]: { ...atual.colunas[id], ...parcial } },
-      };
-      try {
-        localStorage.setItem(`${memoria}:aparencia`, JSON.stringify(proximo));
-      } catch {
-        // Ignora cota ou modo privado.
-      }
-      queueMicrotask(() => publicarAparencia(memoria));
-      return proximo;
-    });
+    const proximo = { ...gravado, colunas: { ...gravado.colunas, [id]: { ...gravado.colunas[id], ...parcial } } };
+    gravarArmazenado(chave, JSON.stringify(proximo));
   }
 
   function salvarCartao(id: string, parcial: Aparencia) {
-    setGravado((atual) => {
-      const proximo = {
-        ...atual,
-        cartoes: { ...atual.cartoes, [id]: { ...atual.cartoes[id], ...parcial } },
-      };
-      try {
-        localStorage.setItem(`${memoria}:aparencia`, JSON.stringify(proximo));
-      } catch {
-        // Ignora cota ou modo privado.
-      }
-      queueMicrotask(() => publicarAparencia(memoria));
-      return proximo;
-    });
+    const proximo = { ...gravado, cartoes: { ...gravado.cartoes, [id]: { ...gravado.cartoes[id], ...parcial } } };
+    gravarArmazenado(chave, JSON.stringify(proximo));
   }
 
   return { gravado, salvarColuna, salvarCartao };

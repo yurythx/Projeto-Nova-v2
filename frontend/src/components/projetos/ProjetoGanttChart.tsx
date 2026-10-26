@@ -2,13 +2,11 @@
 
 import {
   AlertTriangle,
-  Calendar,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
   Flag,
-  Layers,
   Milestone,
   Plus,
   User,
@@ -44,6 +42,10 @@ export function ProjetoGanttChart({
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
   // Janela em dias (30, 60 ou 90 dias)
   const [janelaDias, setJanelaDias] = useState<number>(60);
+
+  // Um só "agora" por montagem: linha de hoje e atraso concordam entre si
+  // e com qualquer nova renderização.
+  const [agora] = useState(() => Date.now());
 
   // Data base do cronograma
   const [dataBase, setDataBase] = useState(() => {
@@ -85,20 +87,23 @@ export function ProjetoGanttChart({
   // Estatísticas do projeto
   const totalTarefas = tarefas.length;
   const concluidas = tarefas.filter((t) => t.estado === "concluida").length;
-  const emAndamento = tarefas.filter((t) => t.estado === "em_andamento").length;
-  const bloqueadas = tarefas.filter((t) => t.estado === "bloqueada").length;
-  const progressoGeral =
-    totalTarefas > 0 ? Math.round((concluidas / totalTarefas) * 100) : 0;
+  const progressoGeral = totalTarefas > 0 ? Math.round((concluidas / totalTarefas) * 100) : 0;
 
   // Dias e semanas do cabeçalho
   const colunasCabecalho = useMemo(() => {
-    const colunas: { label: string; sub: string; offsetPct: number; widthPct: number; isFimDeSemana?: boolean }[] = [];
+    const colunas: {
+      label: string;
+      sub: string;
+      offsetPct: number;
+      widthPct: number;
+      isFimDeSemana?: boolean;
+    }[] = [];
     const inicioMs = dataBase.getTime();
     const fimMs = dataFim.getTime();
     const totalMs = fimMs - inicioMs;
 
     // Gerar agrupamento por semanas (7 dias)
-    let cur = new Date(dataBase);
+    const cur = new Date(dataBase);
     let semanaIdx = 1;
 
     while (cur < dataFim) {
@@ -125,15 +130,14 @@ export function ProjetoGanttChart({
 
   // Posição percentual da linha "Hoje"
   const hojePct = useMemo(() => {
-    const agora = new Date().getTime();
     const inicioMs = dataBase.getTime();
     const fimMs = dataFim.getTime();
     if (agora < inicioMs || agora > fimMs) return null;
     return ((agora - inicioMs) / (fimMs - inicioMs)) * 100;
-  }, [dataBase, dataFim]);
+  }, [agora, dataBase, dataFim]);
 
   // Calcula coordenadas da barra de cada tarefa no Gantt
-  function calcularBarra(t: Tarefa, idx: number) {
+  function calcularBarra(t: Tarefa) {
     const inicioMs = dataBase.getTime();
     const fimMs = dataFim.getTime();
     const totalMs = fimMs - inicioMs;
@@ -142,7 +146,7 @@ export function ProjetoGanttChart({
     // Baseada em projeto.data_inicio_planejada + offset proporcional por ordem ou created_at
     const baseProj = projeto.data_inicio_planejada
       ? new Date(projeto.data_inicio_planejada)
-      : new Date(t.created_at || Date.now());
+      : new Date(t.created_at || agora);
 
     const tInicio = new Date(baseProj);
     // Cada ordem acrescenta um espaçamento natural no cronograma
@@ -163,15 +167,12 @@ export function ProjetoGanttChart({
       tFim.setDate(tInicio.getDate() + diasEstimados);
     }
 
-    const tStartMs = Math.max(tInicio.getTime(), inicioMs);
-    const tEndMs = Math.min(tFim.getTime(), fimMs);
-
     const left = Math.max(0, Math.min(100, ((tInicio.getTime() - inicioMs) / totalMs) * 100));
     const right = Math.max(0, Math.min(100, ((tFim.getTime() - inicioMs) / totalMs) * 100));
     const width = Math.max(2.5, right - left);
 
     // Tarefa atrasada: não concluída e prazo final no passado em relação a Hoje
-    const atrasada = t.estado !== "concluida" && tFim.getTime() < Date.now();
+    const atrasada = t.estado !== "concluida" && tFim.getTime() < agora;
 
     return {
       tInicio,
@@ -183,7 +184,10 @@ export function ProjetoGanttChart({
   }
 
   // Estilo visual da barra do Gantt por estado
-  const estiloBarra: Record<EstadoTarefa, { bg: string; border: string; text: string; fillPct: number }> = {
+  const estiloBarra: Record<
+    EstadoTarefa,
+    { bg: string; border: string; text: string; fillPct: number }
+  > = {
     concluida: {
       bg: "bg-success/20",
       border: "border-success",
@@ -223,9 +227,7 @@ export function ProjetoGanttChart({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-foreground">
-                Cronograma & Diagrama de Gantt
-              </h3>
+              <h3 className="text-sm font-bold text-foreground">Cronograma & Diagrama de Gantt</h3>
               <Badge tone="info">{totalTarefas} atividades</Badge>
             </div>
             <p className="text-xs text-muted">
@@ -378,7 +380,7 @@ export function ProjetoGanttChart({
               )}
 
               {tarefasFiltradas.map((t, idx) => {
-                const barra = calcularBarra(t, idx);
+                const barra = calcularBarra(t);
                 const estilo = estiloBarra[t.estado] || estiloBarra.a_fazer;
                 const meta = ESTADO_TAREFA[t.estado];
 
@@ -462,9 +464,7 @@ export function ProjetoGanttChart({
                           {t.estado === "em_andamento" && (
                             <Clock className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
                           )}
-                          <span className={`text-[11px] truncate ${estilo.text}`}>
-                            {t.titulo}
-                          </span>
+                          <span className={`text-[11px] truncate ${estilo.text}`}>{t.titulo}</span>
                         </div>
                       </div>
                     </div>

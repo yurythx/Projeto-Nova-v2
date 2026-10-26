@@ -194,21 +194,21 @@ function PastaCard({
   return (
     <div className="flex flex-col gap-3">
       <nav aria-label="Pastas">
-        <ul role="tree" aria-label="Pastas" className="flex flex-col gap-0.5">
-          <li role="treeitem" aria-expanded="true" aria-label="Cofre">
+        <ul className="flex flex-col gap-0.5">
+          <li>
             <span className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold text-foreground">
               <FolderOpen aria-hidden className="h-4 w-4 shrink-0" />
               Cofre
             </span>
-            <ul role="group" className="ml-3 flex flex-col gap-0.5 border-l border-surface-border pl-2">
-              <li role="none">
+            <ul aria-label="Pastas do cofre" className="ml-3 flex flex-col gap-0.5 border-l border-surface-border pl-2">
+              <li>
                 <button type="button" aria-current={vista === "todas" ? "true" : undefined} className={classeNo(vista === "todas")} onClick={() => escolher("todas")}>
                   <span>Todas</span>
                   <Contagem n={contagem.total} />
                 </button>
               </li>
               {pastas.map((pasta) => (
-                <li key={pasta.id} role="none">
+                <li key={pasta.id}>
                   <button type="button" aria-current={vista === pasta.id ? "true" : undefined} className={classeNo(vista === pasta.id)} onClick={() => escolher(pasta.id)}>
                     <span className="flex min-w-0 items-center gap-2">
                       <Folder aria-hidden className="h-4 w-4 shrink-0" />
@@ -218,7 +218,7 @@ function PastaCard({
                   </button>
                 </li>
               ))}
-              <li role="none">
+              <li>
                 <button type="button" aria-current={vista === "sem" ? "true" : undefined} className={classeNo(vista === "sem")} onClick={() => escolher("sem")}>
                   <span>Sem pasta</span>
                   <Contagem n={contagem.sem} />

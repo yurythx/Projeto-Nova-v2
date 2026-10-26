@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -29,7 +29,9 @@ describe("AtivoVinculadoCard (CMDB no Atendimento)", () => {
     renderApp(<AtivoVinculadoCard solicitacaoId="sol-10" tecnico={true} finalizada={false} />);
 
     expect(
-      await screen.findByText("Nenhum ativo ou equipamento vinculado diretamente a esta solicitação."),
+      await screen.findByText(
+        "Nenhum ativo ou equipamento vinculado diretamente a esta solicitação.",
+      ),
     ).toBeInTheDocument();
 
     const select = screen.getByLabelText("Vincular equipamento ou sistema");

@@ -4,24 +4,13 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
-  Calendar as CalendarIcon,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Clock,
   ExternalLink,
   Filter,
-  FolderKanban,
-  GitCommit,
-  Headphones,
-  Info,
-  Layers,
-  List,
-  ShieldAlert,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
@@ -30,12 +19,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { useApiPage, useApiQuery } from "@/lib/api/swr";
 import type { Solicitacao } from "@/lib/atendimento/atendimento";
 import { ESTADO_PROJETO, PRIORIDADE_PROJETO, type Projeto } from "@/lib/projetos/projetos";
-import {
-  ESTADO_MUDANCA,
-  RISCO,
-  TIPO_MUDANCA,
-  type Mudanca,
-} from "@/lib/servicos/servicos";
+import { ESTADO_MUDANCA, RISCO, TIPO_MUDANCA, type Mudanca } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 export type TipoEvento = "mudanca" | "projeto" | "sla";
@@ -88,15 +72,11 @@ export default function AssistenciaCalendarioPage() {
 
   const gereMudancas = can("mudancas:manage");
   const veMudancas = gereMudancas || can("mudancas:aprovar");
-  const mudancas = useApiQuery<Mudanca[]>(
-    enabled("mudancas") && veMudancas ? "v1/mudancas" : null,
-  );
+  const mudancas = useApiQuery<Mudanca[]>(enabled("mudancas") && veMudancas ? "v1/mudancas" : null);
 
   const gereProjetos = can("projetos:manage");
   const leProjetos = gereProjetos || can("projetos:read");
-  const projetos = useApiQuery<Projeto[]>(
-    enabled("projetos") && leProjetos ? "v1/projetos" : null,
-  );
+  const projetos = useApiQuery<Projeto[]>(enabled("projetos") && leProjetos ? "v1/projetos" : null);
 
   // Mapeamento e unificação dos eventos
   const todosEventos = useMemo<EventoCalendario[]>(() => {
@@ -127,7 +107,7 @@ export default function AssistenciaCalendarioPage() {
           "Tipo de Mudança": TIPO_MUDANCA[m.tipo] ?? m.tipo,
           "Grau de Risco": RISCO[m.risco]?.label ?? m.risco,
           "Plano de Reversão": m.plano_reversao || "Não especificado",
-          "Solicitante": m.solicitante_nome,
+          Solicitante: m.solicitante_nome,
         },
       });
     }
@@ -154,9 +134,11 @@ export default function AssistenciaCalendarioPage() {
         href: `/projetos/${p.id}`,
         descricao: p.descricao || p.objetivo,
         detalhesExtras: {
-          "Prioridade": PRIORIDADE_PROJETO[p.prioridade]?.label ?? p.prioridade,
-          "Gerente": p.gerente_nome || "Não informado",
-          "Orçamento": p.orcamento ? `R$ ${Number(p.orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "Não definido",
+          Prioridade: PRIORIDADE_PROJETO[p.prioridade]?.label ?? p.prioridade,
+          Gerente: p.gerente_nome || "Não informado",
+          Orçamento: p.orcamento
+            ? `R$ ${Number(p.orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+            : "Não definido",
         },
       });
     }
@@ -181,10 +163,10 @@ export default function AssistenciaCalendarioPage() {
         href: `/atendimento/solicitacoes/${s.id}`,
         descricao: s.descricao,
         detalhesExtras: {
-          "Serviço": s.oferta_nome,
-          "Prioridade": s.prioridade || "Média",
-          "Solicitante": s.solicitante_nome,
-          "Responsável": s.responsavel_nome || "Fila geral",
+          Serviço: s.oferta_nome,
+          Prioridade: s.prioridade || "Média",
+          Solicitante: s.solicitante_nome,
+          Responsável: s.responsavel_nome || "Fila geral",
         },
       });
     }
@@ -198,7 +180,9 @@ export default function AssistenciaCalendarioPage() {
 
     for (const [, lista] of mapaDatas) {
       const temMudancaCritica = lista.some(
-        (e) => e.tipo === "mudanca" && (e.prioridadeOuRisco === "alto" || e.prioridadeOuRisco === "medio"),
+        (e) =>
+          e.tipo === "mudanca" &&
+          (e.prioridadeOuRisco === "alto" || e.prioridadeOuRisco === "medio"),
       );
       if (temMudancaCritica && lista.length > 1) {
         for (const e of lista) {
@@ -306,10 +290,7 @@ export default function AssistenciaCalendarioPage() {
         description="Visão cronológica unificada de janelas de mudanças do CAB, entregas de projetos e prazos de SLA da equipe de atendimento."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/assistencia"
-              className={buttonClass("secondary", "sm")}
-            >
+            <Link href="/assistencia" className={buttonClass("secondary", "sm")}>
               <ArrowLeft className="h-4 w-4" />
               Voltar ao Dashboard
             </Link>
@@ -355,7 +336,9 @@ export default function AssistenciaCalendarioPage() {
               Alerta de Sobreposição Operacional Detectado
             </p>
             <p className="mt-0.5 text-xs text-muted">
-              Existem <strong>{totalConflitosNoMes} dia(s)</strong> neste mês com janelas críticas de Mudança do CAB agendadas simultaneamente a outros eventos e prazos. Verifique os dias destacados para evitar colisões na infraestrutura de TI.
+              Existem <strong>{totalConflitosNoMes} dia(s)</strong> neste mês com janelas críticas
+              de Mudança do CAB agendadas simultaneamente a outros eventos e prazos. Verifique os
+              dias destacados para evitar colisões na infraestrutura de TI.
             </p>
           </div>
           <Button
@@ -476,8 +459,8 @@ export default function AssistenciaCalendarioPage() {
                       !doMesAtual
                         ? "bg-black/[0.01] dark:bg-white/[0.01] opacity-40"
                         : temConflitoNoDia
-                        ? "bg-amber-500/[0.04]"
-                        : "bg-surface"
+                          ? "bg-amber-500/[0.04]"
+                          : "bg-surface"
                     } ${eHoje ? "ring-2 ring-inset ring-primary/40" : ""}`}
                   >
                     {/* Número do Dia & Badges */}
@@ -487,8 +470,8 @@ export default function AssistenciaCalendarioPage() {
                           eHoje
                             ? "bg-primary text-primary-foreground font-bold shadow-xs"
                             : doMesAtual
-                            ? "text-foreground"
-                            : "text-muted"
+                              ? "text-foreground"
+                              : "text-muted"
                         }`}
                       >
                         {data.getDate()}
@@ -594,15 +577,15 @@ export default function AssistenciaCalendarioPage() {
                                 ev.tipo === "mudanca"
                                   ? "info"
                                   : ev.tipo === "projeto"
-                                  ? "success"
-                                  : "warning"
+                                    ? "success"
+                                    : "warning"
                               }
                             >
                               {ev.tipo === "mudanca"
                                 ? "Mudança CAB"
                                 : ev.tipo === "projeto"
-                                ? "Projeto"
-                                : "Prazo SLA"}
+                                  ? "Projeto"
+                                  : "Prazo SLA"}
                             </Badge>
                             {ev.conflito && (
                               <Badge tone="danger" className="inline-flex items-center gap-1">
@@ -629,10 +612,7 @@ export default function AssistenciaCalendarioPage() {
                         >
                           Ver Detalhes
                         </Button>
-                        <Link
-                          href={ev.href}
-                          className={buttonClass("ghost", "sm", "text-xs")}
-                        >
+                        <Link href={ev.href} className={buttonClass("ghost", "sm", "text-xs")}>
                           Abrir <ExternalLink className="h-3.5 w-3.5 ml-1" />
                         </Link>
                       </div>
@@ -693,7 +673,10 @@ export default function AssistenciaCalendarioPage() {
             {eventoSelecionado.detalhesExtras && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {Object.entries(eventoSelecionado.detalhesExtras).map(([rotulo, valor]) => (
-                  <div key={rotulo} className="p-2 rounded border border-surface-border bg-black/[0.01] dark:bg-white/[0.01]">
+                  <div
+                    key={rotulo}
+                    className="p-2 rounded border border-surface-border bg-black/[0.01] dark:bg-white/[0.01]"
+                  >
                     <span className="text-muted block text-[11px]">{rotulo}</span>
                     <span className="font-medium text-foreground">{valor}</span>
                   </div>
@@ -705,10 +688,7 @@ export default function AssistenciaCalendarioPage() {
               <Button variant="secondary" onClick={() => setEventoSelecionado(null)}>
                 Fechar
               </Button>
-              <Link
-                href={eventoSelecionado.href}
-                className={buttonClass("primary", "md")}
-              >
+              <Link href={eventoSelecionado.href} className={buttonClass("primary", "md")}>
                 Abrir no Módulo <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
               </Link>
             </div>

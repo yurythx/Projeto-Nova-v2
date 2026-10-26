@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
@@ -69,8 +69,9 @@ export default function RegrasPage() {
   const equipes = useApiQuery<Equipe[]>(gerencia ? "v1/atendimento/equipes" : null);
   const { run, pending } = useAction();
   const [ofertaResposta, setOfertaResposta] = useState("");
-  const [publico, setPublico] = useState("");
-  const [interna, setInterna] = useState("");
+  // O que se digita fica num rascunho da oferta escolhida; sem rascunho,
+  // os campos mostram o que está gravado.
+  const [rascunho, setRascunho] = useState<{ oferta: string; publico?: string; interna?: string }>({ oferta: "" });
   const resposta = useApiQuery<Resposta>(
     ofertaResposta ? `v1/atendimento/ofertas/${ofertaResposta}/respostas` : null,
   );
@@ -83,10 +84,9 @@ export default function RegrasPage() {
     ...(equipes.data ?? []).map((e) => ({ value: e.id, label: e.nome })),
   ];
 
-  useEffect(() => {
-    setPublico(resposta.data?.publico ?? "");
-    setInterna(resposta.data?.interna ?? "");
-  }, [resposta.data]);
+  const doRascunho = rascunho.oferta === ofertaResposta ? rascunho : { oferta: ofertaResposta };
+  const publico = doRascunho.publico ?? resposta.data?.publico ?? "";
+  const interna = doRascunho.interna ?? resposta.data?.interna ?? "";
 
   async function criarRegra(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -231,8 +231,7 @@ export default function RegrasPage() {
               value={ofertaResposta}
               onChange={(ev) => {
                 setOfertaResposta(ev.target.value);
-                setPublico("");
-                setInterna("");
+                setRascunho({ oferta: ev.target.value });
               }}
               options={(ofertas.data ?? []).map((o) => ({ value: o.id, label: o.nome }))}
             />
@@ -242,7 +241,7 @@ export default function RegrasPage() {
               maxLength={4000}
               rows={3}
               value={publico}
-              onChange={(ev) => setPublico(ev.target.value)}
+              onChange={(ev) => setRascunho({ ...doRascunho, publico: ev.target.value })}
             />
             <Textarea
               id="resposta-interna"
@@ -250,7 +249,7 @@ export default function RegrasPage() {
               maxLength={4000}
               rows={3}
               value={interna}
-              onChange={(ev) => setInterna(ev.target.value)}
+              onChange={(ev) => setRascunho({ ...doRascunho, interna: ev.target.value })}
             />
             <div>
               <Button type="submit" loading={pending} disabled={!ofertaResposta}>

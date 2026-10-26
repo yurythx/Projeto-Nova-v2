@@ -1,12 +1,20 @@
 "use client";
 
-import { ArrowLeft, Clock, DollarSign, GitCommit, Link2, Plus, Printer, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Link2, Plus, Printer, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, Suspense, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
-import { NomeClicavel, Quadro, colunasEmOrdem, ordenarColunas, seloDoEstado, useAparencia, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import {
+  NomeClicavel,
+  Quadro,
+  colunasEmOrdem,
+  ordenarColunas,
+  seloDoEstado,
+  useAparencia,
+  type ColunaFaixa,
+} from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
@@ -275,15 +283,9 @@ export function ProjetoDetalheConteudo() {
                     Imprimir Ficha
                   </Button>
                   {prioridadeMeta && (
-                    <Badge tone={prioridadeMeta.tone}>
-                      {prioridadeMeta.label}
-                    </Badge>
+                    <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
                   )}
-                  {estadoMeta && (
-                    <Badge tone={estadoMeta.tone}>
-                      {estadoMeta.label}
-                    </Badge>
-                  )}
+                  {estadoMeta && <Badge tone={estadoMeta.tone}>{estadoMeta.label}</Badge>}
 
                   {gere && p.estado !== "cancelado" && (
                     <div className="flex items-center gap-1.5 ml-2">
@@ -348,18 +350,14 @@ export function ProjetoDetalheConteudo() {
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm pb-5">
                   <div>
-                    <h3 className="text-xs font-semibold uppercase text-muted">
-                      Objetivo
-                    </h3>
+                    <h3 className="text-xs font-semibold uppercase text-muted">Objetivo</h3>
                     <p className="mt-1 text-foreground">
                       {p.objetivo || "Nenhum objetivo específico registrado."}
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="text-xs font-semibold uppercase text-muted">
-                      Descrição
-                    </h3>
+                    <h3 className="text-xs font-semibold uppercase text-muted">Descrição</h3>
                     <p className="mt-1 text-foreground whitespace-pre-wrap">
                       {p.descricao || "Sem detalhes adicionais."}
                     </p>
@@ -416,7 +414,10 @@ export function ProjetoDetalheConteudo() {
                 </div>
                 {gere && p.estado !== "cancelado" && (
                   <div className="flex items-center gap-2">
-                    <Link href="/projetos/tarefas/colunas" className={buttonClass("secondary", "sm")}>
+                    <Link
+                      href="/projetos/tarefas/colunas"
+                      className={buttonClass("secondary", "sm")}
+                    >
                       Colunas
                     </Link>
                     <Button
@@ -439,7 +440,8 @@ export function ProjetoDetalheConteudo() {
                 >
                   {listaTarefas.length === 0 && (
                     <p className="mb-3 text-sm text-muted">
-                      Nenhuma tarefa criada. Adicione a primeira tarefa para estruturar as entregas deste projeto.
+                      Nenhuma tarefa criada. Adicione a primeira tarefa para estruturar as entregas
+                      deste projeto.
                     </p>
                   )}
                   <Quadro
@@ -455,7 +457,8 @@ export function ProjetoDetalheConteudo() {
                     pending={pending}
                     arrastavel={() => gere && p.estado !== "cancelado"}
                     podeSoltar={(t, coluna) =>
-                      t.estado !== coluna && catalogoTarefas.colunas.find((item) => item.id === coluna)?.ativa !== false
+                      t.estado !== coluna &&
+                      catalogoTarefas.colunas.find((item) => item.id === coluna)?.ativa !== false
                     }
                     aoSoltar={(t, coluna) => void atualizarTarefaEstado(t, coluna as EstadoTarefa)}
                     aoRenomear={
@@ -464,7 +467,11 @@ export function ProjetoDetalheConteudo() {
                         : undefined
                     }
                     render={(t, vista) => {
-                      const meta = seloDoEstado(catalogoTarefas.colunas, t.estado, ESTADO_TAREFA[t.estado]);
+                      const meta = seloDoEstado(
+                        catalogoTarefas.colunas,
+                        t.estado,
+                        ESTADO_TAREFA[t.estado],
+                      );
                       return (
                         <div className="flex flex-col gap-2" data-testid={`tarefa-${t.id}`}>
                           <div className="flex flex-wrap items-center gap-2">
@@ -477,7 +484,9 @@ export function ProjetoDetalheConteudo() {
                           </div>
                           {t.descricao && <p className="text-xs text-muted">{t.descricao}</p>}
                           {t.responsavel_nome && (
-                            <span className="text-[11px] text-muted">Atribuído a: {t.responsavel_nome}</span>
+                            <span className="text-[11px] text-muted">
+                              Atribuído a: {t.responsavel_nome}
+                            </span>
                           )}
                           {gere && p.estado !== "cancelado" && (
                             <div className="flex items-center gap-2">
@@ -487,9 +496,18 @@ export function ProjetoDetalheConteudo() {
                                   void atualizarTarefaEstado(t, e.target.value as EstadoTarefa)
                                 }
                                 aria-label={`Estado da tarefa ${t.titulo}`}
-                                options={ordenarColunas(catalogoTarefas.colunas.filter((coluna) => coluna.ativa !== false || coluna.id === t.estado)).map((coluna) => ({
+                                options={ordenarColunas(
+                                  catalogoTarefas.colunas.filter(
+                                    (coluna) => coluna.ativa !== false || coluna.id === t.estado,
+                                  ),
+                                ).map((coluna) => ({
                                   value: coluna.id,
-                                  label: rotuloQuadro(catalogoTarefas.oficial, catalogoTarefas.colunas, lookTarefas.gravado, coluna.id),
+                                  label: rotuloQuadro(
+                                    catalogoTarefas.oficial,
+                                    catalogoTarefas.colunas,
+                                    lookTarefas.gravado,
+                                    coluna.id,
+                                  ),
                                 }))}
                               />
                               <Button
@@ -554,19 +572,22 @@ export function ProjetoDetalheConteudo() {
                     label="Quadro"
                     value={tarefaEstado}
                     onChange={(e) => setTarefaEstado(e.target.value as EstadoTarefa)}
-                    options={ordenarColunas(catalogoTarefas.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => ({
+                    options={ordenarColunas(
+                      catalogoTarefas.colunas.filter((coluna) => coluna.ativa !== false),
+                    ).map((coluna) => ({
                       value: coluna.id,
-                      label: rotuloQuadro(catalogoTarefas.oficial, catalogoTarefas.colunas, lookTarefas.gravado, coluna.id),
+                      label: rotuloQuadro(
+                        catalogoTarefas.oficial,
+                        catalogoTarefas.colunas,
+                        lookTarefas.gravado,
+                        coluna.id,
+                      ),
                     }))}
                   />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setModalTarefa(false)}
-                  >
+                  <Button type="button" variant="secondary" onClick={() => setModalTarefa(false)}>
                     Cancelar
                   </Button>
                   <Button type="submit" loading={pending}>
@@ -711,11 +732,7 @@ export function ProjetoDetalheConteudo() {
                 />
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setModalVinculo(false)}
-                  >
+                  <Button type="button" variant="secondary" onClick={() => setModalVinculo(false)}>
                     Cancelar
                   </Button>
                   <Button type="submit" loading={pending}>
@@ -765,7 +782,8 @@ export function ProjetoDetalheConteudo() {
                 <div className="p-4">
                   <span className="text-xs text-muted block">Custo Realizado Acumulado</span>
                   <span className="text-xl font-bold text-foreground">
-                    R$ {resumoHoras.total_custo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    R${" "}
+                    {resumoHoras.total_custo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="p-4">
@@ -783,8 +801,8 @@ export function ProjetoDetalheConteudo() {
                             resumoHoras.total_custo > p.orcamento
                               ? "bg-danger"
                               : resumoHoras.total_custo > p.orcamento * 0.8
-                              ? "bg-warning"
-                              : "bg-success"
+                                ? "bg-warning"
+                                : "bg-success"
                           }`}
                           style={{
                             width: `${Math.min(100, Math.round((resumoHoras.total_custo / p.orcamento) * 100))}%`,
@@ -818,17 +836,19 @@ export function ProjetoDetalheConteudo() {
                               {ap.usuario_nome}
                             </span>
                             <Badge tone="info">{ap.horas}h</Badge>
-                            {ap.tarefa_titulo && (
-                              <Badge tone="neutral">{ap.tarefa_titulo}</Badge>
-                            )}
+                            {ap.tarefa_titulo && <Badge tone="neutral">{ap.tarefa_titulo}</Badge>}
                             <span className="text-xs text-muted">
-                              em {new Date(ap.data_apontamento + "T00:00:00").toLocaleDateString("pt-BR")}
+                              em{" "}
+                              {new Date(ap.data_apontamento + "T00:00:00").toLocaleDateString(
+                                "pt-BR",
+                              )}
                             </span>
                           </div>
                           <p className="text-xs text-muted">{ap.descricao}</p>
                           {ap.custo_total > 0 && (
                             <span className="text-[11px] text-muted">
-                              Custo calculado: R$ {ap.custo_total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              Custo calculado: R${" "}
+                              {ap.custo_total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </span>
                           )}
                         </div>

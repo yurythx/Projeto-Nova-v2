@@ -33,6 +33,10 @@ describe("MatrizRiscoCalculadora (Gestão de Riscos do CAB)", () => {
     // Score calculado deve ser 3*2 + 3*2 + 3*1 = 15 (Alto)
     expect(screen.getByText(/Risco alto \(Score 15\)/)).toBeInTheDocument();
     expect(screen.getByText(/exige homologação colegiada de todo o CAB/i)).toBeInTheDocument();
+    // A mudança estava como baixo: a divergência aparece antes de aplicar.
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "A mudança está como risco baixo; a matriz sugere risco alto.",
+    );
 
     // Aplica o risco sugerido
     await user.click(screen.getByRole("button", { name: /Aplicar risco sugerido \(Risco alto\)/i }));

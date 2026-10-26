@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
   ESTADO_PROJETO,
@@ -101,7 +100,10 @@ export function ProjetosCronograma({ projetos }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-surface-border bg-surface p-4 shadow-sm" data-testid="projetos-cronograma">
+    <div
+      className="flex flex-col gap-4 rounded-xl border border-surface-border bg-surface p-4 shadow-sm"
+      data-testid="projetos-cronograma"
+    >
       {/* Controles do Cronograma */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-surface-border">
         <div className="flex items-center gap-2">
@@ -129,9 +131,7 @@ export function ProjetosCronograma({ projetos }: Props) {
         <div className="min-w-[760px]">
           {/* Cabeçalho de Meses */}
           <div className="grid grid-cols-12 gap-2 pb-2 text-xs text-muted border-b border-surface-border">
-            <div className="col-span-4 font-semibold text-foreground">
-              Projeto / Responsável
-            </div>
+            <div className="col-span-4 font-semibold text-foreground">Projeto / Responsável</div>
             <div className="col-span-8 relative h-6 bg-black/[0.02] dark:bg-white/[0.02] rounded">
               {mesesCabecalho.map((m, idx) => (
                 <div
@@ -195,14 +195,20 @@ export function ProjetosCronograma({ projetos }: Props) {
 
                 if (visivel) {
                   barraLeftPct = Math.max(0, ((projStart - inicioMs) / totalMs) * 100);
-                  barraWidthPct = Math.min(100 - barraLeftPct, Math.max(4, ((projEnd - projStart) / totalMs) * 100));
+                  barraWidthPct = Math.min(
+                    100 - barraLeftPct,
+                    Math.max(4, ((projEnd - projStart) / totalMs) * 100),
+                  );
                 }
 
                 const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
                 const estadoMeta = ESTADO_PROJETO[p.estado];
 
                 return (
-                  <div key={p.id} className="grid grid-cols-12 gap-2 py-3 items-center hover:bg-black/[0.01] dark:hover:bg-white/[0.01]">
+                  <div
+                    key={p.id}
+                    className="grid grid-cols-12 gap-2 py-3 items-center hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
+                  >
                     <div className="col-span-4 pr-2">
                       <div className="flex items-center gap-1.5">
                         <span className="font-mono text-xs font-semibold text-primary">
@@ -218,9 +224,7 @@ export function ProjetosCronograma({ projetos }: Props) {
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted">
                         <span>{p.gerente_nome || "Sem gerente"}</span>
-                        {prioridadeMeta && (
-                          <span>• {prioridadeMeta.label}</span>
-                        )}
+                        {prioridadeMeta && <span>• {prioridadeMeta.label}</span>}
                       </div>
                     </div>
 

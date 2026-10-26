@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { identityRoutes, mockBackend, page, renderApp } from "@/test/backend";
+import { identityRoutes, mockBackend, renderApp } from "@/test/backend";
 import { resetNavigation, router } from "@/test/navigation";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
@@ -174,9 +174,7 @@ describe("Projetos — Detalhes e Tarefas", () => {
     mockBackend({
       ...identityRoutes(perms("projetos:read", "projetos:manage")),
       "GET v1/projetos": {
-        data: [
-          projeto({ id: "p1", estado: "em_andamento", titulo: "Projeto Cronograma Alpha" }),
-        ],
+        data: [projeto({ id: "p1", estado: "em_andamento", titulo: "Projeto Cronograma Alpha" })],
       },
     });
 
@@ -231,7 +229,9 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(await screen.findByText("Mudança #5: Troca de Switch")).toBeInTheDocument();
 
     await user.click(screen.getByTestId("adicionar-vinculo-btn"));
-    expect(await screen.findByRole("heading", { name: "Vincular Item da Assistência" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Vincular Item da Assistência" }),
+    ).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText(/Tipo de vínculo/i), "problema");
     await user.type(screen.getByLabelText(/ID do item/i), "00000000-0000-0000-0000-000000000002");
@@ -308,11 +308,16 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(screen.getByText("Elaboração do termo de referência para compra")).toBeInTheDocument();
 
     await user.click(screen.getByTestId("lancar-horas-btn"));
-    expect(await screen.findByRole("heading", { name: "Lançar Horas no Projeto" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Lançar Horas no Projeto" }),
+    ).toBeInTheDocument();
 
     await user.clear(screen.getByLabelText(/Horas trabalhadas/i));
     await user.type(screen.getByLabelText(/Horas trabalhadas/i), "3");
-    await user.type(screen.getByLabelText(/Descrição das atividades/i), "Configuração dos switches");
+    await user.type(
+      screen.getByLabelText(/Descrição das atividades/i),
+      "Configuração dos switches",
+    );
 
     await user.click(screen.getByRole("button", { name: "Registrar horas" }));
 
@@ -323,4 +328,3 @@ describe("Projetos — Detalhes e Tarefas", () => {
     });
   });
 });
-

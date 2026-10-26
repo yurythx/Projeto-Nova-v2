@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
 
-import { Download, FileSpreadsheet, Printer } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
-import { ListaFaixas, NomeClicavel, ordenarColunas, useAparencia } from "@/components/plataforma/Faixas";
+import {
+  ListaFaixas,
+  NomeClicavel,
+  ordenarColunas,
+  useAparencia,
+} from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
 import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
@@ -67,11 +72,7 @@ function ProjetosConteudo() {
   const painel = usePainelNaUrl();
   const paramVista = params.get("vista");
   const vista: Vista =
-    paramVista === "lista"
-      ? "lista"
-      : paramVista === "cronograma"
-        ? "cronograma"
-        : "kanban";
+    paramVista === "lista" ? "lista" : paramVista === "cronograma" ? "cronograma" : "kanban";
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const [estado, setEstado] = useState("");
@@ -110,7 +111,15 @@ function ProjetosConteudo() {
 
   function exportarCSV() {
     if (lista.length === 0) return;
-    const cabecalho = ["Numero", "Titulo", "Estado", "Prioridade", "Gerente", "Orcamento", "CriadoEm"];
+    const cabecalho = [
+      "Numero",
+      "Titulo",
+      "Estado",
+      "Prioridade",
+      "Gerente",
+      "Orcamento",
+      "CriadoEm",
+    ];
     const linhas = lista.map((p) => [
       p.numero,
       `"${p.titulo.replace(/"/g, '""')}"`,
@@ -126,7 +135,10 @@ function ProjetosConteudo() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `relatorio-projetos-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `relatorio-projetos-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -136,24 +148,21 @@ function ProjetosConteudo() {
   async function criar(e: FormEvent) {
     e.preventDefault();
     const alvo = quadro;
-    const criado = await run(
-      async () => {
-        const res = await apiClient.post<Projeto>("v1/projetos", {
-          titulo,
-          descricao,
-          objetivo,
-          prioridade,
-          gerente_nome: gerenteNome,
-          orcamento: Number(orcamento) || 0,
-          unidade_id: unidadeId || undefined,
-        });
-        for (const passo of passosDoProjeto(alvo)) {
-          await apiClient.post(`v1/projetos/${res.data.id}/estado`, { estado: passo });
-        }
-        return res.data;
-      },
-      "Projeto criado com sucesso",
-    );
+    const criado = await run(async () => {
+      const res = await apiClient.post<Projeto>("v1/projetos", {
+        titulo,
+        descricao,
+        objetivo,
+        prioridade,
+        gerente_nome: gerenteNome,
+        orcamento: Number(orcamento) || 0,
+        unidade_id: unidadeId || undefined,
+      });
+      for (const passo of passosDoProjeto(alvo)) {
+        await apiClient.post(`v1/projetos/${res.data.id}/estado`, { estado: passo });
+      }
+      return res.data;
+    }, "Projeto criado com sucesso");
     if (criado) {
       setModalAberto(false);
       setTitulo("");
@@ -319,7 +328,9 @@ function ProjetosConteudo() {
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm font-semibold text-primary">#{p.numero}</span>
+                      <span className="font-mono text-sm font-semibold text-primary">
+                        #{p.numero}
+                      </span>
                       <NomeClicavel
                         nome={vista.titulo || p.titulo}
                         href={`/projetos/${p.id}`}
@@ -328,8 +339,12 @@ function ProjetosConteudo() {
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      {prioridadeMeta && <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>}
-                      <Badge tone={estadoMeta?.tone ?? "neutral"}>{estadoMeta?.label ?? p.estado}</Badge>
+                      {prioridadeMeta && (
+                        <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
+                      )}
+                      <Badge tone={estadoMeta?.tone ?? "neutral"}>
+                        {estadoMeta?.label ?? p.estado}
+                      </Badge>
                     </div>
                   </div>
                   {p.descricao && <p className="line-clamp-2 text-sm text-muted">{p.descricao}</p>}
@@ -342,12 +357,15 @@ function ProjetosConteudo() {
                         Orçamento:{" "}
                         <strong className="font-mono">
                           R${" "}
-                          {Number(p.orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          {Number(p.orcamento).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
                         </strong>
                       </span>
                     )}
                     <span>
-                      Criado em: <strong>{new Date(p.created_at).toLocaleDateString("pt-BR")}</strong>
+                      Criado em:{" "}
+                      <strong>{new Date(p.created_at).toLocaleDateString("pt-BR")}</strong>
                     </span>
                     <button
                       type="button"
@@ -410,7 +428,9 @@ function ProjetosConteudo() {
             label="Quadro"
             value={quadro}
             onChange={(e) => setQuadro(e.target.value as EstadoProjeto)}
-            options={ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => ({
+            options={ordenarColunas(
+              catalogo.colunas.filter((coluna) => coluna.ativa !== false),
+            ).map((coluna) => ({
               value: coluna.id,
               label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
             }))}
@@ -457,11 +477,7 @@ function ProjetosConteudo() {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setModalAberto(false)}
-            >
+            <Button type="button" variant="secondary" onClick={() => setModalAberto(false)}>
               Cancelar
             </Button>
             <Button type="submit" loading={pending}>

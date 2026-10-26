@@ -17,15 +17,15 @@ export function DeflexaoConhecimento({
   onResolvido?: () => void;
 }) {
   const consulta = termo.trim();
-  const [artigos, setArtigos] = useState<SearchResult[]>([]);
-  const [dispensado, setDispensado] = useState(false);
+  // Cada resultado guarda a consulta de onde veio: digitar outra coisa
+  // esconde o anterior sem apagar estado no meio da renderização.
+  const [achado, setAchado] = useState<{ consulta: string; artigos: SearchResult[] }>({ consulta: "", artigos: [] });
+  const [dispensadoEm, setDispensadoEm] = useState<string | null>(null);
+  const artigos = consulta.length >= 3 && achado.consulta === consulta ? achado.artigos : [];
+  const dispensado = dispensadoEm === consulta;
 
   useEffect(() => {
-    setDispensado(false);
-    if (consulta.length < 3) {
-      setArtigos([]);
-      return;
-    }
+    if (consulta.length < 3) return;
     let vivo = true;
     const espera = setTimeout(() => {
       const params = new URLSearchParams({ q: consulta, module: "wiki", limit: "4" });
@@ -34,7 +34,7 @@ export function DeflexaoConhecimento({
         .then((resposta) => {
           if (!vivo) return;
           const vistos = (resposta.data.results ?? []).filter((item) => item.module === "wiki").slice(0, 4);
-          setArtigos(vistos);
+          setAchado({ consulta, artigos: vistos });
           if (vistos.length > 0) {
             void apiClient
               .post("v1/atendimento/deflexao", { artigos: vistos.map((item) => item.id), resolveu: false })
@@ -42,7 +42,7 @@ export function DeflexaoConhecimento({
           }
         })
         .catch(() => {
-          if (vivo) setArtigos([]);
+          if (vivo) setAchado({ consulta, artigos: [] });
         });
     }, 300);
     return () => {
@@ -83,7 +83,7 @@ export function DeflexaoConhecimento({
           void apiClient
             .post("v1/atendimento/deflexao", { artigos: artigos.map((item) => item.id), resolveu: true })
             .catch(() => undefined);
-          setDispensado(true);
+          setDispensadoEm(consulta);
           onResolvido?.();
         }}
       >

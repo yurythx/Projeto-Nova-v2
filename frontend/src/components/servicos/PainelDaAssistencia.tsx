@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AlertTriangle, ArrowRight, FolderKanban, GitCommit, Headphones } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import type { Governanca, PontoIndicador, Solicitacao } from "@/lib/atendimento/atendimento";
+import { gravarArmazenado, useArmazenado } from "@/lib/prefs/armazenado";
 import type { Projeto } from "@/lib/projetos/projetos";
 import { dispor, mostrar, mover, ocultar, type Disposicao } from "@/lib/servicos/painelAssistencia";
 import type { Mudanca, Problema } from "@/lib/servicos/servicos";
@@ -178,10 +179,9 @@ export function BarraDeFiltros({
   );
 }
 
-function lerDisposicao(): Disposicao | null {
+function lerDisposicao(cru: string | null): Disposicao | null {
+  if (!cru) return null;
   try {
-    const cru = localStorage.getItem(MEMORIA);
-    if (!cru) return null;
     const dado = JSON.parse(cru) as Partial<Disposicao>;
     if (!Array.isArray(dado.ordem) || !Array.isArray(dado.ocultos)) return null;
     return { ordem: dado.ordem.filter((id) => typeof id === "string"), ocultos: dado.ocultos.filter((id) => typeof id === "string") };
@@ -190,13 +190,6 @@ function lerDisposicao(): Disposicao | null {
   }
 }
 
-function gravarDisposicao(disposicao: Disposicao) {
-  try {
-    localStorage.setItem(MEMORIA, JSON.stringify(disposicao));
-  } catch {
-    // Cota ou navegação privada: a ordem vale só nesta visita.
-  }
-}
 
 function textoMedida(valor: number | null | undefined, sufixo: string) {
   if (valor == null) return "sem amostra";
@@ -270,18 +263,13 @@ export function PainelDaAssistencia({
     if (id === "janelas" || id === "mudancas") return modulos.mudancas;
     return modulos.projetos;
   });
-  const [disposicao, setDisposicao] = useState<Disposicao>(() => dispor(ids, null));
-
-  const chaveDosCartoes = ids.join(",");
-  useEffect(() => {
-    if (!chaveDosCartoes) return;
-    setDisposicao(dispor(chaveDosCartoes.split(","), lerDisposicao()));
-  }, [chaveDosCartoes]);
+  // Na hidratação vem null e os cartões saem na ordem padrão; o gravado
+  // entra logo depois.
+  const salva = lerDisposicao(useArmazenado(MEMORIA));
+  const disposicao = dispor(ids, salva);
 
   function aplicar(proxima: Disposicao) {
-    const limpa = dispor(ids, proxima);
-    setDisposicao(limpa);
-    gravarDisposicao(limpa);
+    gravarArmazenado(MEMORIA, JSON.stringify(dispor(ids, proxima)));
   }
 
   const abertas = solicitacoes.filter((s) => s.estado === "aberto").length;

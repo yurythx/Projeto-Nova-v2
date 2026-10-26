@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Award, Calendar, FileSpreadsheet, Printer } from "lucide-react";
 
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -16,6 +16,7 @@ import type { Projeto } from "@/lib/projetos/projetos";
 import { estiloGraficoDe, type EstiloGrafico } from "@/lib/servicos/painelAssistencia";
 import type { Mudanca, Problema } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { gravarArmazenado, useArmazenado } from "@/lib/prefs/armazenado";
 
 const ESTILO_MEMORIA = "nova-assistencia:estilo";
 
@@ -25,24 +26,10 @@ export default function AssistenciaDashboardPage() {
   const [aba, setAba] = useState<"painel" | "graficos">("painel");
   const [editar, setEditar] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosAssistencia>(filtrosIniciais);
-  const [estilo, setEstilo] = useState<EstiloGrafico>("barras");
-
-  useEffect(() => {
-    try {
-      const lido = estiloGraficoDe(localStorage.getItem(ESTILO_MEMORIA));
-      setEstilo(lido);
-    } catch {
-      // Sem armazenamento: fica em barras.
-    }
-  }, []);
+  const estilo = estiloGraficoDe(useArmazenado(ESTILO_MEMORIA));
 
   function escolherEstilo(proximo: EstiloGrafico) {
-    setEstilo(proximo);
-    try {
-      localStorage.setItem(ESTILO_MEMORIA, proximo);
-    } catch {
-      // A escolha vale só nesta visita.
-    }
+    gravarArmazenado(ESTILO_MEMORIA, proximo);
   }
 
   const atende = can("atendimento:atender");
