@@ -7,8 +7,21 @@ import type { ModuleStatus } from "@/lib/plataforma/types";
 
 function mod(key: string, name: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {
-    key, name, description: `Descrição ${name}`, core: false, default_enabled: true, depends_on: [], permissions: [],
-    public: false, icon: "box", route: `/${key}`, enabled: true, configured: true, dependents: [], blocked_by: [], ...extra,
+    key,
+    name,
+    description: `Descrição ${name}`,
+    core: false,
+    default_enabled: true,
+    depends_on: [],
+    permissions: [],
+    public: false,
+    icon: "box",
+    route: `/${key}`,
+    enabled: true,
+    configured: true,
+    dependents: [],
+    blocked_by: [],
+    ...extra,
   };
 }
 
@@ -17,12 +30,18 @@ const MODULES = [
   mod("signum", "Signum", { depends_on: ["iam"], dependents: ["tramite"] }),
   mod("tramite", "Trâmite", { depends_on: ["signum"] }),
   mod("blog", "Blog", { enabled: false, configured: false }),
-  mod("calendario", "Agenda de salas e compromissos", { enabled: false, configured: true, blocked_by: ["blog"] }),
+  mod("calendario", "Agenda de salas e compromissos", {
+    enabled: false,
+    configured: true,
+    blocked_by: ["blog"],
+  }),
 ];
 
 function setup(extra: Partial<Parameters<typeof ModuleGraph>[0]> = {}) {
   const onToggle = vi.fn();
-  const utils = render(<ModuleGraph modules={MODULES} canManage busy={false} onToggle={onToggle} {...extra} />);
+  const utils = render(
+    <ModuleGraph modules={MODULES} canManage busy={false} onToggle={onToggle} {...extra} />,
+  );
   const node = (name: RegExp) => screen.getByRole("button", { name });
   return { ...utils, onToggle, node };
 }
@@ -34,7 +53,9 @@ describe("ModuleGraph", () => {
     expect(node(/^Signum; Ativo; depende de IAM; necessário para Trâmite$/)).toBeInTheDocument();
     expect(node(/^IAM; Núcleo/)).toBeInTheDocument();
     expect(node(/^Blog; Inativo$/)).toBeInTheDocument();
-    expect(node(/^Agenda de salas e compromissos; Aguardando dependência$/)).toHaveTextContent("Agenda de salas e c…");
+    expect(node(/^Agenda de salas e compromissos; Aguardando dependência$/)).toHaveTextContent(
+      "Agenda de salas e c…",
+    );
     expect(container.querySelectorAll("[data-edge]")).toHaveLength(2);
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
   });
@@ -43,11 +64,14 @@ describe("ModuleGraph", () => {
     const { container, node } = setup();
     await userEvent.click(node(/^Trâmite/));
     expect(node(/^Trâmite/)).toHaveAttribute("aria-pressed", "true");
-    const opacity = (k: string) => container.querySelector(`[data-node="${k}"]`)!.getAttribute("class");
+    const opacity = (k: string) =>
+      container.querySelector(`[data-node="${k}"]`)!.getAttribute("class");
     expect(opacity("iam")).toContain("opacity-100"); // dependência transitiva
     expect(opacity("signum")).toContain("opacity-100");
     expect(opacity("blog")).toContain("opacity-30");
-    expect(container.querySelector('[data-edge="iam->signum"]')!.getAttribute("class")).toContain("opacity-100");
+    expect(container.querySelector('[data-edge="iam->signum"]')!.getAttribute("class")).toContain(
+      "opacity-100",
+    );
 
     const panel = screen.getByRole("region", { name: "Detalhes de Trâmite" });
     expect(within(panel).getByText("Signum, IAM", { exact: false })).toBeInTheDocument();

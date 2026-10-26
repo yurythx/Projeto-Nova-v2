@@ -21,7 +21,8 @@ export default async function KeycloakConfigPage() {
     if (err instanceof ApiError && err.status === 403) {
       keycloakForbidden = true;
     } else {
-      keycloakErrorMessage = err instanceof ApiError ? err.message : "Falha ao carregar a configuração do Keycloak";
+      keycloakErrorMessage =
+        err instanceof ApiError ? err.message : "Falha ao carregar a configuração do Keycloak";
     }
   }
 
@@ -34,8 +35,8 @@ export default async function KeycloakConfigPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted">
-              Restrito a administradores — sua conta não tem permissão para ver ou alterar a configuração
-              do Keycloak.
+              Restrito a administradores — sua conta não tem permissão para ver ou alterar a
+              configuração do Keycloak.
             </p>
           </CardContent>
         </Card>

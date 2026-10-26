@@ -42,7 +42,7 @@ const K = new Uint32Array([
 /** SHA-256 (FIPS 180-4) em JS puro — fallback de sha256Hex. */
 export function sha256(data: Uint8Array): Uint8Array {
   const bitLen = data.length * 8;
-  const padded = new Uint8Array((((data.length + 9 + 63) >> 6) << 6));
+  const padded = new Uint8Array(((data.length + 9 + 63) >> 6) << 6);
   padded.set(data);
   padded[data.length] = 0x80;
   const view = new DataView(padded.buffer);
@@ -64,9 +64,17 @@ export function sha256(data: Uint8Array): Uint8Array {
       const s1 = rotr(w(i - 2), 17) ^ rotr(w(i - 2), 19) ^ (w(i - 2) >>> 10);
       W[i] = w(i - 16) + s0 + w(i - 7) + s1;
     }
-    let a = H[0]!, b = H[1]!, c = H[2]!, d = H[3]!, e = H[4]!, f = H[5]!, g = H[6]!, h = H[7]!;
+    let a = H[0]!,
+      b = H[1]!,
+      c = H[2]!,
+      d = H[3]!,
+      e = H[4]!,
+      f = H[5]!,
+      g = H[6]!,
+      h = H[7]!;
     for (let i = 0; i < 64; i++) {
-      const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i]! + w(i)) >>> 0;
+      const t1 =
+        (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i]! + w(i)) >>> 0;
       const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
       h = g;
       g = f;

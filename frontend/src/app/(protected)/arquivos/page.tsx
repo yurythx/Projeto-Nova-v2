@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Download, File as FileIcon, Folder as FolderIcon, FolderPlus, Pencil, Plus, Shield, Trash2, Upload } from "lucide-react";
+import {
+  Download,
+  File as FileIcon,
+  Folder as FolderIcon,
+  FolderPlus,
+  Pencil,
+  Plus,
+  Shield,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Suspense, useRef, useState, type FormEvent } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
@@ -15,10 +25,25 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
-import type { ACLEntry, FileItem, Folder, Listing, OrgTree, Perfil, UploadTicket } from "@/lib/plataforma/types";
+import type {
+  ACLEntry,
+  FileItem,
+  Folder,
+  Listing,
+  OrgTree,
+  Perfil,
+  UploadTicket,
+} from "@/lib/plataforma/types";
 import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 
 const SUBJECT_LABEL: Record<ACLEntry["subject_type"], string> = {
@@ -36,31 +61,51 @@ function ACLEditor({ folder, onDone }: { folder: Folder; onDone: () => void }) {
   const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const { run, pending } = useAction();
   const [entries, setEntries] = useState<ACLEntry[] | null>(null);
-  const [draft, setDraft] = useState<ACLEntry>({ subject_type: "perfil", subject: "", can_write: false });
+  const [draft, setDraft] = useState<ACLEntry>({
+    subject_type: "perfil",
+    subject: "",
+    can_write: false,
+  });
   const list = entries ?? acl.data ?? [];
 
   const unidades = (tree.data ?? []).flatMap((e) => e.unidades);
   const subjectOptions: Record<string, { value: string; label: string }[]> = {
     perfil: (perfis.data ?? []).map((p) => ({ value: p.slug, label: p.nome })),
     unidade: unidades.map((u) => ({ value: u.id, label: u.nome })),
-    departamento: unidades.flatMap((u) => u.departamentos.map((d) => ({ value: d.id, label: `${d.nome} (${u.sigla || u.nome})` }))),
+    departamento: unidades.flatMap((u) =>
+      u.departamentos.map((d) => ({ value: d.id, label: `${d.nome} (${u.sigla || u.nome})` })),
+    ),
   };
   const labelFor = (e: ACLEntry) =>
-    e.subject_type === "everyone" ? "" : subjectOptions[e.subject_type]?.find((o) => o.value === e.subject)?.label ?? e.subject;
+    e.subject_type === "everyone"
+      ? ""
+      : (subjectOptions[e.subject_type]?.find((o) => o.value === e.subject)?.label ?? e.subject);
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
-        As permissões são herdadas pelas subpastas. Sem nenhuma entrada, só o dono e administradores de arquivos acessam.
+        As permissões são herdadas pelas subpastas. Sem nenhuma entrada, só o dono e administradores
+        de arquivos acessam.
       </p>
       <ul className="flex flex-col divide-y divide-surface-border rounded-lg border border-surface-border">
-        {list.length === 0 && <li className="p-3 text-sm text-muted">Sem entradas — pasta privada.</li>}
+        {list.length === 0 && (
+          <li className="p-3 text-sm text-muted">Sem entradas — pasta privada.</li>
+        )}
         {list.map((e, i) => (
-          <li key={`${e.subject_type}-${e.subject}-${i}`} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+          <li
+            key={`${e.subject_type}-${e.subject}-${i}`}
+            className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+          >
             <span>
-              <Badge>{SUBJECT_LABEL[e.subject_type]}</Badge> {labelFor(e)} · {e.can_write ? "leitura e escrita" : "somente leitura"}
+              <Badge>{SUBJECT_LABEL[e.subject_type]}</Badge> {labelFor(e)} ·{" "}
+              {e.can_write ? "leitura e escrita" : "somente leitura"}
             </span>
-            <Button variant="ghost" size="sm" aria-label="Remover entrada" onClick={() => setEntries(list.filter((_, j) => j !== i))}>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Remover entrada"
+              onClick={() => setEntries(list.filter((_, j) => j !== i))}
+            >
               <Trash2 size={14} aria-hidden="true" />
             </Button>
           </li>
@@ -71,11 +116,24 @@ function ACLEditor({ folder, onDone }: { folder: Folder; onDone: () => void }) {
           id="acl-type"
           label="Sujeito"
           value={draft.subject_type}
-          onChange={(e) => setDraft({ ...draft, subject_type: e.target.value as ACLEntry["subject_type"], subject: "" })}
+          onChange={(e) =>
+            setDraft({
+              ...draft,
+              subject_type: e.target.value as ACLEntry["subject_type"],
+              subject: "",
+            })
+          }
           options={Object.entries(SUBJECT_LABEL).map(([value, label]) => ({ value, label }))}
         />
         {subjectOptions[draft.subject_type] ? (
-          <Select id="acl-subject" label="Qual" placeholder="Selecione…" value={draft.subject} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} options={subjectOptions[draft.subject_type]!} />
+          <Select
+            id="acl-subject"
+            label="Qual"
+            placeholder="Selecione…"
+            value={draft.subject}
+            onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
+            options={subjectOptions[draft.subject_type]!}
+          />
         ) : (
           <Input
             id="acl-subject"
@@ -83,11 +141,23 @@ function ACLEditor({ folder, onDone }: { folder: Folder; onDone: () => void }) {
             value={draft.subject}
             disabled={draft.subject_type === "everyone"}
             onChange={(e) => setDraft({ ...draft, subject: e.target.value.trim() })}
-            placeholder={draft.subject_type === "user" ? "UUID do usuário" : draft.subject_type === "ad_group" ? "GRP_EQUIPE" : ""}
+            placeholder={
+              draft.subject_type === "user"
+                ? "UUID do usuário"
+                : draft.subject_type === "ad_group"
+                  ? "GRP_EQUIPE"
+                  : ""
+            }
           />
         )}
         <label className="flex items-center gap-2 pb-2 text-sm">
-          <input type="checkbox" checked={draft.can_write} onChange={(e) => setDraft({ ...draft, can_write: e.target.checked })} className="h-4 w-4 accent-primary" /> Escrita
+          <input
+            type="checkbox"
+            checked={draft.can_write}
+            onChange={(e) => setDraft({ ...draft, can_write: e.target.checked })}
+            className="h-4 w-4 accent-primary"
+          />{" "}
+          Escrita
         </label>
         <Button
           type="button"
@@ -105,7 +175,12 @@ function ACLEditor({ folder, onDone }: { folder: Folder; onDone: () => void }) {
         <Button
           loading={pending}
           disabled={entries === null}
-          onClick={() => void run(() => apiClient.put(`v1/files/folders/${folder.id}/acl`, { entries: list }), "Permissões salvas").then((ok) => ok !== undefined && onDone())}
+          onClick={() =>
+            void run(
+              () => apiClient.put(`v1/files/folders/${folder.id}/acl`, { entries: list }),
+              "Permissões salvas",
+            ).then((ok) => ok !== undefined && onDone())
+          }
         >
           Salvar permissões
         </Button>
@@ -145,9 +220,23 @@ function NameDialog({
   return (
     <Dialog open onClose={onClose} title={title}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <Input id="name-dialog" name="name" label="Nome" required maxLength={255} defaultValue={initial} autoFocus />
+        <Input
+          id="name-dialog"
+          name="name"
+          label="Nome"
+          required
+          maxLength={255}
+          defaultValue={initial}
+          autoFocus
+        />
         {unidade && (
-          <UnidadeDonaSelect id="folder-unidade" permission="files:manage" lotacao defaultValue={unidade.initial} placeholder="Sem unidade (vale a da pasta acima)" />
+          <UnidadeDonaSelect
+            id="folder-unidade"
+            permission="files:manage"
+            lotacao
+            defaultValue={unidade.initial}
+            placeholder="Sem unidade (vale a da pasta acima)"
+          />
         )}
         <div className="flex justify-end">
           <Button type="submit" loading={busy}>
@@ -167,7 +256,13 @@ function Arquivos() {
   const { run } = useAction();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<{ kind: "new-folder" } | { kind: "rename-folder"; folder: Folder } | { kind: "rename-file"; file: FileItem } | { kind: "acl"; folder: Folder } | null>(null);
+  const [dialog, setDialog] = useState<
+    | { kind: "new-folder" }
+    | { kind: "rename-folder"; folder: Folder }
+    | { kind: "rename-file"; file: FileItem }
+    | { kind: "acl"; folder: Folder }
+    | null
+  >(null);
   const l = listing.data;
   const refresh = () => void listing.mutate();
 
@@ -176,12 +271,15 @@ function Arquivos() {
     for (const file of Array.from(files)) {
       setUploading(file.name);
       await run(async () => {
-        const { data } = await apiClient.post<{ file: FileItem; upload: UploadTicket }>("v1/files/uploads", {
-          folder_id: folderId,
-          filename: file.name,
-          content_type: mimeOf(file),
-          size: file.size,
-        });
+        const { data } = await apiClient.post<{ file: FileItem; upload: UploadTicket }>(
+          "v1/files/uploads",
+          {
+            folder_id: folderId,
+            filename: file.name,
+            content_type: mimeOf(file),
+            size: file.size,
+          },
+        );
         await putToTicket(data.upload, file);
         await apiClient.post(`v1/files/objects/${data.file.id}/confirm`);
       }, `${file.name} enviado`);
@@ -191,7 +289,9 @@ function Arquivos() {
   }
 
   async function download(f: FileItem) {
-    const res = await run(() => apiClient.get<{ url: string }>(`v1/files/objects/${f.id}/download`));
+    const res = await run(() =>
+      apiClient.get<{ url: string }>(`v1/files/objects/${f.id}/download`),
+    );
     if (res) window.location.assign(res.data.url);
   }
 
@@ -200,7 +300,11 @@ function Arquivos() {
       <PageHeader
         eyebrow="Arquivos"
         title={l?.folder?.name ?? "Pastas"}
-        description={!folderId ? "Pastas de trabalho. Permissões por perfil, grupo do AD ou unidade. O módulo nasce desligado." : undefined}
+        description={
+          !folderId
+            ? "Pastas de trabalho. Permissões por perfil, grupo do AD ou unidade. O módulo nasce desligado."
+            : undefined
+        }
         actions={
           <>
             {(!folderId || l?.access.write) && (
@@ -210,9 +314,18 @@ function Arquivos() {
             )}
             {folderId && l?.access.write && (
               <>
-                <input ref={fileInput} type="file" multiple className="sr-only" id="file-upload" onChange={(e) => e.target.files && void upload(e.target.files)} tabIndex={-1} />
+                <input
+                  ref={fileInput}
+                  type="file"
+                  multiple
+                  className="sr-only"
+                  id="file-upload"
+                  onChange={(e) => e.target.files && void upload(e.target.files)}
+                  tabIndex={-1}
+                />
                 <Button onClick={() => fileInput.current?.click()} loading={uploading !== null}>
-                  <Upload size={16} aria-hidden="true" className="mr-1" /> {uploading ? `Enviando ${uploading}…` : "Enviar arquivos"}
+                  <Upload size={16} aria-hidden="true" className="mr-1" />{" "}
+                  {uploading ? `Enviando ${uploading}…` : "Enviar arquivos"}
                 </Button>
               </>
             )}
@@ -232,7 +345,10 @@ function Arquivos() {
         {(l?.breadcrumbs ?? []).map((b) => (
           <span key={b.id}>
             {" / "}
-            <Link href={`/arquivos?pasta=${b.id}`} className="hover:text-foreground hover:underline">
+            <Link
+              href={`/arquivos?pasta=${b.id}`}
+              className="hover:text-foreground hover:underline"
+            >
               {b.name}
             </Link>
           </span>
@@ -263,7 +379,10 @@ function Arquivos() {
             {(l?.folders ?? []).map((f) => (
               <TableRow key={f.id}>
                 <TableCell>
-                  <Link href={`/arquivos?pasta=${f.id}`} className="inline-flex items-center gap-2 font-medium hover:underline">
+                  <Link
+                    href={`/arquivos?pasta=${f.id}`}
+                    className="inline-flex items-center gap-2 font-medium hover:underline"
+                  >
                     <FolderIcon size={16} aria-hidden="true" className="text-primary" /> {f.name}
                   </Link>
                 </TableCell>
@@ -272,7 +391,12 @@ function Arquivos() {
                 <TableCell className="text-xs text-muted">{fmtDateTime(f.updated_at)}</TableCell>
                 <TableCell className="text-right">
                   <span className="inline-flex gap-1">
-                    <Button variant="ghost" size="sm" aria-label={`Renomear ${f.name}`} onClick={() => setDialog({ kind: "rename-folder", folder: f })}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Renomear ${f.name}`}
+                      onClick={() => setDialog({ kind: "rename-folder", folder: f })}
+                    >
                       <Pencil size={14} aria-hidden="true" />
                     </Button>
                     <ConfirmButton
@@ -280,7 +404,12 @@ function Arquivos() {
                       title={`Excluir a pasta "${f.name}"?`}
                       description="A pasta, todas as subpastas e todos os arquivos dentro dela serão apagados definitivamente (inclusive do armazenamento). A exclusão fica registrada na auditoria."
                       confirmLabel="Excluir tudo"
-                      onConfirm={() => run(() => apiClient.delete(`v1/files/folders/${f.id}?recursive=true`), "Pasta excluída").then(refresh)}
+                      onConfirm={() =>
+                        run(
+                          () => apiClient.delete(`v1/files/folders/${f.id}?recursive=true`),
+                          "Pasta excluída",
+                        ).then(refresh)
+                      }
                     >
                       <Trash2 size={14} aria-hidden="true" />
                     </ConfirmButton>
@@ -302,20 +431,35 @@ function Arquivos() {
                 <TableCell className="text-right">
                   <span className="inline-flex gap-1">
                     {f.status === "ready" && (
-                      <Button variant="ghost" size="sm" aria-label={`Baixar ${f.name}`} onClick={() => void download(f)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Baixar ${f.name}`}
+                        onClick={() => void download(f)}
+                      >
                         <Download size={14} aria-hidden="true" />
                       </Button>
                     )}
                     {l?.access.write && (
                       <>
-                        <Button variant="ghost" size="sm" aria-label={`Renomear ${f.name}`} onClick={() => setDialog({ kind: "rename-file", file: f })}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Renomear ${f.name}`}
+                          onClick={() => setDialog({ kind: "rename-file", file: f })}
+                        >
                           <Pencil size={14} aria-hidden="true" />
                         </Button>
                         <ConfirmButton
                           aria-label={`Excluir ${f.name}`}
                           title={`Excluir "${f.name}"?`}
                           confirmLabel="Excluir"
-                          onConfirm={() => run(() => apiClient.delete(`v1/files/objects/${f.id}`), "Arquivo excluído").then(refresh)}
+                          onConfirm={() =>
+                            run(
+                              () => apiClient.delete(`v1/files/objects/${f.id}`),
+                              "Arquivo excluído",
+                            ).then(refresh)
+                          }
                         >
                           <Trash2 size={14} aria-hidden="true" />
                         </ConfirmButton>
@@ -335,7 +479,15 @@ function Arquivos() {
           unidade={{}}
           onClose={() => setDialog(null)}
           onSubmit={(name, unidadeId) =>
-            run(() => apiClient.post<Folder>("v1/files/folders", { name, parent_id: folderId ?? null, unidade_id: unidadeId }), "Pasta criada").then((res) => {
+            run(
+              () =>
+                apiClient.post<Folder>("v1/files/folders", {
+                  name,
+                  parent_id: folderId ?? null,
+                  unidade_id: unidadeId,
+                }),
+              "Pasta criada",
+            ).then((res) => {
               if (!res) return;
               setDialog(null);
               if (!folderId) router.push(`/arquivos?pasta=${res.data.id}`);
@@ -353,7 +505,13 @@ function Arquivos() {
           onSubmit={(name, unidadeId) =>
             run(
               () =>
-                apiClient.patch(`v1/files/folders/${dialog.folder.id}`, { name, parent_id: dialog.folder.parent_id ?? null, move: false, unidade_id: unidadeId, set_unidade: true }),
+                apiClient.patch(`v1/files/folders/${dialog.folder.id}`, {
+                  name,
+                  parent_id: dialog.folder.parent_id ?? null,
+                  move: false,
+                  unidade_id: unidadeId,
+                  set_unidade: true,
+                }),
               "Pasta salva",
             ).then((ok) => {
               if (ok === undefined) return;
@@ -369,7 +527,14 @@ function Arquivos() {
           initial={dialog.file.name}
           onClose={() => setDialog(null)}
           onSubmit={(name) =>
-            run(() => apiClient.patch(`v1/files/objects/${dialog.file.id}`, { name, folder_id: dialog.file.folder_id }), "Arquivo renomeado").then((ok) => {
+            run(
+              () =>
+                apiClient.patch(`v1/files/objects/${dialog.file.id}`, {
+                  name,
+                  folder_id: dialog.file.folder_id,
+                }),
+              "Arquivo renomeado",
+            ).then((ok) => {
               if (ok === undefined) return;
               setDialog(null);
               refresh();
@@ -378,7 +543,12 @@ function Arquivos() {
         />
       )}
       {dialog?.kind === "acl" && (
-        <Dialog open onClose={() => setDialog(null)} title={`Permissões — ${dialog.folder.name}`} size="xl">
+        <Dialog
+          open
+          onClose={() => setDialog(null)}
+          title={`Permissões — ${dialog.folder.name}`}
+          size="xl"
+        >
           <ACLEditor folder={dialog.folder} onDone={() => setDialog(null)} />
         </Dialog>
       )}

@@ -28,10 +28,13 @@ export function RoomsAdmin({ rooms, onChanged }: { rooms: ChatRoom[]; onChanged:
   const tipo = geridos.global ? kind : "department";
   const deptos = (tree.data ?? []).flatMap((e) =>
     e.unidades.flatMap((u) =>
-      u.departamentos.filter((d) => geridos.departamentos.has(d.id)).map((d) => ({ value: d.id, label: `${d.nome} (${u.sigla || u.nome})` })),
+      u.departamentos
+        .filter((d) => geridos.departamentos.has(d.id))
+        .map((d) => ({ value: d.id, label: `${d.nome} (${u.sigla || u.nome})` })),
     ),
   );
-  const editavel = (r: ChatRoom) => geridos.global || (!!r.departamento_id && geridos.departamentos.has(r.departamento_id));
+  const editavel = (r: ChatRoom) =>
+    geridos.global || (!!r.departamento_id && geridos.departamentos.has(r.departamento_id));
   const managed = rooms.filter((r) => r.kind !== "direct");
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -43,10 +46,17 @@ export function RoomsAdmin({ rooms, onChanged }: { rooms: ChatRoom[]; onChanged:
       name: String(fd.get("name") ?? "").trim(),
       description: String(fd.get("description") ?? "").trim(),
       ad_group: String(fd.get("ad_group") ?? "").trim(),
-      departamento_id: tipo === "department" ? String(fd.get("departamento_id") ?? "") || null : null,
+      departamento_id:
+        tipo === "department" ? String(fd.get("departamento_id") ?? "") || null : null,
       archived: fd.get("archived") === "on",
     };
-    const ok = await run(() => (edit ? apiClient.put(`v1/mercurio/rooms/${edit.id}`, payload) : apiClient.post("v1/mercurio/rooms", payload)), "Sala salva");
+    const ok = await run(
+      () =>
+        edit
+          ? apiClient.put(`v1/mercurio/rooms/${edit.id}`, payload)
+          : apiClient.post("v1/mercurio/rooms", payload),
+      "Sala salva",
+    );
     if (ok) {
       setEdit(null);
       form.reset();
@@ -60,9 +70,16 @@ export function RoomsAdmin({ rooms, onChanged }: { rooms: ChatRoom[]; onChanged:
         {managed.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
             <span>
-              <strong>{r.name}</strong> <Badge className="ml-1">{r.kind === "global" ? "Canal" : "Departamento"}</Badge>
-              {r.archived && <Badge tone="warning" className="ml-1">Arquivada</Badge>}
-              {r.ad_group && <span className="block font-mono text-[11px] text-muted">{r.ad_group}</span>}
+              <strong>{r.name}</strong>{" "}
+              <Badge className="ml-1">{r.kind === "global" ? "Canal" : "Departamento"}</Badge>
+              {r.archived && (
+                <Badge tone="warning" className="ml-1">
+                  Arquivada
+                </Badge>
+              )}
+              {r.ad_group && (
+                <span className="block font-mono text-[11px] text-muted">{r.ad_group}</span>
+              )}
             </span>
             {editavel(r) && (
               <Button
@@ -80,7 +97,11 @@ export function RoomsAdmin({ rooms, onChanged }: { rooms: ChatRoom[]; onChanged:
           </li>
         ))}
       </ul>
-      <form key={edit?.id ?? "new"} onSubmit={submit} className="flex flex-col gap-3 rounded-lg border border-dashed border-surface-border p-3">
+      <form
+        key={edit?.id ?? "new"}
+        onSubmit={submit}
+        className="flex flex-col gap-3 rounded-lg border border-dashed border-surface-border p-3"
+      >
         <p className="text-sm font-medium">{edit ? `Editar ${edit.name}` : "Nova sala"}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
@@ -88,11 +109,27 @@ export function RoomsAdmin({ rooms, onChanged }: { rooms: ChatRoom[]; onChanged:
             label="Tipo"
             value={tipo}
             onChange={(e) => setKind(e.target.value as "global" | "department")}
-            options={[...(geridos.global ? [{ value: "global", label: "Canal global" }] : []), { value: "department", label: "Sala departamental" }]}
+            options={[
+              ...(geridos.global ? [{ value: "global", label: "Canal global" }] : []),
+              { value: "department", label: "Sala departamental" },
+            ]}
           />
-          <Input id="room-name" name="name" label="Nome *" required maxLength={120} defaultValue={edit?.name} />
+          <Input
+            id="room-name"
+            name="name"
+            label="Nome *"
+            required
+            maxLength={120}
+            defaultValue={edit?.name}
+          />
         </div>
-        <Input id="room-desc" name="description" label="Descrição" maxLength={500} defaultValue={edit?.description} />
+        <Input
+          id="room-desc"
+          name="description"
+          label="Descrição"
+          maxLength={500}
+          defaultValue={edit?.description}
+        />
         {tipo === "department" && (
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
@@ -104,12 +141,24 @@ export function RoomsAdmin({ rooms, onChanged }: { rooms: ChatRoom[]; onChanged:
               defaultValue={edit?.departamento_id ?? ""}
               options={deptos}
             />
-            <Input id="room-ad" name="ad_group" label="Grupo do AD" maxLength={200} defaultValue={edit?.ad_group} />
+            <Input
+              id="room-ad"
+              name="ad_group"
+              label="Grupo do AD"
+              maxLength={200}
+              defaultValue={edit?.ad_group}
+            />
           </div>
         )}
         {edit && (
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="archived" defaultChecked={edit.archived} className="h-4 w-4 accent-primary" /> Arquivada (somente leitura)
+            <input
+              type="checkbox"
+              name="archived"
+              defaultChecked={edit.archived}
+              className="h-4 w-4 accent-primary"
+            />{" "}
+            Arquivada (somente leitura)
           </label>
         )}
         <div className="flex justify-end gap-2">

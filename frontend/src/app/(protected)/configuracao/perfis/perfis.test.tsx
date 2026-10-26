@@ -10,10 +10,30 @@ vi.mock("next/navigation", async () => (await import("@/test/navigation")).navig
 import PerfisPage from "./page";
 
 const GROUPS = [
-  { module: "blog", name: "Blog", permissions: [{ key: "blog:read", description: "Ler" }, { key: "blog:manage", description: "Gerir" }] },
-  { module: "files", name: "Arquivos", permissions: [{ key: "files:read", description: "Ler arquivos" }] },
+  {
+    module: "blog",
+    name: "Blog",
+    permissions: [
+      { key: "blog:read", description: "Ler" },
+      { key: "blog:manage", description: "Gerir" },
+    ],
+  },
+  {
+    module: "files",
+    name: "Arquivos",
+    permissions: [{ key: "files:read", description: "Ler arquivos" }],
+  },
 ];
-const perfil = (id: string, extra: Record<string, unknown> = {}) => ({ id, slug: id, nome: `Perfil ${id}`, descricao: "", permissoes: [], sistema: false, ativo: true, ...extra });
+const perfil = (id: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  slug: id,
+  nome: `Perfil ${id}`,
+  descricao: "",
+  permissoes: [],
+  sistema: false,
+  ativo: true,
+  ...extra,
+});
 
 describe("Configurações > Perfis", () => {
   beforeEach(() => resetNavigation());
@@ -21,7 +41,12 @@ describe("Configurações > Perfis", () => {
   it("lista perfis com contagem, sistema e acesso total", async () => {
     mockBackend({
       ...identityRoutes(),
-      "GET v1/iam/perfis": { data: [perfil("admin", { sistema: true, permissoes: ["*"], descricao: "Tudo" }), perfil("leitor", { permissoes: ["blog:read"], ativo: false })] },
+      "GET v1/iam/perfis": {
+        data: [
+          perfil("admin", { sistema: true, permissoes: ["*"], descricao: "Tudo" }),
+          perfil("leitor", { permissoes: ["blog:read"], ativo: false }),
+        ],
+      },
       "GET v1/iam/permissions": { data: GROUPS },
     });
     renderApp(<PerfisPage />);
@@ -57,13 +82,20 @@ describe("Configurações > Perfis", () => {
     await userEvent.click(within(dialog).getByRole("checkbox", { name: /files:read/ }));
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar perfil" }));
     await waitFor(() => expect(api.to("POST v1/iam/perfis")).toHaveLength(1));
-    expect(api.to("POST v1/iam/perfis")[0]!.body).toEqual({ nome: "Editor", descricao: "Edita o blog", permissoes: ["blog:manage", "files:read"], ativo: true });
+    expect(api.to("POST v1/iam/perfis")[0]!.body).toEqual({
+      nome: "Editor",
+      descricao: "Edita o blog",
+      permissoes: ["blog:manage", "files:read"],
+      ativo: true,
+    });
   });
 
   it("edita perfil de sistema preservando curingas; remove um curinga", async () => {
     const api = mockBackend({
       ...identityRoutes(),
-      "GET v1/iam/perfis": { data: [perfil("admin", { sistema: true, permissoes: ["*", "blog:read", "legado:x"] })] },
+      "GET v1/iam/perfis": {
+        data: [perfil("admin", { sistema: true, permissoes: ["*", "blog:read", "legado:x"] })],
+      },
       "GET v1/iam/permissions": { data: GROUPS },
       "PUT v1/iam/perfis/admin": { data: perfil("admin") },
     });
@@ -77,7 +109,12 @@ describe("Configurações > Perfis", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar perfil" }));
     await waitFor(() => expect(api.to("PUT v1/iam/perfis/admin")).toHaveLength(1));
     // slug desabilitado não vai no formulário
-    expect(api.to("PUT v1/iam/perfis/admin")[0]!.body).toEqual({ nome: "Perfil admin", descricao: "", permissoes: ["*", "blog:read"], ativo: true });
+    expect(api.to("PUT v1/iam/perfis/admin")[0]!.body).toEqual({
+      nome: "Perfil admin",
+      descricao: "",
+      permissoes: ["*", "blog:read"],
+      ativo: true,
+    });
   });
 
   it("exclusão recusada (perfil em uso) e erro ao listar", async () => {
@@ -96,7 +133,11 @@ describe("Configurações > Perfis", () => {
   });
 
   it("erro ao carregar perfis", async () => {
-    mockBackend({ ...identityRoutes(), "GET v1/iam/perfis": fail(500, "sem banco"), "GET v1/iam/permissions": { data: [] } });
+    mockBackend({
+      ...identityRoutes(),
+      "GET v1/iam/perfis": fail(500, "sem banco"),
+      "GET v1/iam/permissions": { data: [] },
+    });
     renderApp(<PerfisPage />);
     expect(await screen.findByText("sem banco")).toBeInTheDocument();
   });

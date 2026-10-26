@@ -13,7 +13,10 @@ export function publicoVazio(p?: Publico | null): boolean {
 }
 
 /** Nomes do público-alvo (secretarias e unidades), na ordem da árvore. */
-export function nomesDoPublico(p: Publico | undefined | null, tree: readonly OrgTree[] | undefined): string[] {
+export function nomesDoPublico(
+  p: Publico | undefined | null,
+  tree: readonly OrgTree[] | undefined,
+): string[] {
   if (publicoVazio(p)) return [];
   const nomes: string[] = [];
   for (const e of tree ?? []) {
@@ -83,7 +86,13 @@ export function PublicoAlvoPicker({
 
         <div className="flex max-h-60 flex-col gap-1 overflow-y-auto pr-1">
           {(tree.data ?? []).map((e) => (
-            <details key={e.id} open={value.entidades?.includes(e.id) || e.unidades.some((u) => value.unidades?.includes(u.id))}>
+            <details
+              key={e.id}
+              open={
+                value.entidades?.includes(e.id) ||
+                e.unidades.some((u) => value.unidades?.includes(u.id))
+              }
+            >
               <summary className="cursor-pointer text-sm font-medium hover:text-primary">
                 {e.sigla ? `${e.sigla} — ${e.nome}` : e.nome}
               </summary>

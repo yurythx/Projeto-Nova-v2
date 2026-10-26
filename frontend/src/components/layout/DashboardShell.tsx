@@ -18,7 +18,11 @@ import { NotificationHistoryProvider } from "@/components/notifications/Notifica
 import { ToastProvider } from "@/components/notifications/ToastProvider";
 import { RealtimeProvider, useRealtimeState } from "@/components/realtime/RealtimeProvider";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { getSidebarCollapsedSnapshot, setSidebarCollapsed, subscribeSidebarCollapsed } from "@/lib/layout/sidebarCollapsedStore";
+import {
+  getSidebarCollapsedSnapshot,
+  setSidebarCollapsed,
+  subscribeSidebarCollapsed,
+} from "@/lib/layout/sidebarCollapsedStore";
 import { PlataformaProvider } from "@/lib/plataforma/PlataformaProvider";
 import { CONNECTION_LABEL, CONNECTION_TONE } from "@/lib/websocket/connectionCopy";
 
@@ -28,7 +32,10 @@ function ConnectionIndicator() {
   const state = useRealtimeState();
   return (
     <span className="hidden items-center gap-2 text-xs text-muted lg:flex" aria-live="polite">
-      <span className={`h-2 w-2 rounded-full ${CONNECTION_TONE[state].dotClass}`} aria-hidden="true" />
+      <span
+        className={`h-2 w-2 rounded-full ${CONNECTION_TONE[state].dotClass}`}
+        aria-hidden="true"
+      />
       {CONNECTION_LABEL[state]}
     </span>
   );
@@ -46,7 +53,11 @@ function ShellBody({
   children: ReactNode;
 }) {
   const state = useRealtimeState();
-  const collapsed = useSyncExternalStore(subscribeSidebarCollapsed, getSidebarCollapsedSnapshot, () => initialCollapsed);
+  const collapsed = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarCollapsedSnapshot,
+    () => initialCollapsed,
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function toggle() {
@@ -81,13 +92,21 @@ function ShellBody({
           </>
         }
       />
-      <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
+      <Sidebar
+        collapsed={collapsed}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
       <div
         className={`flex min-h-dvh flex-col pt-[var(--topbar-h)] transition-[padding] duration-[var(--shell-motion)] ${
           collapsed ? "md:pl-[var(--sidebar-w-collapsed)]" : "md:pl-[var(--sidebar-w)]"
         }`}
       >
-        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 pb-10 pt-6 outline-none sm:px-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 px-4 pb-10 pt-6 outline-none sm:px-8"
+        >
           <ConnectionStateProvider value={state}>
             <ModuleGate>{children}</ModuleGate>
           </ConnectionStateProvider>
@@ -118,7 +137,11 @@ export function DashboardShell({
       <RealtimeProvider>
         <ToastProvider>
           <NotificationHistoryProvider>
-            <ShellBody userLabel={userLabel} initialTheme={initialTheme} initialCollapsed={initialCollapsed}>
+            <ShellBody
+              userLabel={userLabel}
+              initialTheme={initialTheme}
+              initialCollapsed={initialCollapsed}
+            >
               {children}
             </ShellBody>
           </NotificationHistoryProvider>

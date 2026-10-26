@@ -26,11 +26,16 @@ export default function PostPage() {
   const p = post.data;
 
   const transition = (action: "publish" | "unpublish" | "archive", msg: string) =>
-    run(() => apiClient.post<Post>(`v1/blog/posts/${p!.id}/${action}`), msg).then(() => post.mutate());
+    run(() => apiClient.post<Post>(`v1/blog/posts/${p!.id}/${action}`), msg).then(() =>
+      post.mutate(),
+    );
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link href="/gestao/blog" className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground">
+      <Link
+        href="/gestao/blog"
+        className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
+      >
         <ArrowLeft size={14} aria-hidden="true" /> Voltar para o painel de publicações
       </Link>
       <DataState loading={post.isLoading} error={post.error} empty={!p}>
@@ -38,8 +43,12 @@ export default function PostPage() {
           <article className="flex flex-col gap-4">
             <header className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                <Badge tone={p.kind === "comunicado" ? "info" : "neutral"}>{p.kind === "comunicado" ? "Comunicado" : "Notícia"}</Badge>
-                {p.status !== "published" && <Badge tone="warning">{p.status === "draft" ? "Rascunho" : "Arquivado"}</Badge>}
+                <Badge tone={p.kind === "comunicado" ? "info" : "neutral"}>
+                  {p.kind === "comunicado" ? "Comunicado" : "Notícia"}
+                </Badge>
+                {p.status !== "published" && (
+                  <Badge tone="warning">{p.status === "draft" ? "Rascunho" : "Arquivado"}</Badge>
+                )}
                 <PublicoBadge publico={p.publico} />
                 <span>{fmtDateTime(p.published_at ?? p.updated_at)}</span>
                 {p.author_name && <span>· {p.author_name}</span>}
@@ -50,21 +59,40 @@ export default function PostPage() {
 
             {manage && (
               <div className="flex flex-wrap gap-2 rounded-lg border border-surface-border p-3">
-                <Link href={`/gestao/blog/${encodeURIComponent(ref)}/editar`} className={buttonClass("secondary", "sm")}>
+                <Link
+                  href={`/gestao/blog/${encodeURIComponent(ref)}/editar`}
+                  className={buttonClass("secondary", "sm")}
+                >
                   <Pencil size={14} aria-hidden="true" className="mr-1" /> Editar
                 </Link>
                 {p.status !== "published" && (
-                  <Button size="sm" loading={pending} onClick={() => void transition("publish", "Publicado — evento blog.post.published emitido")}>
+                  <Button
+                    size="sm"
+                    loading={pending}
+                    onClick={() =>
+                      void transition("publish", "Publicado — evento blog.post.published emitido")
+                    }
+                  >
                     <Send size={14} aria-hidden="true" className="mr-1" /> Publicar
                   </Button>
                 )}
                 {p.status === "published" && (
-                  <Button variant="secondary" size="sm" loading={pending} onClick={() => void transition("unpublish", "Voltou para rascunho")}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    loading={pending}
+                    onClick={() => void transition("unpublish", "Voltou para rascunho")}
+                  >
                     <Undo2 size={14} aria-hidden="true" className="mr-1" /> Despublicar
                   </Button>
                 )}
                 {p.status !== "archived" && (
-                  <Button variant="secondary" size="sm" loading={pending} onClick={() => void transition("archive", "Arquivado")}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    loading={pending}
+                    onClick={() => void transition("archive", "Arquivado")}
+                  >
                     <Archive size={14} aria-hidden="true" className="mr-1" /> Arquivar
                   </Button>
                 )}
@@ -74,7 +102,12 @@ export default function PostPage() {
                   title="Excluir publicação?"
                   description="A exclusão é definitiva e fica registrada na auditoria."
                   confirmLabel="Excluir"
-                  onConfirm={() => run(() => apiClient.delete(`v1/blog/posts/${p.id}`), "Publicação excluída").then(() => router.push("/blog"))}
+                  onConfirm={() =>
+                    run(
+                      () => apiClient.delete(`v1/blog/posts/${p.id}`),
+                      "Publicação excluída",
+                    ).then(() => router.push("/blog"))
+                  }
                 >
                   <Trash2 size={14} aria-hidden="true" className="mr-1" /> Excluir
                 </ConfirmButton>

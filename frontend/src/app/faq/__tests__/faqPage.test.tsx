@@ -13,12 +13,17 @@ describe("FaqPage", () => {
   it("renderiza o cabeçalho, categorias e perguntas frequentes", () => {
     render(<FaqPage />);
 
-    expect(screen.getByRole("heading", { name: "Perguntas Frequentes (FAQ)", level: 1 })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Perguntas Frequentes (FAQ)", level: 1 }),
+    ).toBeInTheDocument();
     expect(screen.getByText("O projeto")).toBeInTheDocument();
     expect(screen.getByText("O que é o Projeto Nova?")).toBeInTheDocument();
     expect(screen.getByText("Incidente e requisição")).toBeInTheDocument();
     expect(screen.getAllByText(/^Base: /).length).toBeGreaterThan(0);
-    expect(screen.getByRole("link", { name: /sobre o projeto nova/i })).toHaveAttribute("href", "/sobre");
+    expect(screen.getByRole("link", { name: /sobre o projeto nova/i })).toHaveAttribute(
+      "href",
+      "/sobre",
+    );
     expect(screen.getByText("Ainda tem dúvidas?")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /entrar/i })).toBeInTheDocument();
   });

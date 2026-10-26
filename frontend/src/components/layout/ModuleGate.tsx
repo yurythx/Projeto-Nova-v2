@@ -14,7 +14,13 @@ import type { ModuleStatus } from "@/lib/plataforma/types";
  * aqui (Configurações tem abas próprias por permissão). */
 export function moduleForPath(modules: ModuleStatus[], pathname: string): ModuleStatus | undefined {
   return modules
-    .filter((m) => !m.core && m.route && !m.route.startsWith("/configuracao") && (pathname === m.route || pathname.startsWith(m.route + "/")))
+    .filter(
+      (m) =>
+        !m.core &&
+        m.route &&
+        !m.route.startsWith("/configuracao") &&
+        (pathname === m.route || pathname.startsWith(m.route + "/")),
+    )
     .sort((a, b) => b.route.length - a.route.length)[0];
 }
 
@@ -31,7 +37,10 @@ export function ModuleGate({ children }: { children: ReactNode }) {
 
   const blocked = mod.configured && mod.blocked_by.length > 0;
   return (
-    <div role="status" className="mx-auto mt-10 flex max-w-lg flex-col items-center gap-3 rounded-xl border border-dashed border-surface-border p-10 text-center">
+    <div
+      role="status"
+      className="mx-auto mt-10 flex max-w-lg flex-col items-center gap-3 rounded-xl border border-dashed border-surface-border p-10 text-center"
+    >
       <PowerOff size={32} aria-hidden="true" className="text-muted" />
       <h1 className="text-xl font-semibold">{mod.name} está desativado</h1>
       <p className="text-sm text-muted">
@@ -40,7 +49,10 @@ export function ModuleGate({ children }: { children: ReactNode }) {
           : "Este módulo foi desativado pela administração da plataforma e está temporariamente indisponível."}
       </p>
       {can("modules:manage") && (
-        <Link href="/configuracao/modulos" className="text-sm font-semibold text-primary hover:underline">
+        <Link
+          href="/configuracao/modulos"
+          className="text-sm font-semibold text-primary hover:underline"
+        >
           Gerenciar módulos →
         </Link>
       )}

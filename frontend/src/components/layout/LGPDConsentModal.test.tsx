@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 let sessionStatus: "authenticated" | "unauthenticated" | "loading" = "unauthenticated";
 vi.mock("next-auth/react", () => ({ useSession: () => ({ status: sessionStatus }) }));
-vi.mock("@/components/branding/BrandingContext", () => ({ useBranding: () => ({ branding: { appName: "Projeto-nova-v2", orgName: "Órgão" } }) }));
+vi.mock("@/components/branding/BrandingContext", () => ({
+  useBranding: () => ({ branding: { appName: "Projeto-nova-v2", orgName: "Órgão" } }),
+}));
 
 const get = vi.fn();
 const post = vi.fn();
@@ -38,7 +40,10 @@ describe("LGPDConsentModal", () => {
     render(<LGPDConsentModal />);
     await flush();
     await userEvent.click(screen.getByRole("button", { name: /Concordar/ }));
-    expect(publicPost).toHaveBeenCalledWith("v1/lgpd/accept-anon", expect.objectContaining({ term_version: "v1.0.0-2026" }));
+    expect(publicPost).toHaveBeenCalledWith(
+      "v1/lgpd/accept-anon",
+      expect.objectContaining({ term_version: "v1.0.0-2026" }),
+    );
     expect(post).not.toHaveBeenCalled();
     expect(localStorage.getItem("nova_lgpd_consent")).toBe("v1.0.0-2026");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -66,7 +71,9 @@ describe("LGPDConsentModal", () => {
   it("falha ao registrar: o modal continua e explica", async () => {
     sessionStatus = "unauthenticated";
     const { ApiError } = await import("@/lib/api/client");
-    publicPost.mockRejectedValue(new ApiError(503, "DEPENDENCY_UNAVAILABLE", "serviço indisponível no momento"));
+    publicPost.mockRejectedValue(
+      new ApiError(503, "DEPENDENCY_UNAVAILABLE", "serviço indisponível no momento"),
+    );
     render(<LGPDConsentModal />);
     await flush();
     await userEvent.click(screen.getByRole("button", { name: /Concordar/ }));

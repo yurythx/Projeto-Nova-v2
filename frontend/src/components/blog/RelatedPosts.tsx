@@ -11,9 +11,7 @@ interface RelatedPostsProps {
 
 export function RelatedPosts({ currentSlug, posts }: RelatedPostsProps) {
   // Filtra o post atual e pega até 3 posts relevantes
-  const related = posts
-    .filter((p) => p.slug !== currentSlug)
-    .slice(0, 3);
+  const related = posts.filter((p) => p.slug !== currentSlug).slice(0, 3);
 
   if (related.length === 0) return null;
 
@@ -82,9 +80,7 @@ export function RelatedPosts({ currentSlug, posts }: RelatedPostsProps) {
               </h3>
 
               {post.summary && (
-                <p className="mt-1.5 line-clamp-2 text-xs text-muted">
-                  {post.summary}
-                </p>
+                <p className="mt-1.5 line-clamp-2 text-xs text-muted">{post.summary}</p>
               )}
             </Link>
           );

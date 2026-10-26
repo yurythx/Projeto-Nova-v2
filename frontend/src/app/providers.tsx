@@ -13,7 +13,13 @@ import { AccessibilityShortcuts } from "@/components/layout/AccessibilityShortcu
 // - BrandingProvider (white-label + Alto Contraste e escala de fonte e-MAG);
 // - AccessibilityShortcuts (Alt+1..4 em qualquer página);
 // - VLibrasWidget (widget oficial de Libras em toda página).
-export function Providers({ children, initialBranding }: { children: ReactNode; initialBranding?: SystemBrandingConfig }) {
+export function Providers({
+  children,
+  initialBranding,
+}: {
+  children: ReactNode;
+  initialBranding?: SystemBrandingConfig;
+}) {
   return (
     <SessionProvider>
       <BrandingProvider initialBranding={initialBranding}>

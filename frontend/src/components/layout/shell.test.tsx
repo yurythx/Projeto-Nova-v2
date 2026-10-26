@@ -5,7 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BrandingProvider, useBranding } from "@/components/branding/BrandingContext";
 import { DEFAULT_BRANDING } from "@/components/branding/brandingConfig";
-import { identityRoutes, moduleStatus, mockBackend, mockWebSocket, wsTicketRoute } from "@/test/backend";
+import {
+  identityRoutes,
+  moduleStatus,
+  mockBackend,
+  mockWebSocket,
+  wsTicketRoute,
+} from "@/test/backend";
 import { resetNavigation, router } from "@/test/navigation";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
@@ -15,7 +21,13 @@ vi.mock("next-auth/react", () => ({
   signOut: vi.fn(),
   SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
-vi.mock("next/script", () => ({ default: ({ onLoad }: { onLoad?: () => void }) => <button type="button" onClick={onLoad}>script vlibras</button> }));
+vi.mock("next/script", () => ({
+  default: ({ onLoad }: { onLoad?: () => void }) => (
+    <button type="button" onClick={onLoad}>
+      script vlibras
+    </button>
+  ),
+}));
 
 import { Providers } from "@/app/providers";
 import { AccessibilityShortcuts, focusSkipTarget } from "./AccessibilityShortcuts";
@@ -26,7 +38,15 @@ import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
 import { Section } from "@/components/ui/Section";
 import { VLibrasWidget } from "@/components/accessibility/VLibrasWidget";
 
-const BRAND = { ...DEFAULT_BRANDING, appName: "Portal X", orgName: "Município X", appDescription: "Serviços ao cidadão", supportEmail: "a@x.gov.br", supportPhone: "3333", supportHours: "8h-17h" };
+const BRAND = {
+  ...DEFAULT_BRANDING,
+  appName: "Portal X",
+  orgName: "Município X",
+  appDescription: "Serviços ao cidadão",
+  supportEmail: "a@x.gov.br",
+  supportPhone: "3333",
+  supportHours: "8h-17h",
+};
 
 function withBrand(ui: React.ReactNode, b = BRAND) {
   return <BrandingProvider initialBranding={b}>{ui}</BrandingProvider>;
@@ -37,7 +57,11 @@ describe("DashboardShell", () => {
 
   it("cabeçalho, busca global, menu, conexão em tempo real e rodapé", async () => {
     mockWebSocket();
-    mockBackend({ ...identityRoutes({}, [moduleStatus("blog", { name: "Blog" })]), ...wsTicketRoute, "GET v1/lgpd/consent": { data: { accepted: true } } });
+    mockBackend({
+      ...identityRoutes({}, [moduleStatus("blog", { name: "Blog" })]),
+      ...wsTicketRoute,
+      "GET v1/lgpd/consent": { data: { accepted: true } },
+    });
     render(
       withBrand(
         <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
@@ -62,7 +86,16 @@ describe("DashboardShell", () => {
     // alternar o menu: em tela larga recolhe a barra lateral
     const toggle = screen.getByRole("button", { name: "Alternar menu de navegação" });
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    const mm = vi.spyOn(window, "matchMedia").mockImplementation((q: string) => ({ matches: true, media: q, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false }));
+    const mm = vi.spyOn(window, "matchMedia").mockImplementation((q: string) => ({
+      matches: true,
+      media: q,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent: () => false,
+    }));
     await userEvent.click(toggle);
     await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
     await userEvent.click(toggle);
@@ -78,45 +111,104 @@ describe("PublicShell", () => {
 
   it("esconde links de plugins desativados; visitante entra, logado vai ao painel", async () => {
     session.status = "unauthenticated";
-    const f = vi.fn(async () => new Response(JSON.stringify({ data: [{ key: "catalog", enabled: true }, { key: "calendar", enabled: false }], error: null })));
+    const f = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              { key: "catalog", enabled: true },
+              { key: "calendar", enabled: false },
+            ],
+            error: null,
+          }),
+        ),
+    );
     vi.stubGlobal("fetch", f);
-    const { unmount } = render(withBrand(<PublicShell><p>página</p></PublicShell>));
+    const { unmount } = render(
+      withBrand(
+        <PublicShell>
+          <p>página</p>
+        </PublicShell>,
+      ),
+    );
     const nav = screen.getByRole("navigation", { name: "Menu principal" });
-    await waitFor(() => expect(within(nav).queryByRole("link", { name: "Agenda" })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(within(nav).queryByRole("link", { name: "Agenda" })).not.toBeInTheDocument(),
+    );
     expect(within(nav).getByRole("link", { name: "Serviços" })).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Sobre" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Entrar" }).closest("a")).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("button", { name: "Entrar" }).closest("a")).toHaveAttribute(
+      "href",
+      "/login",
+    );
     unmount();
 
     session.status = "authenticated";
-    f.mockImplementation(async () => { throw new Error("fora"); });
-    render(withBrand(<PublicShell><p>página</p></PublicShell>));
-    expect(screen.getByRole("button", { name: "Acessar o painel" }).closest("a")).toHaveAttribute("href", "/dashboard");
+    f.mockImplementation(async () => {
+      throw new Error("fora");
+    });
+    render(
+      withBrand(
+        <PublicShell>
+          <p>página</p>
+        </PublicShell>,
+      ),
+    );
+    expect(screen.getByRole("button", { name: "Acessar o painel" }).closest("a")).toHaveAttribute(
+      "href",
+      "/dashboard",
+    );
     // sem saber o estado dos módulos, esconde os de plugin
-    await waitFor(() => expect(screen.queryByRole("link", { name: "Serviços" })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole("link", { name: "Serviços" })).not.toBeInTheDocument(),
+    );
     vi.unstubAllGlobals();
   });
 
   it("com o estado vindo do servidor, plugin desativado nunca pisca no menu", async () => {
     session.status = "unauthenticated";
     let answer: (r: Response) => void = () => {};
-    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((r) => (answer = r))));
-    render(withBrand(<PublicShell initialEnabled={{ catalog: false, directory: false, calendar: false, contact: true }}><p>página</p></PublicShell>));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((r) => (answer = r))),
+    );
+    render(
+      withBrand(
+        <PublicShell
+          initialEnabled={{ catalog: false, directory: false, calendar: false, contact: true }}
+        >
+          <p>página</p>
+        </PublicShell>,
+      ),
+    );
     const nav = screen.getByRole("navigation", { name: "Menu principal" });
     // 1º render, antes de qualquer resposta do fetch do navegador
     expect(within(nav).queryByRole("link", { name: "Serviços" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Agenda" })).not.toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Contato" })).toBeInTheDocument();
     // o fetch do navegador atualiza um estado em cache no servidor
-    await act(async () => answer(new Response(JSON.stringify({ data: [{ key: "catalog", enabled: true }], error: null }))));
+    await act(async () =>
+      answer(
+        new Response(JSON.stringify({ data: [{ key: "catalog", enabled: true }], error: null })),
+      ),
+    );
     expect(await within(nav).findByRole("link", { name: "Serviços" })).toBeInTheDocument();
     vi.unstubAllGlobals();
   });
 
   it("sem estado inicial, links de plugin só aparecem depois do fetch", () => {
     session.status = "unauthenticated";
-    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
-    render(withBrand(<PublicShell><p>página</p></PublicShell>));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    render(
+      withBrand(
+        <PublicShell>
+          <p>página</p>
+        </PublicShell>,
+      ),
+    );
     const nav = screen.getByRole("navigation", { name: "Menu principal" });
     expect(within(nav).queryByRole("link", { name: "Serviços" })).not.toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Sobre" })).toBeInTheDocument();
@@ -132,7 +224,10 @@ describe("barra de acessibilidade e atalhos e-MAG", () => {
 
   it("alto contraste, fonte e atalhos Alt+1..4", async () => {
     session.status = "unauthenticated";
-    vi.stubGlobal("fetch", vi.fn(async () => new Response('{"data":[],"error":null}')));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response('{"data":[],"error":null}')),
+    );
     render(
       <Providers initialBranding={BRAND}>
         <PublicShell>
@@ -182,7 +277,10 @@ describe("barra de acessibilidade e atalhos e-MAG", () => {
 
 describe("componentes menores", () => {
   it("SectionTabs: índice só em match exato, demais por prefixo", () => {
-    const tabs = [{ href: "/configuracao", label: "Geral" }, { href: "/configuracao/perfis", label: "Perfis" }];
+    const tabs = [
+      { href: "/configuracao", label: "Geral" },
+      { href: "/configuracao/perfis", label: "Perfis" },
+    ];
     resetNavigation({}, "/configuracao/perfis/1");
     const { unmount } = render(<SectionTabs tabs={tabs} ariaLabel="Seções" />);
     expect(screen.getByRole("link", { name: "Perfis" })).toHaveAttribute("aria-current", "page");
@@ -193,12 +291,29 @@ describe("componentes menores", () => {
   });
 
   it("Section recolhível", async () => {
-    render(<Section title="Dados" description="desc" collapsible defaultExpanded={false} action={<span>ação</span>}><p>corpo</p></Section>);
+    render(
+      <Section
+        title="Dados"
+        description="desc"
+        collapsible
+        defaultExpanded={false}
+        action={<span>ação</span>}
+      >
+        <p>corpo</p>
+      </Section>,
+    );
     expect(screen.queryByText("corpo")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: 'Expandir seção "Dados"' }));
     expect(screen.getByText("corpo")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: 'Minimizar seção "Dados"' })).toHaveAttribute("aria-expanded", "true");
-    render(<Section title="Fixa"><p>sempre</p></Section>);
+    expect(screen.getByRole("button", { name: 'Minimizar seção "Dados"' })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    render(
+      <Section title="Fixa">
+        <p>sempre</p>
+      </Section>,
+    );
     expect(screen.getByText("sempre")).toBeInTheDocument();
   });
 
@@ -207,7 +322,11 @@ describe("componentes menores", () => {
     window.VLibras = { Widget: Widget as unknown as new (url: string) => void };
     render(<VLibrasWidget />);
     expect(Widget).toHaveBeenCalledWith("https://vlibras.gov.br/app");
-    window.VLibras = { Widget: vi.fn(() => { throw new Error("x"); }) as unknown as new (url: string) => void };
+    window.VLibras = {
+      Widget: vi.fn(() => {
+        throw new Error("x");
+      }) as unknown as new (url: string) => void,
+    };
     await userEvent.click(screen.getByRole("button", { name: "script vlibras" }));
     delete window.VLibras;
   });
@@ -217,7 +336,10 @@ describe("componentes menores", () => {
     const { unmount } = render(withBrand(<PwaInstallPrompt />));
     expect(screen.queryByText(/Instalar o/)).not.toBeInTheDocument();
     const prompt = vi.fn(async () => {});
-    const ev = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), { prompt, userChoice: Promise.resolve({ outcome: "accepted" }) });
+    const ev = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
+      prompt,
+      userChoice: Promise.resolve({ outcome: "accepted" }),
+    });
     act(() => void window.dispatchEvent(ev));
     expect(ev.defaultPrevented).toBe(true);
     expect(await screen.findByText("Instalar o Portal X")).toBeInTheDocument();
@@ -225,25 +347,61 @@ describe("componentes menores", () => {
     expect(prompt).toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByText(/Instalar o/)).not.toBeInTheDocument());
 
-    act(() => void window.dispatchEvent(Object.assign(new Event("beforeinstallprompt"), { prompt, userChoice: Promise.resolve({ outcome: "dismissed" }) })));
+    act(
+      () =>
+        void window.dispatchEvent(
+          Object.assign(new Event("beforeinstallprompt"), {
+            prompt,
+            userChoice: Promise.resolve({ outcome: "dismissed" }),
+          }),
+        ),
+    );
     act(() => void window.dispatchEvent(new Event("appinstalled")));
     expect(screen.queryByText(/Instalar o/)).not.toBeInTheDocument();
 
-    act(() => void window.dispatchEvent(Object.assign(new Event("beforeinstallprompt"), { prompt, userChoice: Promise.resolve({ outcome: "dismissed" }) })));
+    act(
+      () =>
+        void window.dispatchEvent(
+          Object.assign(new Event("beforeinstallprompt"), {
+            prompt,
+            userChoice: Promise.resolve({ outcome: "dismissed" }),
+          }),
+        ),
+    );
     await userEvent.click(await screen.findByRole("button", { name: "Dispensar" }));
     expect(localStorage.getItem("nova-pwa-install-dismissed")).toBe("1");
     unmount();
     // já dispensado: nunca mais aparece
     render(withBrand(<PwaInstallPrompt />));
-    act(() => void window.dispatchEvent(Object.assign(new Event("beforeinstallprompt"), { prompt, userChoice: Promise.resolve({ outcome: "accepted" }) })));
+    act(
+      () =>
+        void window.dispatchEvent(
+          Object.assign(new Event("beforeinstallprompt"), {
+            prompt,
+            userChoice: Promise.resolve({ outcome: "accepted" }),
+          }),
+        ),
+    );
     expect(screen.queryByText(/Instalar o/)).not.toBeInTheDocument();
   });
 
   it("PWA com storage bloqueado não quebra", async () => {
-    const get = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("bloqueado"); });
-    const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("bloqueado"); });
+    const get = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("bloqueado");
+    });
+    const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("bloqueado");
+    });
     render(withBrand(<PwaInstallPrompt />));
-    act(() => void window.dispatchEvent(Object.assign(new Event("beforeinstallprompt"), { prompt: vi.fn(), userChoice: Promise.resolve({ outcome: "accepted" }) })));
+    act(
+      () =>
+        void window.dispatchEvent(
+          Object.assign(new Event("beforeinstallprompt"), {
+            prompt: vi.fn(),
+            userChoice: Promise.resolve({ outcome: "accepted" }),
+          }),
+        ),
+    );
     await userEvent.click(await screen.findByRole("button", { name: "Dispensar" }));
     expect(screen.queryByText(/Instalar o/)).not.toBeInTheDocument();
     get.mockRestore();

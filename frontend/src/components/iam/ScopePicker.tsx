@@ -39,17 +39,33 @@ export function ScopePicker({
     const departamentos = departamentosGeridos(me, tree, permission).departamentos;
     const entidades = new Set(
       (me?.scopes ?? [])
-        .filter((s) => s.entidade_id && !s.unidade_id && !s.departamento_id && hasPermission(s.permissions, permission))
+        .filter(
+          (s) =>
+            s.entidade_id &&
+            !s.unidade_id &&
+            !s.departamento_id &&
+            hasPermission(s.permissions, permission),
+        )
         .map((s) => s.entidade_id!),
     );
     return { entidades, unidades: unidades.unidades, departamentos };
   }, [me, tree, permission]);
 
   const alcancaUnidade = (u: OrgTree["unidades"][number]) =>
-    !alcance || alcance.unidades.has(u.id) || u.departamentos.some((d) => alcance.departamentos.has(d.id));
-  const entidades = (tree ?? []).filter((e) => !alcance || alcance.entidades.has(e.id) || e.unidades.some(alcancaUnidade));
-  const entidade = useMemo(() => tree?.find((e) => e.id === value.entidade_id), [tree, value.entidade_id]);
-  const unidade = useMemo(() => entidade?.unidades.find((u) => u.id === value.unidade_id), [entidade, value.unidade_id]);
+    !alcance ||
+    alcance.unidades.has(u.id) ||
+    u.departamentos.some((d) => alcance.departamentos.has(d.id));
+  const entidades = (tree ?? []).filter(
+    (e) => !alcance || alcance.entidades.has(e.id) || e.unidades.some(alcancaUnidade),
+  );
+  const entidade = useMemo(
+    () => tree?.find((e) => e.id === value.entidade_id),
+    [tree, value.entidade_id],
+  );
+  const unidade = useMemo(
+    () => entidade?.unidades.find((u) => u.id === value.unidade_id),
+    [entidade, value.unidade_id],
+  );
   const unidadeObrigatoria = !!alcance && !!entidade && !alcance.entidades.has(entidade.id);
   const departamentoObrigatorio = !!alcance && !!unidade && !alcance.unidades.has(unidade.id);
   const entidadeObrigatoria = required || !!alcance;
@@ -64,7 +80,10 @@ export function ScopePicker({
         required={entidadeObrigatoria}
         value={value.entidade_id ?? ""}
         onChange={(e) => onChange({ entidade_id: e.target.value || undefined })}
-        options={entidades.map((e) => ({ value: e.id, label: e.sigla ? `${e.sigla} — ${e.nome}` : e.nome }))}
+        options={entidades.map((e) => ({
+          value: e.id,
+          label: e.sigla ? `${e.sigla} — ${e.nome}` : e.nome,
+        }))}
       />
       <Select
         id={`${idPrefix}-unidade`}
@@ -73,8 +92,12 @@ export function ScopePicker({
         required={unidadeObrigatoria}
         disabled={!entidade}
         value={value.unidade_id ?? ""}
-        onChange={(e) => onChange({ entidade_id: value.entidade_id, unidade_id: e.target.value || undefined })}
-        options={(entidade?.unidades ?? []).filter(alcancaUnidade).map((u) => ({ value: u.id, label: u.sigla ? `${u.sigla} — ${u.nome}` : u.nome }))}
+        onChange={(e) =>
+          onChange({ entidade_id: value.entidade_id, unidade_id: e.target.value || undefined })
+        }
+        options={(entidade?.unidades ?? [])
+          .filter(alcancaUnidade)
+          .map((u) => ({ value: u.id, label: u.sigla ? `${u.sigla} — ${u.nome}` : u.nome }))}
       />
       <Select
         id={`${idPrefix}-departamento`}
@@ -84,10 +107,16 @@ export function ScopePicker({
         disabled={!unidade}
         value={value.departamento_id ?? ""}
         onChange={(e) =>
-          onChange({ entidade_id: value.entidade_id, unidade_id: value.unidade_id, departamento_id: e.target.value || undefined })
+          onChange({
+            entidade_id: value.entidade_id,
+            unidade_id: value.unidade_id,
+            departamento_id: e.target.value || undefined,
+          })
         }
         options={(unidade?.departamentos ?? [])
-          .filter((d) => !alcance || alcance.unidades.has(unidade!.id) || alcance.departamentos.has(d.id))
+          .filter(
+            (d) => !alcance || alcance.unidades.has(unidade!.id) || alcance.departamentos.has(d.id),
+          )
           .map((d) => ({ value: d.id, label: d.sigla ? `${d.sigla} — ${d.nome}` : d.nome }))}
       />
     </fieldset>

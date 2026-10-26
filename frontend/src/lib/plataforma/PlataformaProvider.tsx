@@ -30,7 +30,10 @@ export function PlataformaProvider({ children }: { children: ReactNode }) {
   const modules = useApiQuery<ModuleStatus[]>("v1/system/modules", { refreshInterval: 30_000 });
 
   const can = useCallback((p: string) => hasPermission(me.data?.permissions, p), [me.data]);
-  const canGlobal = useCallback((p: string) => unidadesGeridas(me.data, undefined, p).global, [me.data]);
+  const canGlobal = useCallback(
+    (p: string) => unidadesGeridas(me.data, undefined, p).global,
+    [me.data],
+  );
   const enabled = useCallback(
     (key: string) => Boolean(modules.data?.find((m) => m.key === key)?.enabled),
     [modules.data],
@@ -55,7 +58,15 @@ export function usePlataforma(): PlataformaContextValue {
   const ctx = useContext(PlataformaContext);
   if (!ctx) {
     // Fora do provider (testes/telas públicas): nada permitido, nada ativo.
-    return { me: undefined, modules: [], loading: false, can: () => false, canGlobal: () => false, enabled: () => false, refreshModules: () => {} };
+    return {
+      me: undefined,
+      modules: [],
+      loading: false,
+      can: () => false,
+      canGlobal: () => false,
+      enabled: () => false,
+      refreshModules: () => {},
+    };
   }
   return ctx;
 }

@@ -48,7 +48,8 @@ export function SessionKeepAlive() {
       const t = Date.now();
       const left = expiresAt - t;
       if (left <= 0 || left > RENEW_WINDOW_MS) return;
-      if (!force && (t - lastActivity.current > IDLE_MS || t - lastAttempt.current < RETRY_MS)) return;
+      if (!force && (t - lastActivity.current > IDLE_MS || t - lastAttempt.current < RETRY_MS))
+        return;
       renewing.current = true;
       lastAttempt.current = t;
       try {
@@ -65,7 +66,8 @@ export function SessionKeepAlive() {
       lastActivity.current = Date.now();
       void renew();
     };
-    for (const e of ACTIVITY_EVENTS) window.addEventListener(e, onActivity, { passive: true, capture: true });
+    for (const e of ACTIVITY_EVENTS)
+      window.addEventListener(e, onActivity, { passive: true, capture: true });
     return () => {
       for (const e of ACTIVITY_EVENTS) window.removeEventListener(e, onActivity, { capture: true });
     };
@@ -108,7 +110,8 @@ export function SessionKeepAlive() {
         Sua sessão vai expirar por inatividade
       </p>
       <p id="sessao-expirando-texto" className="mt-1 text-sm text-muted">
-        Faltam <span className="font-mono tabular-nums">{mmss(left)}</span>. Depois disso será preciso entrar de novo.
+        Faltam <span className="font-mono tabular-nums">{mmss(left)}</span>. Depois disso será
+        preciso entrar de novo.
       </p>
       <div className="mt-3 flex justify-end">
         <Button

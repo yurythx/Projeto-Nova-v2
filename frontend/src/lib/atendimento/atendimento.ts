@@ -424,4 +424,3 @@ export interface ResumoApontamentosAtendimento {
   total_horas: number;
   apontamentos: ApontamentoAtendimento[];
 }
-

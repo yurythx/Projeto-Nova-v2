@@ -4,7 +4,12 @@ import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import "./globals.css";
 
-import { BRANDING_COOKIE, mergeServerBranding, parseBrandingCookie, tokensToCss } from "@/components/branding/brandingConfig";
+import {
+  BRANDING_COOKIE,
+  mergeServerBranding,
+  parseBrandingCookie,
+  tokensToCss,
+} from "@/components/branding/brandingConfig";
 import { THEME_COOKIE } from "@/lib/prefs/cookies";
 import { publicGetOr } from "@/lib/api/publicServer";
 import { BRANDING_TAG } from "@/lib/branding/tag";
@@ -87,7 +92,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Identidade da organização (API, cache de 60s) + preferências e-MAG do
   // visitante (cookie) — aplicadas em <html> ANTES do 1º paint.
   const api = await publicGetOr<Branding | null>("branding", null, 60, [BRANDING_TAG]);
-  const branding = mergeServerBranding(api, parseBrandingCookie(cookieStore.get(BRANDING_COOKIE)?.value));
+  const branding = mergeServerBranding(
+    api,
+    parseBrandingCookie(cookieStore.get(BRANDING_COOKIE)?.value),
+  );
   const tokenCss = tokensToCss(branding.tokens);
 
   return (

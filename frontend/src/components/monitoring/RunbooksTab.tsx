@@ -51,14 +51,46 @@ export function RunbooksTab() {
   ];
 
   const topologyServices = [
-    { name: "Caddy Reverse Proxy", ports: "80, 443 (HTTP/2 & HTTP/3)", desc: "TLS automático, roteamento de SNI e terminação HTTPS com CA corporativa." },
-    { name: "Next.js 16 BFF & Frontend", ports: "3000 (interno) / 127.0.0.1:3010", desc: "SSR, React Compiler, PWA, Service Worker e Middleware de segurança." },
-    { name: "Go 1.26 Backend REST Core", ports: "8000 (interno) / 8443 (HTTPS)", desc: "Clean Architecture, Chi router, JWT local, autenticação e WebSocket /ws." },
-    { name: "PostgreSQL 16 Engine", ports: "5432 (interno)", desc: "Banco relacional ACID, Goose migrations e fila transacional de Outbox." },
-    { name: "MinIO S3 Storage", ports: "9000 (interno) / 9443 (HTTPS)", desc: "Bucket WORM de auditoria e repositório de documentos/anexos." },
-    { name: "Redis 7.4 Alpine", ports: "6379 (interno)", desc: "Cache IAM, lockout progressivo de login e rate limiting de endpoints." },
-    { name: "RabbitMQ 3.13 AMQP", ports: "5672 (AMQP) / 15672 (Admin)", desc: "Message broker orientado a eventos para workers assíncronos." },
-    { name: "Keycloak 26 OIDC", ports: "8080 (interno) / 8543 (HTTPS)", desc: "Single Sign-On (SSO) corporativo e emissor de tokens federados." },
+    {
+      name: "Caddy Reverse Proxy",
+      ports: "80, 443 (HTTP/2 & HTTP/3)",
+      desc: "TLS automático, roteamento de SNI e terminação HTTPS com CA corporativa.",
+    },
+    {
+      name: "Next.js 16 BFF & Frontend",
+      ports: "3000 (interno) / 127.0.0.1:3010",
+      desc: "SSR, React Compiler, PWA, Service Worker e Middleware de segurança.",
+    },
+    {
+      name: "Go 1.26 Backend REST Core",
+      ports: "8000 (interno) / 8443 (HTTPS)",
+      desc: "Clean Architecture, Chi router, JWT local, autenticação e WebSocket /ws.",
+    },
+    {
+      name: "PostgreSQL 16 Engine",
+      ports: "5432 (interno)",
+      desc: "Banco relacional ACID, Goose migrations e fila transacional de Outbox.",
+    },
+    {
+      name: "MinIO S3 Storage",
+      ports: "9000 (interno) / 9443 (HTTPS)",
+      desc: "Bucket WORM de auditoria e repositório de documentos/anexos.",
+    },
+    {
+      name: "Redis 7.4 Alpine",
+      ports: "6379 (interno)",
+      desc: "Cache IAM, lockout progressivo de login e rate limiting de endpoints.",
+    },
+    {
+      name: "RabbitMQ 3.13 AMQP",
+      ports: "5672 (AMQP) / 15672 (Admin)",
+      desc: "Message broker orientado a eventos para workers assíncronos.",
+    },
+    {
+      name: "Keycloak 26 OIDC",
+      ports: "8080 (interno) / 8543 (HTTPS)",
+      desc: "Single Sign-On (SSO) corporativo e emissor de tokens federados.",
+    },
   ];
 
   return (
@@ -71,7 +103,9 @@ export function RunbooksTab() {
               <ShieldAlert size={20} />
             </span>
             <div>
-              <CardTitle className="text-xl">Disaster Recovery (DR) & Procedimentos de Restauração</CardTitle>
+              <CardTitle className="text-xl">
+                Disaster Recovery (DR) & Procedimentos de Restauração
+              </CardTitle>
               <CardDescription>
                 Diretrizes de recuperação a frio (Cold Standby) e continuidade do Projeto Nova.
               </CardDescription>
@@ -83,36 +117,53 @@ export function RunbooksTab() {
           {/* Status do DR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Diretório de Snapshots</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Diretório de Snapshots
+              </span>
               <p className="font-mono text-sm font-bold text-foreground mt-1">/root/backups/nova</p>
               <span className="text-xs text-muted-foreground">Isolado com umask 077</span>
             </div>
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Agendamento Diário</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Agendamento Diário
+              </span>
               <p className="text-sm font-bold text-foreground mt-1">02:30 AM (Madrugada)</p>
-              <span className="text-xs text-muted-foreground">Configurado em /etc/cron.d/nova-backup</span>
+              <span className="text-xs text-muted-foreground">
+                Configurado em /etc/cron.d/nova-backup
+              </span>
             </div>
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Política de Retenção</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Política de Retenção
+              </span>
               <p className="text-sm font-bold text-foreground mt-1">7 Dias Locais</p>
-              <span className="text-xs text-muted-foreground">Limpeza automática de snapshots antigos</span>
+              <span className="text-xs text-muted-foreground">
+                Limpeza automática de snapshots antigos
+              </span>
             </div>
             <div className="p-3.5 rounded-lg border border-surface-border bg-surface-elevated/40">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Integridade Criptográfica</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Integridade Criptográfica
+              </span>
               <p className="text-sm font-bold text-success mt-1">SHA-256 Verificado</p>
-              <span className="text-xs text-muted-foreground">Checksum automático de todos os arquivos</span>
+              <span className="text-xs text-muted-foreground">
+                Checksum automático de todos os arquivos
+              </span>
             </div>
           </div>
 
           {/* Comandos Rápidos */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Comandos Operacionais de Produção</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+              Comandos Operacionais de Produção
+            </h3>
 
             {/* Comando 1: Verificação sem alterar banco */}
             <div className="flex flex-col gap-1.5 p-3 rounded-lg border border-surface-border bg-surface">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Archive size={14} className="text-primary" /> 1. Testar Restauração sem Alterar Produção (--verify)
+                  <Archive size={14} className="text-primary" /> 1. Testar Restauração sem Alterar
+                  Produção (--verify)
                 </span>
                 <Button
                   variant="ghost"
@@ -120,17 +171,22 @@ export function RunbooksTab() {
                   onClick={() =>
                     copyToClipboard(
                       "./scripts/restore.sh --verify $(ls -td /root/backups/nova/* | head -1)",
-                      "cmd-verify"
+                      "cmd-verify",
                     )
                   }
                   className="h-7 px-2 text-xs gap-1"
                 >
-                  {copiedCmd === "cmd-verify" ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+                  {copiedCmd === "cmd-verify" ? (
+                    <Check size={12} className="text-success" />
+                  ) : (
+                    <Copy size={12} />
+                  )}
                   {copiedCmd === "cmd-verify" ? "Copiado!" : "Copiar"}
                 </Button>
               </div>
               <p className="text-xs text-muted">
-                Restaura o último dump num banco temporário (<code>nova_restore_check</code>), confere contagens de usuários, unidades e auditoria e descarta o temporário.
+                Restaura o último dump num banco temporário (<code>nova_restore_check</code>),
+                confere contagens de usuários, unidades e auditoria e descarta o temporário.
               </p>
               <pre className="p-2 rounded bg-surface-elevated font-mono text-xs text-foreground overflow-x-auto">
                 ./scripts/restore.sh --verify $(ls -td /root/backups/nova/* | head -1)
@@ -149,17 +205,22 @@ export function RunbooksTab() {
                   onClick={() =>
                     copyToClipboard(
                       "./scripts/restore.sh --yes /root/backups/nova/<DATA-HORA> --minio",
-                      "cmd-restore"
+                      "cmd-restore",
                     )
                   }
                   className="h-7 px-2 text-xs gap-1"
                 >
-                  {copiedCmd === "cmd-restore" ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+                  {copiedCmd === "cmd-restore" ? (
+                    <Check size={12} className="text-success" />
+                  ) : (
+                    <Copy size={12} />
+                  )}
                   {copiedCmd === "cmd-restore" ? "Copiado!" : "Copiar"}
                 </Button>
               </div>
               <p className="text-xs text-muted">
-                Para a API e workers, substitui o banco pelo backup e sobrepõe os objetos de armazenamento S3.
+                Para a API e workers, substitui o banco pelo backup e sobrepõe os objetos de
+                armazenamento S3.
               </p>
               <pre className="p-2 rounded bg-surface-elevated font-mono text-xs text-danger overflow-x-auto">
                 ./scripts/restore.sh --yes /root/backups/nova/&lt;DATA-HORA&gt; --minio
@@ -177,7 +238,9 @@ export function RunbooksTab() {
               <Users size={20} />
             </span>
             <div>
-              <CardTitle className="text-xl">Matriz de Identidade & Acessos Homologados (IAM)</CardTitle>
+              <CardTitle className="text-xl">
+                Matriz de Identidade & Acessos Homologados (IAM)
+              </CardTitle>
               <CardDescription>
                 Perfis do núcleo (IAM e Auditoria), com escopo por órgão (ADR 013).
               </CardDescription>
@@ -212,7 +275,9 @@ export function RunbooksTab() {
                         {p.profiles}
                       </span>
                     </td>
-                    <td className="py-2.5 font-mono text-[11px] text-muted-foreground">{p.permissions}</td>
+                    <td className="py-2.5 font-mono text-[11px] text-muted-foreground">
+                      {p.permissions}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -230,7 +295,9 @@ export function RunbooksTab() {
               <Layers size={18} className="text-primary" />
               <CardTitle className="text-base">Topologia da Infraestrutura Docker</CardTitle>
             </div>
-            <CardDescription className="text-xs">Portas, redes internas e finalidade de cada serviço da stack</CardDescription>
+            <CardDescription className="text-xs">
+              Portas, redes internas e finalidade de cada serviço da stack
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="overflow-x-auto">
@@ -263,14 +330,19 @@ export function RunbooksTab() {
               <FileCode2 size={18} className="text-primary" />
               <CardTitle className="text-base">Contrato da API</CardTitle>
             </div>
-            <CardDescription className="text-xs">Onde está o contrato desta instalação</CardDescription>
+            <CardDescription className="text-xs">
+              Onde está o contrato desta instalação
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm leading-relaxed text-muted">
-              O contrato do Projeto Nova está na API desta instalação, em /docs e /openapi.json. Não há um painel em outro endereço, nem um coletor Prometheus publicado aqui.
+              O contrato do Projeto Nova está na API desta instalação, em /docs e /openapi.json. Não
+              há um painel em outro endereço, nem um coletor Prometheus publicado aqui.
             </p>
             <div className="p-3 rounded-lg bg-surface-elevated/40 border border-surface-border text-xs text-muted">
-              <span className="font-semibold text-foreground">Nota:</span> a leitura protegida da API usa o token da sessão, emitido pelo login local ou pelo Keycloak quando ele está configurado.
+              <span className="font-semibold text-foreground">Nota:</span> a leitura protegida da
+              API usa o token da sessão, emitido pelo login local ou pelo Keycloak quando ele está
+              configurado.
             </div>
           </CardContent>
         </Card>

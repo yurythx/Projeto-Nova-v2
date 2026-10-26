@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
-import { NomeClicavel, Quadro, colunasEmOrdem, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
+import {
+  NomeClicavel,
+  Quadro,
+  colunasEmOrdem,
+  type ColunaFaixa,
+  type ControlesColuna,
+} from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
 import {
   relogioEmFoco,
@@ -16,11 +22,7 @@ import {
 } from "@/lib/atendimento/atendimento";
 
 type Coluna =
-  | "aberto"
-  | "em_atendimento"
-  | "aguardando_servidor"
-  | "aguardando_terceiro"
-  | "concluida";
+  "aberto" | "em_atendimento" | "aguardando_servidor" | "aguardando_terceiro" | "concluida";
 
 /** A mesma numeração no quadro e na lista, a partir de zero. O quadro fica
  * no fluxo em andamento; a lista segue com encerradas (5) e canceladas (6). */
@@ -119,8 +121,10 @@ export function Kanban({
       render={(s, vista) => {
         const moves = (s.proximos ?? []).filter((p) => p !== "cancelado");
         const foco = s.prazo ? relogioEmFoco(s.prazo) : null;
-        const isVencido = foco?.relogio.situacao === "vencido" || foco?.relogio.situacao === "descumprido";
-        const isCritico = foco?.relogio.situacao === "critico" || foco?.relogio.situacao === "atencao";
+        const isVencido =
+          foco?.relogio.situacao === "vencido" || foco?.relogio.situacao === "descumprido";
+        const isCritico =
+          foco?.relogio.situacao === "critico" || foco?.relogio.situacao === "atencao";
         const percentualSLA = Math.min(100, Math.round(foco?.relogio.percentual ?? 0));
         return (
           <>
@@ -140,7 +144,10 @@ export function Kanban({
               <PrazoBadge prazo={s.prazo} />
             </p>
             {foco && foco.relogio.estado === "correndo" && (
-              <div className="mt-0.5 flex flex-col gap-1" title={`Consumo de SLA: ${foco.relogio.percentual}%`}>
+              <div
+                className="mt-0.5 flex flex-col gap-1"
+                title={`Consumo de SLA: ${foco.relogio.percentual}%`}
+              >
                 <div className="flex items-center justify-between text-[11px] text-muted">
                   <span className="flex items-center gap-1 font-medium">
                     {isVencido && <AlertTriangle className="h-3 w-3 text-danger animate-pulse" />}
@@ -149,7 +156,11 @@ export function Kanban({
                   </span>
                   <span
                     className={`font-mono text-xs ${
-                      isVencido ? "font-bold text-danger" : isCritico ? "font-semibold text-warning" : "text-muted"
+                      isVencido
+                        ? "font-bold text-danger"
+                        : isCritico
+                          ? "font-semibold text-warning"
+                          : "text-muted"
                     }`}
                   >
                     {foco.relogio.percentual}%

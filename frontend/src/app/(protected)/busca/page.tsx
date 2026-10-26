@@ -23,15 +23,22 @@ function Busca() {
   const q = params.get("q") ?? "";
   const mod = params.get("modulo") ?? "";
   const [draft, setDraft] = useState(q);
-  const res = useApiQuery<SearchResponse>(q.length >= 2 ? withQuery("v1/search", { q, module: mod, limit: 50 }) : null);
+  const res = useApiQuery<SearchResponse>(
+    q.length >= 2 ? withQuery("v1/search", { q, module: mod, limit: 50 }) : null,
+  );
   const nameOf = (key: string) => modules.find((m) => m.key === key)?.name ?? key;
   const iconOf = (key: string) => modules.find((m) => m.key === key)?.icon ?? "box";
 
-  const go = (nq: string, nm = mod) => router.replace(`/busca?${new URLSearchParams({ q: nq, ...(nm ? { modulo: nm } : {}) })}`);
+  const go = (nq: string, nm = mod) =>
+    router.replace(`/busca?${new URLSearchParams({ q: nq, ...(nm ? { modulo: nm } : {}) })}`);
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Busca global" title={q ? `Resultados para “${q}”` : "Buscar"} description="Pesquisa unificada sobre os módulos ativos, respeitando suas permissões. O módulo nasce desligado." />
+      <PageHeader
+        eyebrow="Busca global"
+        title={q ? `Resultados para “${q}”` : "Buscar"}
+        description="Pesquisa unificada sobre os módulos ativos, respeitando suas permissões. O módulo nasce desligado."
+      />
       <form
         role="search"
         className="flex items-end gap-2"
@@ -41,7 +48,14 @@ function Busca() {
         }}
       >
         <div className="flex-1">
-          <Input id="busca-q" type="search" label="Termo" value={draft} onChange={(e) => setDraft(e.target.value)} minLength={2} />
+          <Input
+            id="busca-q"
+            type="search"
+            label="Termo"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            minLength={2}
+          />
         </div>
         <Button type="submit">
           <Search size={16} aria-hidden="true" className="mr-1" /> Buscar
@@ -53,11 +67,22 @@ function Busca() {
           <span>
             {res.data.results.length} resultado(s) em {res.data.took_ms} ms ·
           </span>
-          <button type="button" onClick={() => go(q, "")} aria-pressed={!mod} className={`rounded-full px-2 py-0.5 ${!mod ? "bg-primary text-primary-foreground" : "bg-surface-hover"}`}>
+          <button
+            type="button"
+            onClick={() => go(q, "")}
+            aria-pressed={!mod}
+            className={`rounded-full px-2 py-0.5 ${!mod ? "bg-primary text-primary-foreground" : "bg-surface-hover"}`}
+          >
             Todos
           </button>
           {res.data.modules.map((m) => (
-            <button key={m} type="button" onClick={() => go(q, m)} aria-pressed={mod === m} className={`rounded-full px-2 py-0.5 ${mod === m ? "bg-primary text-primary-foreground" : "bg-surface-hover"}`}>
+            <button
+              key={m}
+              type="button"
+              onClick={() => go(q, m)}
+              aria-pressed={mod === m}
+              className={`rounded-full px-2 py-0.5 ${mod === m ? "bg-primary text-primary-foreground" : "bg-surface-hover"}`}
+            >
               {nameOf(m)}
             </button>
           ))}
@@ -70,16 +95,28 @@ function Busca() {
       )}
 
       {q.length >= 2 && (
-        <DataState loading={res.isLoading} error={res.error} empty={(res.data?.results ?? []).length === 0} emptyTitle="Nada encontrado" emptyDescription="Tente outro termo ou remova o filtro de módulo.">
+        <DataState
+          loading={res.isLoading}
+          error={res.error}
+          empty={(res.data?.results ?? []).length === 0}
+          emptyTitle="Nada encontrado"
+          emptyDescription="Tente outro termo ou remova o filtro de módulo."
+        >
           <ol className="flex flex-col gap-3">
             {(res.data?.results ?? []).map((r) => (
-              <li key={`${r.module}-${r.id}`} className="rounded-lg border border-surface-border bg-surface p-4">
+              <li
+                key={`${r.module}-${r.id}`}
+                className="rounded-lg border border-surface-border bg-surface p-4"
+              >
                 <div className="flex items-center gap-2 text-xs text-muted">
                   <ModuleIcon name={iconOf(r.module)} size={14} aria-hidden="true" />
                   <Badge>{nameOf(r.module)}</Badge>
                   {r.updated_at && <span>{fmtDate(r.updated_at)}</span>}
                 </div>
-                <Link href={r.url} className="mt-1 block font-semibold text-primary hover:underline">
+                <Link
+                  href={r.url}
+                  className="mt-1 block font-semibold text-primary hover:underline"
+                >
                   {r.title}
                 </Link>
                 {r.snippet && <p className="mt-1 text-sm text-muted">{r.snippet}</p>}

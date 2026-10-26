@@ -1,0 +1,9 @@
+# Gerados: o gerador decide o formato.
+package-lock.json
+src/types/openapi.gen.ts
+public/
+# Saídas de build e de teste.
+.next/
+coverage/
+playwright-report/
+test-results/

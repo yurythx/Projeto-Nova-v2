@@ -6,7 +6,15 @@ import { type FormEvent, Suspense, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
-import { ListaFaixas, NomeClicavel, colunasEmOrdem, ordenarColunas, seloDoEstado, useAparencia, type ColunaFaixa } from "@/components/plataforma/Faixas";
+import {
+  ListaFaixas,
+  NomeClicavel,
+  colunasEmOrdem,
+  ordenarColunas,
+  seloDoEstado,
+  useAparencia,
+  type ColunaFaixa,
+} from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
@@ -67,9 +75,7 @@ function InventarioDaMaquina({ inventario }: { inventario: InventarioMaquina }) 
       {(inventario.discos ?? []).length > 0 ? (
         <div>
           <dt className="text-muted">Discos locais</dt>
-          <dd>
-            {inventario.discos!.map((d) => `${d.nome} ${textoBytes(d.bytes)}`).join(" · ")}
-          </dd>
+          <dd>{inventario.discos!.map((d) => `${d.nome} ${textoBytes(d.bytes)}`).join(" · ")}</dd>
         </div>
       ) : null}
       {(inventario.programas ?? []).length > 0 ? (
@@ -77,7 +83,11 @@ function InventarioDaMaquina({ inventario }: { inventario: InventarioMaquina }) 
           <dt className="text-muted">
             Programas{inventario.programas_truncado ? " (lista parcial)" : ""}
           </dt>
-          <dd>{inventario.programas!.map((p) => (p.versao ? `${p.nome} ${p.versao}` : p.nome)).join(" · ")}</dd>
+          <dd>
+            {inventario
+              .programas!.map((p) => (p.versao ? `${p.nome} ${p.versao}` : p.nome))
+              .join(" · ")}
+          </dd>
         </div>
       ) : null}
     </dl>
@@ -250,7 +260,11 @@ function Ativos() {
               name="estado"
               label="Estado"
               defaultValue={editando?.estado ?? "em_uso"}
-              options={ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false || coluna.id === editando?.estado)).map((coluna) => ({
+              options={ordenarColunas(
+                catalogo.colunas.filter(
+                  (coluna) => coluna.ativa !== false || coluna.id === editando?.estado,
+                ),
+              ).map((coluna) => ({
                 value: coluna.id,
                 label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
               }))}
@@ -327,7 +341,9 @@ function Ativos() {
                 <p className="text-sm text-muted">
                   {TIPO_ATIVO[a.tipo]}
                   {a.identificador ? ` · ${a.identificador}` : ""}
-                  {a.produto_id ? ` · ${nomeDoProduto.get(a.produto_id) ?? "produto vinculado"}` : ""}
+                  {a.produto_id
+                    ? ` · ${nomeDoProduto.get(a.produto_id) ?? "produto vinculado"}`
+                    : ""}
                   {a.origem === "agente" ? " · informado pela máquina" : ""}
                 </p>
                 {a.inventario ? <InventarioDaMaquina inventario={a.inventario} /> : null}
@@ -347,7 +363,9 @@ function Ativos() {
 
       <CredenciaisDaMaquina />
 
-      {lista.length >= 2 ? <Relacoes origemOpcoes={lista} onMudou={() => void ativos.mutate()} /> : null}
+      {lista.length >= 2 ? (
+        <Relacoes origemOpcoes={lista} onMudou={() => void ativos.mutate()} />
+      ) : null}
     </div>
   );
 }
@@ -381,7 +399,8 @@ function CredenciaisDaMaquina() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pb-5">
         <p className="text-sm text-muted">
-          O segredo aparece uma vez. A máquina usa esse token no lugar da senha de uma pessoa e só pode informar o próprio patrimônio.
+          O segredo aparece uma vez. A máquina usa esse token no lugar da senha de uma pessoa e só
+          pode informar o próprio patrimônio.
         </p>
         {lista.error ? (
           <p className="text-sm text-danger" role="alert">
@@ -394,7 +413,13 @@ function CredenciaisDaMaquina() {
           ))}
         </ul>
         <form className="flex flex-col gap-3" onSubmit={(e) => void gerar(e)}>
-          <Input id="credencial-nome" name="nome" label="Nome da máquina" required maxLength={160} />
+          <Input
+            id="credencial-nome"
+            name="nome"
+            label="Nome da máquina"
+            required
+            maxLength={160}
+          />
           <UnidadeDonaSelect id="credencial-unidade" permission="ativos:manage" label="Unidade" />
           {erro ? (
             <p className="text-sm text-danger" role="alert">
@@ -413,13 +438,7 @@ function CredenciaisDaMaquina() {
   );
 }
 
-function Relacoes({
-  origemOpcoes,
-  onMudou,
-}: {
-  origemOpcoes: Ativo[];
-  onMudou: () => void;
-}) {
+function Relacoes({ origemOpcoes, onMudou }: { origemOpcoes: Ativo[]; onMudou: () => void }) {
   const [origem, setOrigem] = useState(origemOpcoes[0]?.id ?? "");
   const relacoes = useApiQuery<{ id: string; destino_nome: string; tipo: string }[]>(
     origem ? `v1/ativos/${origem}/relacoes` : null,
@@ -451,7 +470,8 @@ function Relacoes({
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pb-5">
         <p className="text-sm text-muted">
-          O que depende do quê, o que compõe um item e o que está conectado. Dependência em ciclo não entra.
+          O que depende do quê, o que compõe um item e o que está conectado. Dependência em ciclo
+          não entra.
         </p>
         <Select
           id="relacao-origem"
@@ -467,7 +487,9 @@ function Relacoes({
             label="Aponta para *"
             required
             placeholder="Escolha o ativo"
-            options={origemOpcoes.filter((a) => a.id !== origem).map((a) => ({ value: a.id, label: a.nome }))}
+            options={origemOpcoes
+              .filter((a) => a.id !== origem)
+              .map((a) => ({ value: a.id, label: a.nome }))}
           />
           <Select
             id="relacao-tipo"

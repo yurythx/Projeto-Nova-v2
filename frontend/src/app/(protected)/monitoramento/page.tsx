@@ -3,4 +3,3 @@ import { PlatformMonitoringDashboard } from "@/components/monitoring/PlatformMon
 export default function MonitoramentoPage() {
   return <PlatformMonitoringDashboard />;
 }
-

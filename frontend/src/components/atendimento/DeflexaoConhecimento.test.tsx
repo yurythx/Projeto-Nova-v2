@@ -30,7 +30,9 @@ describe("DeflexaoConhecimento", () => {
     get.mockReset();
     post.mockReset();
     post.mockResolvedValue({});
-    get.mockResolvedValue({ data: { query: "senha", results: [artigo], modules: ["wiki"], degraded: [], took_ms: 1 } });
+    get.mockResolvedValue({
+      data: { query: "senha", results: [artigo], modules: ["wiki"], degraded: [], took_ms: 1 },
+    });
     const user = userEvent.setup();
     const onResolvido = vi.fn();
 
@@ -38,14 +40,20 @@ describe("DeflexaoConhecimento", () => {
 
     expect(await screen.findByTestId("deflexao-conhecimento")).toBeInTheDocument();
     await vi.waitFor(() =>
-      expect(post).toHaveBeenCalledWith("v1/atendimento/deflexao", { artigos: ["p1"], resolveu: false }),
+      expect(post).toHaveBeenCalledWith("v1/atendimento/deflexao", {
+        artigos: ["p1"],
+        resolveu: false,
+      }),
     );
     expect(screen.getByRole("link", { name: artigo.title })).toHaveAttribute("href", "/wiki/senha");
     expect(get).toHaveBeenCalledWith(expect.stringContaining("module=wiki"));
 
     await user.click(screen.getByRole("button", { name: "Não preciso mais abrir" }));
     expect(onResolvido).toHaveBeenCalledTimes(1);
-    expect(post).toHaveBeenCalledWith("v1/atendimento/deflexao", { artigos: ["p1"], resolveu: true });
+    expect(post).toHaveBeenCalledWith("v1/atendimento/deflexao", {
+      artigos: ["p1"],
+      resolveu: true,
+    });
     expect(screen.getByRole("status")).toHaveTextContent("não foi enviada");
   });
 

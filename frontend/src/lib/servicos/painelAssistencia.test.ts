@@ -10,7 +10,9 @@ describe("disposição do painel", () => {
   });
 
   it("mantém a ordem gravada e acrescenta cartão novo no fim", () => {
-    expect(dispor(ids, { ordem: ["janelas", "fila", "sumido"], ocultos: ["erros", "sumido"] })).toEqual({
+    expect(
+      dispor(ids, { ordem: ["janelas", "fila", "sumido"], ocultos: ["erros", "sumido"] }),
+    ).toEqual({
       ordem: ["janelas", "fila", "erros"],
       ocultos: ["erros"],
     });

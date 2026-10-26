@@ -7,7 +7,10 @@ import type { OrgTree, Publico } from "@/lib/plataforma/types";
 
 const tree = [
   {
-    id: "e1", nome: "Secretaria de Saúde", sigla: "SEMSA", ativo: true,
+    id: "e1",
+    nome: "Secretaria de Saúde",
+    sigla: "SEMSA",
+    ativo: true,
     unidades: [
       { id: "u1", entidade_id: "e1", nome: "UPA", sigla: "", departamentos: [] },
       { id: "u2", entidade_id: "e1", nome: "PSF Conjunto", sigla: "PSF-CJ", departamentos: [] },
@@ -15,9 +18,17 @@ const tree = [
   },
   { id: "e2", nome: "Educação", sigla: "", ativo: true, unidades: [] },
 ] as unknown as OrgTree[];
-vi.mock("@/lib/api/swr", () => ({ useApiQuery: (key: string | null) => ({ data: key ? tree : undefined }) }));
+vi.mock("@/lib/api/swr", () => ({
+  useApiQuery: (key: string | null) => ({ data: key ? tree : undefined }),
+}));
 
-import { PublicoAlvoPicker, PublicoBadge, TODOS, nomesDoPublico, publicoVazio } from "./PublicoAlvo";
+import {
+  PublicoAlvoPicker,
+  PublicoBadge,
+  TODOS,
+  nomesDoPublico,
+  publicoVazio,
+} from "./PublicoAlvo";
 
 function Harness({ onChange }: { onChange: (p: Publico) => void }) {
   const [v, setV] = useState<Publico>(TODOS);
@@ -49,7 +60,9 @@ describe("Público-alvo (ADR 014)", () => {
   });
 
   it("selo: nomes do público; sem público, nada", () => {
-    const { container, rerender } = render(<PublicoBadge publico={{ entidades: ["e2"], unidades: ["u1"] }} />);
+    const { container, rerender } = render(
+      <PublicoBadge publico={{ entidades: ["e2"], unidades: ["u1"] }} />,
+    );
     expect(screen.getByText("Para: UPA, Educação")).toBeInTheDocument();
     rerender(<PublicoBadge publico={{ entidades: ["sumiu"], unidades: [] }} />);
     expect(screen.getByText("Público restrito")).toBeInTheDocument();

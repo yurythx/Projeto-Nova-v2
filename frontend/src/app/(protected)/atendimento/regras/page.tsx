@@ -71,7 +71,9 @@ export default function RegrasPage() {
   const [ofertaResposta, setOfertaResposta] = useState("");
   // O que se digita fica num rascunho da oferta escolhida; sem rascunho,
   // os campos mostram o que está gravado.
-  const [rascunho, setRascunho] = useState<{ oferta: string; publico?: string; interna?: string }>({ oferta: "" });
+  const [rascunho, setRascunho] = useState<{ oferta: string; publico?: string; interna?: string }>({
+    oferta: "",
+  });
   const resposta = useApiQuery<Resposta>(
     ofertaResposta ? `v1/atendimento/ofertas/${ofertaResposta}/respostas` : null,
   );
@@ -147,7 +149,12 @@ export default function RegrasPage() {
   }
 
   if (!gerencia) {
-    return <EmptyState title="Seu perfil não cadastra a triagem" description="Peça atendimento:manage na unidade." />;
+    return (
+      <EmptyState
+        title="Seu perfil não cadastra a triagem"
+        description="Peça atendimento:manage na unidade."
+      />
+    );
   }
 
   return (
@@ -165,12 +172,36 @@ export default function RegrasPage() {
         <CardContent className="flex flex-col gap-3 pb-5">
           <form onSubmit={(ev) => void criarRegra(ev)} className="grid gap-3 sm:grid-cols-2">
             <Input id="regra-nome" name="nome" label="Nome *" required maxLength={160} />
-            <Input id="regra-ordem" name="ordem" type="number" min={0} max={999} label="Ordem" defaultValue={10} />
+            <Input
+              id="regra-ordem"
+              name="ordem"
+              type="number"
+              min={0}
+              max={999}
+              label="Ordem"
+              defaultValue={10}
+            />
             <Input id="regra-palavra" name="palavra" label="Palavra no título" maxLength={80} />
-            <Select id="regra-prioridade" name="prioridade" label="Prioridade" options={prioridades} />
+            <Select
+              id="regra-prioridade"
+              name="prioridade"
+              label="Prioridade"
+              options={prioridades}
+            />
             <Select id="regra-oferta" name="oferta_id" label="Oferta" options={opcoesOferta} />
-            <Select id="regra-equipe" name="equipe_id" label="Equipe avisada" options={opcoesEquipe} />
-            <UnidadeDonaSelect id="regra-unidade" name="unidade_id" permission="atendimento:manage" label="Unidade da regra" optional />
+            <Select
+              id="regra-equipe"
+              name="equipe_id"
+              label="Equipe avisada"
+              options={opcoesEquipe}
+            />
+            <UnidadeDonaSelect
+              id="regra-unidade"
+              name="unidade_id"
+              permission="atendimento:manage"
+              label="Unidade da regra"
+              optional
+            />
             <UnidadeDonaSelect
               id="regra-solicitante"
               name="unidade_solicitante_id"
@@ -273,9 +304,30 @@ export default function RegrasPage() {
               required
               options={(ofertas.data ?? []).map((o) => ({ value: o.id, label: o.nome }))}
             />
-            <Input id="recorrencia-titulo" name="titulo" label="Título *" required maxLength={160} />
-            <Input id="recorrencia-dia" name="dia" type="number" min={1} max={28} label="Dia do mês *" required defaultValue={1} />
-            <Textarea id="recorrencia-descricao" name="descricao" label="Descrição" maxLength={4000} rows={2} />
+            <Input
+              id="recorrencia-titulo"
+              name="titulo"
+              label="Título *"
+              required
+              maxLength={160}
+            />
+            <Input
+              id="recorrencia-dia"
+              name="dia"
+              type="number"
+              min={1}
+              max={28}
+              label="Dia do mês *"
+              required
+              defaultValue={1}
+            />
+            <Textarea
+              id="recorrencia-descricao"
+              name="descricao"
+              label="Descrição"
+              maxLength={4000}
+              rows={2}
+            />
             <div className="sm:col-span-2">
               <Button type="submit" loading={pending}>
                 Gravar chamado mensal

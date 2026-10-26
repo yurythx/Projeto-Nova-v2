@@ -32,7 +32,9 @@ beforeEach(() => {
 });
 
 function faixa(titulo: string) {
-  return screen.getByRole("heading", { name: new RegExp(`^${titulo}`) }).closest("section") as HTMLElement;
+  return screen
+    .getByRole("heading", { name: new RegExp(`^${titulo}`) })
+    .closest("section") as HTMLElement;
 }
 
 function semDizeres(raiz: HTMLElement) {
@@ -197,7 +199,9 @@ describe("Problemas — regras do quadro", () => {
     await user.click(screen.getByRole("button", { name: "Novo problema" }));
     const quadro = await screen.findByLabelText("Quadro");
     await waitFor(() => {
-      expect(within(quadro).getByRole("option", { name: "Triagem do João" })).toHaveValue("em_analise");
+      expect(within(quadro).getByRole("option", { name: "Triagem do João" })).toHaveValue(
+        "em_analise",
+      );
     });
     await user.selectOptions(quadro, "em_analise");
     await user.type(screen.getByLabelText("Título *"), "Ramal mudo");
@@ -219,14 +223,56 @@ describe("Problemas — regras do quadro", () => {
       "GET v1/problemas/sugestoes": { data: [] },
       "GET v1/quadros/problemas": {
         data: [
-          { chave: "em_analise", nome: "Triagem", cor: "", tom: "info", ordem: 0, entrada: false, ativa: true },
-          { chave: "registrado", nome: "Registrados", cor: "", tom: "info", ordem: 1, entrada: true, ativa: true },
-          { chave: "erro_conhecido", nome: "Erros conhecidos", cor: "", tom: "warning", ordem: 2, entrada: false, ativa: true },
-          { chave: "resolvido", nome: "Resolvidos", cor: "", tom: "success", ordem: 3, entrada: false, ativa: true },
-          { chave: "encerrado", nome: "Encerrados", cor: "", tom: "neutral", ordem: 4, entrada: false, ativa: true },
+          {
+            chave: "em_analise",
+            nome: "Triagem",
+            cor: "",
+            tom: "info",
+            ordem: 0,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "registrado",
+            nome: "Registrados",
+            cor: "",
+            tom: "info",
+            ordem: 1,
+            entrada: true,
+            ativa: true,
+          },
+          {
+            chave: "erro_conhecido",
+            nome: "Erros conhecidos",
+            cor: "",
+            tom: "warning",
+            ordem: 2,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "resolvido",
+            nome: "Resolvidos",
+            cor: "",
+            tom: "success",
+            ordem: 3,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "encerrado",
+            nome: "Encerrados",
+            cor: "",
+            tom: "neutral",
+            ordem: 4,
+            entrada: false,
+            ativa: true,
+          },
         ],
       },
-      "PUT v1/quadros/problemas/em_analise": { data: { chave: "em_analise", nome: "Triagem", ordem: 0, ativa: true } },
+      "PUT v1/quadros/problemas/em_analise": {
+        data: { chave: "em_analise", nome: "Triagem", ordem: 0, ativa: true },
+      },
     });
     renderApp(<ProblemasPage />);
     const triagem = await screen.findByRole("heading", { name: /^Triagem/ });
@@ -237,7 +283,10 @@ describe("Problemas — regras do quadro", () => {
     expect(screen.queryByRole("button", { name: /Subir/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Descer/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Triagem" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Colunas" })).toHaveAttribute("href", "/problemas/colunas");
+    expect(screen.getByRole("link", { name: "Colunas" })).toHaveAttribute(
+      "href",
+      "/problemas/colunas",
+    );
     expect(api.to("PUT v1/quadros/problemas/em_analise")).toHaveLength(0);
   });
 
@@ -248,15 +297,61 @@ describe("Problemas — regras do quadro", () => {
       ...identityRoutes(perms("problemas:manage")),
       "GET v1/quadros/problemas": {
         data: [
-          { chave: "registrado", nome: "Registrados", cor: "", tom: "info", ordem: 0, entrada: true, ativa: true },
-          { chave: "em_analise", nome: "Triagem", cor: "", tom: "info", ordem: 1, entrada: false, ativa: true },
-          { chave: "erro_conhecido", nome: "Erros conhecidos", cor: "", tom: "warning", ordem: 2, entrada: false, ativa: true },
-          { chave: "resolvido", nome: "Resolvidos", cor: "", tom: "success", ordem: 3, entrada: false, ativa: true },
-          { chave: "encerrado", nome: "Encerrados", cor: "", tom: "neutral", ordem: 4, entrada: false, ativa: true },
+          {
+            chave: "registrado",
+            nome: "Registrados",
+            cor: "",
+            tom: "info",
+            ordem: 0,
+            entrada: true,
+            ativa: true,
+          },
+          {
+            chave: "em_analise",
+            nome: "Triagem",
+            cor: "",
+            tom: "info",
+            ordem: 1,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "erro_conhecido",
+            nome: "Erros conhecidos",
+            cor: "",
+            tom: "warning",
+            ordem: 2,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "resolvido",
+            nome: "Resolvidos",
+            cor: "",
+            tom: "success",
+            ordem: 3,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "encerrado",
+            nome: "Encerrados",
+            cor: "",
+            tom: "neutral",
+            ordem: 4,
+            entrada: false,
+            ativa: true,
+          },
         ],
       },
       "PUT v1/quadros/problemas/em_analise": {
-        data: { chave: "em_analise", nome: "Fila de triagem", cor: "#2563eb", ordem: 1, ativa: true },
+        data: {
+          chave: "em_analise",
+          nome: "Fila de triagem",
+          cor: "#2563eb",
+          ordem: 1,
+          ativa: true,
+        },
       },
     });
     renderApp(<ColunasDeProblemasPage />);
@@ -281,26 +376,86 @@ describe("Problemas — regras do quadro", () => {
       ...identityRoutes(perms("problemas:manage")),
       "GET v1/quadros/problemas": {
         data: [
-          { chave: "registrado", nome: "Registrados", cor: "", tom: "info", ordem: 0, entrada: true, ativa: true },
-          { chave: "em_analise", nome: "Triagem", cor: "", tom: "info", ordem: 1, entrada: false, ativa: true },
-          { chave: "erro_conhecido", nome: "Erros conhecidos", cor: "", tom: "warning", ordem: 2, entrada: false, ativa: true },
-          { chave: "resolvido", nome: "Resolvidos", cor: "", tom: "success", ordem: 3, entrada: false, ativa: true },
-          { chave: "encerrado", nome: "Encerrados", cor: "", tom: "neutral", ordem: 4, entrada: false, ativa: true },
+          {
+            chave: "registrado",
+            nome: "Registrados",
+            cor: "",
+            tom: "info",
+            ordem: 0,
+            entrada: true,
+            ativa: true,
+          },
+          {
+            chave: "em_analise",
+            nome: "Triagem",
+            cor: "",
+            tom: "info",
+            ordem: 1,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "erro_conhecido",
+            nome: "Erros conhecidos",
+            cor: "",
+            tom: "warning",
+            ordem: 2,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "resolvido",
+            nome: "Resolvidos",
+            cor: "",
+            tom: "success",
+            ordem: 3,
+            entrada: false,
+            ativa: true,
+          },
+          {
+            chave: "encerrado",
+            nome: "Encerrados",
+            cor: "",
+            tom: "neutral",
+            ordem: 4,
+            entrada: false,
+            ativa: true,
+          },
         ],
       },
       "POST v1/quadros/problemas": {
-        data: { chave: "c01234567", nome: "Aguardando fornecedor", cor: "#2563eb", ordem: 5, ativa: true },
+        data: {
+          chave: "c01234567",
+          nome: "Aguardando fornecedor",
+          cor: "#2563eb",
+          ordem: 5,
+          ativa: true,
+        },
       },
     });
     renderApp(<ColunasDeProblemasPage />);
     await user.click(await screen.findByRole("button", { name: "Nova coluna" }));
-    await user.type(screen.getByLabelText("Nome", { selector: "#nova-nome-problemas" }), "Aguardando fornecedor");
+    await user.type(
+      screen.getByLabelText("Nome", { selector: "#nova-nome-problemas" }),
+      "Aguardando fornecedor",
+    );
     await user.click(screen.getByRole("button", { name: "Criar coluna" }));
-    expect(await screen.findByText("Escolha ao menos uma coluna de onde o card entra.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Escolha ao menos uma coluna de onde o card entra."),
+    ).toBeInTheDocument();
     expect(api.to("POST v1/quadros/problemas")).toHaveLength(0);
 
-    await user.click(within(screen.getByRole("group", { name: "O card entra a partir de" })).getByRole("checkbox", { name: "Triagem" }));
-    await user.click(within(screen.getByRole("group", { name: "O card pode seguir para" })).getByRole("checkbox", { name: "Encerrados" }));
+    await user.click(
+      within(screen.getByRole("group", { name: "O card entra a partir de" })).getByRole(
+        "checkbox",
+        { name: "Triagem" },
+      ),
+    );
+    await user.click(
+      within(screen.getByRole("group", { name: "O card pode seguir para" })).getByRole("checkbox", {
+        name: "Encerrados",
+      }),
+    );
     await user.click(screen.getByRole("button", { name: "Criar coluna" }));
     await waitFor(() => expect(api.to("POST v1/quadros/problemas")).toHaveLength(1));
     expect(api.to("POST v1/quadros/problemas")[0]!.body).toEqual({
@@ -320,8 +475,24 @@ describe("Problemas — regras do quadro", () => {
       ...identityRoutes(perms("problemas:manage")),
       "GET v1/quadros/problemas": {
         data: [
-          { chave: "registrado", nome: "Registrados", cor: "", tom: "info", ordem: 0, entrada: true, ativa: true },
-          { chave: "em_analise", nome: "Triagem", cor: "", tom: "info", ordem: 1, entrada: false, ativa: true },
+          {
+            chave: "registrado",
+            nome: "Registrados",
+            cor: "",
+            tom: "info",
+            ordem: 0,
+            entrada: true,
+            ativa: true,
+          },
+          {
+            chave: "em_analise",
+            nome: "Triagem",
+            cor: "",
+            tom: "info",
+            ordem: 1,
+            entrada: false,
+            ativa: true,
+          },
         ],
       },
     });
@@ -330,7 +501,10 @@ describe("Problemas — regras do quadro", () => {
     await user.click(screen.getByRole("button", { name: "Criar coluna" }));
     expect(await screen.findByText("Toda coluna precisa de um nome.")).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Nome", { selector: "#nova-nome-problemas" }), "Fornecedor");
+    await user.type(
+      screen.getByLabelText("Nome", { selector: "#nova-nome-problemas" }),
+      "Fornecedor",
+    );
     await user.clear(screen.getByLabelText("Posição", { selector: "#nova-posicao-problemas" }));
     await user.type(screen.getByLabelText("Posição", { selector: "#nova-posicao-problemas" }), "x");
     await user.click(screen.getByRole("button", { name: "Criar coluna" }));
@@ -342,11 +516,23 @@ describe("Problemas — regras do quadro", () => {
     mockBackend({
       ...identityRoutes(perms("problemas:read")),
       "GET v1/quadros/problemas": {
-        data: [{ chave: "registrado", nome: "Registrados", cor: "", tom: "info", ordem: 0, entrada: true, ativa: true }],
+        data: [
+          {
+            chave: "registrado",
+            nome: "Registrados",
+            cor: "",
+            tom: "info",
+            ordem: 0,
+            entrada: true,
+            ativa: true,
+          },
+        ],
       },
     });
     renderApp(<ColunasDeProblemasPage />);
-    expect(await screen.findByLabelText("Nome", { selector: "#nome-problemas-registrado" })).toBeDisabled();
+    expect(
+      await screen.findByLabelText("Nome", { selector: "#nome-problemas-registrado" }),
+    ).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Nova coluna" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Salvar colunas" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Retirar" })).not.toBeInTheDocument();
@@ -425,7 +611,9 @@ describe("Mudanças — regras do quadro", () => {
     abas(["Quadro", "Lista"]);
     semDizeres(quadro);
     expect(within(quadro).getByRole("heading", { name: /^Rascunho/ })).toBeInTheDocument();
-    expect(within(quadro).getByRole("heading", { name: /^Rejeitada \/ Falhou/ })).toBeInTheDocument();
+    expect(
+      within(quadro).getByRole("heading", { name: /^Rejeitada \/ Falhou/ }),
+    ).toBeInTheDocument();
     expect(faixa("Rascunho")).toHaveAttribute("data-ordem", "0");
     expect(faixa("Rejeitada / Falhou")).toHaveAttribute("data-ordem", "5");
     expect(within(faixa("Aprovadas")).getByText("Nenhum item")).toBeInTheDocument();
@@ -453,7 +641,9 @@ describe("Mudanças — regras do quadro", () => {
 
     await user.click(within(quadro).getByRole("button", { name: "Recolher Rascunho" }));
     expect(faixa("Rascunho").className).toContain("w-12");
-    expect(within(faixa("Em avaliação")).queryByRole("button", { name: "Criar card" })).not.toBeInTheDocument();
+    expect(
+      within(faixa("Em avaliação")).queryByRole("button", { name: "Criar card" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Em avaliação" }));
     const nomeQuadro = screen.getByLabelText("Nome de Em avaliação");
@@ -464,7 +654,9 @@ describe("Mudanças — regras do quadro", () => {
 
     await user.click(screen.getByRole("button", { name: "Nova mudança" }));
     const escolha = await screen.findByLabelText("Quadro");
-    await waitFor(() => expect(within(escolha).getByRole("option", { name: "CAB" })).toHaveValue("em_avaliacao"));
+    await waitFor(() =>
+      expect(within(escolha).getByRole("option", { name: "CAB" })).toHaveValue("em_avaliacao"),
+    );
     await user.selectOptions(escolha, "em_avaliacao");
     await user.type(screen.getByLabelText("Título *"), "Janela");
     await user.click(screen.getByRole("button", { name: "Registrar mudança" }));
@@ -550,8 +742,12 @@ describe("Projetos — regras do quadro", () => {
 
     await user.click(screen.getByRole("button", { name: "Recolher Planejados" }));
     expect(faixa("Planejados").className).toContain("w-12");
-    expect(within(faixa("Planejados")).queryByRole("button", { name: "Adicionar projeto" })).not.toBeInTheDocument();
-    expect(within(faixa("Em andamento")).queryByRole("button", { name: "Criar card" })).not.toBeInTheDocument();
+    expect(
+      within(faixa("Planejados")).queryByRole("button", { name: "Adicionar projeto" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(faixa("Em andamento")).queryByRole("button", { name: "Criar card" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Novo projeto" })).toBeInTheDocument();
 
     await user.click(within(faixa("Em andamento")).getByRole("button", { name: "Em andamento" }));
@@ -563,7 +759,9 @@ describe("Projetos — regras do quadro", () => {
 
     await user.click(screen.getByRole("button", { name: "Novo projeto" }));
     const escolha = await screen.findByLabelText("Quadro");
-    await waitFor(() => expect(within(escolha).getByRole("option", { name: "Execução" })).toHaveValue("em_andamento"));
+    await waitFor(() =>
+      expect(within(escolha).getByRole("option", { name: "Execução" })).toHaveValue("em_andamento"),
+    );
     await user.type(screen.getByLabelText("Título do projeto *"), "Rede");
     await user.selectOptions(escolha, "em_andamento");
     await user.click(screen.getByRole("button", { name: "Criar projeto" }));
@@ -616,7 +814,9 @@ describe("Tarefas — regras do quadro", () => {
       "GET v1/projetos/proj-1": { data: projeto },
       "GET v1/projetos/proj-1/tarefas": { data: [tarefa] },
       "GET v1/projetos/proj-1/vinculos": { data: [] },
-      "GET v1/projetos/proj-1/apontamentos": { data: { items: [], resumo: { total_horas: 0, total_custo: 0, por_usuario: {} } } },
+      "GET v1/projetos/proj-1/apontamentos": {
+        data: { items: [], resumo: { total_horas: 0, total_custo: 0, por_usuario: {} } },
+      },
       "PUT v1/projetos/proj-1/tarefas/tar-1": { data: { ...tarefa, titulo: "Cabos novos" } },
       "POST v1/projetos/proj-1/tarefas": { status: 201, data: tarefa },
     });
@@ -658,7 +858,9 @@ describe("Tarefas — regras do quadro", () => {
 
     await user.click(screen.getByTestId("adicionar-tarefa-btn"));
     const escolha = await screen.findByLabelText("Quadro");
-    await waitFor(() => expect(within(escolha).getByRole("option", { name: "Fazendo" })).toHaveValue("em_andamento"));
+    await waitFor(() =>
+      expect(within(escolha).getByRole("option", { name: "Fazendo" })).toHaveValue("em_andamento"),
+    );
     await user.type(screen.getByLabelText("Título da tarefa *"), "Lançar");
     await user.selectOptions(escolha, "em_andamento");
     await user.click(screen.getByRole("button", { name: "Adicionar tarefa" }));
@@ -710,11 +912,18 @@ describe("Fila — regras do quadro", () => {
     expect(faixa("Concluídas")).toHaveAttribute("data-ordem", "4");
     expect(within(faixa("Em atendimento")).getByText("Nenhum item")).toBeInTheDocument();
     expect(within(quadro).queryByRole("button", { name: "Criar card" })).not.toBeInTheDocument();
-    expect(within(quadro).queryByRole("link", { name: "Nova solicitação" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Nova solicitação" })).toHaveAttribute("href", "/atendimento");
+    expect(
+      within(quadro).queryByRole("link", { name: "Nova solicitação" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Nova solicitação" })).toHaveAttribute(
+      "href",
+      "/atendimento",
+    );
 
     await user.click(screen.getByText("Correio · sem responsável"));
-    expect(await screen.findByRole("dialog", { name: "Detalhe da solicitação" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: "Detalhe da solicitação" }),
+    ).toBeInTheDocument();
     expect(router.push).toHaveBeenCalledWith("/atendimento/fila?painel=s1", { scroll: false });
     await user.click(screen.getByRole("button", { name: "Fechar painel" }));
     router.push.mockClear();
@@ -732,7 +941,10 @@ describe("Fila — regras do quadro", () => {
 
     await user.click(within(quadro).getByRole("button", { name: "Recolher Abertas" }));
     expect(faixa("Abertas").className).toContain("w-12");
-    expect(screen.getByRole("link", { name: "Nova solicitação" })).toHaveAttribute("href", "/atendimento");
+    expect(screen.getByRole("link", { name: "Nova solicitação" })).toHaveAttribute(
+      "href",
+      "/atendimento",
+    );
   });
 });
 
@@ -791,7 +1003,9 @@ describe("Ativos — regras das faixas", () => {
     await user.click(within(lista).getByRole("button", { name: "Recolher Em uso" }));
     const secao = faixa("Em uso");
     expect(secao.className).toBe("w-full");
-    expect(within(secao).getByRole("heading", { name: /^Em uso/ }).className).not.toContain("writing-mode");
+    expect(within(secao).getByRole("heading", { name: /^Em uso/ }).className).not.toContain(
+      "writing-mode",
+    );
     expect(within(lista).queryByRole("button", { name: "Criar card" })).not.toBeInTheDocument();
 
     await user.click(within(faixa("Planejado")).getByRole("button", { name: "Planejado" }));
@@ -804,7 +1018,9 @@ describe("Ativos — regras das faixas", () => {
     await user.click(screen.getByRole("button", { name: "Novo ativo" }));
     expect(screen.getByRole("heading", { name: "Novo ativo" })).toBeInTheDocument();
     const estado = screen.getByLabelText("Estado");
-    await waitFor(() => expect(within(estado).getByRole("option", { name: "Reserva" })).toHaveValue("planejado"));
+    await waitFor(() =>
+      expect(within(estado).getByRole("option", { name: "Reserva" })).toHaveValue("planejado"),
+    );
     await user.clear(screen.getByLabelText("Nome *"));
     await user.type(screen.getByLabelText("Nome *"), "Nobreak");
     await user.selectOptions(estado, "planejado");

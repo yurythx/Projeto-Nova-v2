@@ -232,8 +232,14 @@ export default function AtendimentoPortalPage() {
                       placeholder="Individual (apenas meu posto de trabalho)"
                       options={[
                         { value: "individual", label: "Individual (apenas meu posto de trabalho)" },
-                        { value: "setorial", label: "Setorial (afeta toda a minha equipe / setor)" },
-                        { value: "institucional", label: "Institucional (afeta múltiplos setores ou o prédio)" },
+                        {
+                          value: "setorial",
+                          label: "Setorial (afeta toda a minha equipe / setor)",
+                        },
+                        {
+                          value: "institucional",
+                          label: "Institucional (afeta múltiplos setores ou o prédio)",
+                        },
                       ]}
                     />
                   </div>

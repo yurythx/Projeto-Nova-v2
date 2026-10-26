@@ -43,12 +43,18 @@ export function ModulesGrid() {
                   {m.core ? <Badge tone="info">Núcleo</Badge> : <Badge tone="success">Ativo</Badge>}
                 </div>
                 <CardTitle className="text-base">{m.name}</CardTitle>
-                <CardDescription className="text-xs leading-relaxed">{m.description}</CardDescription>
+                <CardDescription className="text-xs leading-relaxed">
+                  {m.description}
+                </CardDescription>
               </CardHeader>
               <CardContent className="mt-auto pb-4">
                 {m.route && (
-                  <Link href={m.route} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
-                    Acessar <span className="sr-only">{m.name}</span> <ArrowRight size={14} aria-hidden="true" />
+                  <Link
+                    href={m.route}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                  >
+                    Acessar <span className="sr-only">{m.name}</span>{" "}
+                    <ArrowRight size={14} aria-hidden="true" />
                   </Link>
                 )}
               </CardContent>
@@ -58,7 +64,8 @@ export function ModulesGrid() {
       </ul>
       {inactive.length > 0 && (
         <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
-          <Lock size={12} aria-hidden="true" /> Desativados: {inactive.map((m) => m.name).join(", ")}
+          <Lock size={12} aria-hidden="true" /> Desativados:{" "}
+          {inactive.map((m) => m.name).join(", ")}
         </p>
       )}
     </div>

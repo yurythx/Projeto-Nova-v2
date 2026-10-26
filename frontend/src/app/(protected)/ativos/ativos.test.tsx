@@ -94,7 +94,9 @@ describe("Ativos", () => {
     });
     const filtro = renderApp(<AtivosPage />);
     expect(await screen.findByText("Nenhum ativo cadastrado")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText(/Mostrando os ativos de/)).toHaveTextContent("Rede da escola"));
+    await waitFor(() =>
+      expect(screen.getByText(/Mostrando os ativos de/)).toHaveTextContent("Rede da escola"),
+    );
     expect(api.to("GET v1/ativos")[0]!.query.get("produto_id")).toBe("p1");
     expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/ativos");
     filtro.unmount();

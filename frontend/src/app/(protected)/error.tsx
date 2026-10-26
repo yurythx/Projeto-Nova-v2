@@ -25,7 +25,8 @@ export default function ProtectedError({
       <div>
         <h2 className="text-lg font-semibold text-foreground">Ocorreu um erro inesperado</h2>
         <p className="text-sm text-muted mt-1 max-w-md">
-          {error.message || "Não foi possível carregar as informações desta seção. Tente recarregar."}
+          {error.message ||
+            "Não foi possível carregar as informações desta seção. Tente recarregar."}
         </p>
       </div>
       <Button onClick={() => retry()} variant="primary" size="sm">

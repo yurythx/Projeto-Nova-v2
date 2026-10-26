@@ -44,7 +44,10 @@ function mockBackend({
         return {
           ok: true,
           status: 200,
-          json: async () => ({ data: outbox ?? { pending: 0, published: 0, failed: 0 }, error: null }),
+          json: async () => ({
+            data: outbox ?? { pending: 0, published: 0, failed: 0 },
+            error: null,
+          }),
         };
       }
       throw new Error(`URL inesperada no mock de fetch: ${url}`);
@@ -104,7 +107,10 @@ describe("PlatformMonitoringDashboard", () => {
   });
 
   it("MinIO indisponível aparece como Offline, não mais preso em 'Desconhecido'", async () => {
-    mockBackend({ health: { postgres: "ok", rabbitmq: "ok", minio: "unavailable" }, healthStatus: 503 });
+    mockBackend({
+      health: { postgres: "ok", rabbitmq: "ok", minio: "unavailable" },
+      healthStatus: 503,
+    });
     renderDashboard();
 
     await screen.findByText("PostgreSQL 16 Engine");
@@ -112,7 +118,7 @@ describe("PlatformMonitoringDashboard", () => {
     expect(minioCard.closest(".relative")!.textContent).toContain("Offline");
   });
 
-  it("não existe mais um botão \"Testar\" chamando um endpoint de integração inexistente", async () => {
+  it('não existe mais um botão "Testar" chamando um endpoint de integração inexistente', async () => {
     mockBackend({ health: { postgres: "ok", rabbitmq: "ok" } });
     renderDashboard();
 
@@ -171,8 +177,12 @@ describe("PlatformMonitoringDashboard", () => {
     const runbooksTabBtn = screen.getByRole("button", { name: /governança & runbooks/i });
     fireEvent.click(runbooksTabBtn);
 
-    expect(await screen.findByText("Disaster Recovery (DR) & Procedimentos de Restauração")).toBeInTheDocument();
-    expect(screen.getByText("Matriz de Identidade & Acessos Homologados (IAM)")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Disaster Recovery (DR) & Procedimentos de Restauração"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Matriz de Identidade & Acessos Homologados (IAM)"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Administração de identidade")).toBeInTheDocument();
 
     // 3. Retorna para a aba de Observabilidade & Telemetria

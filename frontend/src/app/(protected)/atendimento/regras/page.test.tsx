@@ -20,7 +20,9 @@ describe("Triagem", () => {
       ...identityRoutes(perms),
       "GET v1/atendimento/regras": { data: [] },
       "GET v1/atendimento/recorrencias": { data: [] },
-      "GET v1/atendimento/ofertas": { data: [{ id: "o1", nome: "E-mail", tipo: "incidente", ativa: true }] },
+      "GET v1/atendimento/ofertas": {
+        data: [{ id: "o1", nome: "E-mail", tipo: "incidente", ativa: true }],
+      },
       "GET v1/atendimento/equipes": { data: [{ id: "e1", nome: "N1" }] },
       "GET v1/iam/org-tree": { data: [] },
       "POST v1/atendimento/regras": { status: 201, data: { id: "r1", nome: "Senha", ordem: 10 } },
@@ -46,7 +48,9 @@ describe("Triagem", () => {
       ...identityRoutes(perms),
       "GET v1/atendimento/regras": { data: [] },
       "GET v1/atendimento/recorrencias": { data: [] },
-      "GET v1/atendimento/ofertas": { data: [{ id: "o1", nome: "E-mail", tipo: "incidente", ativa: true }] },
+      "GET v1/atendimento/ofertas": {
+        data: [{ id: "o1", nome: "E-mail", tipo: "incidente", ativa: true }],
+      },
       "GET v1/atendimento/equipes": { data: [] },
       "GET v1/iam/org-tree": { data: [] },
       "GET v1/atendimento/ofertas/o1/respostas": {

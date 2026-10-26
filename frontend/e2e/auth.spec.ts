@@ -37,7 +37,9 @@ test.describe("Login local", () => {
     // sessão foi de fato estabelecida e que /me respondeu, não só que a
     // URL mudou.
     await expect(
-      page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Configurações" }),
+      page
+        .getByRole("navigation", { name: "Menu principal" })
+        .getByRole("link", { name: "Configurações" }),
     ).toBeVisible();
 
     // UserMenu → Sair (RP-Initiated Logout, §30) — mesmo fluxo real que
@@ -53,7 +55,9 @@ test.describe("Login local", () => {
     await expect(page).toHaveURL(/\/login(\?.*)?$/);
   });
 
-  test("credenciais erradas: mensagem genérica, nunca revela qual campo errou", async ({ page }) => {
+  test("credenciais erradas: mensagem genérica, nunca revela qual campo errou", async ({
+    page,
+  }) => {
     await page.goto("/login");
 
     await page.getByLabel("Usuário").fill(ADMIN_USERNAME);

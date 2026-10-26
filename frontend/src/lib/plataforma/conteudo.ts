@@ -87,7 +87,8 @@ export const REGRAS_PUBLICAS: Pilar[] = [
 export const PILARES: Pilar[] = [
   {
     nome: "Núcleo",
-    descricao: "IAM e Auditoria ficam sempre ativos. Eles não se desligam em Configurações → Módulos.",
+    descricao:
+      "IAM e Auditoria ficam sempre ativos. Eles não se desligam em Configurações → Módulos.",
   },
   {
     nome: "Módulos de serviço",

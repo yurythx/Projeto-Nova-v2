@@ -90,7 +90,9 @@ export function LoginCard() {
         {/* h2, não h1 (A-01): o h1 da página é o do painel de marca em
             app/login/page.tsx. */}
         <h2 className="text-2xl font-bold text-foreground">Entrar no Projeto Nova</h2>
-        <p className="mt-1 text-sm text-muted">Informe seu usuário e senha para continuar na gestão de serviços.</p>
+        <p className="mt-1 text-sm text-muted">
+          Informe seu usuário e senha para continuar na gestão de serviços.
+        </p>
       </div>
 
       {oauthError === "NaoPertenceAssistenciaSocial" ? (
@@ -99,14 +101,15 @@ export function LoginCard() {
           className="rounded-lg border border-danger/40 bg-danger/10 p-4 text-sm text-foreground flex flex-col gap-1.5"
         >
           <div className="flex items-center gap-2 font-semibold text-danger">
-            <span aria-hidden="true" className="text-base">⚠️</span>
+            <span aria-hidden="true" className="text-base">
+              ⚠️
+            </span>
             <span>Acesso Não Autorizado</span>
           </div>
-          <p className="font-medium text-danger">
-            Sua conta não tem acesso a esta plataforma.
-          </p>
+          <p className="font-medium text-danger">Sua conta não tem acesso a esta plataforma.</p>
           <p className="text-xs text-muted">
-            Sua conta do Active Directory precisa pertencer a um grupo mapeado para um Perfil de acesso. Procure o administrador do sistema.
+            Sua conta do Active Directory precisa pertencer a um grupo mapeado para um Perfil de
+            acesso. Procure o administrador do sistema.
           </p>
         </div>
       ) : oauthError ? (
@@ -115,14 +118,20 @@ export function LoginCard() {
         </p>
       ) : null}
       {sessionExpired && (
-        <p role="alert" className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
+        <p
+          role="alert"
+          className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground"
+        >
           Sua sessão expirou. Entre novamente para voltar à página em que estava.
         </p>
       )}
       {failedAttempts >= ATTEMPTS_BEFORE_RATE_LIMIT_WARNING && (
-        <p role="alert" className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-foreground">
-          Muitas tentativas sem sucesso. Após algumas tentativas incorretas, o
-          acesso é bloqueado temporariamente por alguns minutos.
+        <p
+          role="alert"
+          className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-foreground"
+        >
+          Muitas tentativas sem sucesso. Após algumas tentativas incorretas, o acesso é bloqueado
+          temporariamente por alguns minutos.
         </p>
       )}
       {/* O erro de submit (localError) aparece no campo de senha via
@@ -164,7 +173,11 @@ export function LoginCard() {
             aria-pressed={showPassword}
             className="absolute right-0 top-6 flex h-10 w-10 items-center justify-center text-muted hover:text-foreground"
           >
-            {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+            {showPassword ? (
+              <EyeOff size={16} aria-hidden="true" />
+            ) : (
+              <Eye size={16} aria-hidden="true" />
+            )}
           </button>
         </div>
         <Button type="submit" className="w-full" loading={submitting}>

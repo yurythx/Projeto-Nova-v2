@@ -75,13 +75,13 @@ export function ProblemaDetalhe() {
   return (
     <div className="flex flex-col gap-6">
       {!embutido && (
-      <Link
-        href="/problemas"
-        className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
-      >
-        <ArrowLeft aria-hidden className="h-4 w-4" />
-        Voltar para os problemas
-      </Link>
+        <Link
+          href="/problemas"
+          className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <ArrowLeft aria-hidden className="h-4 w-4" />
+          Voltar para os problemas
+        </Link>
       )}
       <DataState
         loading={problema.isLoading}

@@ -6,7 +6,11 @@ import { type FormEvent, Suspense, useState } from "react";
 
 import { Congelamentos } from "@/components/servicos/Congelamentos";
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
-import { COLUNAS_MUDANCA, MudancasKanban, faixaDaMudanca } from "@/components/servicos/MudancasKanban";
+import {
+  COLUNAS_MUDANCA,
+  MudancasKanban,
+  faixaDaMudanca,
+} from "@/components/servicos/MudancasKanban";
 import { DataState } from "@/components/plataforma/DataState";
 import { ListaFaixas, NomeClicavel, useAparencia } from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
@@ -165,13 +169,17 @@ function MudancasConteudo() {
       ["em_avaliacao", "em_avaliacao"],
       ["cancelada", "fechada"],
     ] as const
-  ).filter(([, colunaId]) => catalogo.colunas.find((coluna) => coluna.id === colunaId)?.ativa !== false).map(([estadoId, colunaId]) => ({
-    value: estadoId,
-    label:
-      estadoId === "cancelada"
-        ? `Cancelada (${rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, colunaId)})`
-        : rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, colunaId),
-  }));
+  )
+    .filter(
+      ([, colunaId]) => catalogo.colunas.find((coluna) => coluna.id === colunaId)?.ativa !== false,
+    )
+    .map(([estadoId, colunaId]) => ({
+      value: estadoId,
+      label:
+        estadoId === "cancelada"
+          ? `Cancelada (${rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, colunaId)})`
+          : rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, colunaId),
+    }));
 
   const reqTexto = pedindoTexto ? TEXTO_DA_PASSAGEM[pedindoTexto.para] : undefined;
 
@@ -235,9 +243,7 @@ function MudancasConteudo() {
         onRetry={() => void mudancas.mutate()}
         empty={false}
       >
-        {lista.length === 0 && (
-          <p className="text-sm text-muted">Nenhuma mudança neste recorte</p>
-        )}
+        {lista.length === 0 && <p className="text-sm text-muted">Nenhuma mudança neste recorte</p>}
         {kanban ? (
           <MudancasKanban
             itens={lista}
@@ -315,11 +321,16 @@ function MudancasConteudo() {
             />
             {quadro === "em_avaliacao" && (
               <p className="text-xs text-muted">
-                Para ir à avaliação, informe a janela (início antes do fim) e, na mudança normal ou emergencial, o plano de reversão.
+                Para ir à avaliação, informe a janela (início antes do fim) e, na mudança normal ou
+                emergencial, o plano de reversão.
               </p>
             )}
           </div>
-          <MudancaForm rotulo="Registrar mudança" pending={pending} onSalvar={(c) => void criar(c)} />
+          <MudancaForm
+            rotulo="Registrar mudança"
+            pending={pending}
+            onSalvar={(c) => void criar(c)}
+          />
         </Dialog>
       )}
 

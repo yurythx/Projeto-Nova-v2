@@ -6,7 +6,13 @@ import { type FormEvent, Suspense, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
-import { ListaFaixas, NomeClicavel, ordenarColunas, seloDoEstado, useAparencia } from "@/components/plataforma/Faixas";
+import {
+  ListaFaixas,
+  NomeClicavel,
+  ordenarColunas,
+  seloDoEstado,
+  useAparencia,
+} from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -228,10 +234,12 @@ function ProblemasConteudo() {
 
   const lista = problemas.data ?? [];
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
-  const quadros = ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => ({
-    value: coluna.id,
-    label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
-  }));
+  const quadros = ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map(
+    (coluna) => ({
+      value: coluna.id,
+      label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -278,10 +286,12 @@ function ProblemasConteudo() {
             onChange={(e) => setEstado(e.target.value)}
             options={[
               { value: "", label: "Todos" },
-              ...ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => ({
-                value: coluna.id,
-                label: coluna.titulo,
-              })),
+              ...ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map(
+                (coluna) => ({
+                  value: coluna.id,
+                  label: coluna.titulo,
+                }),
+              ),
             ]}
           />
           <Input
@@ -299,9 +309,7 @@ function ProblemasConteudo() {
         onRetry={() => void problemas.mutate()}
         empty={false}
       >
-        {lista.length === 0 && (
-          <p className="text-sm text-muted">Nenhum problema neste recorte</p>
-        )}
+        {lista.length === 0 && <p className="text-sm text-muted">Nenhum problema neste recorte</p>}
         {kanban ? (
           <ProblemasKanban
             itens={lista}
@@ -335,7 +343,9 @@ function ProblemasConteudo() {
                     onSalvar={vista.salvarNome}
                     className="font-medium text-primary hover:underline"
                   />
-                  <Badge tone={seloDoEstado(catalogo.colunas, p.estado, ESTADO_PROBLEMA[p.estado]).tone}>
+                  <Badge
+                    tone={seloDoEstado(catalogo.colunas, p.estado, ESTADO_PROBLEMA[p.estado]).tone}
+                  >
                     {seloDoEstado(catalogo.colunas, p.estado, ESTADO_PROBLEMA[p.estado]).label}
                   </Badge>
                 </div>

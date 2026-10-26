@@ -276,11 +276,7 @@ export function SolicitacaoDetalhe() {
 
             {tecnico && s.tipo === "incidente" && <ProblemasDoIncidente solicitacaoId={s.id} />}
 
-            <AtivoVinculadoCard
-              solicitacaoId={s.id}
-              tecnico={tecnico}
-              finalizada={finalizada}
-            />
+            <AtivoVinculadoCard solicitacaoId={s.id} tecnico={tecnico} finalizada={finalizada} />
 
             <SegredoVinculadoCard
               solicitacaoId={s.id}
@@ -299,11 +295,7 @@ export function SolicitacaoDetalhe() {
               onMudou={recarregar}
             />
 
-            <ApontamentosCard
-              solicitacaoId={s.id}
-              tecnico={tecnico}
-              finalizada={finalizada}
-            />
+            <ApontamentosCard solicitacaoId={s.id} tecnico={tecnico} finalizada={finalizada} />
 
             <AvaliacaoAtendimentoCard
               solicitacao={s}

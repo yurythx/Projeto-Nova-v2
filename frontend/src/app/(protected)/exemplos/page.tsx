@@ -38,7 +38,11 @@ export default function ExemplosPage() {
     const form = e.currentTarget;
     const fd = new FormData(form);
     const ok = await run(
-      () => apiClient.post("v1/examples", { title: String(fd.get("title") ?? "").trim(), description: String(fd.get("description") ?? "").trim() }),
+      () =>
+        apiClient.post("v1/examples", {
+          title: String(fd.get("title") ?? "").trim(),
+          description: String(fd.get("description") ?? "").trim(),
+        }),
       "Item criado",
     );
     if (ok) {
@@ -49,7 +53,11 @@ export default function ExemplosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Módulo-modelo" title="Exemplo (blueprint)" description="Referência de como um plug-in consome a API: consulta tipada, estados padrão, mutação auditada e autorização por escopo." />
+      <PageHeader
+        eyebrow="Módulo-modelo"
+        title="Exemplo (blueprint)"
+        description="Referência de como um plug-in consome a API: consulta tipada, estados padrão, mutação auditada e autorização por escopo."
+      />
 
       {can("example:manage") && (
         <Card>
@@ -57,9 +65,25 @@ export default function ExemplosPage() {
             <CardTitle as="h2">Novo item</CardTitle>
           </CardHeader>
           <CardContent className="pb-5">
-            <form onSubmit={create} className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-              <Input id="ex-title" name="title" label="Título *" required maxLength={200} autoComplete="off" />
-              <Input id="ex-desc" name="description" label="Descrição" maxLength={2000} autoComplete="off" />
+            <form
+              onSubmit={create}
+              className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+            >
+              <Input
+                id="ex-title"
+                name="title"
+                label="Título *"
+                required
+                maxLength={200}
+                autoComplete="off"
+              />
+              <Input
+                id="ex-desc"
+                name="description"
+                label="Descrição"
+                maxLength={2000}
+                autoComplete="off"
+              />
               <Button type="submit" loading={pending}>
                 <Plus size={16} aria-hidden="true" className="mr-1" /> Criar
               </Button>
@@ -68,7 +92,13 @@ export default function ExemplosPage() {
         </Card>
       )}
 
-      <DataState loading={list.isLoading} error={list.error} onRetry={() => void list.mutate()} empty={(list.data ?? []).length === 0} emptyTitle="Nenhum item cadastrado">
+      <DataState
+        loading={list.isLoading}
+        error={list.error}
+        onRetry={() => void list.mutate()}
+        empty={(list.data ?? []).length === 0}
+        emptyTitle="Nenhum item cadastrado"
+      >
         <ul className="flex flex-col divide-y divide-surface-border rounded-xl border border-surface-border bg-surface">
           {(list.data ?? []).map((item) => (
             <li key={item.id} className="flex items-center justify-between gap-3 p-4">

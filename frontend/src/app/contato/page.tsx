@@ -8,7 +8,8 @@ import { getFeatures } from "@/lib/features/getFeatures";
 import { MODULE } from "@/lib/features/modules";
 import { APP_URL } from "@/lib/env";
 
-const description = "Envie sua dúvida, sugestão, reclamação ou elogio — você recebe um número de protocolo para acompanhamento.";
+const description =
+  "Envie sua dúvida, sugestão, reclamação ou elogio — você recebe um número de protocolo para acompanhamento.";
 
 export const metadata: Metadata = {
   title: "Contato",

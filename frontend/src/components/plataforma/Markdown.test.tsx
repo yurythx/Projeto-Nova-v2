@@ -5,7 +5,13 @@ import { Markdown, safeMarkdownHref } from "./Markdown";
 
 describe("Markdown seguro", () => {
   it("renderiza títulos, listas, ênfase e código", () => {
-    const { container } = render(<Markdown source={"# Título\n\n- um\n- **dois**\n\n1. primeiro\n\n`codigo` e *itálico*\n\n```\nbloco\n```"} />);
+    const { container } = render(
+      <Markdown
+        source={
+          "# Título\n\n- um\n- **dois**\n\n1. primeiro\n\n`codigo` e *itálico*\n\n```\nbloco\n```"
+        }
+      />,
+    );
     expect(screen.getByRole("heading", { name: "Título" })).toBeInTheDocument();
     expect(container.querySelectorAll("ul li")).toHaveLength(2);
     expect(container.querySelector("ol li")).toHaveTextContent("primeiro");
@@ -14,17 +20,28 @@ describe("Markdown seguro", () => {
   });
 
   it("HTML embutido aparece como texto (sem XSS)", () => {
-    const { container } = render(<Markdown source={'<img src=x onerror="alert(1)"><script>alert(2)</script>'} />);
+    const { container } = render(
+      <Markdown source={'<img src=x onerror="alert(1)"><script>alert(2)</script>'} />,
+    );
     expect(container.querySelector("img")).toBeNull();
     expect(container.querySelector("script")).toBeNull();
     expect(container).toHaveTextContent("<script>alert(2)</script>");
   });
 
   it("links: internos e http(s) viram <a>; javascript:/data:/protocol-relative viram texto", () => {
-    render(<Markdown source={"[interno](/wiki/manual) [site](https://gov.br) [mau](javascript:alert(1)) [dados](data:text/html,x) [outro](//evil.com)"} />);
+    render(
+      <Markdown
+        source={
+          "[interno](/wiki/manual) [site](https://gov.br) [mau](javascript:alert(1)) [dados](data:text/html,x) [outro](//evil.com)"
+        }
+      />,
+    );
     expect(screen.getByRole("link", { name: "interno" })).toHaveAttribute("href", "/wiki/manual");
     expect(screen.getByRole("link", { name: "interno" })).not.toHaveAttribute("target");
-    expect(screen.getByRole("link", { name: "site" })).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByRole("link", { name: "site" })).toHaveAttribute(
+      "rel",
+      "noopener noreferrer",
+    );
     expect(screen.queryByRole("link", { name: "mau" })).toBeNull();
     expect(screen.queryByRole("link", { name: "dados" })).toBeNull();
     expect(screen.queryByRole("link", { name: "outro" })).toBeNull();
@@ -57,7 +74,13 @@ describe("Markdown seguro", () => {
 
 describe("Markdown — imagens, tabelas e avisos", () => {
   it("imagens: seguras viram <img> com legenda; inseguras viram texto", () => {
-    const { container } = render(<Markdown source={"![Fachada](/img/a.png) ![](https://gov.br/b.png) ![Mau](javascript:x) ![](javascript:y)"} />);
+    const { container } = render(
+      <Markdown
+        source={
+          "![Fachada](/img/a.png) ![](https://gov.br/b.png) ![Mau](javascript:x) ![](javascript:y)"
+        }
+      />,
+    );
     const imgs = container.querySelectorAll("img");
     expect(imgs).toHaveLength(2);
     expect(imgs[0]).toHaveAttribute("alt", "Fachada");
@@ -67,7 +90,11 @@ describe("Markdown — imagens, tabelas e avisos", () => {
 
   it("tabela GFM com alinhamentos", () => {
     const { container } = render(
-      <Markdown source={"| Série | Prazo | Destino |\n| :--- | :---: | ---: |\n| **2.0** | 5 anos | Eliminação |\n| 3.0 | 10 |\n\ndepois"} />,
+      <Markdown
+        source={
+          "| Série | Prazo | Destino |\n| :--- | :---: | ---: |\n| **2.0** | 5 anos | Eliminação |\n| 3.0 | 10 |\n\ndepois"
+        }
+      />,
     );
     const ths = container.querySelectorAll("th");
     expect(ths[0]).toHaveClass("text-left");
@@ -81,7 +108,9 @@ describe("Markdown — imagens, tabelas e avisos", () => {
   it("avisos [!TIPO], tipo desconhecido e citação comum", () => {
     render(
       <Markdown
-        source={"> [!WARNING] Prazo de 30 dias\n> conta da publicação\n\n> [!TIP]\n> Use o modelo\n\n> [!OUTRO] x\n\n> [!CAUTION] a\n\n> [!IMPORTANT] b\n\n> [!INFO] c\n\n> [!NOTE] d\n\n> citação simples\n> continua"}
+        source={
+          "> [!WARNING] Prazo de 30 dias\n> conta da publicação\n\n> [!TIP]\n> Use o modelo\n\n> [!OUTRO] x\n\n> [!CAUTION] a\n\n> [!IMPORTANT] b\n\n> [!INFO] c\n\n> [!NOTE] d\n\n> citação simples\n> continua"
+        }
       />,
     );
     const notas = screen.getAllByRole("note");
@@ -93,8 +122,14 @@ describe("Markdown — imagens, tabelas e avisos", () => {
   });
 
   it("títulos ganham âncora e listas com * também valem", () => {
-    const { container } = render(<Markdown source={"## Prazos de guarda\n#### Nível 4\n* um\r\n* dois\n\nlinha um\nlinha dois"} />);
-    expect(screen.getByRole("heading", { level: 3, name: /Prazos de guarda/ })).toHaveAttribute("id");
+    const { container } = render(
+      <Markdown
+        source={"## Prazos de guarda\n#### Nível 4\n* um\r\n* dois\n\nlinha um\nlinha dois"}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 3, name: /Prazos de guarda/ })).toHaveAttribute(
+      "id",
+    );
     expect(screen.getByRole("heading", { level: 5, name: /Nível 4/ })).toBeInTheDocument();
     expect(container.querySelectorAll("ul li")).toHaveLength(2);
     expect(screen.getByText("linha um linha dois")).toBeInTheDocument();

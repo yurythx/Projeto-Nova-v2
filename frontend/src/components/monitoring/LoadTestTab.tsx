@@ -83,7 +83,12 @@ const TARGETS: TargetItem[] = [
     url: "/api/public/v1/catalog/services",
     description: "Endpoint público de consulta das cartas de serviços e procedimentos com filtro",
     impactLevel: "Banco de Dados & I/O",
-    pipeline: ["Caddy (Proxy HTTPS/TLS)", "Next.js BFF (Allowlist)", "Go Core REST", "PostgreSQL (Pool pgx)"],
+    pipeline: [
+      "Caddy (Proxy HTTPS/TLS)",
+      "Next.js BFF (Allowlist)",
+      "Go Core REST",
+      "PostgreSQL (Pool pgx)",
+    ],
     testExplanation: {
       overview:
         "Avalia a capacidade de busca, junção de categorias e serialização de cartas de serviços públicos sob intensa consulta simultânea por múltiplos visitantes anônimos.",
@@ -93,7 +98,8 @@ const TARGETS: TargetItem[] = [
         "Next.js BFF Proxy: Validação de cabeçalhos e repasse não-bloqueante com keep-alive",
         "Caddy Edge: Terminação TLS 1.3 e compressão zstd/gzip para transferência rápida",
       ],
-      stressVector: "Concorrência no pool de conexões do banco de dados e serialização de payload JSON.",
+      stressVector:
+        "Concorrência no pool de conexões do banco de dados e serialização de payload JSON.",
       expectedBehavior:
         "Respostas com P95 abaixo de 50ms em regime normal. Quando disparado por IP único em excesso (>120 req/min), deve aplicar rate limit 429 para proteger o banco.",
     },
@@ -113,7 +119,12 @@ const TARGETS: TargetItem[] = [
     url: "/api/public/v1/blog/posts",
     description: "Artigos institucionais, guias de infraestrutura (Proxmox/Ansible) e destaques",
     impactLevel: "Cache & Leitura Pública",
-    pipeline: ["Caddy (Proxy HTTPS/TLS)", "Next.js BFF (Allowlist)", "Go Core REST", "PostgreSQL (Índice de Tags)"],
+    pipeline: [
+      "Caddy (Proxy HTTPS/TLS)",
+      "Next.js BFF (Allowlist)",
+      "Go Core REST",
+      "PostgreSQL (Índice de Tags)",
+    ],
     testExplanation: {
       overview:
         "Testa a publicação e entrega de artigos do blog institucional, posts em destaque editorial e metadados de leitura rápida para a população e equipes técnicas.",
@@ -142,7 +153,12 @@ const TARGETS: TargetItem[] = [
     url: "/api/public/v1/branding",
     description: "Identidade visual governamental, cores institucionais, brasão e parâmetros",
     impactLevel: "Alta Frequência / Leve",
-    pipeline: ["Caddy (Proxy HTTPS/TLS)", "Next.js BFF (Allowlist)", "Go Core REST", "Redis (In-Memory)"],
+    pipeline: [
+      "Caddy (Proxy HTTPS/TLS)",
+      "Next.js BFF (Allowlist)",
+      "Go Core REST",
+      "Redis (In-Memory)",
+    ],
     testExplanation: {
       overview:
         "Endpoint acessado na carga inicial de qualquer página do portal para renderizar cores, logotipo e metadados da instituição.",
@@ -171,7 +187,13 @@ const TARGETS: TargetItem[] = [
     url: "/api/health",
     description: "Sonda de liveness e readiness de todos os contêineres e dependências",
     impactLevel: "Sonda de Diagnóstico",
-    pipeline: ["Caddy (Proxy HTTPS)", "Next.js Route Handler", "Postgres Ping", "Redis Ping", "MinIO Ping"],
+    pipeline: [
+      "Caddy (Proxy HTTPS)",
+      "Next.js Route Handler",
+      "Postgres Ping",
+      "Redis Ping",
+      "MinIO Ping",
+    ],
     testExplanation: {
       overview:
         "Exercita o healthcheck completo do sistema, que verifica a conectividade simultânea com o PostgreSQL, Redis, MinIO e barramento de eventos.",
@@ -199,7 +221,13 @@ const TARGETS: TargetItem[] = [
     url: "/api/public/v1/contact/messages",
     description: "Endpoint POST de envio de mensagens com barreira anti-spam e Rate Limit ativo",
     impactLevel: "Segurança & Defesa Anti-Spam",
-    pipeline: ["Caddy (Proxy HTTPS)", "Next.js BFF (Allowlist POST)", "Go Core REST", "Redis RateLimiter", "PostgreSQL"],
+    pipeline: [
+      "Caddy (Proxy HTTPS)",
+      "Next.js BFF (Allowlist POST)",
+      "Go Core REST",
+      "Redis RateLimiter",
+      "PostgreSQL",
+    ],
     testExplanation: {
       overview:
         "Mede a eficácia dos mecanismos de defesa ativa contra inundações (DDoS), bots e submissões automatizadas em massa de formulários públicos.",
@@ -208,7 +236,8 @@ const TARGETS: TargetItem[] = [
         "Next.js BFF: Repasse estrito de payloads JSON com sanitização e limite de tamanho",
         "Go Backend: Resposta imediata 429 com cabeçalho Retry-After: 60 quando o limite é excedido",
       ],
-      stressVector: "Rajada deliberada de requisições concorrentes a partir do mesmo IP para comprovar contenção.",
+      stressVector:
+        "Rajada deliberada de requisições concorrentes a partir do mesmo IP para comprovar contenção.",
       expectedBehavior:
         "Aceite das primeiras requisições autorizadas e bloqueio imediato das subsequentes com HTTP 429 Too Many Requests em < 1ms.",
     },
@@ -226,9 +255,16 @@ const TARGETS: TargetItem[] = [
     id: "modelos_minio",
     name: "Leitura pública & Storage MinIO/S3",
     url: "/api/public/v1/blog/posts",
-    description: "Consulta pública de conteúdo publicado, com objetos no MinIO quando o plug-in guarda arquivo",
+    description:
+      "Consulta pública de conteúdo publicado, com objetos no MinIO quando o plug-in guarda arquivo",
     impactLevel: "Armazenamento S3 & MinIO",
-    pipeline: ["Caddy (Proxy TLS)", "Next.js BFF (Allowlist)", "Go Core REST", "MinIO S3 Engine", "PostgreSQL"],
+    pipeline: [
+      "Caddy (Proxy TLS)",
+      "Next.js BFF (Allowlist)",
+      "Go Core REST",
+      "MinIO S3 Engine",
+      "PostgreSQL",
+    ],
     testExplanation: {
       overview:
         "Mede a vazão e a estabilidade do armazenamento de objetos S3 (MinIO) usado pelos plug-ins de arquivo.",
@@ -238,7 +274,8 @@ const TARGETS: TargetItem[] = [
         "Go REST Streamer: Streaming em bytes com zero-copy para entrega rápida ao navegador",
         "Caddy: Compressão e terminação TLS sem bufferização excessiva de binários",
       ],
-      stressVector: "Concorrência de leitura em armazenamento de objetos S3 e validação de integridade criptográfica.",
+      stressVector:
+        "Concorrência de leitura em armazenamento de objetos S3 e validação de integridade criptográfica.",
       expectedBehavior:
         "P95 nominal abaixo de 45ms para metadados e streaming contínuo sem estouro de buffers de memória.",
     },
@@ -258,7 +295,13 @@ const TARGETS: TargetItem[] = [
     url: "/api/backend/v1/monitoring/outbox-stats",
     description: "Monitoramento de vazão do Transactional Outbox e saúde da fila de eventos AMQP",
     impactLevel: "Mensageria & Broker AMQP",
-    pipeline: ["Caddy (Proxy TLS)", "Next.js BFF Auth", "Go Core REST", "PostgreSQL (outbox_events)", "RabbitMQ 3.13"],
+    pipeline: [
+      "Caddy (Proxy TLS)",
+      "Next.js BFF Auth",
+      "Go Core REST",
+      "PostgreSQL (outbox_events)",
+      "RabbitMQ 3.13",
+    ],
     testExplanation: {
       overview:
         "Avalia a integridade do padrão Transactional Outbox do Projeto Nova sob concorrência, verificando o status de publicação assíncrona para o RabbitMQ.",
@@ -268,7 +311,8 @@ const TARGETS: TargetItem[] = [
         "Go Background Relay: Worker de despacho assíncrono entre banco e filas",
         "Next.js BFF Auth: Injeção de credencial segura de sessão de monitoramento",
       ],
-      stressVector: "Consultas de telemetria transacional concorrentes durante despacho de eventos assíncronos.",
+      stressVector:
+        "Consultas de telemetria transacional concorrentes durante despacho de eventos assíncronos.",
       expectedBehavior:
         "P95 abaixo de 35ms, com 0 falhas na contagem de dead letters e fila de pendências estável.",
     },
@@ -286,9 +330,15 @@ const TARGETS: TargetItem[] = [
     id: "cluster_probes",
     name: "Sondas de Cluster & Infraestrutura (RabbitMQ, MinIO, Redis & DB)",
     url: "/api/health",
-    description: "Estresse simultâneo dos 4 pilares da stack: Postgres 16, Redis 7.4, RabbitMQ 3.13 e MinIO",
+    description:
+      "Estresse simultâneo dos 4 pilares da stack: Postgres 16, Redis 7.4, RabbitMQ 3.13 e MinIO",
     impactLevel: "Alta Concorrência Multi-Serviço",
-    pipeline: ["Caddy (Proxy TLS)", "Next.js Runtime", "Go /ready Core", "4x Sondas Paralelas (PG, Redis, RabbitMQ, MinIO)"],
+    pipeline: [
+      "Caddy (Proxy TLS)",
+      "Next.js Runtime",
+      "Go /ready Core",
+      "4x Sondas Paralelas (PG, Redis, RabbitMQ, MinIO)",
+    ],
     testExplanation: {
       overview:
         "Dispara probes concorrentes no endpoint central de readiness, que executa pings TCP e liveness simultâneos em todos os 4 serviços da infraestrutura Proxmox.",
@@ -299,7 +349,8 @@ const TARGETS: TargetItem[] = [
         "MinIO: Validação de probe do bucket S3 e credenciais de acesso",
         "Next.js Runtime: Orquestração de timeouts de 3 segundos por sonda",
       ],
-      stressVector: "Inundação de probes de liveness para verificar se a infraestrutura aguenta checagens de alta frequência sem degradação.",
+      stressVector:
+        "Inundação de probes de liveness para verificar se a infraestrutura aguenta checagens de alta frequência sem degradação.",
       expectedBehavior:
         "Status HTTP 200 OK com 'status: ok' para 100% dos 4 serviços. P95 inferior a 45ms.",
     },
@@ -368,7 +419,8 @@ export function LoadTestTab() {
     };
   }, []);
 
-  const selectedTarget: TargetItem = TARGETS.find((t) => t.id === selectedTargetId) ?? DEFAULT_TARGET;
+  const selectedTarget: TargetItem =
+    TARGETS.find((t) => t.id === selectedTargetId) ?? DEFAULT_TARGET;
 
   const calculatePercentile = (sortedArr: number[], p: number): number => {
     if (sortedArr.length === 0) return 0;
@@ -528,12 +580,15 @@ export function LoadTestTab() {
 
     const totalDurationMs = Math.round(performance.now() - startTime);
     const sortedLatencies = [...latencies].sort((a, b) => a - b);
-    const avg = latencies.length ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0;
+    const avg = latencies.length
+      ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+      : 0;
     const min = sortedLatencies.length ? (sortedLatencies[0] ?? 0) : 0;
     const max = sortedLatencies.length ? (sortedLatencies[sortedLatencies.length - 1] ?? 0) : 0;
     const p95Val = calculatePercentile(sortedLatencies, 95);
     const p99Val = calculatePercentile(sortedLatencies, 99);
-    const totalRps = totalDurationMs > 0 ? Math.round((completed / (totalDurationMs / 1000)) * 10) / 10 : 0;
+    const totalRps =
+      totalDurationMs > 0 ? Math.round((completed / (totalDurationMs / 1000)) * 10) / 10 : 0;
 
     setStats({
       completed,
@@ -552,7 +607,14 @@ export function LoadTestTab() {
     isRunningRef.current = false;
 
     if (completed > 0) {
-      const diagnostic = generateDiagnostic(currentTarget, p95Val, success, rateLimited, serverErrors, completed);
+      const diagnostic = generateDiagnostic(
+        currentTarget,
+        p95Val,
+        success,
+        rateLimited,
+        serverErrors,
+        completed,
+      );
       const newResult: BenchmarkResult = {
         id: crypto.randomUUID(),
         targetId: currentTarget.id,
@@ -603,7 +665,14 @@ export function LoadTestTab() {
       `- Erros de Servidor (5xx): ${stats.serverErrors}`,
       `---------------------------------------------`,
       `DIAGNÓSTICO:`,
-      generateDiagnostic(selectedTarget, stats.p95, stats.success, stats.rateLimited, stats.serverErrors, stats.completed),
+      generateDiagnostic(
+        selectedTarget,
+        stats.p95,
+        stats.success,
+        stats.rateLimited,
+        stats.serverErrors,
+        stats.completed,
+      ),
     ].join("\n");
 
     navigator.clipboard.writeText(text);
@@ -612,7 +681,8 @@ export function LoadTestTab() {
   };
 
   const handleExportJSON = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(history, null, 2));
+    const dataStr =
+      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(history, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `nova-benchmark-${Date.now()}.json`);
@@ -634,7 +704,8 @@ export function LoadTestTab() {
               <div>
                 <CardTitle className="text-xl">Cockpit de Testes de Carga & Performance</CardTitle>
                 <CardDescription>
-                  Dispare requisições concorrentes em tempo real para aferir vazão (req/s), latências (p95/p99) e limites.
+                  Dispare requisições concorrentes em tempo real para aferir vazão (req/s),
+                  latências (p95/p99) e limites.
                 </CardDescription>
               </div>
             </div>
@@ -654,7 +725,10 @@ export function LoadTestTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
             {/* 1. Escolha do Alvo */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="target-select" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              <label
+                htmlFor="target-select"
+                className="text-xs font-semibold uppercase tracking-wider text-muted"
+              >
                 1. Endpoint / Cenário Alvo
               </label>
               <select
@@ -695,7 +769,9 @@ export function LoadTestTab() {
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">{concurrency} requisições disparadas em paralelo</span>
+              <span className="text-xs text-muted-foreground">
+                {concurrency} requisições disparadas em paralelo
+              </span>
             </div>
 
             {/* 3. Volume de Requisições */}
@@ -728,14 +804,25 @@ export function LoadTestTab() {
           <div className="mt-6 flex flex-col gap-2">
             <div className="flex items-center justify-between text-xs text-muted">
               <span>
-                Progresso: {stats.completed} de {totalRequestsTarget} requisições ({currentProgress}%)
+                Progresso: {stats.completed} de {totalRequestsTarget} requisições ({currentProgress}
+                %)
               </span>
-              <span>{isRunning ? "Executando benchmark concorrente..." : stats.completed > 0 ? "Benchmark concluído" : "Aguardando disparo"}</span>
+              <span>
+                {isRunning
+                  ? "Executando benchmark concorrente..."
+                  : stats.completed > 0
+                    ? "Benchmark concluído"
+                    : "Aguardando disparo"}
+              </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-surface-border">
               <div
                 className={`h-full transition-all duration-150 ${
-                  isRunning ? "bg-primary animate-pulse" : stats.completed > 0 ? "bg-success" : "bg-muted"
+                  isRunning
+                    ? "bg-primary animate-pulse"
+                    : stats.completed > 0
+                      ? "bg-success"
+                      : "bg-muted"
                 }`}
                 style={{ width: `${currentProgress}%` }}
               />
@@ -764,7 +851,8 @@ export function LoadTestTab() {
             </div>
           </div>
           <CardDescription className="text-xs">
-            Compreenda exatamente o fluxo percorrido pela requisição, os subsistemas exercitados e o que este teste avalia.
+            Compreenda exatamente o fluxo percorrido pela requisição, os subsistemas exercitados e o
+            que este teste avalia.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-xs">
@@ -844,13 +932,17 @@ export function LoadTestTab() {
         <Card className="border-surface-border">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between text-muted mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Vazão Instantânea</span>
+              <span className="text-xs font-medium uppercase tracking-wider">
+                Vazão Instantânea
+              </span>
               <Gauge size={16} className="text-primary" />
             </div>
             <div className="text-2xl font-bold tracking-tight">
               {liveReqPerSec} <span className="text-xs font-normal text-muted">req/s</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">Capacidade de resposta da stack</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Capacidade de resposta da stack
+            </p>
           </CardContent>
         </Card>
 
@@ -874,13 +966,17 @@ export function LoadTestTab() {
         <Card className="border-surface-border">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between text-muted mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Percentis P95 / P99</span>
+              <span className="text-xs font-medium uppercase tracking-wider">
+                Percentis P95 / P99
+              </span>
               <TrendingUp size={16} className="text-warning" />
             </div>
             <div className="text-2xl font-bold tracking-tight">
               {stats.p95} / {stats.p99} <span className="text-xs font-normal text-muted">ms</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">95% das respostas abaixo de {stats.p95}ms</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              95% das respostas abaixo de {stats.p95}ms
+            </p>
           </CardContent>
         </Card>
 
@@ -888,13 +984,18 @@ export function LoadTestTab() {
         <Card className="border-surface-border">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between text-muted mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider">Status das Respostas</span>
+              <span className="text-xs font-medium uppercase tracking-wider">
+                Status das Respostas
+              </span>
               <BarChart3 size={16} className="text-success" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-success">{stats.success}</span>
               {stats.rateLimited > 0 && (
-                <span className="text-sm font-semibold text-warning" title="Rate Limited (HTTP 429)">
+                <span
+                  className="text-sm font-semibold text-warning"
+                  title="Rate Limited (HTTP 429)"
+                >
                   ({stats.rateLimited}x 429)
                 </span>
               )}
@@ -908,8 +1009,8 @@ export function LoadTestTab() {
               {stats.rateLimited > 0
                 ? "Rate Limiter ativado com sucesso"
                 : stats.serverErrors > 0
-                ? "Falhas de servidor detectadas"
-                : "Respostas HTTP 200 OK"}
+                  ? "Falhas de servidor detectadas"
+                  : "Respostas HTTP 200 OK"}
             </p>
           </CardContent>
         </Card>
@@ -944,21 +1045,32 @@ export function LoadTestTab() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-[11px]">
               <div className="rounded border border-surface-border p-2 bg-surface">
-                <span className="text-muted block font-semibold mb-0.5">Por que P95 e P99 importam?</span>
+                <span className="text-muted block font-semibold mb-0.5">
+                  Por que P95 e P99 importam?
+                </span>
                 <span className="text-muted-foreground">
-                  A média pode mascarar requisições lentas. O P95 ({stats.p95}ms) garante que 95 de cada 100 usuários recebem resposta abaixo deste teto sem lentidão.
+                  A média pode mascarar requisições lentas. O P95 ({stats.p95}ms) garante que 95 de
+                  cada 100 usuários recebem resposta abaixo deste teto sem lentidão.
                 </span>
               </div>
               <div className="rounded border border-surface-border p-2 bg-surface">
-                <span className="text-muted block font-semibold mb-0.5">Impacto no Hardware do Host:</span>
+                <span className="text-muted block font-semibold mb-0.5">
+                  Impacto no Hardware do Host:
+                </span>
                 <span className="text-muted-foreground">
-                  Com conexões pooled do Go e Redis, o consumo de CPU permanece abaixo de 1% e a memória fica contida na faixa de 28MB no Proxmox.
+                  Com conexões pooled do Go e Redis, o consumo de CPU permanece abaixo de 1% e a
+                  memória fica contida na faixa de 28MB no Proxmox.
                 </span>
               </div>
               <div className="rounded border border-surface-border p-2 bg-surface">
-                <span className="text-muted block font-semibold mb-0.5">Cabeçalhos RFC 6585 Ativos:</span>
+                <span className="text-muted block font-semibold mb-0.5">
+                  Cabeçalhos RFC 6585 Ativos:
+                </span>
                 <span className="text-muted-foreground">
-                  Quando o status 429 ocorre, os headers <code className="text-primary">Retry-After: 60</code> e <code className="text-primary">X-RateLimit-Limit</code> orientam o cliente a retentar com segurança.
+                  Quando o status 429 ocorre, os headers{" "}
+                  <code className="text-primary">Retry-After: 60</code> e{" "}
+                  <code className="text-primary">X-RateLimit-Limit</code> orientam o cliente a
+                  retentar com segurança.
                 </span>
               </div>
             </div>
@@ -972,7 +1084,9 @@ export function LoadTestTab() {
         <Card className="border-surface-border lg:col-span-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Distribuição de Status HTTP</CardTitle>
-            <CardDescription className="text-xs">Proporção de códigos retornados pelo servidor</CardDescription>
+            <CardDescription className="text-xs">
+              Proporção de códigos retornados pelo servidor
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {/* 2xx */}
@@ -981,12 +1095,17 @@ export function LoadTestTab() {
                 <span className="flex items-center gap-1.5 font-medium text-success">
                   <CheckCircle2 size={13} /> 2xx (Sucesso)
                 </span>
-                <span className="font-bold">{stats.success} ({stats.completed > 0 ? Math.round((stats.success / stats.completed) * 100) : 0}%)</span>
+                <span className="font-bold">
+                  {stats.success} (
+                  {stats.completed > 0 ? Math.round((stats.success / stats.completed) * 100) : 0}%)
+                </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-surface-border overflow-hidden">
                 <div
                   className="h-full bg-success"
-                  style={{ width: `${stats.completed > 0 ? (stats.success / stats.completed) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.completed > 0 ? (stats.success / stats.completed) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -997,12 +1116,20 @@ export function LoadTestTab() {
                 <span className="flex items-center gap-1.5 font-medium text-warning">
                   <AlertTriangle size={13} /> 429 (Rate Limited / Defesa)
                 </span>
-                <span className="font-bold">{stats.rateLimited} ({stats.completed > 0 ? Math.round((stats.rateLimited / stats.completed) * 100) : 0}%)</span>
+                <span className="font-bold">
+                  {stats.rateLimited} (
+                  {stats.completed > 0
+                    ? Math.round((stats.rateLimited / stats.completed) * 100)
+                    : 0}
+                  %)
+                </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-surface-border overflow-hidden">
                 <div
                   className="h-full bg-warning"
-                  style={{ width: `${stats.completed > 0 ? (stats.rateLimited / stats.completed) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.completed > 0 ? (stats.rateLimited / stats.completed) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -1013,12 +1140,20 @@ export function LoadTestTab() {
                 <span className="flex items-center gap-1.5 font-medium text-muted">
                   4xx (Erros Cliente)
                 </span>
-                <span className="font-bold">{stats.clientErrors} ({stats.completed > 0 ? Math.round((stats.clientErrors / stats.completed) * 100) : 0}%)</span>
+                <span className="font-bold">
+                  {stats.clientErrors} (
+                  {stats.completed > 0
+                    ? Math.round((stats.clientErrors / stats.completed) * 100)
+                    : 0}
+                  %)
+                </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-surface-border overflow-hidden">
                 <div
                   className="h-full bg-muted"
-                  style={{ width: `${stats.completed > 0 ? (stats.clientErrors / stats.completed) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.completed > 0 ? (stats.clientErrors / stats.completed) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -1029,12 +1164,20 @@ export function LoadTestTab() {
                 <span className="flex items-center gap-1.5 font-medium text-danger">
                   5xx (Erros Servidor)
                 </span>
-                <span className="font-bold">{stats.serverErrors} ({stats.completed > 0 ? Math.round((stats.serverErrors / stats.completed) * 100) : 0}%)</span>
+                <span className="font-bold">
+                  {stats.serverErrors} (
+                  {stats.completed > 0
+                    ? Math.round((stats.serverErrors / stats.completed) * 100)
+                    : 0}
+                  %)
+                </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-surface-border overflow-hidden">
                 <div
                   className="h-full bg-danger"
-                  style={{ width: `${stats.completed > 0 ? (stats.serverErrors / stats.completed) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.completed > 0 ? (stats.serverErrors / stats.completed) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -1071,10 +1214,14 @@ export function LoadTestTab() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base">Stream de Requisições ao Vivo</CardTitle>
-                <CardDescription className="text-xs">Amostragem em tempo real das chamadas finalizadas</CardDescription>
+                <CardDescription className="text-xs">
+                  Amostragem em tempo real das chamadas finalizadas
+                </CardDescription>
               </div>
               <span className="text-xs text-muted flex items-center gap-1">
-                <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-success animate-ping" : "bg-muted"}`} />
+                <span
+                  className={`h-2 w-2 rounded-full ${isRunning ? "bg-success animate-ping" : "bg-muted"}`}
+                />
                 {isRunning ? "Ativo" : "Ocioso"}
               </span>
             </div>
@@ -1084,7 +1231,9 @@ export function LoadTestTab() {
               <div className="flex flex-col items-center justify-center py-10 text-center text-muted">
                 <Gauge size={32} className="opacity-30 mb-2" />
                 <p className="text-sm">Nenhum teste de carga executado ainda nesta sessão.</p>
-                <p className="text-xs text-muted-foreground">Clique em &quot;Iniciar Teste de Carga&quot; para começar a amostragem.</p>
+                <p className="text-xs text-muted-foreground">
+                  Clique em &quot;Iniciar Teste de Carga&quot; para começar a amostragem.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto max-h-[220px] overflow-y-auto pr-1">
@@ -1108,8 +1257,8 @@ export function LoadTestTab() {
                               log.statusCode >= 200 && log.statusCode < 300
                                 ? "bg-success/10 text-success"
                                 : log.statusCode === 429
-                                ? "bg-warning/10 text-warning"
-                                : "bg-danger/10 text-danger"
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-danger/10 text-danger"
                             }`}
                           >
                             {log.statusCode} {log.statusCode === 429 ? "Rate Limit" : ""}
@@ -1121,8 +1270,8 @@ export function LoadTestTab() {
                               log.durationMs < 50
                                 ? "text-success"
                                 : log.durationMs < 200
-                                ? "text-info"
-                                : "text-warning"
+                                  ? "text-info"
+                                  : "text-warning"
                             }
                           >
                             {log.durationMs}ms
@@ -1142,9 +1291,12 @@ export function LoadTestTab() {
       {history.length > 0 && (
         <Card className="border-surface-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Histórico dos Testes Realizados & Análise de Desempenho</CardTitle>
+            <CardTitle className="text-base">
+              Histórico dos Testes Realizados & Análise de Desempenho
+            </CardTitle>
             <CardDescription className="text-xs">
-              Benchmarks finalizados durante a sessão atual. Clique em qualquer linha para abrir a análise detalhada.
+              Benchmarks finalizados durante a sessão atual. Clique em qualquer linha para abrir a
+              análise detalhada.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1168,7 +1320,9 @@ export function LoadTestTab() {
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-xs text-foreground">{h.targetName}</span>
+                            <span className="font-semibold text-xs text-foreground">
+                              {h.targetName}
+                            </span>
                             <span className="text-[10px] text-muted font-mono">{h.url}</span>
                           </div>
                           <span className="text-[11px] text-muted-foreground">
@@ -1183,13 +1337,19 @@ export function LoadTestTab() {
                           <span className="text-[10px] text-muted">Vazão média</span>
                         </div>
                         <div className="flex flex-col items-end">
-                          <span className="font-semibold text-foreground">P95: {h.p95Latency}ms</span>
+                          <span className="font-semibold text-foreground">
+                            P95: {h.p95Latency}ms
+                          </span>
                           <span className="text-[10px] text-muted">Média: {h.avgLatency}ms</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-success text-xs font-bold">{h.successCount}x 200</span>
+                          <span className="text-success text-xs font-bold">
+                            {h.successCount}x 200
+                          </span>
                           {h.rateLimitedCount > 0 && (
-                            <span className="text-warning text-xs font-bold">| {h.rateLimitedCount}x 429</span>
+                            <span className="text-warning text-xs font-bold">
+                              | {h.rateLimitedCount}x 429
+                            </span>
                           )}
                         </div>
                         <button
@@ -1227,7 +1387,9 @@ export function LoadTestTab() {
                                 Parecer de Conformidade com o SLA:
                               </span>
                               <p className="text-xs text-muted-foreground">
-                                Meta: {matchedTarget.performanceGuide.slaTarget}. O teste alcançou P95 de {h.p95Latency}ms e P99 de {h.p99Latency}ms sob {h.concurrency} conexões paralelas.
+                                Meta: {matchedTarget.performanceGuide.slaTarget}. O teste alcançou
+                                P95 de {h.p95Latency}ms e P99 de {h.p99Latency}ms sob{" "}
+                                {h.concurrency} conexões paralelas.
                               </p>
                             </div>
                           </div>

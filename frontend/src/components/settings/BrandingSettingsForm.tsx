@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Building2, Save, RotateCcw, ShieldCheck } from "lucide-react";
 
-import { useBranding, DEFAULT_BRANDING, type SystemBrandingConfig } from "@/components/branding/BrandingContext";
+import {
+  useBranding,
+  DEFAULT_BRANDING,
+  type SystemBrandingConfig,
+} from "@/components/branding/BrandingContext";
 import { mergeServerBranding } from "@/components/branding/brandingConfig";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -64,7 +68,10 @@ export function BrandingSettingsForm() {
   // de contraste WCAG, auditoria) e só então atualiza a tela. Antes o
   // formulário mudava apenas o estado desta aba e anunciava "salvo" — um
   // recarregamento, ou qualquer outro usuário, via o branding antigo.
-  async function persist(config: SystemBrandingConfig, success: { title: string; description: string; tone: "success" | "info" }) {
+  async function persist(
+    config: SystemBrandingConfig,
+    success: { title: string; description: string; tone: "success" | "info" },
+  ) {
     setSaving(true);
     try {
       const { data } = await apiClient.put<Branding>("v1/admin/branding", toApi(config));
@@ -98,11 +105,19 @@ export function BrandingSettingsForm() {
   };
 
   const doReset = async () => {
-    const ok = await persist({ ...branding, ...DEFAULT_BRANDING, highContrast: branding.highContrast, fontSizeScale: branding.fontSizeScale }, {
-      title: "Padrões restaurados",
-      description: "A identidade visual padrão foi reestabelecida.",
-      tone: "info",
-    });
+    const ok = await persist(
+      {
+        ...branding,
+        ...DEFAULT_BRANDING,
+        highContrast: branding.highContrast,
+        fontSizeScale: branding.fontSizeScale,
+      },
+      {
+        title: "Padrões restaurados",
+        description: "A identidade visual padrão foi reestabelecida.",
+        tone: "info",
+      },
+    );
     if (ok) setConfirmResetOpen(false);
   };
 
@@ -126,175 +141,178 @@ export function BrandingSettingsForm() {
       <CardContent className="p-6">
         {!canManage && (
           <p role="note" className="mb-4 rounded-md bg-warning/10 p-3 text-xs">
-            Somente leitura: alterar a identidade visual exige a permissão <code className="font-mono">branding:manage</code>.
+            Somente leitura: alterar a identidade visual exige a permissão{" "}
+            <code className="font-mono">branding:manage</code>.
           </p>
         )}
         <form onSubmit={handleSave} className="flex flex-col gap-6 text-xs">
           <fieldset disabled={!canManage || saving} className="contents">
-          {/* Seção 1: Identificação */}
-          <div className="flex flex-col gap-4">
-            <h3 className="border-b border-surface-border pb-1 text-xs font-bold uppercase tracking-wider text-primary">
-              1. Identificação & Metadados
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input
-                label="Nome da Aplicação / Sistema *"
-                name="appName"
-                autoComplete="off"
-                value={form.appName}
-                onChange={(e) => handleChange("appName", e.target.value)}
-                placeholder="Ex: Portal da Prefeitura"
-                required
-              />
-              <Input
-                label="Órgão / Prefeitura Municipal *"
-                name="orgName"
-                autoComplete="organization"
-                value={form.orgName}
-                onChange={(e) => handleChange("orgName", e.target.value)}
-                placeholder="Ex: Secretaria de Governo Digital"
-                required
-              />
-            </div>
-            <Textarea
-              label="Descrição Institucional"
-              name="appDescription"
-              rows={2}
-              value={form.appDescription}
-              onChange={(e) => handleChange("appDescription", e.target.value)}
-              placeholder="Descrição curta para a barra e-MAG e metadados…"
-            />
-          </div>
-
-          {/* Seção 2: Logomarca */}
-          <div className="flex flex-col gap-4">
-            <h3 className="border-b border-surface-border pb-1 text-xs font-bold uppercase tracking-wider text-primary">
-              2. Logomarca & Imagens Institucionais
-            </h3>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="flex flex-col gap-2">
+            {/* Seção 1: Identificação */}
+            <div className="flex flex-col gap-4">
+              <h3 className="border-b border-surface-border pb-1 text-xs font-bold uppercase tracking-wider text-primary">
+                1. Identificação & Metadados
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
-                  label="URL da Logomarca (PNG/SVG/WebP)"
-                  name="logoUrl"
-                  type="url"
-                  inputMode="url"
+                  label="Nome da Aplicação / Sistema *"
+                  name="appName"
                   autoComplete="off"
-                  value={form.logoUrl}
-                  onChange={(e) => handleChange("logoUrl", e.target.value)}
-                  placeholder="https://exemplo.gov.br/logo.png"
+                  value={form.appName}
+                  onChange={(e) => handleChange("appName", e.target.value)}
+                  placeholder="Ex: Portal da Prefeitura"
+                  required
                 />
-                <p className="text-[11px] text-muted">
-                  Apenas URLs <code className="font-mono">https://</code> ou caminhos locais (<code className="font-mono">/logo.svg</code>) são aceitos.
-                </p>
-              </div>
-
-              {/* Preview — espaço reservado fixo para não gerar CLS (P-01) */}
-              <div className="flex min-h-[100px] flex-col items-center justify-center rounded-lg border border-surface-border bg-surface-hover/30 p-4">
-                <span className="mb-2 text-[10px] font-bold uppercase text-muted">
-                  Pré-visualização da Logomarca
-                </span>
-                {safeLogo ? (
-                  <span className="inline-flex h-10 w-[180px] items-center justify-center overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={safeLogo}
-                      alt={`Logomarca de ${form.appName || "aplicação"}`}
-                      width={180}
-                      height={40}
-                      onError={() => setLogoPreviewError(true)}
-                      className="h-10 w-auto max-w-full object-contain"
-                    />
-                  </span>
-                ) : (
-                  <div className="flex items-center gap-2 text-muted">
-                    <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
-                    <span className="text-xs font-semibold">{form.appName || "Projeto Nova"}</span>
-                    <span className="text-[10px] text-muted">(fallback vetorial)</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
                 <Input
-                  label="URL do Favicon (ICO/PNG/SVG)"
-                  name="faviconUrl"
-                  type="url"
-                  inputMode="url"
-                  autoComplete="off"
-                  value={form.faviconUrl}
-                  onChange={(e) => handleChange("faviconUrl", e.target.value)}
-                  placeholder="https://exemplo.gov.br/favicon.png"
+                  label="Órgão / Prefeitura Municipal *"
+                  name="orgName"
+                  autoComplete="organization"
+                  value={form.orgName}
+                  onChange={(e) => handleChange("orgName", e.target.value)}
+                  placeholder="Ex: Secretaria de Governo Digital"
+                  required
                 />
-                <p className="text-[11px] text-muted">
-                  Apenas URLs <code className="font-mono">https://</code> são aceitas. Sem isto, a
-                  aplicação usa o selo padrão da plataforma.
-                </p>
               </div>
+              <Textarea
+                label="Descrição Institucional"
+                name="appDescription"
+                rows={2}
+                value={form.appDescription}
+                onChange={(e) => handleChange("appDescription", e.target.value)}
+                placeholder="Descrição curta para a barra e-MAG e metadados…"
+              />
+            </div>
 
-              {/* Preview — mesmo raciocínio de CLS do preview da logo acima. */}
-              <div className="flex min-h-[100px] flex-col items-center justify-center rounded-lg border border-surface-border bg-surface-hover/30 p-4">
-                <span className="mb-2 text-[10px] font-bold uppercase text-muted">
-                  Pré-visualização do Favicon
-                </span>
-                {safeFavicon ? (
-                  <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={safeFavicon}
-                      alt="Favicon personalizado"
-                      width={32}
-                      height={32}
-                      onError={() => setFaviconPreviewError(true)}
-                      className="h-8 w-8 object-contain"
-                    />
+            {/* Seção 2: Logomarca */}
+            <div className="flex flex-col gap-4">
+              <h3 className="border-b border-surface-border pb-1 text-xs font-bold uppercase tracking-wider text-primary">
+                2. Logomarca & Imagens Institucionais
+              </h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Input
+                    label="URL da Logomarca (PNG/SVG/WebP)"
+                    name="logoUrl"
+                    type="url"
+                    inputMode="url"
+                    autoComplete="off"
+                    value={form.logoUrl}
+                    onChange={(e) => handleChange("logoUrl", e.target.value)}
+                    placeholder="https://exemplo.gov.br/logo.png"
+                  />
+                  <p className="text-[11px] text-muted">
+                    Apenas URLs <code className="font-mono">https://</code> ou caminhos locais (
+                    <code className="font-mono">/logo.svg</code>) são aceitos.
+                  </p>
+                </div>
+
+                {/* Preview — espaço reservado fixo para não gerar CLS (P-01) */}
+                <div className="flex min-h-[100px] flex-col items-center justify-center rounded-lg border border-surface-border bg-surface-hover/30 p-4">
+                  <span className="mb-2 text-[10px] font-bold uppercase text-muted">
+                    Pré-visualização da Logomarca
                   </span>
-                ) : (
-                  <div className="flex items-center gap-2 text-muted">
-                    <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
-                    <span className="text-[10px] text-muted">(favicon padrão)</span>
-                  </div>
-                )}
+                  {safeLogo ? (
+                    <span className="inline-flex h-10 w-[180px] items-center justify-center overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={safeLogo}
+                        alt={`Logomarca de ${form.appName || "aplicação"}`}
+                        width={180}
+                        height={40}
+                        onError={() => setLogoPreviewError(true)}
+                        className="h-10 w-auto max-w-full object-contain"
+                      />
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-2 text-muted">
+                      <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
+                      <span className="text-xs font-semibold">
+                        {form.appName || "Projeto Nova"}
+                      </span>
+                      <span className="text-[10px] text-muted">(fallback vetorial)</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Input
+                    label="URL do Favicon (ICO/PNG/SVG)"
+                    name="faviconUrl"
+                    type="url"
+                    inputMode="url"
+                    autoComplete="off"
+                    value={form.faviconUrl}
+                    onChange={(e) => handleChange("faviconUrl", e.target.value)}
+                    placeholder="https://exemplo.gov.br/favicon.png"
+                  />
+                  <p className="text-[11px] text-muted">
+                    Apenas URLs <code className="font-mono">https://</code> são aceitas. Sem isto, a
+                    aplicação usa o selo padrão da plataforma.
+                  </p>
+                </div>
+
+                {/* Preview — mesmo raciocínio de CLS do preview da logo acima. */}
+                <div className="flex min-h-[100px] flex-col items-center justify-center rounded-lg border border-surface-border bg-surface-hover/30 p-4">
+                  <span className="mb-2 text-[10px] font-bold uppercase text-muted">
+                    Pré-visualização do Favicon
+                  </span>
+                  {safeFavicon ? (
+                    <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={safeFavicon}
+                        alt="Favicon personalizado"
+                        width={32}
+                        height={32}
+                        onError={() => setFaviconPreviewError(true)}
+                        className="h-8 w-8 object-contain"
+                      />
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-2 text-muted">
+                      <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
+                      <span className="text-[10px] text-muted">(favicon padrão)</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Seção 3: Contatos */}
-          <div className="flex flex-col gap-4">
-            <h3 className="border-b border-surface-border pb-1 text-xs font-bold uppercase tracking-wider text-primary">
-              3. Canais de Atendimento & Suporte
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Input
-                label="E-mail de Suporte"
-                name="supportEmail"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={form.supportEmail}
-                onChange={(e) => handleChange("supportEmail", e.target.value)}
-                placeholder="suporte@municipio.gov.br"
-              />
-              <Input
-                label="Telefone de Atendimento"
-                name="supportPhone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={form.supportPhone}
-                onChange={(e) => handleChange("supportPhone", e.target.value)}
-                placeholder="(66) 3411-5000"
-              />
-              <Input
-                label="Horário de Atendimento"
-                name="supportHours"
-                autoComplete="off"
-                value={form.supportHours}
-                onChange={(e) => handleChange("supportHours", e.target.value)}
-                placeholder="Segunda a Sexta, 08h às 17h"
-              />
+            {/* Seção 3: Contatos */}
+            <div className="flex flex-col gap-4">
+              <h3 className="border-b border-surface-border pb-1 text-xs font-bold uppercase tracking-wider text-primary">
+                3. Canais de Atendimento & Suporte
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Input
+                  label="E-mail de Suporte"
+                  name="supportEmail"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={form.supportEmail}
+                  onChange={(e) => handleChange("supportEmail", e.target.value)}
+                  placeholder="suporte@municipio.gov.br"
+                />
+                <Input
+                  label="Telefone de Atendimento"
+                  name="supportPhone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={form.supportPhone}
+                  onChange={(e) => handleChange("supportPhone", e.target.value)}
+                  placeholder="(66) 3411-5000"
+                />
+                <Input
+                  label="Horário de Atendimento"
+                  name="supportHours"
+                  autoComplete="off"
+                  value={form.supportHours}
+                  onChange={(e) => handleChange("supportHours", e.target.value)}
+                  placeholder="Segunda a Sexta, 08h às 17h"
+                />
+              </div>
             </div>
-          </div>
-
           </fieldset>
           <div className="flex items-center justify-between border-t border-surface-border pt-4">
             <Button
@@ -326,7 +344,12 @@ export function BrandingSettingsForm() {
             <Button variant="ghost" onClick={() => setConfirmResetOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="danger" className="ml-auto" loading={saving} onClick={() => void doReset()}>
+            <Button
+              variant="danger"
+              className="ml-auto"
+              loading={saving}
+              onClick={() => void doReset()}
+            >
               Restaurar padrões
             </Button>
           </>

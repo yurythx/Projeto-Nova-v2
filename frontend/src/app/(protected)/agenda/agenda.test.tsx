@@ -10,12 +10,31 @@ vi.mock("next/navigation", async () => (await import("@/test/navigation")).navig
 import AgendaPage from "./page";
 
 const now = new Date();
-const at = (day: number, hour: number) => new Date(now.getFullYear(), now.getMonth(), day, hour).toISOString();
+const at = (day: number, hour: number) =>
+  new Date(now.getFullYear(), now.getMonth(), day, hour).toISOString();
 
-const room = (id: string, extra: Record<string, unknown> = {}) => ({ id, name: `Sala ${id}`, location: "Bloco A", capacity: 10, resources: [], active: true, ...extra });
+const room = (id: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  name: `Sala ${id}`,
+  location: "Bloco A",
+  capacity: 10,
+  resources: [],
+  active: true,
+  ...extra,
+});
 const event = (id: string, extra: Record<string, unknown> = {}) => ({
-  id, title: `Evento ${id}`, description: "", location: "", starts_at: at(10, 9), ends_at: at(10, 10), all_day: false,
-  visibility: "internal", status: "confirmed", organizer_id: ME.id, organizer_name: "Maria", ...extra,
+  id,
+  title: `Evento ${id}`,
+  description: "",
+  location: "",
+  starts_at: at(10, 9),
+  ends_at: at(10, 10),
+  all_day: false,
+  visibility: "internal",
+  status: "confirmed",
+  organizer_id: ME.id,
+  organizer_name: "Maria",
+  ...extra,
 });
 
 describe("Agenda", () => {
@@ -27,8 +46,18 @@ describe("Agenda", () => {
       "GET v1/calendar/events": {
         data: [
           event("e1", { room_name: "Sala r1", description: "Pauta" }),
-          event("e2", { all_day: true, location: "https://meet", visibility: "public", organizer_id: "outro" }),
-          event("e3", { status: "cancelled", starts_at: at(12, 14), ends_at: at(12, 15), visibility: "private" }),
+          event("e2", {
+            all_day: true,
+            location: "https://meet",
+            visibility: "public",
+            organizer_id: "outro",
+          }),
+          event("e3", {
+            status: "cancelled",
+            starts_at: at(12, 14),
+            ends_at: at(12, 15),
+            visibility: "private",
+          }),
         ],
       },
       "GET v1/calendar/rooms": { data: [room("r1")] },
@@ -48,19 +77,26 @@ describe("Agenda", () => {
 
     const first = api.to("GET v1/calendar/events")[0]!.query;
     await userEvent.click(screen.getByRole("button", { name: "Próximo mês" }));
-    await waitFor(() => expect(api.to("GET v1/calendar/events").at(-1)!.query.get("from")).toBe(first.get("to")));
+    await waitFor(() =>
+      expect(api.to("GET v1/calendar/events").at(-1)!.query.get("from")).toBe(first.get("to")),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Mês anterior" }));
     await userEvent.click(screen.getByRole("button", { name: "Mês anterior" }));
-    await waitFor(() => expect(api.to("GET v1/calendar/events").at(-1)!.query.get("to")).toBe(first.get("from")));
+    await waitFor(() =>
+      expect(api.to("GET v1/calendar/events").at(-1)!.query.get("to")).toBe(first.get("from")),
+    );
 
     await userEvent.selectOptions(screen.getByLabelText("Sala"), "r1");
-    await waitFor(() => expect(api.to("GET v1/calendar/events").at(-1)!.query.get("room_id")).toBe("r1"));
+    await waitFor(() =>
+      expect(api.to("GET v1/calendar/events").at(-1)!.query.get("room_id")).toBe("r1"),
+    );
   });
 
   it("mês vazio e erro", async () => {
     mockBackend({
       ...identityRoutes(),
-      "GET v1/calendar/events": (req) => (req.query.get("room_id") ? fail(500, "agenda fora") : { data: [] }),
+      "GET v1/calendar/events": (req) =>
+        req.query.get("room_id") ? fail(500, "agenda fora") : { data: [] },
       "GET v1/calendar/rooms": { data: [room("r1")] },
     });
     renderApp(<AgendaPage />);
@@ -73,7 +109,9 @@ describe("Agenda", () => {
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/calendar/events": { data: [] },
-      "GET v1/calendar/rooms": { data: [room("r1", { capacity: 0 }), room("r2", { active: false })] },
+      "GET v1/calendar/rooms": {
+        data: [room("r1", { capacity: 0 }), room("r2", { active: false })],
+      },
       "POST v1/calendar/events": { data: event("novo") },
     });
     renderApp(<AgendaPage />);
@@ -93,19 +131,37 @@ describe("Agenda", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar evento" }));
     await waitFor(() => expect(api.to("POST v1/calendar/events")).toHaveLength(1));
     expect(api.to("POST v1/calendar/events")[0]!.body).toEqual({
-      title: "Reunião", description: "Pauta", location: "Auditório", room_id: "r1",
-      starts_at: new Date("2026-03-10T09:00").toISOString(), ends_at: new Date("2026-03-10T10:30").toISOString(),
-      all_day: true, visibility: "public", publico: { entidades: [], unidades: [] },
+      title: "Reunião",
+      description: "Pauta",
+      location: "Auditório",
+      room_id: "r1",
+      starts_at: new Date("2026-03-10T09:00").toISOString(),
+      ends_at: new Date("2026-03-10T10:30").toISOString(),
+      all_day: true,
+      visibility: "public",
+      publico: { entidades: [], unidades: [] },
     });
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Novo evento" })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Novo evento" })).not.toBeInTheDocument(),
+    );
   });
 
   it("público-alvo (ADR 014): restrito tira a opção Pública e vai no corpo; a lista mostra o selo", async () => {
-    const ORG = [{ id: "e1", nome: "Saúde", sigla: "SEMSA", ativo: true, unidades: [{ id: "u1", entidade_id: "e1", nome: "UPA", sigla: "", departamentos: [] }] }];
+    const ORG = [
+      {
+        id: "e1",
+        nome: "Saúde",
+        sigla: "SEMSA",
+        ativo: true,
+        unidades: [{ id: "u1", entidade_id: "e1", nome: "UPA", sigla: "", departamentos: [] }],
+      },
+    ];
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/iam/org-tree": { data: ORG },
-      "GET v1/calendar/events": { data: [event("e7", { publico: { entidades: ["e1"], unidades: [] } })] },
+      "GET v1/calendar/events": {
+        data: [event("e7", { publico: { entidades: ["e1"], unidades: [] } })],
+      },
       "GET v1/calendar/rooms": { data: [] },
       "POST v1/calendar/events": { data: event("novo") },
     });
@@ -114,12 +170,21 @@ describe("Agenda", () => {
     await userEvent.click(screen.getByRole("button", { name: /Novo evento/ }));
     const dialog = await screen.findByRole("dialog", { name: "Novo evento" });
     await userEvent.type(within(dialog).getByLabelText("Título *"), "Reunião da UPA");
-    expect(within(dialog).getByRole("option", { name: "Pública (site institucional)" })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("option", { name: "Pública (site institucional)" }),
+    ).toBeInTheDocument();
     await userEvent.click(within(dialog).getByText("SEMSA — Saúde"));
     await userEvent.click(within(dialog).getByLabelText("UPA"));
-    expect(within(dialog).queryByRole("option", { name: "Pública (site institucional)" })).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("option", { name: "Pública (site institucional)" }),
+    ).not.toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar evento" }));
-    await waitFor(() => expect(api.to("POST v1/calendar/events")[0]?.body).toMatchObject({ visibility: "internal", publico: { entidades: [], unidades: ["u1"] } }));
+    await waitFor(() =>
+      expect(api.to("POST v1/calendar/events")[0]?.body).toMatchObject({
+        visibility: "internal",
+        publico: { entidades: [], unidades: ["u1"] },
+      }),
+    );
   });
 
   it("conflito de sala volta como erro e o formulário fica aberto", async () => {
@@ -141,7 +206,9 @@ describe("Agenda", () => {
   it("edita evento numa sala desativada sem perder a reserva; cancela e exclui", async () => {
     const api = mockBackend({
       ...identityRoutes(),
-      "GET v1/calendar/events": { data: [event("e1", { room_id: "r2", room_name: "Sala r2", location: "x" })] },
+      "GET v1/calendar/events": {
+        data: [event("e1", { room_id: "r2", room_name: "Sala r2", location: "x" })],
+      },
       "GET v1/calendar/rooms": { data: [room("r1"), room("r2", { active: false })] },
       "PUT v1/calendar/events/e1": { data: event("e1") },
       "POST v1/calendar/events/e1/cancel": { data: null },
@@ -151,10 +218,15 @@ describe("Agenda", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Editar Evento e1" }));
     const dialog = await screen.findByRole("dialog", { name: "Editar evento" });
     expect(within(dialog).getByLabelText("Sala (reserva)")).toHaveValue("r2");
-    expect(within(dialog).getByRole("option", { name: "Sala r2 · 10 lugares (inativa)" })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("option", { name: "Sala r2 · 10 lugares (inativa)" }),
+    ).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar evento" }));
     await waitFor(() => expect(api.to("PUT v1/calendar/events/e1")).toHaveLength(1));
-    expect(api.to("PUT v1/calendar/events/e1")[0]!.body).toMatchObject({ room_id: "r2", title: "Evento e1" });
+    expect(api.to("PUT v1/calendar/events/e1")[0]!.body).toMatchObject({
+      room_id: "r2",
+      title: "Evento e1",
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Cancelar Evento e1" }));
     let confirm = await screen.findByRole("dialog", { name: "Cancelar evento?" });
@@ -171,7 +243,12 @@ describe("Agenda", () => {
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/calendar/events": { data: [event("e9", { organizer_id: "outro" })] },
-      "GET v1/calendar/rooms": { data: [room("r1", { resources: ["projetor"], location: "" }), room("r2", { active: false })] },
+      "GET v1/calendar/rooms": {
+        data: [
+          room("r1", { resources: ["projetor"], location: "" }),
+          room("r2", { active: false }),
+        ],
+      },
       "POST v1/calendar/rooms": { data: room("r3") },
       "PUT v1/calendar/rooms/r1": { data: room("r1") },
       "DELETE v1/calendar/rooms/r2": { data: null },
@@ -189,20 +266,35 @@ describe("Agenda", () => {
     await userEvent.type(within(dialog).getByLabelText("Localização"), "2º andar");
     await userEvent.clear(within(dialog).getByLabelText("Capacidade"));
     await userEvent.type(within(dialog).getByLabelText("Capacidade"), "12");
-    await userEvent.type(within(dialog).getByLabelText("Recursos (separados por vírgula)"), "tv, , videoconferência ");
+    await userEvent.type(
+      within(dialog).getByLabelText("Recursos (separados por vírgula)"),
+      "tv, , videoconferência ",
+    );
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar sala" }));
     await waitFor(() => expect(api.to("POST v1/calendar/rooms")).toHaveLength(1));
-    expect(api.to("POST v1/calendar/rooms")[0]!.body).toEqual({ name: "Sala Azul", location: "2º andar", capacity: 12, resources: ["tv", "videoconferência"], active: true, unidade_id: null });
+    expect(api.to("POST v1/calendar/rooms")[0]!.body).toEqual({
+      name: "Sala Azul",
+      location: "2º andar",
+      capacity: 12,
+      resources: ["tv", "videoconferência"],
+      active: true,
+      unidade_id: null,
+    });
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Editar Sala r1" }));
-    expect(within(dialog).getByLabelText("Recursos (separados por vírgula)")).toHaveValue("projetor");
+    expect(within(dialog).getByLabelText("Recursos (separados por vírgula)")).toHaveValue(
+      "projetor",
+    );
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
     await userEvent.click(within(dialog).getByRole("button", { name: "Editar Sala r1" }));
     await userEvent.click(within(dialog).getByLabelText("Ativa"));
     await userEvent.clear(within(dialog).getByLabelText("Capacidade"));
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar sala" }));
     await waitFor(() => expect(api.to("PUT v1/calendar/rooms/r1")).toHaveLength(1));
-    expect(api.to("PUT v1/calendar/rooms/r1")[0]!.body).toMatchObject({ active: false, capacity: 0 });
+    expect(api.to("PUT v1/calendar/rooms/r1")[0]!.body).toMatchObject({
+      active: false,
+      capacity: 0,
+    });
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Excluir Sala r2" }));
     const confirm = await screen.findByRole("dialog", { name: 'Excluir a sala "Sala r2"?' });
@@ -211,10 +303,33 @@ describe("Agenda", () => {
   });
 
   it("gestor com escopo (ADR 013): só as salas da unidade dele e os eventos reservados nelas", async () => {
-    const ORG = [{ id: "e1", nome: "Órgão", unidades: [{ id: "u1", entidade_id: "e1", nome: "Protocolo", departamentos: [] }] }];
+    const ORG = [
+      {
+        id: "e1",
+        nome: "Órgão",
+        unidades: [{ id: "u1", entidade_id: "e1", nome: "Protocolo", departamentos: [] }],
+      },
+    ];
     mockBackend({
-      ...identityRoutes({ permissions: ["calendar:manage"], scopes: [{ perfil: "p", origem: "manual", entidade_id: "e1", unidade_id: "u1", permissions: ["calendar:manage"] }] }),
-      "GET v1/calendar/events": { data: [event("e1", { organizer_id: "outro", room_id: "r1" }), event("e2", { organizer_id: "outro", room_id: "r2" }), event("e3", { organizer_id: "outro" })] },
+      ...identityRoutes({
+        permissions: ["calendar:manage"],
+        scopes: [
+          {
+            perfil: "p",
+            origem: "manual",
+            entidade_id: "e1",
+            unidade_id: "u1",
+            permissions: ["calendar:manage"],
+          },
+        ],
+      }),
+      "GET v1/calendar/events": {
+        data: [
+          event("e1", { organizer_id: "outro", room_id: "r1" }),
+          event("e2", { organizer_id: "outro", room_id: "r2" }),
+          event("e3", { organizer_id: "outro" }),
+        ],
+      },
       "GET v1/calendar/rooms": { data: [room("r1", { unidade_id: "u1" }), room("r2")] },
       "GET v1/iam/org-tree": { data: ORG },
     });
@@ -226,14 +341,20 @@ describe("Agenda", () => {
     await userEvent.click(screen.getByRole("button", { name: /Salas/ }));
     const dialog = await screen.findByRole("dialog", { name: "Salas de reunião" });
     expect(within(dialog).getByRole("button", { name: "Editar Sala r1" })).toBeInTheDocument();
-    expect(within(dialog).queryByRole("button", { name: "Editar Sala r2" })).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: "Editar Sala r2" }),
+    ).not.toBeInTheDocument();
     const dona = within(dialog).getByLabelText("Unidade dona *");
     expect(dona).toBeRequired();
     expect(within(dona).getByRole("option", { name: "Protocolo" })).toBeInTheDocument();
   });
 
   it("sem salas cadastradas", async () => {
-    mockBackend({ ...identityRoutes(), "GET v1/calendar/events": { data: [] }, "GET v1/calendar/rooms": { data: [] } });
+    mockBackend({
+      ...identityRoutes(),
+      "GET v1/calendar/events": { data: [] },
+      "GET v1/calendar/rooms": { data: [] },
+    });
     renderApp(<AgendaPage />);
     await userEvent.click(await screen.findByRole("button", { name: /Salas/ }));
     expect(await screen.findByText("Nenhuma sala cadastrada.")).toBeInTheDocument();

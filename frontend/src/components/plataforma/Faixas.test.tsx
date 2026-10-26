@@ -3,7 +3,14 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ListaFaixas, NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa } from "./Faixas";
+import {
+  ListaFaixas,
+  NomeClicavel,
+  Quadro,
+  colunasEmOrdem,
+  seloDoEstado,
+  type ColunaFaixa,
+} from "./Faixas";
 
 const COLUNAS: ColunaFaixa[] = colunasEmOrdem([
   { id: "aberta", titulo: "Abertas", tom: "info" },
@@ -32,7 +39,9 @@ function memoriaNova() {
 }
 
 function faixa(titulo: string) {
-  return screen.getByRole("heading", { name: new RegExp(`^${titulo}`) }).closest("section") as HTMLElement;
+  return screen
+    .getByRole("heading", { name: new RegExp(`^${titulo}`) })
+    .closest("section") as HTMLElement;
 }
 
 function semDizeres(raiz: HTMLElement) {
@@ -120,7 +129,9 @@ describe("Quadro da assistência", () => {
     const segunda = faixa("Concluídas");
     expect(primeira).toHaveAttribute("data-ordem", "0");
     expect(segunda).toHaveAttribute("data-ordem", "1");
-    expect(primeira.compareDocumentPosition(segunda) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      primeira.compareDocumentPosition(segunda) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("renomeia a coluna pelo próprio título e lembra neste navegador", async () => {
@@ -236,7 +247,9 @@ describe("Quadro da assistência", () => {
   it("a cor da coluna e a cor do card ficam neste navegador", () => {
     const { memoria } = desenho(Quadro);
     fireEvent.change(screen.getByLabelText("Cor de Abertas"), { target: { value: "#dc2626" } });
-    fireEvent.change(screen.getByLabelText("Cor do card Pedido um"), { target: { value: "#059669" } });
+    fireEvent.change(screen.getByLabelText("Cor do card Pedido um"), {
+      target: { value: "#059669" },
+    });
     const gravado = JSON.parse(localStorage.getItem(`${memoria}:aparencia`) ?? "{}") as {
       colunas: Record<string, { cor?: string }>;
       cartoes: Record<string, { cor?: string }>;
@@ -251,7 +264,9 @@ describe("Selo de um estado", () => {
   const colunas = [{ id: "c01234567", titulo: "Fornecedor", tom: "info" as const }];
 
   it("prefere o catálogo, depois o rótulo conhecido e por fim a chave", () => {
-    expect(seloDoEstado(colunas, "c01234567", { label: "Chave crua", tone: "danger" })).toMatchObject({
+    expect(
+      seloDoEstado(colunas, "c01234567", { label: "Chave crua", tone: "danger" }),
+    ).toMatchObject({
       label: "Fornecedor",
       tone: "info",
     });

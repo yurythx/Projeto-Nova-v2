@@ -21,8 +21,21 @@ import ModulosPage from "./page";
 
 function mod(key: string, name: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {
-    key, name, description: `Descrição ${name}`, core: false, default_enabled: true, depends_on: [], permissions: [],
-    public: false, icon: "box", route: `/${key}`, enabled: true, configured: true, dependents: [], blocked_by: [], ...extra,
+    key,
+    name,
+    description: `Descrição ${name}`,
+    core: false,
+    default_enabled: true,
+    depends_on: [],
+    permissions: [],
+    public: false,
+    icon: "box",
+    route: `/${key}`,
+    enabled: true,
+    configured: true,
+    dependents: [],
+    blocked_by: [],
+    ...extra,
   };
 }
 
@@ -63,7 +76,9 @@ describe("Configurações > Módulos", () => {
   it("módulo sem dependentes desativa direto, sem diálogo", async () => {
     renderPage();
     await userEvent.click(within(card("Blog")).getByRole("switch"));
-    await waitFor(() => expect(patch).toHaveBeenCalledWith("v1/admin/modules/blog", { enabled: false }));
+    await waitFor(() =>
+      expect(patch).toHaveBeenCalledWith("v1/admin/modules/blog", { enabled: false }),
+    );
     expect(patch).toHaveBeenCalledTimes(1);
     expect(refreshModules).toHaveBeenCalled();
   });
@@ -77,7 +92,10 @@ describe("Configurações > Módulos", () => {
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Desativar todos" }));
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
-    expect(patch.mock.calls.map((c) => c[0])).toEqual(["v1/admin/modules/tramite", "v1/admin/modules/signum"]);
+    expect(patch.mock.calls.map((c) => c[0])).toEqual([
+      "v1/admin/modules/tramite",
+      "v1/admin/modules/signum",
+    ]);
   });
 
   it("cancelar a cascata não altera nada", async () => {
@@ -108,10 +126,14 @@ describe("Configurações > Módulos", () => {
 
   it("erro 409 do backend vira aviso e a lista é recarregada", async () => {
     const { ApiError } = await import("@/lib/api/client");
-    patch.mockRejectedValue(new ApiError(409, "CONFLICT", "kernel: há módulos ativos que dependem deste"));
+    patch.mockRejectedValue(
+      new ApiError(409, "CONFLICT", "kernel: há módulos ativos que dependem deste"),
+    );
     renderPage();
     await userEvent.click(within(card("Blog")).getByRole("switch"));
-    expect(await screen.findByText("kernel: há módulos ativos que dependem deste")).toBeInTheDocument();
+    expect(
+      await screen.findByText("kernel: há módulos ativos que dependem deste"),
+    ).toBeInTheDocument();
     expect(refreshModules).toHaveBeenCalled();
   });
 
@@ -128,7 +150,10 @@ describe("Configurações > Módulos", () => {
     const dialog = await screen.findByRole("dialog", { name: "Desativar Signum?" });
     await userEvent.click(within(dialog).getByRole("button", { name: "Desativar todos" }));
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
-    expect(patch.mock.calls.map((c) => c[0])).toEqual(["v1/admin/modules/tramite", "v1/admin/modules/signum"]);
+    expect(patch.mock.calls.map((c) => c[0])).toEqual([
+      "v1/admin/modules/tramite",
+      "v1/admin/modules/signum",
+    ]);
 
     await userEvent.click(cards);
     expect(screen.getByRole("heading", { name: "Trâmite" })).toBeInTheDocument();

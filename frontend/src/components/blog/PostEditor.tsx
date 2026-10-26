@@ -84,7 +84,10 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
   async function uploadCover(file: File) {
     setUploading(true);
     await run(async () => {
-      const { data: ticket } = await apiClient.post<UploadTicket>("v1/blog/uploads", { filename: file.name, content_type: mimeOf(file) });
+      const { data: ticket } = await apiClient.post<UploadTicket>("v1/blog/uploads", {
+        filename: file.name,
+        content_type: mimeOf(file),
+      });
       await putToTicket(ticket, file);
       setCoverKey(ticket.object_key);
     }, "Capa enviada");
@@ -106,7 +109,10 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
       body,
     };
     const res = await run(
-      () => (post ? apiClient.put<Post>(`v1/blog/posts/${post.id}`, payload) : apiClient.post<Post>("v1/blog/posts", payload)),
+      () =>
+        post
+          ? apiClient.put<Post>(`v1/blog/posts/${post.id}`, payload)
+          : apiClient.post<Post>("v1/blog/posts", payload),
       "Publicação salva",
     );
     if (res) {
@@ -135,9 +141,23 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
         </div>
       )}
 
-      <Input id="post-title" name="title" label="Título *" required maxLength={200} defaultValue={post?.title} />
+      <Input
+        id="post-title"
+        name="title"
+        label="Título *"
+        required
+        maxLength={200}
+        defaultValue={post?.title}
+      />
       <div className="grid gap-3 sm:grid-cols-3">
-        <Input id="post-slug" name="slug" label="Slug" maxLength={100} defaultValue={post?.slug} placeholder="gerado do título" />
+        <Input
+          id="post-slug"
+          name="slug"
+          label="Slug"
+          maxLength={100}
+          defaultValue={post?.slug}
+          placeholder="gerado do título"
+        />
         <Select
           id="post-kind"
           name="kind"
@@ -149,12 +169,29 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
           ]}
         />
         <label className="flex items-center gap-2 self-end pb-2 text-sm">
-          <input type="checkbox" name="pinned" defaultChecked={post?.pinned} className="h-4 w-4 accent-primary" /> Fixar no topo
+          <input
+            type="checkbox"
+            name="pinned"
+            defaultChecked={post?.pinned}
+            className="h-4 w-4 accent-primary"
+          />{" "}
+          Fixar no topo
         </label>
       </div>
-      <UnidadeDonaSelect id="post-unidade" permission="blog:manage" defaultValue={post?.unidade_id} />
+      <UnidadeDonaSelect
+        id="post-unidade"
+        permission="blog:manage"
+        defaultValue={post?.unidade_id}
+      />
       <PublicoAlvoPicker idPrefix="post-publico" value={publico} onChange={setPublico} />
-      <Textarea id="post-summary" name="summary" label="Resumo" rows={2} maxLength={500} defaultValue={post?.summary} />
+      <Textarea
+        id="post-summary"
+        name="summary"
+        label="Resumo"
+        rows={2}
+        maxLength={500}
+        defaultValue={post?.summary}
+      />
       <div className="flex flex-col gap-1">
         <label htmlFor="post-cover" className="text-sm font-medium">
           Imagem de capa
@@ -175,7 +212,13 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Conteúdo (Markdown)</span>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setPreview((v) => !v)} aria-pressed={preview}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPreview((v) => !v)}
+            aria-pressed={preview}
+          >
             {preview ? "Editar" : "Pré-visualizar"}
           </Button>
         </div>
@@ -189,9 +232,7 @@ export function PostEditor({ post, onSaved }: { post?: Post; onSaved: (p: Post) 
       </div>
       <div className="flex items-center justify-end gap-3">
         {lastSaved && (
-          <span className="text-xs text-muted">
-            ✓ Rascunho salvo localmente às {lastSaved}
-          </span>
+          <span className="text-xs text-muted">✓ Rascunho salvo localmente às {lastSaved}</span>
         )}
         <Button type="submit" loading={pending || uploading}>
           Salvar

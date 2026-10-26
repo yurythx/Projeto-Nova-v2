@@ -14,7 +14,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/Table";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
@@ -27,12 +34,13 @@ const KINDS = [
   { value: "grafana", label: "Grafana" },
 ];
 
-const STATUS_TONE: Record<EgressDelivery["status"], "success" | "warning" | "danger" | "neutral"> = {
-  delivered: "success",
-  pending: "neutral",
-  failed: "warning",
-  dead: "danger",
-};
+const STATUS_TONE: Record<EgressDelivery["status"], "success" | "warning" | "danger" | "neutral"> =
+  {
+    delivered: "success",
+    pending: "neutral",
+    failed: "warning",
+    dead: "danger",
+  };
 
 function TargetForm({ target, onDone }: { target?: EgressTarget; onDone: () => void }) {
   const { run, pending } = useAction();
@@ -53,7 +61,10 @@ function TargetForm({ target, onDone }: { target?: EgressTarget; onDone: () => v
       active: fd.get("active") === "on",
     };
     const ok = await run(
-      () => (target ? apiClient.put(`v1/egress/targets/${target.id}`, body) : apiClient.post("v1/egress/targets", body)),
+      () =>
+        target
+          ? apiClient.put(`v1/egress/targets/${target.id}`, body)
+          : apiClient.post("v1/egress/targets", body),
       "Destino salvo",
     );
     if (ok) onDone();
@@ -61,13 +72,36 @@ function TargetForm({ target, onDone }: { target?: EgressTarget; onDone: () => v
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input id="eg-name" name="name" label="Nome *" required maxLength={120} defaultValue={target?.name} />
-        <Select id="eg-kind" name="kind" label="Tipo" options={KINDS} defaultValue={target?.kind ?? "webhook"} />
+        <Input
+          id="eg-name"
+          name="name"
+          label="Nome *"
+          required
+          maxLength={120}
+          defaultValue={target?.name}
+        />
+        <Select
+          id="eg-kind"
+          name="kind"
+          label="Tipo"
+          options={KINDS}
+          defaultValue={target?.kind ?? "webhook"}
+        />
       </div>
       <div>
-        <Input id="eg-url" name="url" type="url" label="URL *" required maxLength={1000} defaultValue={target?.url} placeholder="https://" />
+        <Input
+          id="eg-url"
+          name="url"
+          type="url"
+          label="URL *"
+          required
+          maxLength={1000}
+          defaultValue={target?.url}
+          placeholder="https://"
+        />
         <p className="mt-1 text-xs text-muted">
-          Validada contra SSRF no envio: IPs privados (RFC 1918), loopback, link-local/metadata (169.254.169.254) e DNS interno são bloqueados.
+          Validada contra SSRF no envio: IPs privados (RFC 1918), loopback, link-local/metadata
+          (169.254.169.254) e DNS interno são bloqueados.
         </p>
       </div>
       <Input
@@ -87,7 +121,13 @@ function TargetForm({ target, onDone }: { target?: EgressTarget; onDone: () => v
         placeholder={"blog.post.published\ntramite.*"}
       />
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="active" defaultChecked={target?.active ?? true} className="h-4 w-4 accent-primary" /> Ativo
+        <input
+          type="checkbox"
+          name="active"
+          defaultChecked={target?.active ?? true}
+          className="h-4 w-4 accent-primary"
+        />{" "}
+        Ativo
       </label>
       <div className="flex justify-end">
         <Button type="submit" loading={pending}>
@@ -102,19 +142,34 @@ export default function EgressPage() {
   const targets = useApiQuery<EgressTarget[]>("v1/egress/targets");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const deliveries = useApiPage<EgressDelivery>(withQuery("v1/egress/deliveries", { status, page, page_size: 20 }), { refreshInterval: 15_000 });
+  const deliveries = useApiPage<EgressDelivery>(
+    withQuery("v1/egress/deliveries", { status, page, page_size: 20 }),
+    { refreshInterval: 15_000 },
+  );
   const [editing, setEditing] = useState<EgressTarget | "new" | null>(null);
   const { run } = useAction();
   const { showToast } = useToast();
 
   async function test(t: EgressTarget) {
-    const res = await run(() => apiClient.post<{ ok: boolean; status_code: number; error?: string; took_ms: number }>(`v1/egress/targets/${t.id}/test`));
+    const res = await run(() =>
+      apiClient.post<{ ok: boolean; status_code: number; error?: string; took_ms: number }>(
+        `v1/egress/targets/${t.id}/test`,
+      ),
+    );
     if (!res) return;
     const r = res.data;
     showToast(
       r.ok
-        ? { title: "Destino respondeu", description: `HTTP ${r.status_code} em ${r.took_ms} ms`, tone: "success" }
-        : { title: "Falha no teste", description: r.error || `HTTP ${r.status_code}`, tone: "danger" },
+        ? {
+            title: "Destino respondeu",
+            description: `HTTP ${r.status_code} em ${r.took_ms} ms`,
+            tone: "success",
+          }
+        : {
+            title: "Falha no teste",
+            description: r.error || `HTTP ${r.status_code}`,
+            tone: "danger",
+          },
     );
   }
 
@@ -140,23 +195,40 @@ export default function EgressPage() {
                 <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="font-medium">
-                      {t.name} <Badge className="ml-1">{t.kind}</Badge> {!t.active && <Badge tone="warning" className="ml-1">Inativo</Badge>}
+                      {t.name} <Badge className="ml-1">{t.kind}</Badge>{" "}
+                      {!t.active && (
+                        <Badge tone="warning" className="ml-1">
+                          Inativo
+                        </Badge>
+                      )}
                     </p>
                     <p className="truncate font-mono text-xs text-muted">{t.url}</p>
-                    <p className="text-xs text-muted">{t.event_patterns.length ? t.event_patterns.join(", ") : "todos os eventos"}</p>
+                    <p className="text-xs text-muted">
+                      {t.event_patterns.length ? t.event_patterns.join(", ") : "todos os eventos"}
+                    </p>
                   </div>
                   <span className="flex items-center gap-1">
                     <Button variant="secondary" size="sm" onClick={() => void test(t)}>
                       <Send size={14} aria-hidden="true" className="mr-1" /> Testar
                     </Button>
-                    <Button variant="ghost" size="sm" aria-label={`Editar ${t.name}`} onClick={() => setEditing(t)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Editar ${t.name}`}
+                      onClick={() => setEditing(t)}
+                    >
                       <Pencil size={14} aria-hidden="true" />
                     </Button>
                     <ConfirmButton
                       aria-label={`Excluir ${t.name}`}
                       title={`Excluir o destino "${t.name}"?`}
                       confirmLabel="Excluir"
-                      onConfirm={() => run(() => apiClient.delete(`v1/egress/targets/${t.id}`), "Destino excluído").then(() => targets.mutate())}
+                      onConfirm={() =>
+                        run(
+                          () => apiClient.delete(`v1/egress/targets/${t.id}`),
+                          "Destino excluído",
+                        ).then(() => targets.mutate())
+                      }
                     >
                       <Trash2 size={14} aria-hidden="true" />
                     </ConfirmButton>
@@ -190,7 +262,12 @@ export default function EgressPage() {
             ]}
           />
         </div>
-        <DataState loading={deliveries.isLoading} error={deliveries.error} empty={(deliveries.data?.items ?? []).length === 0} emptyTitle="Nenhuma entrega">
+        <DataState
+          loading={deliveries.isLoading}
+          error={deliveries.error}
+          empty={(deliveries.data?.items ?? []).length === 0}
+          emptyTitle="Nenhuma entrega"
+        >
           <Table caption="Entregas de eventos para destinos externos">
             <TableHead>
               <TableRow>
@@ -213,11 +290,20 @@ export default function EgressPage() {
                   <TableCell className="text-sm">{d.target_name ?? "—"}</TableCell>
                   <TableCell>
                     <Badge tone={STATUS_TONE[d.status]}>{d.status}</Badge>
-                    {d.last_error && <span className="block max-w-xs truncate text-xs text-danger" title={d.last_error}>{d.last_error}</span>}
+                    {d.last_error && (
+                      <span
+                        className="block max-w-xs truncate text-xs text-danger"
+                        title={d.last_error}
+                      >
+                        {d.last_error}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {d.attempts}
-                    {d.last_status_code ? <span className="text-xs text-muted"> · HTTP {d.last_status_code}</span> : null}
+                    {d.last_status_code ? (
+                      <span className="text-xs text-muted"> · HTTP {d.last_status_code}</span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="text-xs text-muted">{fmtDateTime(d.created_at)}</TableCell>
                   <TableCell className="text-right">
@@ -226,7 +312,12 @@ export default function EgressPage() {
                         variant="ghost"
                         size="sm"
                         aria-label="Reenviar"
-                        onClick={() => void run(() => apiClient.post(`v1/egress/deliveries/${d.id}/redeliver`), "Reenvio agendado").then(() => deliveries.mutate())}
+                        onClick={() =>
+                          void run(
+                            () => apiClient.post(`v1/egress/deliveries/${d.id}/redeliver`),
+                            "Reenvio agendado",
+                          ).then(() => deliveries.mutate())
+                        }
                       >
                         <RotateCcw size={14} aria-hidden="true" />
                       </Button>
@@ -240,7 +331,12 @@ export default function EgressPage() {
         </DataState>
       </section>
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} size="lg" title={editing === "new" ? "Novo destino" : "Editar destino"}>
+      <Dialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        size="lg"
+        title={editing === "new" ? "Novo destino" : "Editar destino"}
+      >
         {editing && (
           <TargetForm
             key={editing === "new" ? "new" : editing.id}

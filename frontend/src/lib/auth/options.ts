@@ -98,7 +98,12 @@ async function renewLocalToken(token: JWT): Promise<JWT> {
     if (!res.ok || !body.data) return token;
     const expires = new Date(body.data.expires_at).getTime();
     if (!Number.isFinite(expires)) return token;
-    return { ...token, accessToken: body.data.access_token, accessTokenExpires: expires, error: undefined };
+    return {
+      ...token,
+      accessToken: body.data.access_token,
+      accessTokenExpires: expires,
+      error: undefined,
+    };
   } catch {
     console.error("Falha ao renovar o token do login local");
     return token;
@@ -107,7 +112,12 @@ async function renewLocalToken(token: JWT): Promise<JWT> {
 
 function dueForRenewal(token: JWT): boolean {
   const expires = token.accessTokenExpires;
-  return !token.error && typeof expires === "number" && Date.now() < expires && expires - Date.now() < RENEW_WINDOW_MS;
+  return (
+    !token.error &&
+    typeof expires === "number" &&
+    Date.now() < expires &&
+    expires - Date.now() < RENEW_WINDOW_MS
+  );
 }
 
 interface LocalLoginResponse {
@@ -129,7 +139,8 @@ function decodeDisplayClaims(accessToken: string): { roles: string[]; groups: st
     const roles = new Set<string>();
     for (const r of payload.roles ?? []) roles.add(String(r));
     for (const r of payload.realm_access?.roles ?? []) roles.add(String(r));
-    if (clientId) for (const r of payload.resource_access?.[clientId]?.roles ?? []) roles.add(String(r));
+    if (clientId)
+      for (const r of payload.resource_access?.[clientId]?.roles ?? []) roles.add(String(r));
     const groups = Array.isArray(payload.groups) ? payload.groups.map(String) : [];
     return { roles: [...roles], groups };
   } catch {
@@ -165,7 +176,10 @@ export const authOptions: NextAuthOptions = {
             // TODOS os logins: o limite (10/min) e o bloqueio por IP viravam
             // um balde só para a organização inteira.
             headers: { "Content-Type": "application/json", ...forwardedFor(req?.headers) },
-            body: JSON.stringify({ username: credentials.username, password: credentials.password }),
+            body: JSON.stringify({
+              username: credentials.username,
+              password: credentials.password,
+            }),
             signal: AbortSignal.timeout(8000),
           });
         } catch {

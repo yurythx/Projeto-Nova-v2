@@ -22,14 +22,11 @@ describe("Calendário Unificado da Assistência", () => {
     const isoHoje = hoje.toISOString();
 
     mockBackend({
-      ...identityRoutes(
-        perms("atendimento:atender", "mudancas:manage", "projetos:read"),
-        [
-          moduleStatus("atendimento"),
-          moduleStatus("mudancas"),
-          moduleStatus("projetos"),
-        ],
-      ),
+      ...identityRoutes(perms("atendimento:atender", "mudancas:manage", "projetos:read"), [
+        moduleStatus("atendimento"),
+        moduleStatus("mudancas"),
+        moduleStatus("projetos"),
+      ]),
       "GET v1/mudancas": {
         data: [
           {
@@ -94,9 +91,7 @@ describe("Calendário Unificado da Assistência", () => {
 
     // Como m1 tem risco alto e coincide na data de pr1 e s1, um alerta de sobreposição deve surgir
     expect(await screen.findByRole("alert")).toBeInTheDocument();
-    expect(
-      screen.getByText("Alerta de Sobreposição Operacional Detectado"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Alerta de Sobreposição Operacional Detectado")).toBeInTheDocument();
 
     // Eventos visíveis na grade
     expect(screen.getByText("M#401 Migração do Switch Core")).toBeInTheDocument();
@@ -105,14 +100,18 @@ describe("Calendário Unificado da Assistência", () => {
 
     // Abre detalhes ao clicar no evento
     await user.click(screen.getByText("M#401 Migração do Switch Core"));
-    expect(await screen.findByRole("heading", { name: "M#401 Migração do Switch Core" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "M#401 Migração do Switch Core" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Aviso de Sobreposição")).toBeInTheDocument();
     expect(screen.getByText(/Atualização de firmware/)).toBeInTheDocument();
 
     // Fecha modal de detalhes
     await user.click(screen.getByRole("button", { name: "Fechar" }));
     await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: "M#401 Migração do Switch Core" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: "M#401 Migração do Switch Core" }),
+      ).not.toBeInTheDocument();
     });
 
     // Alterna para visualização em Lista

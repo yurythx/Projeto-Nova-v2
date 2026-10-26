@@ -80,7 +80,10 @@ export function useApiPage<T>(path: string | null, config?: SWRConfiguration<Pag
 }
 
 /** Monta "caminho?query" ignorando valores vazios. */
-export function withQuery(path: string, params: Record<string, string | number | boolean | undefined | null>): string {
+export function withQuery(
+  path: string,
+  params: Record<string, string | number | boolean | undefined | null>,
+): string {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") q.set(k, String(v));

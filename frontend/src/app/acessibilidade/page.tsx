@@ -8,8 +8,7 @@ import { getServerBranding } from "@/lib/branding/server";
 
 export const metadata: Metadata = {
   title: "Acessibilidade",
-  description:
-    "Declaração e instruções de acessibilidade e-MAG da plataforma.",
+  description: "Declaração e instruções de acessibilidade e-MAG da plataforma.",
 };
 
 // § Padronização de páginas públicas: esta página tinha seu próprio
@@ -135,8 +134,8 @@ export default async function AccessibilityPage() {
             </div>
             <p className="text-xs text-muted leading-relaxed">
               Através do ícone na barra superior ou do botão abaixo, é possível utilizar a suíte do{" "}
-              <strong>VLibras</strong> para traduzir todo o conteúdo do site
-              para a Língua Brasileira de Sinais - LIBRAS.
+              <strong>VLibras</strong> para traduzir todo o conteúdo do site para a Língua
+              Brasileira de Sinais - LIBRAS.
             </p>
             <div className="mt-auto pt-2">
               <a
@@ -158,8 +157,7 @@ export default async function AccessibilityPage() {
               <h2>Legislação sobre Acessibilidade</h2>
             </div>
             <p className="text-xs text-muted leading-relaxed">
-              O {brand.appName} cumpre
-              rigorosamente os seguintes normativos legais:
+              O {brand.appName} cumpre rigorosamente os seguintes normativos legais:
             </p>
             <ul className="flex flex-col gap-3 text-xs">
               <li className="flex flex-col gap-1 border-l-2 border-primary pl-3">
@@ -221,26 +219,30 @@ export default async function AccessibilityPage() {
 
             <dt className="font-semibold text-foreground">Método</dt>
             <dd className="text-muted leading-relaxed">
-              (1) Análise automatizada a cada alteração de código no CI (<code>eslint-plugin-jsx-a11y</code>,
-              regras e-MAG obrigatórias); (2) revisão manual de contraste, foco visível e semântica
-              HTML; (3) navegação apenas por teclado nos fluxos principais; (4) atalhos e-MAG
-              (Alt+1..4) com âncoras verificadas em <code>&lt;main&gt;</code>, <code>&lt;nav&gt;</code>{" "}
-              e <code>&lt;footer&gt;</code> reais.
+              (1) Análise automatizada a cada alteração de código no CI (
+              <code>eslint-plugin-jsx-a11y</code>, regras e-MAG obrigatórias); (2) revisão manual de
+              contraste, foco visível e semântica HTML; (3) navegação apenas por teclado nos fluxos
+              principais; (4) atalhos e-MAG (Alt+1..4) com âncoras verificadas em{" "}
+              <code>&lt;main&gt;</code>, <code>&lt;nav&gt;</code> e <code>&lt;footer&gt;</code>{" "}
+              reais.
             </dd>
 
             <dt className="font-semibold text-foreground">Pendências conhecidas</dt>
             <dd className="text-muted leading-relaxed">
-              Avaliação por especialista humano com tecnologia assistiva (leitores de tela NVDA/VoiceOver,
-              leitor móvel) ainda não realizada; correções pontuais de componentes complexos podem
-              surgir dessa avaliação. Um VPAT (Voluntary Product Accessibility Template) será anexado
-              ao dossiê de conformidade após ela.
+              Avaliação por especialista humano com tecnologia assistiva (leitores de tela
+              NVDA/VoiceOver, leitor móvel) ainda não realizada; correções pontuais de componentes
+              complexos podem surgir dessa avaliação. Um VPAT (Voluntary Product Accessibility
+              Template) será anexado ao dossiê de conformidade após ela.
             </dd>
 
             <dt className="font-semibold text-foreground">Contato</dt>
             <dd className="text-muted leading-relaxed">
               Barreiras de acessibilidade podem ser relatadas pelos canais de atendimento da
               Prefeitura (ver rodapé). Detalhes técnicos dos parâmetros aplicados em{" "}
-              <Link href="/sobre" className="text-primary hover:underline">Sobre &amp; Conformidade</Link>.
+              <Link href="/sobre" className="text-primary hover:underline">
+                Sobre &amp; Conformidade
+              </Link>
+              .
             </dd>
           </dl>
         </section>

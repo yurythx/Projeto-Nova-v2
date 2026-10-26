@@ -1,6 +1,15 @@
 "use client";
 
-import { Activity, BarChart3, Calendar, ChevronDown, LayoutDashboard, Settings, ShieldCheck, type LucideProps } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Calendar,
+  ChevronDown,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  type LucideProps,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -35,8 +44,18 @@ const MENU_PERMISSION: Record<string, string> = {
 };
 
 const ADMIN_PERMISSIONS = [
-  "modules:manage", "iam:manage", "users:read", "branding:manage", "keycloak:manage", "ia:manage",
-  "egress:manage", "catalog:manage", "contact:read", "mercurio:manage", "calendar:manage", "blog:manage",
+  "modules:manage",
+  "iam:manage",
+  "users:read",
+  "branding:manage",
+  "keycloak:manage",
+  "ia:manage",
+  "egress:manage",
+  "catalog:manage",
+  "contact:read",
+  "mercurio:manage",
+  "calendar:manage",
+  "blog:manage",
 ];
 
 function childrenOf(
@@ -68,7 +87,14 @@ export function buildNav(
   const mods: NavItem[] = [];
 
   for (const m of activeMods) {
-    const href = m.key === "blog" ? (can("blog:manage") ? "/gestao/blog" : (m.route === "/gestao/blog" ? "/blog" : m.route)) : m.route;
+    const href =
+      m.key === "blog"
+        ? can("blog:manage")
+          ? "/gestao/blog"
+          : m.route === "/gestao/blog"
+            ? "/blog"
+            : m.route
+        : m.route;
     const item: NavItem = {
       href,
       label: m.name,
@@ -94,13 +120,16 @@ export function buildNav(
       label: "Calendário",
       icon: Calendar,
     });
-    assistenciaMods.sort((a, b) => ASSISTENCIA_ORDER.indexOf(a.key) - ASSISTENCIA_ORDER.indexOf(b.key));
+    assistenciaMods.sort(
+      (a, b) => ASSISTENCIA_ORDER.indexOf(a.key) - ASSISTENCIA_ORDER.indexOf(b.key),
+    );
     assistencia.push(...assistenciaMods.map((m) => m.item));
   }
 
   const admin: NavItem[] = [];
   if (can("audit:read")) admin.push({ href: "/auditoria", label: "Auditoria", icon: ShieldCheck });
-  if (can("monitoring:read")) admin.push({ href: "/monitoramento", label: "Monitoramento", icon: Activity });
+  if (can("monitoring:read"))
+    admin.push({ href: "/monitoramento", label: "Monitoramento", icon: Activity });
   if (ADMIN_PERMISSIONS.some(can)) {
     admin.push({
       href: "/configuracao",
@@ -184,12 +213,20 @@ export function Sidebar({
               aria-label={open ? `Recolher ${item.label}` : `Expandir ${item.label}`}
               onClick={() => setAberto((a) => ({ ...a, [item.href]: !open }))}
             >
-              <ChevronDown size={16} aria-hidden="true" className={`transition-transform ${open ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className={`transition-transform ${open ? "rotate-180" : ""}`}
+              />
             </button>
           )}
         </div>
         {kids.length > 0 && (
-          <ul id={subId} hidden={!open} className="mt-0.5 flex flex-col gap-0.5 border-l border-surface-border ml-5">
+          <ul
+            id={subId}
+            hidden={!open}
+            className="mt-0.5 flex flex-col gap-0.5 border-l border-surface-border ml-5"
+          >
             {kids.map((c) => (
               <li key={c.href}>{renderLink(c, { nested: true })}</li>
             ))}
@@ -202,7 +239,11 @@ export function Sidebar({
   return (
     <>
       {mobileOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-[var(--topbar-h)] z-40 bg-black/40 md:hidden" onClick={onCloseMobile} aria-hidden="true" />
+        <div
+          className="fixed inset-x-0 bottom-0 top-[var(--topbar-h)] z-40 bg-black/40 md:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
       )}
       <nav
         id="main-menu"
@@ -212,30 +253,46 @@ export function Sidebar({
           collapsed ? "md:w-[var(--sidebar-w-collapsed)]" : "md:w-[var(--sidebar-w)]"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <ul className="flex flex-col gap-0.5 px-2 pt-3">{renderGroup({ href: "/dashboard", label: "Visão geral", icon: LayoutDashboard })}</ul>
+        <ul className="flex flex-col gap-0.5 px-2 pt-3">
+          {renderGroup({ href: "/dashboard", label: "Visão geral", icon: LayoutDashboard })}
+        </ul>
 
         {nav.assistencia.length > 0 && (
           <div className="mt-3">
-            <p className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}>Assistência</p>
+            <p
+              className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}
+            >
+              Assistência
+            </p>
             <ul className="flex flex-col gap-0.5 px-2">{nav.assistencia.map(renderGroup)}</ul>
           </div>
         )}
 
         {nav.modules.length > 0 && (
           <div className="mt-3">
-            <p className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}>Módulos</p>
+            <p
+              className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}
+            >
+              Módulos
+            </p>
             <ul className="flex flex-col gap-0.5 px-2">{nav.modules.map(renderGroup)}</ul>
           </div>
         )}
 
         {nav.admin.length > 0 && (
           <div className="mt-3">
-            <p className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}>Administração</p>
+            <p
+              className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}
+            >
+              Administração
+            </p>
             <ul className="flex flex-col gap-0.5 px-2 pb-3">{nav.admin.map(renderGroup)}</ul>
           </div>
         )}
 
-        <p className={`mt-auto border-t border-surface-border px-4 py-3 text-[11px] text-muted ${collapsed ? "md:sr-only" : ""}`}>
+        <p
+          className={`mt-auto border-t border-surface-border px-4 py-3 text-[11px] text-muted ${collapsed ? "md:sr-only" : ""}`}
+        >
           {branding.appName}
         </p>
       </nav>

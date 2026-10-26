@@ -90,9 +90,15 @@ describe("ProjetoGanttChart (Cronograma Visual Interativo)", () => {
     expect(screen.getByText("33% entregue")).toBeInTheDocument();
 
     // Tarefas
-    expect(screen.getAllByText("Levantamento topológico dos racks").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Instalação dos novos switches core").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Migração dos servidores de produção").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Levantamento topológico dos racks").length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getAllByText("Instalação dos novos switches core").length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(
+      screen.getAllByText("Migração dos servidores de produção").length,
+    ).toBeGreaterThanOrEqual(1);
 
     // Responsáveis
     expect(screen.getByText("Mariana Costa")).toBeInTheDocument();
@@ -106,34 +112,29 @@ describe("ProjetoGanttChart (Cronograma Visual Interativo)", () => {
   it("permite filtrar por estado da tarefa no diagrama", async () => {
     const user = userEvent.setup();
     render(
-      <ProjetoGanttChart
-        projeto={projetoMock}
-        tarefas={tarefasMock}
-        vinculos={vinculosMock}
-      />,
+      <ProjetoGanttChart projeto={projetoMock} tarefas={tarefasMock} vinculos={vinculosMock} />,
     );
 
     // Clica no filtro "Concluída"
     await user.click(screen.getByRole("button", { name: "Concluída (1)" }));
 
     // Apenas a concluída deve permanecer
-    expect(screen.getAllByText("Levantamento topológico dos racks").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Levantamento topológico dos racks").length).toBeGreaterThanOrEqual(
+      1,
+    );
     expect(screen.queryByText("Instalação dos novos switches core")).not.toBeInTheDocument();
     expect(screen.queryByText("Migração dos servidores de produção")).not.toBeInTheDocument();
 
     // Volta para todas
     await user.click(screen.getByRole("button", { name: "Todas (3)" }));
-    expect(screen.getAllByText("Instalação dos novos switches core").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Instalação dos novos switches core").length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
   it("permite alternar janelas de tempo e navegar", async () => {
     const user = userEvent.setup();
-    render(
-      <ProjetoGanttChart
-        projeto={projetoMock}
-        tarefas={tarefasMock}
-      />,
-    );
+    render(<ProjetoGanttChart projeto={projetoMock} tarefas={tarefasMock} />);
 
     // Zoom 30d
     await user.click(screen.getByRole("button", { name: "30d" }));

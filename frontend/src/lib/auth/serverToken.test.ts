@@ -15,7 +15,10 @@ describe("getServerToken", () => {
   it("monta um req mínimo (cookies e cabeçalhos) para o getToken", async () => {
     getToken.mockResolvedValue({ accessToken: "t" });
     expect(await getServerToken()).toEqual({ accessToken: "t" });
-    expect(getToken.mock.calls[0]![0].req).toEqual({ cookies: { "next-auth.session-token": "cifrado" }, headers: { host: "app" } });
+    expect(getToken.mock.calls[0]![0].req).toEqual({
+      cookies: { "next-auth.session-token": "cifrado" },
+      headers: { host: "app" },
+    });
   });
 });
 
@@ -24,8 +27,12 @@ describe("accessTokenUsable", () => {
     expect(accessTokenUsable(null)).toBe(false);
     expect(accessTokenUsable({ accessToken: "" })).toBe(false);
     expect(accessTokenUsable({ accessToken: "t", error: "RefreshAccessTokenError" })).toBe(false);
-    expect(accessTokenUsable({ accessToken: "t", accessTokenExpires: Date.now() + 2000 })).toBe(false);
-    expect(accessTokenUsable({ accessToken: "t", accessTokenExpires: Date.now() + 60_000 })).toBe(true);
+    expect(accessTokenUsable({ accessToken: "t", accessTokenExpires: Date.now() + 2000 })).toBe(
+      false,
+    );
+    expect(accessTokenUsable({ accessToken: "t", accessTokenExpires: Date.now() + 60_000 })).toBe(
+      true,
+    );
     expect(accessTokenUsable({ accessToken: "t" })).toBe(true);
   });
 });

@@ -6,7 +6,9 @@ import { ApiError } from "@/lib/api/client";
 const serverApiGet = vi.fn();
 vi.mock("@/lib/api/server", () => ({ serverApiGet: (...a: unknown[]) => serverApiGet(...a) }));
 vi.mock("@/components/settings/KeycloakSettingsForm", () => ({
-  KeycloakSettingsForm: ({ initialStatus }: { initialStatus: { issuer_url: string } }) => <p>formulário: {initialStatus.issuer_url}</p>,
+  KeycloakSettingsForm: ({ initialStatus }: { initialStatus: { issuer_url: string } }) => (
+    <p>formulário: {initialStatus.issuer_url}</p>
+  ),
 }));
 
 import KeycloakConfigPage from "./page";
@@ -15,7 +17,9 @@ describe("Configurações > Keycloak (Server Component)", () => {
   beforeEach(() => serverApiGet.mockReset());
 
   it("mostra o formulário com o status atual", async () => {
-    serverApiGet.mockResolvedValue({ data: { issuer_url: "https://sso/realms/n", source: "database" } });
+    serverApiGet.mockResolvedValue({
+      data: { issuer_url: "https://sso/realms/n", source: "database" },
+    });
     render(await KeycloakConfigPage());
     expect(screen.getByText("formulário: https://sso/realms/n")).toBeInTheDocument();
     expect(serverApiGet.mock.calls[0]![0]).toBe("v1/admin/keycloak");

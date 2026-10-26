@@ -34,10 +34,18 @@ export function fail(status: number, message = "falhou", code = "ERR"): Reply {
 }
 
 /** Página paginada no envelope padrão. */
-export function page(items: unknown[], extra: Partial<{ page: number; total_pages: number }> = {}): Reply {
+export function page(
+  items: unknown[],
+  extra: Partial<{ page: number; total_pages: number }> = {},
+): Reply {
   return {
     data: items,
-    meta: { page: extra.page ?? 1, page_size: 20, total_items: items.length, total_pages: extra.total_pages ?? 1 },
+    meta: {
+      page: extra.page ?? 1,
+      page_size: 20,
+      total_items: items.length,
+      total_pages: extra.total_pages ?? 1,
+    },
   };
 }
 
@@ -49,7 +57,10 @@ export function mockBackend(routes: Record<string, Route>) {
     const url = new URL(String(input), "http://localhost");
     // chamadas ao próprio BFF: "v1/..."; a outros hosts (ex.: PUT na URL
     // pré-assinada do MinIO): "host/caminho".
-    const path = url.host === "localhost" ? url.pathname.replace(/^\/api\/backend\//, "") : url.host + url.pathname;
+    const path =
+      url.host === "localhost"
+        ? url.pathname.replace(/^\/api\/backend\//, "")
+        : url.host + url.pathname;
     const method = (init?.method ?? "GET").toUpperCase();
     let body: unknown = undefined;
     if (typeof init?.body === "string") {
@@ -68,7 +79,11 @@ export function mockBackend(routes: Record<string, Route>) {
     const prefix = Object.keys(routes)
       .filter((k) => k.endsWith("*") && key.startsWith(k.slice(0, -1)))
       .sort((a, b) => b.length - a.length)[0];
-    const route: Route = routes[key] ?? (prefix ? routes[prefix] : undefined) ?? { status: 404, error: { code: "NOT_FOUND", message: `sem rota: ${key}` } };
+    const route: Route = routes[key] ??
+      (prefix ? routes[prefix] : undefined) ?? {
+        status: 404,
+        error: { code: "NOT_FOUND", message: `sem rota: ${key}` },
+      };
     const reply = typeof route === "function" ? await route(req) : route;
     const status = reply.status ?? 200;
     // 204/205/304 não têm corpo (o construtor de Response lança).
@@ -104,13 +119,29 @@ export const ME: Me = {
 
 export function moduleStatus(key: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {
-    key, name: key, description: "", core: false, default_enabled: true, depends_on: [], permissions: [],
-    public: false, icon: "box", route: `/${key}`, enabled: true, configured: true, dependents: [], blocked_by: [], ...extra,
+    key,
+    name: key,
+    description: "",
+    core: false,
+    default_enabled: true,
+    depends_on: [],
+    permissions: [],
+    public: false,
+    icon: "box",
+    route: `/${key}`,
+    enabled: true,
+    configured: true,
+    dependents: [],
+    blocked_by: [],
+    ...extra,
   };
 }
 
 /** Rotas do PlataformaProvider (identidade e módulos). */
-export function identityRoutes(me: Partial<Me> = {}, modules: ModuleStatus[] = []): Record<string, Route> {
+export function identityRoutes(
+  me: Partial<Me> = {},
+  modules: ModuleStatus[] = [],
+): Record<string, Route> {
   return {
     "GET v1/me": { data: { ...ME, ...me } },
     "GET v1/system/modules": { data: modules },
@@ -119,7 +150,9 @@ export function identityRoutes(me: Partial<Me> = {}, modules: ModuleStatus[] = [
 
 function Providers({ children }: { children: ReactNode }) {
   return (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false }}>
+    <SWRConfig
+      value={{ provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false }}
+    >
       <ToastProvider>
         <PlataformaProvider>{children}</PlataformaProvider>
       </ToastProvider>
@@ -174,7 +207,9 @@ export function mockWebSocket() {
 }
 
 /** Rota do ticket de uso único do WebSocket. */
-export const wsTicketRoute: Record<string, Route> = { "POST v1/ws/ticket": { data: { ticket: "t1" } } };
+export const wsTicketRoute: Record<string, Route> = {
+  "POST v1/ws/ticket": { data: { ticket: "t1" } },
+};
 
 function RealtimeProviders({ children }: { children: ReactNode }) {
   return (

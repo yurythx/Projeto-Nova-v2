@@ -4,7 +4,14 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { fmtDateTime } from "@/components/plataforma/useAction";
-import { NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
+import {
+  NomeClicavel,
+  Quadro,
+  colunasEmOrdem,
+  seloDoEstado,
+  type ColunaFaixa,
+  type ControlesColuna,
+} from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
 import {
   ESTADO_MUDANCA,
@@ -15,12 +22,7 @@ import {
 } from "@/lib/servicos/servicos";
 
 type ColunaMudanca =
-  | "rascunho"
-  | "em_avaliacao"
-  | "aprovada"
-  | "em_execucao"
-  | "concluida"
-  | "fechada";
+  "rascunho" | "em_avaliacao" | "aprovada" | "em_execucao" | "concluida" | "fechada";
 
 export const COLUNAS_MUDANCA: ColunaFaixa[] = colunasEmOrdem([
   { id: "rascunho", titulo: "Rascunho", tom: "neutral" },
@@ -38,7 +40,9 @@ export function faixaDaMudanca(estado: EstadoMudanca): string {
 
 function destino(m: Mudanca, coluna: ColunaMudanca): EstadoMudanca | null {
   if (coluna !== "fechada") return coluna as EstadoMudanca;
-  const valid = (m.proximos ?? []).find((p) => p === "cancelada" || p === "rejeitada" || p === "falhou");
+  const valid = (m.proximos ?? []).find(
+    (p) => p === "cancelada" || p === "rejeitada" || p === "falhou",
+  );
   return valid ?? null;
 }
 
@@ -106,7 +110,11 @@ export function MudancasKanban({
               <span className="font-semibold tabular-nums text-foreground">#{m.numero}</span>
               <div className="flex items-center gap-1">
                 <Badge tone={RISCO[m.risco].tone}>{RISCO[m.risco].label}</Badge>
-                <Badge tone={seloDoEstado(colunas, m.estado, ESTADO_MUDANCA[m.estado as EstadoMudanca]).tone}>
+                <Badge
+                  tone={
+                    seloDoEstado(colunas, m.estado, ESTADO_MUDANCA[m.estado as EstadoMudanca]).tone
+                  }
+                >
                   {seloDoEstado(colunas, m.estado, ESTADO_MUDANCA[m.estado as EstadoMudanca]).label}
                 </Badge>
               </div>
@@ -131,7 +139,11 @@ export function MudancasKanban({
                 </span>
               )}
             </div>
-            <button type="button" className="text-left text-xs font-medium text-primary hover:underline" onClick={() => abrir(m)}>
+            <button
+              type="button"
+              className="text-left text-xs font-medium text-primary hover:underline"
+              onClick={() => abrir(m)}
+            >
               Editar
             </button>
             {moves.length > 0 && (

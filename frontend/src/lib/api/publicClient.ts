@@ -16,7 +16,11 @@ export async function publicPost<T>(path: string, body: unknown): Promise<T> {
     throw new ApiError(res.status, "INVALID_RESPONSE", "resposta ilegível do servidor");
   }
   if (!res.ok || json.error) {
-    throw new ApiError(res.status, json.error?.code ?? "UNKNOWN_ERROR", json.error?.message ?? "erro inesperado");
+    throw new ApiError(
+      res.status,
+      json.error?.code ?? "UNKNOWN_ERROR",
+      json.error?.message ?? "erro inesperado",
+    );
   }
   return json.data as T;
 }
@@ -25,7 +29,11 @@ export async function publicFetch<T>(path: string): Promise<T> {
   const res = await fetch(`/api/public/${path.replace(/^\/+/, "")}`);
   const json = await res.json();
   if (!res.ok || json.error) {
-    throw new ApiError(res.status, json.error?.code ?? "UNKNOWN_ERROR", json.error?.message ?? "erro inesperado");
+    throw new ApiError(
+      res.status,
+      json.error?.code ?? "UNKNOWN_ERROR",
+      json.error?.message ?? "erro inesperado",
+    );
   }
   return json.data as T;
 }

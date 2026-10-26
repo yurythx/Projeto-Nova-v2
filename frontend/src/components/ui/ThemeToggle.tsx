@@ -19,7 +19,8 @@ export function ThemeToggle({ initialTheme }: { initialTheme?: "light" | "dark" 
       const fromAttr = document.documentElement.getAttribute("data-theme");
       if (fromAttr === "dark" || fromAttr === "light") return fromAttr;
       const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
-      if (match && (match[1] === "dark" || match[1] === "light")) return match[1] as "light" | "dark";
+      if (match && (match[1] === "dark" || match[1] === "light"))
+        return match[1] as "light" | "dark";
     }
     return null;
   });
@@ -54,7 +55,11 @@ export function ThemeToggle({ initialTheme }: { initialTheme?: "light" | "dark" 
       title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
       className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/5"
     >
-      {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+      {theme === "dark" ? (
+        <Sun size={18} aria-hidden="true" />
+      ) : (
+        <Moon size={18} aria-hidden="true" />
+      )}
     </button>
   );
 }

@@ -30,19 +30,19 @@ export default function GlobalError({
         tabIndex={-1}
         className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center outline-none"
       >
-      <p className="text-sm font-medium text-danger">Algo deu errado</p>
-      <p className="max-w-sm text-sm text-muted">
-        Um erro inesperado interrompeu esta página.
-        {error.digest && (
-          <>
-            {" "}
-            Código de referência: <code className="font-mono text-xs">{error.digest}</code>
-          </>
-        )}
-      </p>
-      <Button size="md" className="mt-2" onClick={() => retry()}>
-        Tentar novamente
-      </Button>
+        <p className="text-sm font-medium text-danger">Algo deu errado</p>
+        <p className="max-w-sm text-sm text-muted">
+          Um erro inesperado interrompeu esta página.
+          {error.digest && (
+            <>
+              {" "}
+              Código de referência: <code className="font-mono text-xs">{error.digest}</code>
+            </>
+          )}
+        </p>
+        <Button size="md" className="mt-2" onClick={() => retry()}>
+          Tentar novamente
+        </Button>
       </main>
     </div>
   );

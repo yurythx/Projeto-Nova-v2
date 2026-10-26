@@ -6,7 +6,15 @@ import { sha256Hex } from "@/lib/plataforma/upload";
 
 /** Calcula no navegador o SHA-256 do documento escolhido — o arquivo
  * nunca sai da máquina do usuário, só o hash. */
-export function FileHash({ id, label, onHash }: { id: string; label: string; onHash: (hash: string, name: string) => void }) {
+export function FileHash({
+  id,
+  label,
+  onHash,
+}: {
+  id: string;
+  label: string;
+  onHash: (hash: string, name: string) => void;
+}) {
   const [state, setState] = useState<{ name: string; hash: string } | null>(null);
   const [busy, setBusy] = useState(false);
   return (
@@ -29,7 +37,11 @@ export function FileHash({ id, label, onHash }: { id: string; label: string; onH
         }}
       />
       <p className="break-all font-mono text-[11px] text-muted" aria-live="polite">
-        {busy ? "Calculando SHA-256…" : state ? `SHA-256: ${state.hash}` : "O arquivo é lido apenas localmente para calcular o hash."}
+        {busy
+          ? "Calculando SHA-256…"
+          : state
+            ? `SHA-256: ${state.hash}`
+            : "O arquivo é lido apenas localmente para calcular o hash."}
       </p>
     </div>
   );

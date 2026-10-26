@@ -15,10 +15,16 @@ const CORES = ["text-primary", "text-warning", "text-success", "text-info", "tex
 function contar(itens: { estado: string }[], rotulos: Record<string, string>): PontoGrafico[] {
   const mapa = new Map<string, number>();
   for (const item of itens) mapa.set(item.estado, (mapa.get(item.estado) ?? 0) + 1);
-  return [...mapa.entries()].map(([estado, valor]) => ({ rotulo: rotulos[estado] ?? estado, valor }));
+  return [...mapa.entries()].map(([estado, valor]) => ({
+    rotulo: rotulos[estado] ?? estado,
+    valor,
+  }));
 }
 
-function diasComValor(serie: PontoIndicador[] | undefined, campo: keyof PontoIndicador): PontoGrafico[] {
+function diasComValor(
+  serie: PontoIndicador[] | undefined,
+  campo: keyof PontoIndicador,
+): PontoGrafico[] {
   return (serie ?? [])
     .filter((ponto) => typeof ponto[campo] === "number")
     .map((ponto) => ({ rotulo: ponto.dia.slice(0, 10), valor: ponto[campo] as number }));
@@ -51,7 +57,11 @@ function Figura({
         <p className="text-xs text-muted">{descricao}</p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pt-2">
-        {pontos.length === 0 ? <p className="text-sm">Sem amostra neste recorte.</p> : <Desenho pontos={pontos} estilo={estilo} total={total} maximo={maximo} />}
+        {pontos.length === 0 ? (
+          <p className="text-sm">Sem amostra neste recorte.</p>
+        ) : (
+          <Desenho pontos={pontos} estilo={estilo} total={total} maximo={maximo} />
+        )}
         {nota ? <p className="text-xs text-muted">{nota}</p> : null}
         {pontos.length > 0 ? (
           <ul className="flex flex-col gap-1 text-xs">
@@ -61,7 +71,9 @@ function Figura({
                   <span className="h-2.5 w-2.5 rounded-full bg-current" />
                   <span className="text-muted">{ponto.rotulo}</span>
                 </span>
-                <span className="font-semibold text-foreground">{ponto.valor.toLocaleString("pt-BR")}</span>
+                <span className="font-semibold text-foreground">
+                  {ponto.valor.toLocaleString("pt-BR")}
+                </span>
               </li>
             ))}
           </ul>
@@ -85,19 +97,32 @@ function Desenho({
   if (estilo === "barras" || estilo === "horizontal") {
     const deitado = estilo === "horizontal";
     return (
-      <div className={`flex gap-2 overflow-x-auto ${deitado ? "flex-col" : "h-36 items-end"}`} role="img" aria-label="Gráfico">
+      <div
+        className={`flex gap-2 overflow-x-auto ${deitado ? "flex-col" : "h-36 items-end"}`}
+        role="img"
+        aria-label="Gráfico"
+      >
         {pontos.map((ponto, indice) => {
           const fracao = `${Math.round((ponto.valor / maximo) * 100)}%`;
           return deitado ? (
             <div key={ponto.rotulo} className="grid grid-cols-[7rem_1fr] items-center gap-2">
               <span className="truncate text-xs text-muted">{ponto.rotulo}</span>
               <div className="h-3 rounded-full bg-surface-border">
-                <div className={`h-3 rounded-full bg-current ${CORES[indice % CORES.length]}`} style={{ width: fracao }} />
+                <div
+                  className={`h-3 rounded-full bg-current ${CORES[indice % CORES.length]}`}
+                  style={{ width: fracao }}
+                />
               </div>
             </div>
           ) : (
-            <div key={ponto.rotulo} className="flex h-full min-w-8 flex-1 flex-col justify-end gap-1">
-              <div className={`w-full rounded-t bg-current ${CORES[indice % CORES.length]}`} style={{ height: fracao }} />
+            <div
+              key={ponto.rotulo}
+              className="flex h-full min-w-8 flex-1 flex-col justify-end gap-1"
+            >
+              <div
+                className={`w-full rounded-t bg-current ${CORES[indice % CORES.length]}`}
+                style={{ height: fracao }}
+              />
             </div>
           );
         })}
@@ -112,7 +137,15 @@ function Desenho({
     return (
       <div className="flex items-center justify-center" role="img" aria-label="Gráfico">
         <svg width="120" height="120" viewBox="0 0 100 100" className="-rotate-90">
-          <circle cx="50" cy="50" r={raio} fill="transparent" stroke="currentColor" strokeWidth="14" className="text-surface-border" />
+          <circle
+            cx="50"
+            cy="50"
+            r={raio}
+            fill="transparent"
+            stroke="currentColor"
+            strokeWidth="14"
+            className="text-surface-border"
+          />
           {total > 0
             ? pontos.map((ponto, indice) => {
                 const trecho = (ponto.valor / total) * perimetro;
@@ -147,8 +180,16 @@ function Desenho({
   const linha = coordenadas.join(" ");
   return (
     <svg viewBox="0 0 100 40" className="h-36 w-full text-primary" role="img" aria-label="Gráfico">
-      {estilo === "area" ? <polygon points={`0,40 ${linha} 100,40`} className="fill-current opacity-20" /> : null}
-      <polyline points={linha} fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      {estilo === "area" ? (
+        <polygon points={`0,40 ${linha} 100,40`} className="fill-current opacity-20" />
+      ) : null}
+      <polyline
+        points={linha}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }
@@ -180,7 +221,9 @@ export function AssistenciaGraficos({
     rotulo: risco === "baixo" ? "Baixo" : risco === "medio" ? "Médio" : "Alto",
     valor: mudancas.filter((item) => item.risco === risco).length,
   }));
-  const semRisco = mudancas.filter((item) => !["baixo", "medio", "alto"].includes(item.risco ?? "")).length;
+  const semRisco = mudancas.filter(
+    (item) => !["baixo", "medio", "alto"].includes(item.risco ?? ""),
+  ).length;
   if (semRisco > 0) riscos.push({ rotulo: "Sem faixa", valor: semRisco });
 
   const figuras: { titulo: string; descricao: string; pontos: PontoGrafico[]; nota?: string }[] = [
@@ -266,7 +309,9 @@ export function AssistenciaGraficos({
             aria-checked={estilo === item.id}
             onClick={() => onEstilo(item.id)}
             className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-              estilo === item.id ? "border-primary bg-primary/10 text-primary" : "border-surface-border text-muted hover:text-foreground"
+              estilo === item.id
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-surface-border text-muted hover:text-foreground"
             }`}
           >
             {item.label}

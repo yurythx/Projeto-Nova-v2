@@ -51,14 +51,18 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="praticas">
+        <section
+          className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6"
+          aria-labelledby="praticas"
+        >
           <div className="flex flex-col gap-2">
             <p className="dateline">ITIL (Version 5)</p>
             <h2 id="praticas" className="text-3xl font-bold tracking-tight text-foreground">
               Como o serviço funciona
             </h2>
             <p className="max-w-3xl text-sm leading-relaxed text-muted">
-              Quatro práticas carregam a operação. O incidente e a requisição atendem o agora. O problema trata a causa. A mudança altera com controle. O projeto conduz a iniciativa.
+              Quatro práticas carregam a operação. O incidente e a requisição atendem o agora. O
+              problema trata a causa. A mudança altera com controle. O projeto conduz a iniciativa.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -67,13 +71,18 @@ export default async function HomePage() {
                 <CardHeader>
                   <CardTitle>{pratica.nome}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm leading-relaxed text-muted">{pratica.descricao}</CardContent>
+                <CardContent className="text-sm leading-relaxed text-muted">
+                  {pratica.descricao}
+                </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="fundamentos">
+        <section
+          className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6"
+          aria-labelledby="fundamentos"
+        >
           <div className="flex flex-col gap-2">
             <p className="dateline">Fundamentos</p>
             <h2 id="fundamentos" className="text-3xl font-bold tracking-tight text-foreground">
@@ -86,13 +95,18 @@ export default async function HomePage() {
                 <CardHeader>
                   <CardTitle>{item.nome}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm leading-relaxed text-muted">{item.descricao}</CardContent>
+                <CardContent className="text-sm leading-relaxed text-muted">
+                  {item.descricao}
+                </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6" aria-labelledby="regras">
+        <section
+          className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6"
+          aria-labelledby="regras"
+        >
           <div className="flex flex-col gap-2">
             <p className="dateline">Política de uso</p>
             <h2 id="regras" className="text-3xl font-bold tracking-tight text-foreground">
@@ -105,11 +119,16 @@ export default async function HomePage() {
                 <CardHeader>
                   <CardTitle>{regra.nome}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm leading-relaxed text-muted">{regra.descricao}</CardContent>
+                <CardContent className="text-sm leading-relaxed text-muted">
+                  {regra.descricao}
+                </CardContent>
               </Card>
             ))}
           </div>
-          <Link href="/faq" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
+          <Link
+            href="/faq"
+            className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          >
             Perguntas frequentes <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </section>

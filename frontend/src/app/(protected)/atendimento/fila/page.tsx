@@ -6,7 +6,13 @@ import { Suspense, useState } from "react";
 
 import { FAIXAS_FILA, Kanban, faixaDaFila } from "@/components/atendimento/Kanban";
 import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
-import { BarraFaixa, ordenarColunas, pontoFaixa, useAparencia, useFaixasRecolhidas } from "@/components/plataforma/Faixas";
+import {
+  BarraFaixa,
+  ordenarColunas,
+  pontoFaixa,
+  useAparencia,
+  useFaixasRecolhidas,
+} from "@/components/plataforma/Faixas";
 import { colunasVisiveis, useQuadro } from "@/components/plataforma/useQuadro";
 import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
 import { SolicitacaoDetalhe } from "@/app/(protected)/atendimento/solicitacoes/[id]/page";
@@ -258,124 +264,138 @@ function FilaDaEquipe() {
           <>
             <div className="flex flex-col gap-2">
               {ordenarColunas(colunasLista).map((coluna) => {
-                const titulo = catalogo.oficial ? coluna.titulo : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
+                const titulo = catalogo.oficial
+                  ? coluna.titulo
+                  : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
                 const cor = catalogo.oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
                 const total = itens.filter((s) => faixaDaFila(s.estado) === coluna.id).length;
                 return (
-                <BarraFaixa
-                  key={coluna.id}
-                  titulo={titulo}
-                  tituloId={`faixa-fila-${coluna.id}`}
-                  total={total}
-                  tom={coluna.tom}
-                  cor={cor}
-                  recolhida={recolhidas.includes(coluna.id)}
-                  ordem={coluna.ordem}
-                  corImediata={!catalogo.oficial}
-                  onAlternar={() => alternar(coluna.id)}
-                  onRenomear={catalogo.oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })}
-                  onCor={catalogo.oficial ? undefined : (valor) => look.salvarColuna(coluna.id, { cor: valor })}
-                />
+                  <BarraFaixa
+                    key={coluna.id}
+                    titulo={titulo}
+                    tituloId={`faixa-fila-${coluna.id}`}
+                    total={total}
+                    tom={coluna.tom}
+                    cor={cor}
+                    recolhida={recolhidas.includes(coluna.id)}
+                    ordem={coluna.ordem}
+                    corImediata={!catalogo.oficial}
+                    onAlternar={() => alternar(coluna.id)}
+                    onRenomear={
+                      catalogo.oficial
+                        ? undefined
+                        : (nome) => look.salvarColuna(coluna.id, { titulo: nome })
+                    }
+                    onCor={
+                      catalogo.oficial
+                        ? undefined
+                        : (valor) => look.salvarColuna(coluna.id, { cor: valor })
+                    }
+                  />
                 );
               })}
             </div>
             {itens.length === 0 ? (
               <p className="text-sm text-muted">Fila vazia</p>
             ) : (
-            <Table caption="Solicitações da fila" className="min-w-[980px]">
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Nº</TableHeaderCell>
-                  <TableHeaderCell>Solicitação</TableHeaderCell>
-                  <TableHeaderCell>Tipo</TableHeaderCell>
-                  <TableHeaderCell>Estado</TableHeaderCell>
-                  <TableHeaderCell>Responsável</TableHeaderCell>
-                  <TableHeaderCell>Aberta por</TableHeaderCell>
-                  <TableHeaderCell>Aberta em</TableHeaderCell>
-                  <TableHeaderCell>Prazo</TableHeaderCell>
-                  <TableHeaderCell>
-                    <span className="sr-only">Ações</span>
-                  </TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {itens
-                  .filter((s) => !recolhidas.includes(faixaDaFila(s.estado)))
-                  .map((s, indice) => ({ s, indice }))
-                  .sort((a, b) => {
-                    const ordemDe = (estado: string) =>
-                      catalogo.colunas.find((coluna) => coluna.id === faixaDaFila(estado as Estado))?.ordem ?? 999;
-                    return ordemDe(a.s.estado) - ordemDe(b.s.estado) || a.indice - b.indice;
-                  })
-                  .map(({ s }) => {
-                    const faixa = faixaDaFila(s.estado);
-                    const cor =
-                      look.gravado.cartoes[s.id]?.cor ||
-                      (catalogo.oficial
-                        ? catalogo.colunas.find((coluna) => coluna.id === faixa)?.cor
-                        : look.gravado.colunas[faixa]?.cor);
-                    return (
-                  <TableRow key={s.id}>
-                    <TableCell className="tabular-nums text-muted">
-                      <span
-                        className={`mr-2 inline-block size-2.5 rounded-full align-middle ${cor ? "" : pontoFaixa(tomEstado(s.estado))}`}
-                        style={cor ? { backgroundColor: cor } : undefined}
-                        aria-hidden
-                      />
-                      #{s.numero}
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        type="button"
-                        className="font-medium text-primary hover:underline"
-                        onClick={() => painel.abrir(s.id)}
-                      >
-                        {look.gravado.cartoes[s.id]?.titulo || s.titulo}
-                      </button>
-                      <p className="text-xs text-muted">{s.oferta_nome}</p>
-                    </TableCell>
-                    <TableCell>{rotuloTipo(s.tipo)}</TableCell>
-                    <TableCell>
-                      <Badge tone={tomEstado(s.estado)}>{rotuloEstado(s.estado)}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {s.responsavel_nome || <span className="text-muted">—</span>}
-                    </TableCell>
-                    <TableCell>{s.solicitante_nome}</TableCell>
-                    <TableCell className="whitespace-nowrap">{fmtDateTime(s.created_at)}</TableCell>
-                    <TableCell>
-                      <PrazoBadge prazo={s.prazo} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="text-sm font-medium text-primary hover:underline"
-                          onClick={() => painel.abrir(s.id)}
-                        >
-                          Editar
-                        </button>
-                        {!s.responsavel_id &&
-                          s.estado !== "encerrado" &&
-                          s.estado !== "cancelado" && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              disabled={pending}
-                              onClick={() => void assumir(s)}
-                              aria-label={`Assumir a solicitação #${s.numero}`}
-                            >
-                              Assumir
-                            </Button>
-                          )}
-                      </div>
-                    </TableCell>
+              <Table caption="Solicitações da fila" className="min-w-[980px]">
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Nº</TableHeaderCell>
+                    <TableHeaderCell>Solicitação</TableHeaderCell>
+                    <TableHeaderCell>Tipo</TableHeaderCell>
+                    <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>Responsável</TableHeaderCell>
+                    <TableHeaderCell>Aberta por</TableHeaderCell>
+                    <TableHeaderCell>Aberta em</TableHeaderCell>
+                    <TableHeaderCell>Prazo</TableHeaderCell>
+                    <TableHeaderCell>
+                      <span className="sr-only">Ações</span>
+                    </TableHeaderCell>
                   </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {itens
+                    .filter((s) => !recolhidas.includes(faixaDaFila(s.estado)))
+                    .map((s, indice) => ({ s, indice }))
+                    .sort((a, b) => {
+                      const ordemDe = (estado: string) =>
+                        catalogo.colunas.find(
+                          (coluna) => coluna.id === faixaDaFila(estado as Estado),
+                        )?.ordem ?? 999;
+                      return ordemDe(a.s.estado) - ordemDe(b.s.estado) || a.indice - b.indice;
+                    })
+                    .map(({ s }) => {
+                      const faixa = faixaDaFila(s.estado);
+                      const cor =
+                        look.gravado.cartoes[s.id]?.cor ||
+                        (catalogo.oficial
+                          ? catalogo.colunas.find((coluna) => coluna.id === faixa)?.cor
+                          : look.gravado.colunas[faixa]?.cor);
+                      return (
+                        <TableRow key={s.id}>
+                          <TableCell className="tabular-nums text-muted">
+                            <span
+                              className={`mr-2 inline-block size-2.5 rounded-full align-middle ${cor ? "" : pontoFaixa(tomEstado(s.estado))}`}
+                              style={cor ? { backgroundColor: cor } : undefined}
+                              aria-hidden
+                            />
+                            #{s.numero}
+                          </TableCell>
+                          <TableCell>
+                            <button
+                              type="button"
+                              className="font-medium text-primary hover:underline"
+                              onClick={() => painel.abrir(s.id)}
+                            >
+                              {look.gravado.cartoes[s.id]?.titulo || s.titulo}
+                            </button>
+                            <p className="text-xs text-muted">{s.oferta_nome}</p>
+                          </TableCell>
+                          <TableCell>{rotuloTipo(s.tipo)}</TableCell>
+                          <TableCell>
+                            <Badge tone={tomEstado(s.estado)}>{rotuloEstado(s.estado)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {s.responsavel_nome || <span className="text-muted">—</span>}
+                          </TableCell>
+                          <TableCell>{s.solicitante_nome}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {fmtDateTime(s.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            <PrazoBadge prazo={s.prazo} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="text-sm font-medium text-primary hover:underline"
+                                onClick={() => painel.abrir(s.id)}
+                              >
+                                Editar
+                              </button>
+                              {!s.responsavel_id &&
+                                s.estado !== "encerrado" &&
+                                s.estado !== "cancelado" && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="secondary"
+                                    disabled={pending}
+                                    onClick={() => void assumir(s)}
+                                    aria-label={`Assumir a solicitação #${s.numero}`}
+                                  >
+                                    Assumir
+                                  </Button>
+                                )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
             )}
             <Pagination meta={fila.data?.meta} onPage={setPagina} />
           </>

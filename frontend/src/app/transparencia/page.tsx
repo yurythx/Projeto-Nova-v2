@@ -5,9 +5,14 @@ import { PublicShell } from "@/components/layout/PublicShell";
 import { publicGetOr } from "@/lib/api/publicServer";
 import { APP_URL } from "@/lib/env";
 
-const description = "Transparência ativa (LAI — Lei 12.527/2011): conjuntos de dados abertos da plataforma, sem dados pessoais.";
+const description =
+  "Transparência ativa (LAI — Lei 12.527/2011): conjuntos de dados abertos da plataforma, sem dados pessoais.";
 
-export const metadata: Metadata = { title: "Transparência", description, alternates: { canonical: `${APP_URL}/transparencia` } };
+export const metadata: Metadata = {
+  title: "Transparência",
+  description,
+  alternates: { canonical: `${APP_URL}/transparencia` },
+};
 
 interface Dataset {
   id: string;
@@ -36,7 +41,9 @@ export default async function TransparenciaPage() {
           <p className="mt-1 text-muted">{description}</p>
         </div>
         {datasets.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-surface-border p-10 text-center text-muted">Catálogo de dados abertos indisponível no momento.</p>
+          <p className="rounded-xl border border-dashed border-surface-border p-10 text-center text-muted">
+            Catálogo de dados abertos indisponível no momento.
+          </p>
         ) : (
           <ul className="flex flex-col gap-4">
             {datasets.map((d) => (
@@ -47,16 +54,22 @@ export default async function TransparenciaPage() {
                     <h2 className="text-lg font-semibold">{d.titulo}</h2>
                     <p className="text-xs text-muted">Atualização: {d.periodicidade}</p>
                     <details className="mt-2 text-sm">
-                      <summary className="cursor-pointer text-muted hover:text-foreground">Dicionário de dados</summary>
+                      <summary className="cursor-pointer text-muted hover:text-foreground">
+                        Dicionário de dados
+                      </summary>
                       <dl className="mt-2 grid gap-1">
                         {Object.entries(d.campos).map(([k, v]) => (
                           <div key={k}>
-                            <dt className="inline font-mono text-xs">{k}</dt> <dd className="inline text-muted">— {v}</dd>
+                            <dt className="inline font-mono text-xs">{k}</dt>{" "}
+                            <dd className="inline text-muted">— {v}</dd>
                           </div>
                         ))}
                       </dl>
                     </details>
-                    <div className="mt-3 flex flex-wrap gap-2" aria-label={`Downloads de ${d.titulo}`}>
+                    <div
+                      className="mt-3 flex flex-wrap gap-2"
+                      aria-label={`Downloads de ${d.titulo}`}
+                    >
                       {d.formatos.map((f) => (
                         <a
                           key={f}

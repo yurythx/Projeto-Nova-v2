@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/lib/api/client";
-import { defaultBackoff, parseFrame, RealtimeClient, type ConnectionState } from "@/lib/websocket/client";
+import {
+  defaultBackoff,
+  parseFrame,
+  RealtimeClient,
+  type ConnectionState,
+} from "@/lib/websocket/client";
 
 class FakeSocket {
   readyState = 0;
@@ -69,11 +74,15 @@ describe("RealtimeClient", () => {
     await Promise.resolve();
     await Promise.resolve();
     sockets[0]!.open();
-    expect(sockets[0]!.sent).toContain(JSON.stringify({ type: "subscribe", topic: "mercurio:room:1" }));
+    expect(sockets[0]!.sent).toContain(
+      JSON.stringify({ type: "subscribe", topic: "mercurio:room:1" }),
+    );
     off1();
     expect(sockets[0]!.sent.filter((s) => s.includes("unsubscribe"))).toHaveLength(0);
     off2();
-    expect(sockets[0]!.sent).toContain(JSON.stringify({ type: "unsubscribe", topic: "mercurio:room:1" }));
+    expect(sockets[0]!.sent).toContain(
+      JSON.stringify({ type: "unsubscribe", topic: "mercurio:room:1" }),
+    );
   });
 
   it("para de tentar quando o ticket é negado com 401", async () => {

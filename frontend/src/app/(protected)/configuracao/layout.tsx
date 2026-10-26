@@ -19,7 +19,8 @@ export default function ConfiguracaoLayout({ children }: { children: ReactNode }
         <p className="dateline">Administração</p>
         <h1 className="mt-2 text-2xl font-semibold">Configurações</h1>
         <p className="mt-1 text-sm text-muted">
-          Identidade visual, módulos do Kernel, estrutura organizacional, controle de acesso e integrações.
+          Identidade visual, módulos do Kernel, estrutura organizacional, controle de acesso e
+          integrações.
         </p>
       </div>
       {tabs.length > 0 && <SectionTabs tabs={tabs} ariaLabel="Seções de configuração" />}

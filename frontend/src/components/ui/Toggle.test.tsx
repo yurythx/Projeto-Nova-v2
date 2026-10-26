@@ -7,10 +7,16 @@ import { Toggle } from "./Toggle";
 describe("Toggle", () => {
   it("reflete o estado checked em aria-checked", () => {
     const { rerender } = render(<Toggle checked={false} onChange={() => {}} label="Ativar X" />);
-    expect(screen.getByRole("switch", { name: "Ativar X" })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("switch", { name: "Ativar X" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
 
     rerender(<Toggle checked={true} onChange={() => {}} label="Ativar X" />);
-    expect(screen.getByRole("switch", { name: "Ativar X" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "Ativar X" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   });
 
   it("chama onChange com o valor invertido ao clicar", async () => {

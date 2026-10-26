@@ -58,7 +58,8 @@ describe("ToastProvider", () => {
     fireEvent.click(screen.getByRole("button", { name: "disparar" }));
     // <p>título</p> -> <div> (título+descrição) -> <div flex...> -> <div>
     // raiz do Toast (onde o onMouseEnter/onMouseLeave de fato estão).
-    const toast = screen.getByText("Integração online").parentElement!.parentElement!.parentElement!;
+    const toast =
+      screen.getByText("Integração online").parentElement!.parentElement!.parentElement!;
 
     // Passa boa parte do tempo, depois entra com o mouse ANTES de vencer.
     advance(4000);

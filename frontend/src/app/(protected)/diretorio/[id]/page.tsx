@@ -17,7 +17,10 @@ export default function PessoaPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <Link href="/diretorio" className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground">
+      <Link
+        href="/diretorio"
+        className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
+      >
         <ArrowLeft size={14} aria-hidden="true" /> Diretório
       </Link>
       <DataState loading={person.isLoading} error={person.error} empty={!p}>
@@ -31,7 +34,8 @@ export default function PessoaPage() {
             <ul className="flex flex-col gap-2 text-sm">
               {(p.departamento || p.unidade) && (
                 <li className="flex items-center gap-2">
-                  <Building size={14} aria-hidden="true" /> {[p.departamento, p.unidade].filter(Boolean).join(" · ")}
+                  <Building size={14} aria-hidden="true" />{" "}
+                  {[p.departamento, p.unidade].filter(Boolean).join(" · ")}
                 </li>
               )}
               {p.email && (
@@ -44,7 +48,8 @@ export default function PessoaPage() {
               )}
               {(p.phone || p.extension) && (
                 <li className="flex items-center gap-2">
-                  <Phone size={14} aria-hidden="true" /> {p.phone} {p.extension && `· ramal ${p.extension}`}
+                  <Phone size={14} aria-hidden="true" /> {p.phone}{" "}
+                  {p.extension && `· ramal ${p.extension}`}
                 </li>
               )}
             </ul>

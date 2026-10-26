@@ -76,7 +76,10 @@ export function TableOfContents({ source, mobile = false }: TableOfContentsProps
             ▼
           </span>
         </summary>
-        <nav aria-label="Sumário móvel do artigo" className="mt-3 border-t border-surface-border pt-3">
+        <nav
+          aria-label="Sumário móvel do artigo"
+          className="mt-3 border-t border-surface-border pt-3"
+        >
           <ul className="flex flex-col gap-1 text-sm">
             {headings.map((h) => {
               const isActive = activeId === h.id;
@@ -123,10 +126,7 @@ export function TableOfContents({ source, mobile = false }: TableOfContentsProps
         {headings.map((h) => {
           const isActive = activeId === h.id;
           return (
-            <li
-              key={h.id}
-              className={`${h.level === 3 ? "pl-3 text-[11px]" : "font-medium"}`}
-            >
+            <li key={h.id} className={`${h.level === 3 ? "pl-3 text-[11px]" : "font-medium"}`}>
               <a
                 href={`#${h.id}`}
                 onClick={(e) => {

@@ -70,7 +70,9 @@ export function layoutModuleGraph(all: ModuleStatus[]): GraphLayout {
     }
   }
   const modules = all.filter((m) => linked.has(m.key));
-  const isolated = all.filter((m) => !linked.has(m.key)).sort((a, b) => Number(b.core) - Number(a.core) || byName(a, b));
+  const isolated = all
+    .filter((m) => !linked.has(m.key))
+    .sort((a, b) => Number(b.core) - Number(a.core) || byName(a, b));
 
   const layer = new Map<string, number>();
   const visiting = new Set<string>();
@@ -105,7 +107,8 @@ export function layoutModuleGraph(all: ModuleStatus[]): GraphLayout {
 
   const maxRows = Math.max(0, ...columns.map((c) => c.length));
   const flowHeight = maxRows === 0 ? 0 : PAD * 2 + maxRows * NODE_H + (maxRows - 1) * GAP_Y;
-  const flowWidth = columns.length === 0 ? 0 : PAD * 2 + columns.length * NODE_W + (columns.length - 1) * GAP_X;
+  const flowWidth =
+    columns.length === 0 ? 0 : PAD * 2 + columns.length * NODE_W + (columns.length - 1) * GAP_X;
 
   const nodes: GraphNode[] = [];
   const pos = new Map<string, GraphNode>();
@@ -113,8 +116,13 @@ export function layoutModuleGraph(all: ModuleStatus[]): GraphLayout {
     const offset = ((maxRows - col.length) * (NODE_H + GAP_Y)) / 2; // coluna centralizada
     col.forEach((m, r) => {
       const n: GraphNode = {
-        key: m.key, name: m.name, layer: l, row: r, status: nodeStatus(m),
-        x: PAD + l * (NODE_W + GAP_X), y: PAD + offset + r * (NODE_H + GAP_Y),
+        key: m.key,
+        name: m.name,
+        layer: l,
+        row: r,
+        status: nodeStatus(m),
+        x: PAD + l * (NODE_W + GAP_X),
+        y: PAD + offset + r * (NODE_H + GAP_Y),
       };
       nodes.push(n);
       pos.set(m.key, n);
@@ -132,7 +140,9 @@ export function layoutModuleGraph(all: ModuleStatus[]): GraphLayout {
       const y2 = b.y + NODE_H / 2;
       const dx = Math.max(24, (x2 - x1) / 2);
       edges.push({
-        from: d, to: m.key, active: byKey.get(d)!.enabled && m.enabled,
+        from: d,
+        to: m.key,
+        active: byKey.get(d)!.enabled && m.enabled,
         path: `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`,
       });
     }
@@ -141,14 +151,22 @@ export function layoutModuleGraph(all: ModuleStatus[]): GraphLayout {
     return { nodes, edges, width: flowWidth, height: flowHeight, isolatedLabelY: null };
   }
   // grade: tão larga quanto as colunas do fluxo, com um mínimo de colunas
-  const cols = Math.min(isolated.length, Math.max(MIN_GRID_COLS, Math.floor((flowWidth - PAD * 2 + GRID_GAP) / (NODE_W + GRID_GAP))));
+  const cols = Math.min(
+    isolated.length,
+    Math.max(MIN_GRID_COLS, Math.floor((flowWidth - PAD * 2 + GRID_GAP) / (NODE_W + GRID_GAP))),
+  );
   const labelY = flowHeight === 0 ? PAD : flowHeight + PAD;
   const top = labelY + LABEL_H;
   isolated.forEach((m, i) => {
     const r = Math.floor(i / cols);
     nodes.push({
-      key: m.key, name: m.name, layer: -1, row: r, status: nodeStatus(m),
-      x: PAD + (i % cols) * (NODE_W + GRID_GAP), y: top + r * (NODE_H + GRID_GAP),
+      key: m.key,
+      name: m.name,
+      layer: -1,
+      row: r,
+      status: nodeStatus(m),
+      x: PAD + (i % cols) * (NODE_W + GRID_GAP),
+      y: top + r * (NODE_H + GRID_GAP),
     });
   });
   const rows = Math.ceil(isolated.length / cols);
@@ -162,7 +180,10 @@ export function layoutModuleGraph(all: ModuleStatus[]): GraphLayout {
 }
 
 /** Dependências (acima) e dependentes (abaixo) transitivos de key. */
-export function relatedModules(modules: ModuleStatus[], key: string): { up: Set<string>; down: Set<string> } {
+export function relatedModules(
+  modules: ModuleStatus[],
+  key: string,
+): { up: Set<string>; down: Set<string> } {
   const byKey = new Map(modules.map((m) => [m.key, m]));
   const walk = (start: string, next: (m: ModuleStatus) => string[]) => {
     const seen = new Set<string>();

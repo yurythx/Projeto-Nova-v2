@@ -12,14 +12,15 @@ export function useAction() {
   const [pending, setPending] = useState(false);
 
   const run = useCallback(
-    async <T,>(fn: () => Promise<T>, success?: string): Promise<T | undefined> => {
+    async <T>(fn: () => Promise<T>, success?: string): Promise<T | undefined> => {
       setPending(true);
       try {
         const out = await fn();
         if (success) showToast({ title: success, tone: "success" });
         return out;
       } catch (err) {
-        const message = err instanceof ApiError ? err.message : "Não foi possível concluir a operação.";
+        const message =
+          err instanceof ApiError ? err.message : "Não foi possível concluir a operação.";
         showToast({ title: "Operação não concluída", description: message, tone: "danger" });
         return undefined;
       } finally {

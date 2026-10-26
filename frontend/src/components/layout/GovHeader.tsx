@@ -39,7 +39,8 @@ export function GovHeader({
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (searchAction && q.trim().length >= 2) router.push(`${searchAction}?q=${encodeURIComponent(q.trim())}`);
+    if (searchAction && q.trim().length >= 2)
+      router.push(`${searchAction}?q=${encodeURIComponent(q.trim())}`);
   }
 
   return (
@@ -58,16 +59,29 @@ export function GovHeader({
             <Menu size={18} aria-hidden="true" />
           </button>
         )}
-        <Link href={homeHref} className="flex shrink-0 items-center gap-2.5 rounded-md p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <Link
+          href={homeHref}
+          className="flex shrink-0 items-center gap-2.5 rounded-md p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
           {logoSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoSrc} alt={`Logomarca de ${branding.appName}`} height={32} onError={() => setLogoError(true)} className="h-8 w-auto max-w-[140px] object-contain" />
+            <img
+              src={logoSrc}
+              alt={`Logomarca de ${branding.appName}`}
+              height={32}
+              onError={() => setLogoError(true)}
+              className="h-8 w-auto max-w-[140px] object-contain"
+            />
           ) : (
             <Logo size={30} />
           )}
           <span className="hidden flex-col sm:flex">
-            <span className="text-sm font-bold leading-tight text-foreground">{branding.appName}</span>
-            <span className="text-[10px] uppercase leading-none tracking-[0.12em] text-muted">{branding.orgName}</span>
+            <span className="text-sm font-bold leading-tight text-foreground">
+              {branding.appName}
+            </span>
+            <span className="text-[10px] uppercase leading-none tracking-[0.12em] text-muted">
+              {branding.orgName}
+            </span>
           </span>
         </Link>
 
@@ -79,7 +93,11 @@ export function GovHeader({
               <label htmlFor="global-search" className="sr-only">
                 Buscar em todo o sistema
               </label>
-              <Search size={15} aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+              <Search
+                size={15}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+              />
               <input
                 id="global-search"
                 type="search"

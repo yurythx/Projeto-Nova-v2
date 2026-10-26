@@ -113,7 +113,9 @@ export default function ContratosPage() {
           fornecedor_id: String(fd.get("fornecedor_id")),
           inicio: dia(String(fd.get("inicio"))),
           fim: dia(String(fd.get("fim"))),
-          valor_centavos: Math.round(Number(String(fd.get("valor") || "0").replace(",", ".")) * 100),
+          valor_centavos: Math.round(
+            Number(String(fd.get("valor") || "0").replace(",", ".")) * 100,
+          ),
           unidade_id: String(fd.get("unidade_id") || "") || null,
         }),
       "Contrato cadastrado",
@@ -167,15 +169,29 @@ export default function ContratosPage() {
           <CardTitle as="h2">Fornecedores</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 pb-5">
-          <Button type="button" variant="secondary" onClick={() => setAberto(aberto === "fornecedor" ? null : "fornecedor")}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setAberto(aberto === "fornecedor" ? null : "fornecedor")}
+          >
             Novo fornecedor
           </Button>
           {aberto === "fornecedor" ? (
             <form onSubmit={salvarFornecedor} className="grid gap-3 sm:grid-cols-2">
               <Input id="fornecedor-nome" name="nome" label="Nome *" required maxLength={160} />
-              <Input id="fornecedor-email" name="email" type="email" label="E-mail" maxLength={160} />
+              <Input
+                id="fornecedor-email"
+                name="email"
+                type="email"
+                label="E-mail"
+                maxLength={160}
+              />
               <Input id="fornecedor-telefone" name="telefone" label="Telefone" maxLength={40} />
-              <UnidadeDonaSelect id="fornecedor-unidade" permission="contratos:manage" label="Unidade" />
+              <UnidadeDonaSelect
+                id="fornecedor-unidade"
+                permission="contratos:manage"
+                label="Unidade"
+              />
               <div>
                 <Button type="submit" loading={pending}>
                   Cadastrar fornecedor
@@ -197,7 +213,16 @@ export default function ContratosPage() {
                     {f.nome}
                     {f.email ? ` · ${f.email}` : ""}
                   </span>
-                  <Button type="button" variant="secondary" onClick={() => void excluir(`v1/contratos/fornecedores/${f.id}`, () => void fornecedores.mutate())}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void excluir(
+                        `v1/contratos/fornecedores/${f.id}`,
+                        () => void fornecedores.mutate(),
+                      )
+                    }
+                  >
                     Remover {f.nome}
                   </Button>
                 </li>
@@ -212,18 +237,33 @@ export default function ContratosPage() {
           <CardTitle as="h2">Contratos</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 pb-5">
-          <Button type="button" variant="secondary" onClick={() => setAberto(aberto === "contrato" ? null : "contrato")} disabled={opcoes.length === 0}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setAberto(aberto === "contrato" ? null : "contrato")}
+            disabled={opcoes.length === 0}
+          >
             Novo contrato
           </Button>
           {aberto === "contrato" ? (
             <form onSubmit={salvarContrato} className="grid gap-3 sm:grid-cols-2">
               <Input id="contrato-numero" name="numero" label="Número *" required maxLength={80} />
               <Input id="contrato-titulo" name="titulo" label="Título *" required maxLength={160} />
-              <Select id="contrato-fornecedor" name="fornecedor_id" label="Fornecedor *" required options={opcoes} />
+              <Select
+                id="contrato-fornecedor"
+                name="fornecedor_id"
+                label="Fornecedor *"
+                required
+                options={opcoes}
+              />
               <Input id="contrato-valor" name="valor" label="Valor em reais" inputMode="decimal" />
               <Input id="contrato-inicio" name="inicio" type="date" label="Início *" required />
               <Input id="contrato-fim" name="fim" type="date" label="Fim *" required />
-              <UnidadeDonaSelect id="contrato-unidade" permission="contratos:manage" label="Unidade" />
+              <UnidadeDonaSelect
+                id="contrato-unidade"
+                permission="contratos:manage"
+                label="Unidade"
+              />
               <div>
                 <Button type="submit" loading={pending}>
                   Cadastrar contrato
@@ -244,7 +284,13 @@ export default function ContratosPage() {
                   <span>
                     {c.numero} · {c.titulo} · {c.fornecedor_nome} · até {c.fim.slice(0, 10)}
                   </span>
-                  <Button type="button" variant="secondary" onClick={() => void excluir(`v1/contratos/contratos/${c.id}`, () => void contratos.mutate())}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void excluir(`v1/contratos/contratos/${c.id}`, () => void contratos.mutate())
+                    }
+                  >
                     Remover contrato {c.numero}
                   </Button>
                 </li>
@@ -259,17 +305,46 @@ export default function ContratosPage() {
           <CardTitle as="h2">Licenças</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 pb-5">
-          <Button type="button" variant="secondary" onClick={() => setAberto(aberto === "licenca" ? null : "licenca")} disabled={opcoes.length === 0}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setAberto(aberto === "licenca" ? null : "licenca")}
+            disabled={opcoes.length === 0}
+          >
             Nova licença
           </Button>
           {aberto === "licenca" ? (
             <form onSubmit={salvarLicenca} className="grid gap-3 sm:grid-cols-2">
               <Input id="licenca-nome" name="nome" label="Nome *" required maxLength={160} />
-              <Select id="licenca-fornecedor" name="fornecedor_id" label="Fornecedor *" required options={opcoes} />
-              <Input id="licenca-quantidade" name="quantidade" type="number" min={1} label="Assentos *" required defaultValue={1} />
-              <Input id="licenca-programa" name="programa" label="Programa no ativo" maxLength={80} placeholder="Nome que o agente informa" />
+              <Select
+                id="licenca-fornecedor"
+                name="fornecedor_id"
+                label="Fornecedor *"
+                required
+                options={opcoes}
+              />
+              <Input
+                id="licenca-quantidade"
+                name="quantidade"
+                type="number"
+                min={1}
+                label="Assentos *"
+                required
+                defaultValue={1}
+              />
+              <Input
+                id="licenca-programa"
+                name="programa"
+                label="Programa no ativo"
+                maxLength={80}
+                placeholder="Nome que o agente informa"
+              />
               <Input id="licenca-fim" name="fim" type="date" label="Vencimento" />
-              <UnidadeDonaSelect id="licenca-unidade" permission="contratos:manage" label="Unidade" />
+              <UnidadeDonaSelect
+                id="licenca-unidade"
+                permission="contratos:manage"
+                label="Unidade"
+              />
               <div>
                 <Button type="submit" loading={pending}>
                   Cadastrar licença
@@ -292,7 +367,13 @@ export default function ContratosPage() {
                     {l.fim ? ` · até ${l.fim.slice(0, 10)}` : ""}
                     {textoUso(l)}
                   </span>
-                  <Button type="button" variant="secondary" onClick={() => void excluir(`v1/contratos/licencas/${l.id}`, () => void licencas.mutate())}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void excluir(`v1/contratos/licencas/${l.id}`, () => void licencas.mutate())
+                    }
+                  >
                     Remover {l.nome}
                   </Button>
                 </li>

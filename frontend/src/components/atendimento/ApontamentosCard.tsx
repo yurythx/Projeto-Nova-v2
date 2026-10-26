@@ -111,9 +111,7 @@ export function ApontamentosCard({
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-4 pb-5">
-        {isLoading && !data && (
-          <p className="text-sm text-muted">Carregando apontamentos...</p>
-        )}
+        {isLoading && !data && <p className="text-sm text-muted">Carregando apontamentos...</p>}
 
         {!isLoading && apontamentos.length === 0 && (
           <p className="text-sm text-muted">

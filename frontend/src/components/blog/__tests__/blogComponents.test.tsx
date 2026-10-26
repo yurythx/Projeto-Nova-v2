@@ -26,7 +26,10 @@ describe("ReadingProgressBar", () => {
     expect(bar).toHaveAttribute("aria-valuenow", "0");
 
     // Simula scroll
-    Object.defineProperty(document.documentElement, "scrollHeight", { value: 2000, configurable: true });
+    Object.defineProperty(document.documentElement, "scrollHeight", {
+      value: 2000,
+      configurable: true,
+    });
     Object.defineProperty(window, "innerHeight", { value: 1000, configurable: true });
     Object.defineProperty(window, "scrollY", { value: 500, configurable: true });
 
@@ -70,7 +73,9 @@ Texto da seção dois.
 
 describe("SocialShareBar", () => {
   it("renderiza os botões de compartilhamento", () => {
-    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nova.local/blog/novidades" />);
+    render(
+      <SocialShareBar title="Novidades Projeto-nova-v2" url="https://nova.local/blog/novidades" />,
+    );
     expect(screen.getByLabelText("Compartilhar no WhatsApp")).toHaveAttribute(
       "href",
       expect.stringContaining("api.whatsapp.com"),
@@ -91,7 +96,9 @@ describe("SocialShareBar", () => {
       clipboard: { writeText },
     });
 
-    render(<SocialShareBar title="Novidades Projeto-nova-v2" url="https://nova.local/blog/novidades" />);
+    render(
+      <SocialShareBar title="Novidades Projeto-nova-v2" url="https://nova.local/blog/novidades" />,
+    );
     const copyBtn = screen.getByLabelText("Copiar link do artigo para a área de transferência");
     fireEvent.click(copyBtn);
 
@@ -220,7 +227,9 @@ describe("PostEditor Autosave & Draft Management", () => {
       </ToastProvider>,
     );
 
-    expect(screen.getByText("Existe um rascunho anterior salvo localmente no seu navegador.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Existe um rascunho anterior salvo localmente no seu navegador."),
+    ).toBeInTheDocument();
 
     const restoreBtn = screen.getByRole("button", { name: "Restaurar" });
     fireEvent.click(restoreBtn);
@@ -230,7 +239,9 @@ describe("PostEditor Autosave & Draft Management", () => {
     fireEvent.click(previewBtn);
 
     expect(screen.getByText("Texto restaurado do rascunho.")).toBeInTheDocument();
-    expect(screen.queryByText("Existe um rascunho anterior salvo localmente no seu navegador.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Existe um rascunho anterior salvo localmente no seu navegador."),
+    ).not.toBeInTheDocument();
   });
 
   it("descarta o rascunho ao clicar em Descartar", async () => {
@@ -250,6 +261,8 @@ describe("PostEditor Autosave & Draft Management", () => {
     fireEvent.click(discardBtn);
 
     expect(localStorage.getItem("nova_blog_draft_new")).toBeNull();
-    expect(screen.queryByText("Existe um rascunho anterior salvo localmente no seu navegador.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Existe um rascunho anterior salvo localmente no seu navegador."),
+    ).not.toBeInTheDocument();
   });
 });

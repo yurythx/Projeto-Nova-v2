@@ -7,9 +7,14 @@ import { PublicApiError, publicGet } from "@/lib/api/publicServer";
 import { APP_URL } from "@/lib/env";
 import type { CalendarEvent } from "@/lib/plataforma/types";
 
-const description = "Agenda pública do Projeto Nova. O módulo nasce desligado e só aparece quando a instalação o liga.";
+const description =
+  "Agenda pública do Projeto Nova. O módulo nasce desligado e só aparece quando a instalação o liga.";
 
-export const metadata: Metadata = { title: "Agenda", description, alternates: { canonical: `${APP_URL}/eventos` } };
+export const metadata: Metadata = {
+  title: "Agenda",
+  description,
+  alternates: { canonical: `${APP_URL}/eventos` },
+};
 
 export default async function EventosPage() {
   const from = new Date();
@@ -17,7 +22,12 @@ export default async function EventosPage() {
   const to = new Date(from.getTime() + 90 * 86400_000);
   let events: CalendarEvent[];
   try {
-    events = (await publicGet<CalendarEvent[]>(`calendar/public/events?from=${from.toISOString()}&to=${to.toISOString()}`, 300)).data;
+    events = (
+      await publicGet<CalendarEvent[]>(
+        `calendar/public/events?from=${from.toISOString()}&to=${to.toISOString()}`,
+        300,
+      )
+    ).data;
   } catch (err) {
     if (err instanceof PublicApiError && err.status === 404) notFound();
     throw err;
@@ -32,13 +42,20 @@ export default async function EventosPage() {
           <p className="mt-1 text-muted">{description}</p>
         </div>
         {events.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-surface-border p-10 text-center text-muted">Nenhum evento público programado.</p>
+          <p className="rounded-xl border border-dashed border-surface-border p-10 text-center text-muted">
+            Nenhum evento público programado.
+          </p>
         ) : (
           <ol className="flex flex-col gap-3">
             {events.map((e) => (
-              <li key={e.id} className="flex gap-4 rounded-xl border border-surface-border bg-surface p-4">
+              <li
+                key={e.id}
+                className="flex gap-4 rounded-xl border border-surface-border bg-surface p-4"
+              >
                 <div className="flex w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-primary/10 py-2 text-primary">
-                  <span className="text-xs uppercase">{new Date(e.starts_at).toLocaleDateString("pt-BR", { month: "short" })}</span>
+                  <span className="text-xs uppercase">
+                    {new Date(e.starts_at).toLocaleDateString("pt-BR", { month: "short" })}
+                  </span>
                   <span className="text-2xl font-bold">{new Date(e.starts_at).getDate()}</span>
                 </div>
                 <div className="text-sm">

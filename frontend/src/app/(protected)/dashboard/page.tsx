@@ -27,7 +27,9 @@ function StatCell({
 }) {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-surface-border bg-surface p-4 shadow-sm">
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${statCellToneClass[tone]}`}>
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${statCellToneClass[tone]}`}
+      >
         <Icon size={20} aria-hidden="true" />
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -42,7 +44,12 @@ function StatCell({
 export default async function DashboardOverviewPage() {
   const session = await getServerSession(authOptions);
   const firstName = (session?.user?.name ?? session?.user?.email ?? "").split(/[@\s]/)[0];
-  const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   // Checagem real (/ready do backend: postgres, rabbitmq, minio, redis).
   const health = await getSystemHealth();
@@ -54,7 +61,9 @@ export default async function DashboardOverviewPage() {
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-1 border-b border-surface-border pb-6">
         <p className="dateline">{today}</p>
-        <h1 className="text-3xl font-bold tracking-tight">{firstName ? `Olá, ${firstName}` : "Visão geral"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {firstName ? `Olá, ${firstName}` : "Visão geral"}
+        </h1>
         <p className="text-sm text-muted">Núcleo ligado e o estado das dependências.</p>
       </header>
 
@@ -64,13 +73,39 @@ export default async function DashboardOverviewPage() {
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCell label="Núcleo" value="IAM" hint="Identidade, sempre ligado" icon={Shield} />
-          <StatCell label="Módulos" value="Na grade" hint="Ativos e desativados aparecem abaixo" icon={Puzzle} />
-          <StatCell label="Rastreio" value="Auditoria" hint="Cadeia SHA-256 e cópia WORM" icon={Shield} />
+          <StatCell
+            label="Módulos"
+            value="Na grade"
+            hint="Ativos e desativados aparecem abaixo"
+            icon={Puzzle}
+          />
+          <StatCell
+            label="Rastreio"
+            value="Auditoria"
+            hint="Cadeia SHA-256 e cópia WORM"
+            icon={Shield}
+          />
           <StatCell
             label="Estado do núcleo"
-            value={health.status === "ok" ? "Saudável" : health.status === "degraded" ? "Degradado" : "Indisponível"}
-            hint={health.status === "ok" ? "Dependências verificadas" : degraded.join(", ") || "Backend não respondeu"}
-            tone={health.status === "ok" ? "success" : health.status === "degraded" ? "warning" : "danger"}
+            value={
+              health.status === "ok"
+                ? "Saudável"
+                : health.status === "degraded"
+                  ? "Degradado"
+                  : "Indisponível"
+            }
+            hint={
+              health.status === "ok"
+                ? "Dependências verificadas"
+                : degraded.join(", ") || "Backend não respondeu"
+            }
+            tone={
+              health.status === "ok"
+                ? "success"
+                : health.status === "degraded"
+                  ? "warning"
+                  : "danger"
+            }
             icon={Cpu}
           />
         </div>

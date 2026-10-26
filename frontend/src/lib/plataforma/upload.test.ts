@@ -19,7 +19,9 @@ describe("upload direto ao MinIO", () => {
       expect(hex(sha256(data)), `n=${n}`).toBe(hex(expected));
     }
     vi.stubGlobal("crypto", {});
-    expect(await sha256Hex(new Blob(["abc"]))).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    expect(await sha256Hex(new Blob(["abc"]))).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    );
   });
 
   it("PUT na URL pré-assinada com os headers do ticket", async () => {
@@ -27,16 +29,29 @@ describe("upload direto ao MinIO", () => {
     vi.stubGlobal("fetch", fetchMock);
     const blob = new Blob(["x"]);
     await putToTicket(
-      { object_key: "k", upload_url: "https://minio.test/put", method: "PUT", headers: { "Content-Type": "application/pdf" }, expires_at: "" },
+      {
+        object_key: "k",
+        upload_url: "https://minio.test/put",
+        method: "PUT",
+        headers: { "Content-Type": "application/pdf" },
+        expires_at: "",
+      },
       blob,
     );
-    expect(fetchMock).toHaveBeenCalledWith("https://minio.test/put", { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: blob });
+    expect(fetchMock).toHaveBeenCalledWith("https://minio.test/put", {
+      method: "PUT",
+      headers: { "Content-Type": "application/pdf" },
+      body: blob,
+    });
   });
 
   it("falha do storage vira erro", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 403 }));
     await expect(
-      putToTicket({ object_key: "k", upload_url: "u", method: "PUT", headers: {}, expires_at: "" }, new Blob([])),
+      putToTicket(
+        { object_key: "k", upload_url: "u", method: "PUT", headers: {}, expires_at: "" },
+        new Blob([]),
+      ),
     ).rejects.toThrow(/403/);
   });
 

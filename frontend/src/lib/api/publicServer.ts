@@ -23,7 +23,11 @@ interface Envelope<T> {
   meta?: unknown;
 }
 
-export async function publicGet<T>(path: string, revalidateSeconds = 0, tags?: string[]): Promise<{ data: T; meta?: unknown }> {
+export async function publicGet<T>(
+  path: string,
+  revalidateSeconds = 0,
+  tags?: string[],
+): Promise<{ data: T; meta?: unknown }> {
   const url = new URL(`/api/v1/${path.replace(/^\/+/, "")}`, BACKEND_INTERNAL_URL);
   let res: Response;
   try {
@@ -44,7 +48,11 @@ export async function publicGet<T>(path: string, revalidateSeconds = 0, tags?: s
     throw new PublicApiError(res.status, "INVALID_RESPONSE", "resposta ilegível do servidor");
   }
   if (!res.ok || json.error || json.data === null) {
-    throw new PublicApiError(res.status, json.error?.code ?? "UNKNOWN_ERROR", json.error?.message ?? "erro inesperado");
+    throw new PublicApiError(
+      res.status,
+      json.error?.code ?? "UNKNOWN_ERROR",
+      json.error?.message ?? "erro inesperado",
+    );
   }
   return { data: json.data, meta: json.meta };
 }
@@ -52,7 +60,12 @@ export async function publicGet<T>(path: string, revalidateSeconds = 0, tags?: s
 /** Variante tolerante: devolve fallback quando o módulo está desativado
  * (404 MODULE_DISABLED) ou a API está fora — o site público degrada em
  * vez de quebrar. */
-export async function publicGetOr<T>(path: string, fallback: T, revalidateSeconds = 60, tags?: string[]): Promise<T> {
+export async function publicGetOr<T>(
+  path: string,
+  fallback: T,
+  revalidateSeconds = 60,
+  tags?: string[],
+): Promise<T> {
   try {
     return (await publicGet<T>(path, revalidateSeconds, tags)).data;
   } catch {

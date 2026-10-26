@@ -10,8 +10,16 @@ vi.mock("next/navigation", async () => (await import("@/test/navigation")).navig
 import AuditoriaPage from "./page";
 
 const rec = (pos: number, extra: Record<string, unknown> = {}) => ({
-  id: `r${pos}`, chain_pos: pos, actor_roles: [], entity_context: {}, action: "iam.perfil.updated", metadata: {},
-  timestamp_utc: "2026-01-01T10:00:00Z", prev_hash: "aa", hash: "bb", ...extra,
+  id: `r${pos}`,
+  chain_pos: pos,
+  actor_roles: [],
+  entity_context: {},
+  action: "iam.perfil.updated",
+  metadata: {},
+  timestamp_utc: "2026-01-01T10:00:00Z",
+  prev_hash: "aa",
+  hash: "bb",
+  ...extra,
 });
 
 describe("Auditoria", () => {
@@ -19,7 +27,18 @@ describe("Auditoria", () => {
 
   it("auditoria com escopo (ADR 013) avisa que a trilha vale na área; a global não", async () => {
     mockBackend({
-      ...identityRoutes({ permissions: ["audit:read"], scopes: [{ perfil: "p", origem: "manual", entidade_id: "e1", unidade_id: "u1", permissions: ["audit:read"] }] }),
+      ...identityRoutes({
+        permissions: ["audit:read"],
+        scopes: [
+          {
+            perfil: "p",
+            origem: "manual",
+            entidade_id: "e1",
+            unidade_id: "u1",
+            permissions: ["audit:read"],
+          },
+        ],
+      }),
       "GET v1/audit/logs": page([rec(1)]),
     });
     const { unmount } = renderApp(<AuditoriaPage />);
@@ -28,7 +47,9 @@ describe("Auditoria", () => {
     unmount();
     mockBackend({ ...identityRoutes(), "GET v1/audit/logs": page([rec(1)]) });
     renderApp(<AuditoriaPage />);
-    expect(await screen.findByRole("button", { name: /Verificar integridade/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Verificar integridade/ }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
@@ -36,7 +57,12 @@ describe("Auditoria", () => {
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/audit/logs": (req) =>
-        req.query.get("action") === "falha" ? fail(500, "trilha indisponível") : page([rec(2, { actor_name: "Maria", ip_address: "10.0.0.1", resource_type: "perfil" }), rec(1)]),
+        req.query.get("action") === "falha"
+          ? fail(500, "trilha indisponível")
+          : page([
+              rec(2, { actor_name: "Maria", ip_address: "10.0.0.1", resource_type: "perfil" }),
+              rec(1),
+            ]),
     });
     renderApp(<AuditoriaPage />);
     expect(await screen.findByText("Maria")).toBeInTheDocument();
@@ -48,12 +74,16 @@ describe("Auditoria", () => {
     await userEvent.type(screen.getByLabelText("De"), "2026-01-01");
     await userEvent.type(screen.getByLabelText("Até"), "2026-01-31");
     await userEvent.click(screen.getByRole("button", { name: "Filtrar" }));
-    await waitFor(() => expect(api.to("GET v1/audit/logs").at(-1)!.query.get("action")).toBe("login.failed"));
+    await waitFor(() =>
+      expect(api.to("GET v1/audit/logs").at(-1)!.query.get("action")).toBe("login.failed"),
+    );
     expect(api.to("GET v1/audit/logs").at(-1)!.query.get("resource_type")).toBe("user");
 
     await userEvent.selectOptions(screen.getByLabelText("Formato de exportação"), "xml");
     const href = screen.getByRole("link", { name: /Exportar \(LAI\)/ }).getAttribute("href")!;
-    expect(href).toBe("/api/backend/v1/audit/export?from=2026-01-01&to=2026-01-31&action=login.failed&format=xml");
+    expect(href).toBe(
+      "/api/backend/v1/audit/export?from=2026-01-01&to=2026-01-31&action=login.failed&format=xml",
+    );
 
     await userEvent.clear(screen.getByLabelText("Ação"));
     await userEvent.type(screen.getByLabelText("Ação"), "falha");
@@ -66,8 +96,16 @@ describe("Auditoria", () => {
       ...identityRoutes(),
       "GET v1/audit/logs": page([
         rec(7, {
-          actor_subject: "sub-9", actor_roles: ["nova-admin"], user_agent: "Mozilla", correlation_id: "req-1", resource_type: "perfil", resource_id: "p1",
-          diff_before: { nome: "A" }, diff_after: { nome: "B" }, entity_context: { unidade_id: "u1" }, metadata: { motivo: "ajuste" },
+          actor_subject: "sub-9",
+          actor_roles: ["nova-admin"],
+          user_agent: "Mozilla",
+          correlation_id: "req-1",
+          resource_type: "perfil",
+          resource_id: "p1",
+          diff_before: { nome: "A" },
+          diff_after: { nome: "B" },
+          entity_context: { unidade_id: "u1" },
+          metadata: { motivo: "ajuste" },
         }),
         rec(6),
       ]),
@@ -97,7 +135,15 @@ describe("Auditoria", () => {
       ...identityRoutes(),
       "GET v1/audit/logs": page([]),
       "GET v1/audit/verify": () => ({
-        data: valid ? { checked: 120, valid: true, verified_at: "2026-01-02T00:00:00Z" } : { checked: 50, valid: false, first_invalid_pos: 42, reason: "hash divergente", verified_at: "2026-01-02T00:00:00Z" },
+        data: valid
+          ? { checked: 120, valid: true, verified_at: "2026-01-02T00:00:00Z" }
+          : {
+              checked: 50,
+              valid: false,
+              first_invalid_pos: 42,
+              reason: "hash divergente",
+              verified_at: "2026-01-02T00:00:00Z",
+            },
       }),
     });
     renderApp(<AuditoriaPage />);
@@ -108,18 +154,27 @@ describe("Auditoria", () => {
     valid = false;
     await userEvent.click(screen.getByRole("button", { name: /Verificar integridade/ }));
     expect(await screen.findByText("Cadeia violada")).toBeInTheDocument();
-    expect(screen.getByText(/Primeira divergência na posição #42: hash divergente/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Primeira divergência na posição #42: hash divergente/),
+    ).toBeInTheDocument();
   });
 
   it("sem audit:verify nem audit:read não há verificação nem exportação; verificação com erro", async () => {
-    mockBackend({ ...identityRoutes({ permissions: ["audit:list"] }), "GET v1/audit/logs": page([]) });
+    mockBackend({
+      ...identityRoutes({ permissions: ["audit:list"] }),
+      "GET v1/audit/logs": page([]),
+    });
     const { unmount } = renderApp(<AuditoriaPage />);
     await screen.findByText("Nenhum registro no período");
     expect(screen.queryByRole("button", { name: /Verificar integridade/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Exportar/ })).not.toBeInTheDocument();
     unmount();
 
-    mockBackend({ ...identityRoutes(), "GET v1/audit/logs": page([]), "GET v1/audit/verify": fail(503, "verificação indisponível") });
+    mockBackend({
+      ...identityRoutes(),
+      "GET v1/audit/logs": page([]),
+      "GET v1/audit/verify": fail(503, "verificação indisponível"),
+    });
     renderApp(<AuditoriaPage />);
     await userEvent.click(await screen.findByRole("button", { name: /Verificar integridade/ }));
     expect(await screen.findByText("verificação indisponível")).toBeInTheDocument();

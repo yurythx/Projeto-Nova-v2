@@ -39,7 +39,9 @@ describe("MatrizRiscoCalculadora (Gestão de Riscos do CAB)", () => {
     );
 
     // Aplica o risco sugerido
-    await user.click(screen.getByRole("button", { name: /Aplicar risco sugerido \(Risco alto\)/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Aplicar risco sugerido \(Risco alto\)/i }),
+    );
 
     expect(onAplicar).toHaveBeenCalledTimes(1);
     expect(onAplicar).toHaveBeenCalledWith(

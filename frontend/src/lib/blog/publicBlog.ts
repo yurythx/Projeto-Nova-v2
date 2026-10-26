@@ -3,7 +3,12 @@ import "server-only";
 import { PublicApiError, publicGet } from "@/lib/api/publicServer";
 import type { Post } from "@/lib/plataforma/types";
 
-export async function listPublicPosts(query = "", kind = "", page = 1, pageSize = 50): Promise<Post[]> {
+export async function listPublicPosts(
+  query = "",
+  kind = "",
+  page = 1,
+  pageSize = 50,
+): Promise<Post[]> {
   const params = new URLSearchParams();
   if (query) params.set("q", query);
   if (kind) params.set("kind", kind);

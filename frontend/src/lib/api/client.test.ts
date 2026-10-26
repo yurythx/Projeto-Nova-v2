@@ -13,6 +13,17 @@ function mockFetchOnce(status: number, body: unknown) {
   );
 }
 
+// jsdom não implementa navegação: troca window.location por um objeto
+// simples o bastante pra location.replace(...) não lançar.
+function fingirLocation(pathname: string) {
+  const replace = vi.fn();
+  Object.defineProperty(window, "location", {
+    configurable: true,
+    value: { pathname, search: "", origin: "http://localhost:3000", replace },
+  });
+  return replace;
+}
+
 describe("apiClient", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -30,7 +41,8 @@ describe("apiClient", () => {
     await apiClient.post("v1/blog/posts", { title: "x" });
     await apiClient.get("v1/blog/posts");
     const calls = (fetch as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls;
-    const key = (i: number) => (calls[i]![1].headers as Record<string, string>)["X-Idempotency-Key"];
+    const key = (i: number) =>
+      (calls[i]![1].headers as Record<string, string>)["X-Idempotency-Key"];
     expect(key(0)).toMatch(/^[0-9a-f-]{36}$/);
     expect(key(1)).not.toBe(key(0));
     expect(key(2)).toBeUndefined();
@@ -108,43 +120,47 @@ describe("apiClient", () => {
   it("um 401 do proxy BFF redireciona a /login com reason=session_expired", async () => {
     mockFetchOnce(401, { data: null, error: { code: "UNAUTHORIZED", message: "sessão expirada" } });
 
-    // @ts-expect-error jsdom não implementa navegação real — mesmo padrão
-    // de UserMenu.test.tsx.
-    delete window.location;
-    // @ts-expect-error idem — objeto simples o bastante pra
-    // location.replace(...) não lançar.
-    window.location = { pathname: "/dashboard", search: "", origin: "http://localhost:3000", replace: vi.fn() };
+    const replace = fingirLocation("/dashboard");
 
     await expect(apiClient.get("v1/integrations")).rejects.toBeInstanceOf(ApiError);
 
-    const replaced = (window.location.replace as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
+    const replaced = replace.mock.calls[0]?.[0] as string;
     expect(replaced).toContain("/login");
     expect(replaced).toContain("reason=session_expired");
     expect(replaced).toContain("callbackUrl=%2Fdashboard");
   });
 
   it("401 com código próprio (senha errada no Signum) NÃO derruba a sessão", async () => {
-    mockFetchOnce(401, { data: null, error: { code: "SIGNUM_REAUTH_FAILED", message: "senha incorreta — a assinatura não foi realizada" } });
-    // @ts-expect-error jsdom não implementa navegação real
-    delete window.location;
-    // @ts-expect-error objeto simples o bastante
-    window.location = { pathname: "/signum/1", search: "", origin: "http://localhost:3000", replace: vi.fn() };
+    mockFetchOnce(401, {
+      data: null,
+      error: {
+        code: "SIGNUM_REAUTH_FAILED",
+        message: "senha incorreta — a assinatura não foi realizada",
+      },
+    });
+    const replace = fingirLocation("/signum/1");
 
     const err = await apiClient.post("v1/signum/envelopes/1/sign", {}).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).code).toBe("SIGNUM_REAUTH_FAILED");
-    expect(window.location.replace).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("401 com corpo ilegível ainda é tratado como sessão expirada", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => { throw new Error("html"); } }));
-    // @ts-expect-error jsdom não implementa navegação real
-    delete window.location;
-    // @ts-expect-error objeto simples o bastante
-    window.location = { pathname: "/dashboard", search: "", origin: "http://localhost:3000", replace: vi.fn() };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => {
+          throw new Error("html");
+        },
+      }),
+    );
+    const replace = fingirLocation("/dashboard");
 
     await expect(apiClient.get("v1/me")).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
-    expect(window.location.replace).toHaveBeenCalled();
+    expect(replace).toHaveBeenCalled();
   });
 
   it("post() (JSON body) keeps setting Content-Type: application/json, unaffected by postForm's exception", async () => {

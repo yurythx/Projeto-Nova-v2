@@ -6,7 +6,12 @@ import { Award, Calendar, FileSpreadsheet, Printer } from "lucide-react";
 
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { AssistenciaGraficos } from "@/components/servicos/AssistenciaGraficos";
-import { BarraDeFiltros, filtrosIniciais, PainelDaAssistencia, type FiltrosAssistencia } from "@/components/servicos/PainelDaAssistencia";
+import {
+  BarraDeFiltros,
+  filtrosIniciais,
+  PainelDaAssistencia,
+  type FiltrosAssistencia,
+} from "@/components/servicos/PainelDaAssistencia";
 import { RelatorioExecutivoModal } from "@/components/servicos/RelatorioExecutivoModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
@@ -52,7 +57,9 @@ export default function AssistenciaDashboardPage() {
 
   const gereProblemas = can("problemas:manage");
   const leProblemas = gereProblemas || can("problemas:read");
-  const problemas = useApiQuery<Problema[]>(enabled("problemas") && leProblemas ? "v1/problemas" : null);
+  const problemas = useApiQuery<Problema[]>(
+    enabled("problemas") && leProblemas ? "v1/problemas" : null,
+  );
 
   const gereMudancas = can("mudancas:manage");
   const veMudancas = gereMudancas || can("mudancas:aprovar");
@@ -64,12 +71,21 @@ export default function AssistenciaDashboardPage() {
 
   const solicitacoes = fila.data?.items ?? [];
   const totalFila = fila.data?.meta?.total_items ?? solicitacoes.length;
-  const listaProblemas = (problemas.data ?? []).filter((item) => !filtros.estadoProblema || item.estado === filtros.estadoProblema);
-  const listaMudancas = (mudancas.data ?? []).filter((item) => !filtros.estadoMudanca || item.estado === filtros.estadoMudanca);
-  const listaProjetos = (projetos.data ?? []).filter((item) => !filtros.estadoProjeto || item.estado === filtros.estadoProjeto);
+  const listaProblemas = (problemas.data ?? []).filter(
+    (item) => !filtros.estadoProblema || item.estado === filtros.estadoProblema,
+  );
+  const listaMudancas = (mudancas.data ?? []).filter(
+    (item) => !filtros.estadoMudanca || item.estado === filtros.estadoMudanca,
+  );
+  const listaProjetos = (projetos.data ?? []).filter(
+    (item) => !filtros.estadoProjeto || item.estado === filtros.estadoProjeto,
+  );
   const incidentes = solicitacoes.filter((s) => s.tipo === "incidente").length;
   const requisicoes = solicitacoes.filter((s) => s.tipo === "requisicao").length;
-  const notaFila = veFila && totalFila > solicitacoes.length ? `A fila tem ${totalFila}. Esta página mostra ${solicitacoes.length}.` : undefined;
+  const notaFila =
+    veFila && totalFila > solicitacoes.length
+      ? `A fila tem ${totalFila}. Esta página mostra ${solicitacoes.length}.`
+      : undefined;
 
   function exportarRelatorioGeral() {
     const cabecalho = ["Modulo", "Metrica", "Valor", "DataExtracao"];
@@ -87,7 +103,12 @@ export default function AssistenciaDashboardPage() {
       linhas.push(
         ["Atendimento", "Resolucao (h)", governanca.data.mttr_horas ?? "sem amostra", hoje],
         ["Atendimento", "Prazo (%)", governanca.data.sla_percentual ?? "sem amostra", hoje],
-        ["Atendimento", "Primeiro contato (%)", governanca.data.fcr_percentual ?? "sem amostra", hoje],
+        [
+          "Atendimento",
+          "Primeiro contato (%)",
+          governanca.data.fcr_percentual ?? "sem amostra",
+          hoje,
+        ],
       );
     }
     const conteudo = "\uFEFF" + [cabecalho.join(";"), ...linhas.map((l) => l.join(";"))].join("\n");
@@ -95,7 +116,10 @@ export default function AssistenciaDashboardPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `relatorio-assistencia-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `relatorio-assistencia-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -110,10 +134,21 @@ export default function AssistenciaDashboardPage() {
         description="Os filtros valem para o painel e para os gráficos. A ordem dos cartões fica neste navegador."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="secondary" type="button" onClick={() => setEditar((atual) => !atual)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={() => setEditar((atual) => !atual)}
+            >
               {editar ? "Concluir organização" : "Organizar painel"}
             </Button>
-            <Button size="sm" variant="secondary" type="button" onClick={() => setModalRelatorio(true)} className="inline-flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={() => setModalRelatorio(true)}
+              className="inline-flex items-center gap-1.5"
+            >
               <Award className="h-4 w-4 text-primary" />
               Relatório Executivo
             </Button>
@@ -121,11 +156,23 @@ export default function AssistenciaDashboardPage() {
               <Calendar className="h-4 w-4" />
               Calendário
             </Link>
-            <Button size="sm" variant="secondary" type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5"
+            >
               <Printer className="h-4 w-4" />
               Imprimir Painel
             </Button>
-            <Button size="sm" variant="secondary" type="button" onClick={exportarRelatorioGeral} className="inline-flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={exportarRelatorioGeral}
+              className="inline-flex items-center gap-1.5"
+            >
               <FileSpreadsheet className="h-4 w-4" />
               Exportar CSV
             </Button>
@@ -136,7 +183,11 @@ export default function AssistenciaDashboardPage() {
 
       <BarraDeFiltros filtros={filtros} onChange={setFiltros} />
 
-      <div role="tablist" aria-label="Dashboard da assistência" className="flex gap-2 border-b border-surface-border">
+      <div
+        role="tablist"
+        aria-label="Dashboard da assistência"
+        className="flex gap-2 border-b border-surface-border"
+      >
         <button
           type="button"
           role="tab"

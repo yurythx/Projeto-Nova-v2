@@ -12,7 +12,11 @@ export function GovFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id="gov-footer" tabIndex={-1} className="gov-footer mt-auto bg-footer-bg text-footer-foreground outline-none">
+    <footer
+      id="gov-footer"
+      tabIndex={-1}
+      className="gov-footer mt-auto bg-footer-bg text-footer-foreground outline-none"
+    >
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 text-sm sm:px-8 md:grid-cols-3">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-base font-bold">
@@ -20,7 +24,9 @@ export function GovFooter() {
             <span>{branding.appName}</span>
           </div>
           {branding.appDescription && <p className="opacity-80">{branding.appDescription}</p>}
-          <p className="text-xs font-semibold uppercase tracking-wider opacity-90">{branding.orgName}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-90">
+            {branding.orgName}
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -29,7 +35,10 @@ export function GovFooter() {
             {branding.supportEmail && (
               <li className="flex items-center gap-2">
                 <Mail size={16} aria-hidden="true" />
-                <a href={`mailto:${branding.supportEmail}`} className="underline-offset-2 hover:underline">
+                <a
+                  href={`mailto:${branding.supportEmail}`}
+                  className="underline-offset-2 hover:underline"
+                >
                   {branding.supportEmail}
                 </a>
               </li>
@@ -65,7 +74,9 @@ export function GovFooter() {
         </div>
 
         <nav aria-label="Institucional" className="flex flex-col gap-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider">Transparência e conformidade</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider">
+            Transparência e conformidade
+          </h2>
           <ul className="flex flex-col gap-1.5 opacity-90">
             <li>
               <Link href="/privacidade" className="underline-offset-2 hover:underline">

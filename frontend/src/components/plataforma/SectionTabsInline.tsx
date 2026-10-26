@@ -26,7 +26,11 @@ export function SectionTabsInline<T extends string>({
   }
 
   return (
-    <div role="tablist" aria-label={label} className="flex gap-4 overflow-x-auto border-b border-surface-border">
+    <div
+      role="tablist"
+      aria-label={label}
+      className="flex gap-4 overflow-x-auto border-b border-surface-border"
+    >
       {tabs.map((t, i) => (
         <button
           key={t.value}
@@ -40,7 +44,9 @@ export function SectionTabsInline<T extends string>({
           onClick={() => onChange(t.value)}
           onKeyDown={(e) => onKey(e, i)}
           className={`-mb-px shrink-0 border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
-            value === t.value ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground"
+            value === t.value
+              ? "border-primary text-primary"
+              : "border-transparent text-muted hover:text-foreground"
           }`}
         >
           {t.label}

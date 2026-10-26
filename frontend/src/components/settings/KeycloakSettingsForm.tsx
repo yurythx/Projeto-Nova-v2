@@ -43,7 +43,10 @@ function toFormState(s: KeycloakSettingsStatus): FormState {
   };
 }
 
-const sourceBadge: Record<KeycloakSettingsStatus["source"], { label: string; tone: "success" | "info" | "neutral" }> = {
+const sourceBadge: Record<
+  KeycloakSettingsStatus["source"],
+  { label: string; tone: "success" | "info" | "neutral" }
+> = {
   database: { label: "Salvo no banco — em uso agora", tone: "success" },
   environment: { label: "Vindo de variável de ambiente", tone: "info" },
   unset: { label: "Nada configurado ainda", tone: "neutral" },
@@ -121,25 +124,26 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
     e.preventDefault();
     setSaving(true);
     try {
-      const { data } = await apiClient.put<{ settings: KeycloakSettingsStatus; test: KeycloakTestResult }>(
-        "v1/admin/keycloak",
-        {
-          issuer_url: form.issuerUrl,
-          realm: form.realm,
-          client_id: form.clientId,
-          client_secret: form.clientSecret,
-          audience: form.audience,
-          frontend_client_id: form.frontendClientId,
-          frontend_client_secret: form.frontendClientSecret,
-        },
-      );
+      const { data } = await apiClient.put<{
+        settings: KeycloakSettingsStatus;
+        test: KeycloakTestResult;
+      }>("v1/admin/keycloak", {
+        issuer_url: form.issuerUrl,
+        realm: form.realm,
+        client_id: form.clientId,
+        client_secret: form.clientSecret,
+        audience: form.audience,
+        frontend_client_id: form.frontendClientId,
+        frontend_client_secret: form.frontendClientSecret,
+      });
       const parsed = keycloakSaveResponseSchema.parse(data);
       setStatus(parsed.settings);
       setForm(toFormState(parsed.settings));
       setTestResult(parsed.test);
       showToast({
         title: "Configuração do Keycloak salva",
-        description: "O backend já recarregou a verificação de tokens com os novos valores — sem reiniciar.",
+        description:
+          "O backend já recarregou a verificação de tokens com os novos valores — sem reiniciar.",
         tone: "success",
       });
     } catch (err) {
@@ -159,7 +163,10 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
     <Card className="border border-surface-border bg-surface">
       <CardHeader className="border-b border-surface-border">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle as="h2" className="flex items-center gap-2 text-base font-bold text-foreground">
+          <CardTitle
+            as="h2"
+            className="flex items-center gap-2 text-base font-bold text-foreground"
+          >
             <KeyRound className="h-5 w-5 text-primary" aria-hidden="true" />
             Integração com o Keycloak (IAM)
           </CardTitle>
@@ -167,9 +174,9 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
         </div>
         <p className="mt-1 text-xs text-muted">
           O Keycloak é o provedor de identidade (IAM) que emite e assina os tokens de acesso desta
-          plataforma. Esta tela NUNCA cria ou administra o Keycloak em si — só aponta o backend para um
-          realm/client já existentes lá. Salvar aqui grava a configuração no banco (o Client Secret fica
-          cifrado) e aplica na hora, sem reiniciar nenhum container.
+          plataforma. Esta tela NUNCA cria ou administra o Keycloak em si — só aponta o backend para
+          um realm/client já existentes lá. Salvar aqui grava a configuração no banco (o Client
+          Secret fica cifrado) e aplica na hora, sem reiniciar nenhum container.
         </p>
         {status.updated_at && (
           <p className="mt-1 text-[11px] text-muted">
@@ -185,9 +192,10 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
             <div className="flex items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 p-3 text-xs text-foreground">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
               <p>
-                Esta configuração ainda roda a partir de variáveis de ambiente do container, nunca foi
-                salva por esta tela. Você pode salvar sem preencher o Client Secret (o valor atual do
-                ambiente será reaproveitado) — mas se quiser TROCAR o secret, precisa digitá-lo aqui.
+                Esta configuração ainda roda a partir de variáveis de ambiente do container, nunca
+                foi salva por esta tela. Você pode salvar sem preencher o Client Secret (o valor
+                atual do ambiente será reaproveitado) — mas se quiser TROCAR o secret, precisa
+                digitá-lo aqui.
               </p>
             </div>
           )}
@@ -198,9 +206,9 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
               1. Backend — Verificação de Tokens (Resource Server)
             </h3>
             <p className="text-[11px] text-muted">
-              Estes valores são usados pelo backend Go para BAIXAR as chaves públicas do realm (JWKS) e
-              validar a assinatura, o emissor e a audiência de todo token recebido — o backend nunca
-              autentica ninguém sozinho, só confere um token que o Keycloak já emitiu.
+              Estes valores são usados pelo backend Go para BAIXAR as chaves públicas do realm
+              (JWKS) e validar a assinatura, o emissor e a audiência de todo token recebido — o
+              backend nunca autentica ninguém sozinho, só confere um token que o Keycloak já emitiu.
             </p>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -216,9 +224,12 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   required
                 />
                 <p className="text-[11px] text-muted">
-                  URL do realm no Keycloak. É a partir dela que o backend descobre automaticamente todo o
-                  resto (endpoint de token, chaves públicas) — o documento fica em{" "}
-                  <code className="font-mono">{"{issuer_url}"}/.well-known/openid-configuration</code>.
+                  URL do realm no Keycloak. É a partir dela que o backend descobre automaticamente
+                  todo o resto (endpoint de token, chaves públicas) — o documento fica em{" "}
+                  <code className="font-mono">
+                    {"{issuer_url}"}/.well-known/openid-configuration
+                  </code>
+                  .
                 </p>
               </div>
 
@@ -233,8 +244,8 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   required
                 />
                 <p className="text-[11px] text-muted">
-                  Nome do realm no Keycloak — só informativo/de conferência; a validação de fato usa a
-                  Issuer URL acima.
+                  Nome do realm no Keycloak — só informativo/de conferência; a validação de fato usa
+                  a Issuer URL acima.
                 </p>
               </div>
 
@@ -249,8 +260,9 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   required
                 />
                 <p className="text-[11px] text-muted">
-                  Todo token precisa ter esta audiência (claim <code className="font-mono">aud</code>)
-                  para ser aceito — normalmente igual ao Client ID do backend, abaixo.
+                  Todo token precisa ter esta audiência (claim{" "}
+                  <code className="font-mono">aud</code>) para ser aceito — normalmente igual ao
+                  Client ID do backend, abaixo.
                 </p>
               </div>
 
@@ -265,8 +277,8 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   required
                 />
                 <p className="text-[11px] text-muted">
-                  Client &ldquo;confidential&rdquo; do backend, cadastrado no Keycloak — identifica este
-                  backend perante o realm.
+                  Client &ldquo;confidential&rdquo; do backend, cadastrado no Keycloak — identifica
+                  este backend perante o realm.
                 </p>
               </div>
 
@@ -278,7 +290,11 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
                   autoComplete="new-password"
                   value={form.clientSecret}
                   onChange={(e) => handleChange("clientSecret", e.target.value)}
-                  placeholder={status.client_secret_set ? "•••••••••••••• (já definido — deixe em branco para manter)" : "Cole o Client Secret"}
+                  placeholder={
+                    status.client_secret_set
+                      ? "•••••••••••••• (já definido — deixe em branco para manter)"
+                      : "Cole o Client Secret"
+                  }
                 />
                 <p className="text-[11px] text-muted">
                   Nunca é reexibido depois de salvo, por segurança — fica cifrado no banco. Deixe em
@@ -295,11 +311,11 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
             </h3>
             <p className="text-[11px] text-muted">
               Client Keycloak DIFERENTE do backend, usado só pelo botão &ldquo;Entrar com
-              Keycloak&rdquo; (fluxo Authorization Code + PKCE). Estes valores ficam registrados aqui
-              para consulta e auditoria
-              em um único lugar; como o processo do frontend lê suas próprias variáveis de ambiente uma
-              única vez ao subir, uma troca aqui só entra em vigor no login depois que o container do
-              frontend for reiniciado com as variáveis correspondentes atualizadas.
+              Keycloak&rdquo; (fluxo Authorization Code + PKCE). Estes valores ficam registrados
+              aqui para consulta e auditoria em um único lugar; como o processo do frontend lê suas
+              próprias variáveis de ambiente uma única vez ao subir, uma troca aqui só entra em
+              vigor no login depois que o container do frontend for reiniciado com as variáveis
+              correspondentes atualizadas.
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
@@ -333,7 +349,13 @@ export function KeycloakSettingsForm({ initialStatus }: { initialStatus: Keycloa
           {testResult && <TestResultPanel result={testResult} />}
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-border pt-4">
-            <Button type="button" variant="secondary" onClick={handleTest} loading={testing} disabled={!form.issuerUrl}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleTest}
+              loading={testing}
+              disabled={!form.issuerUrl}
+            >
               <PlugZap className="mr-1.5 h-4 w-4" aria-hidden="true" />
               Testar conexão
             </Button>

@@ -14,7 +14,14 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/Table";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
@@ -23,13 +30,20 @@ import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import { unidadesGeridas } from "@/lib/plataforma/permissions";
 import type { CatalogService, OrgTree, ServiceChannel } from "@/lib/plataforma/types";
 
-const STATUS: Record<CatalogService["status"], { label: string; tone: "neutral" | "success" | "warning" }> = {
+const STATUS: Record<
+  CatalogService["status"],
+  { label: string; tone: "neutral" | "success" | "warning" }
+> = {
   draft: { label: "Rascunho", tone: "neutral" },
   published: { label: "Publicado", tone: "success" },
   archived: { label: "Arquivado", tone: "warning" },
 };
 
-const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
+const lines = (s: string) =>
+  s
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
 function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: () => void }) {
   const { run, pending } = useAction();
@@ -39,7 +53,9 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
   // Só as unidades que a pessoa gerencia; sem unidade (institucional) só
   // para a gestão global (ADR 013 — a API confere de novo).
   const geridas = unidadesGeridas(me, tree.data, "catalog:manage");
-  const unidades = (tree.data ?? []).flatMap((e) => e.unidades).filter((u) => geridas.unidades.has(u.id));
+  const unidades = (tree.data ?? [])
+    .flatMap((e) => e.unidades)
+    .filter((u) => geridas.unidades.has(u.id));
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,7 +78,10 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
       position: Number(s("position")) || 0,
     };
     const ok = await run(
-      () => (service ? apiClient.put(`v1/catalog/admin/services/${service.id}`, payload) : apiClient.post("v1/catalog/admin/services", payload)),
+      () =>
+        service
+          ? apiClient.put(`v1/catalog/admin/services/${service.id}`, payload)
+          : apiClient.post("v1/catalog/admin/services", payload),
       "Serviço salvo",
     );
     if (ok) onDone();
@@ -71,18 +90,72 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input id="svc-title" name="title" label="Título *" required maxLength={200} defaultValue={service?.title} />
-        <Input id="svc-slug" name="slug" label="Slug" maxLength={100} defaultValue={service?.slug} placeholder="gerado do título" />
+        <Input
+          id="svc-title"
+          name="title"
+          label="Título *"
+          required
+          maxLength={200}
+          defaultValue={service?.title}
+        />
+        <Input
+          id="svc-slug"
+          name="slug"
+          label="Slug"
+          maxLength={100}
+          defaultValue={service?.slug}
+          placeholder="gerado do título"
+        />
       </div>
-      <Textarea id="svc-summary" name="summary" label="Resumo" rows={2} maxLength={500} defaultValue={service?.summary} />
+      <Textarea
+        id="svc-summary"
+        name="summary"
+        label="Resumo"
+        rows={2}
+        maxLength={500}
+        defaultValue={service?.summary}
+      />
       <div className="grid gap-3 sm:grid-cols-3">
-        <Input id="svc-category" name="category" label="Categoria" maxLength={80} defaultValue={service?.category} />
-        <Input id="svc-audience" name="audience" label="Público" maxLength={200} defaultValue={service?.audience} />
-        <Select id="svc-icon" name="icon" label="Ícone" placeholder="Padrão" defaultValue={service?.icon ?? ""} options={SERVICE_ICON_NAMES.map((n) => ({ value: n, label: n }))} />
+        <Input
+          id="svc-category"
+          name="category"
+          label="Categoria"
+          maxLength={80}
+          defaultValue={service?.category}
+        />
+        <Input
+          id="svc-audience"
+          name="audience"
+          label="Público"
+          maxLength={200}
+          defaultValue={service?.audience}
+        />
+        <Select
+          id="svc-icon"
+          name="icon"
+          label="Ícone"
+          placeholder="Padrão"
+          defaultValue={service?.icon ?? ""}
+          options={SERVICE_ICON_NAMES.map((n) => ({ value: n, label: n }))}
+        />
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Input id="svc-sla" name="sla" label="Prazo" maxLength={120} defaultValue={service?.sla} placeholder="até 15 dias" />
-        <Input id="svc-cost" name="cost" label="Custo" maxLength={120} defaultValue={service?.cost} placeholder="Gratuito" />
+        <Input
+          id="svc-sla"
+          name="sla"
+          label="Prazo"
+          maxLength={120}
+          defaultValue={service?.sla}
+          placeholder="até 15 dias"
+        />
+        <Input
+          id="svc-cost"
+          name="cost"
+          label="Custo"
+          maxLength={120}
+          defaultValue={service?.cost}
+          placeholder="Gratuito"
+        />
         <Select
           id="svc-unidade"
           name="responsible_unidade_id"
@@ -92,12 +165,38 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
           defaultValue={service?.responsible_unidade_id ?? ""}
           options={unidades.map((u) => ({ value: u.id, label: u.nome }))}
         />
-        <Input id="svc-position" name="position" type="number" min={0} label="Ordem" defaultValue={service?.position ?? 0} />
+        <Input
+          id="svc-position"
+          name="position"
+          type="number"
+          min={0}
+          label="Ordem"
+          defaultValue={service?.position ?? 0}
+        />
       </div>
-      <Textarea id="svc-description" name="description" label="Descrição (Markdown)" rows={6} maxLength={50000} defaultValue={service?.description} />
+      <Textarea
+        id="svc-description"
+        name="description"
+        label="Descrição (Markdown)"
+        rows={6}
+        maxLength={50000}
+        defaultValue={service?.description}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
-        <Textarea id="svc-req" name="requirements" label="Requisitos (um por linha)" rows={4} defaultValue={service?.requirements.join("\n")} />
-        <Textarea id="svc-steps" name="steps" label="Etapas (uma por linha)" rows={4} defaultValue={service?.steps.join("\n")} />
+        <Textarea
+          id="svc-req"
+          name="requirements"
+          label="Requisitos (um por linha)"
+          rows={4}
+          defaultValue={service?.requirements.join("\n")}
+        />
+        <Textarea
+          id="svc-steps"
+          name="steps"
+          label="Etapas (uma por linha)"
+          rows={4}
+          defaultValue={service?.steps.join("\n")}
+        />
       </div>
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium">Canais de atendimento</legend>
@@ -107,7 +206,13 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
               id={`ch-type-${i}`}
               label="Tipo"
               value={c.type}
-              onChange={(e) => setChannels(channels.map((x, j) => (j === i ? { ...x, type: e.target.value as ServiceChannel["type"] } : x)))}
+              onChange={(e) =>
+                setChannels(
+                  channels.map((x, j) =>
+                    j === i ? { ...x, type: e.target.value as ServiceChannel["type"] } : x,
+                  ),
+                )
+              }
               options={[
                 { value: "online", label: "Online" },
                 { value: "presencial", label: "Presencial" },
@@ -115,14 +220,42 @@ function ServiceForm({ service, onDone }: { service?: CatalogService; onDone: ()
                 { value: "email", label: "E-mail" },
               ]}
             />
-            <Input id={`ch-label-${i}`} label="Rótulo" value={c.label} maxLength={120} onChange={(e) => setChannels(channels.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
-            <Input id={`ch-value-${i}`} label="Valor" value={c.value} maxLength={300} onChange={(e) => setChannels(channels.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))} />
-            <Button type="button" variant="ghost" size="sm" aria-label="Remover canal" onClick={() => setChannels(channels.filter((_, j) => j !== i))}>
+            <Input
+              id={`ch-label-${i}`}
+              label="Rótulo"
+              value={c.label}
+              maxLength={120}
+              onChange={(e) =>
+                setChannels(channels.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))
+              }
+            />
+            <Input
+              id={`ch-value-${i}`}
+              label="Valor"
+              value={c.value}
+              maxLength={300}
+              onChange={(e) =>
+                setChannels(channels.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))
+              }
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label="Remover canal"
+              onClick={() => setChannels(channels.filter((_, j) => j !== i))}
+            >
               <Trash2 size={14} aria-hidden="true" />
             </Button>
           </div>
         ))}
-        <Button type="button" variant="secondary" size="sm" className="self-start" onClick={() => setChannels([...channels, { type: "online", label: "", value: "" }])}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={() => setChannels([...channels, { type: "online", label: "", value: "" }])}
+        >
           <Plus size={14} aria-hidden="true" className="mr-1" /> Canal
         </Button>
       </fieldset>
@@ -139,11 +272,16 @@ export default function GestaoServicosPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<CatalogService | "new" | null>(null);
-  const list = useApiPage<CatalogService>(withQuery("v1/catalog/admin/services", { status, page, page_size: 25 }));
+  const list = useApiPage<CatalogService>(
+    withQuery("v1/catalog/admin/services", { status, page, page_size: 25 }),
+  );
   const { run } = useAction();
   const refresh = () => void list.mutate();
-  const transition = (s: CatalogService, action: "publish" | "unpublish" | "archive", msg: string) =>
-    run(() => apiClient.post(`v1/catalog/admin/services/${s.id}/${action}`), msg).then(refresh);
+  const transition = (
+    s: CatalogService,
+    action: "publish" | "unpublish" | "archive",
+    msg: string,
+  ) => run(() => apiClient.post(`v1/catalog/admin/services/${s.id}/${action}`), msg).then(refresh);
 
   return (
     <div className="flex flex-col gap-6">
@@ -153,7 +291,11 @@ export default function GestaoServicosPage() {
         description="Carta de serviços publicada no site (/servicos). O módulo nasce desligado."
         actions={
           <>
-            <Link href="/servicos" target="_blank" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+            <Link
+              href="/servicos"
+              target="_blank"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
               Ver site <ExternalLink size={12} aria-hidden="true" />
             </Link>
             <Button onClick={() => setEditing("new")}>
@@ -170,10 +312,19 @@ export default function GestaoServicosPage() {
           setPage(1);
           setStatus(e.target.value);
         }}
-        options={[{ value: "", label: "Todas" }, ...Object.entries(STATUS).map(([value, s]) => ({ value, label: s.label }))]}
+        options={[
+          { value: "", label: "Todas" },
+          ...Object.entries(STATUS).map(([value, s]) => ({ value, label: s.label })),
+        ]}
         className="max-w-xs"
       />
-      <DataState loading={list.isLoading} error={list.error} onRetry={refresh} empty={(list.data?.items ?? []).length === 0} emptyTitle="Nenhum serviço">
+      <DataState
+        loading={list.isLoading}
+        error={list.error}
+        onRetry={refresh}
+        empty={(list.data?.items ?? []).length === 0}
+        emptyTitle="Nenhum serviço"
+      >
         <Table caption="Serviços do catálogo">
           <TableHead>
             <TableRow>
@@ -200,20 +351,40 @@ export default function GestaoServicosPage() {
                 <TableCell className="text-xs text-muted">{fmtDateTime(s.updated_at)}</TableCell>
                 <TableCell className="text-right">
                   <span className="inline-flex gap-1">
-                    <Button variant="ghost" size="sm" aria-label={`Editar ${s.title}`} onClick={() => setEditing(s)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Editar ${s.title}`}
+                      onClick={() => setEditing(s)}
+                    >
                       <Pencil size={14} aria-hidden="true" />
                     </Button>
                     {s.status !== "published" ? (
-                      <Button variant="ghost" size="sm" aria-label={`Publicar ${s.title}`} onClick={() => void transition(s, "publish", "Serviço publicado")}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Publicar ${s.title}`}
+                        onClick={() => void transition(s, "publish", "Serviço publicado")}
+                      >
                         <Send size={14} aria-hidden="true" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" aria-label={`Despublicar ${s.title}`} onClick={() => void transition(s, "unpublish", "Serviço despublicado")}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Despublicar ${s.title}`}
+                        onClick={() => void transition(s, "unpublish", "Serviço despublicado")}
+                      >
                         <Undo2 size={14} aria-hidden="true" />
                       </Button>
                     )}
                     {s.status !== "archived" && (
-                      <Button variant="ghost" size="sm" aria-label={`Arquivar ${s.title}`} onClick={() => void transition(s, "archive", "Serviço arquivado")}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Arquivar ${s.title}`}
+                        onClick={() => void transition(s, "archive", "Serviço arquivado")}
+                      >
                         <Archive size={14} aria-hidden="true" />
                       </Button>
                     )}
@@ -221,7 +392,12 @@ export default function GestaoServicosPage() {
                       aria-label={`Excluir ${s.title}`}
                       title={`Excluir "${s.title}"?`}
                       confirmLabel="Excluir"
-                      onConfirm={() => run(() => apiClient.delete(`v1/catalog/admin/services/${s.id}`), "Serviço excluído").then(refresh)}
+                      onConfirm={() =>
+                        run(
+                          () => apiClient.delete(`v1/catalog/admin/services/${s.id}`),
+                          "Serviço excluído",
+                        ).then(refresh)
+                      }
                     >
                       <Trash2 size={14} aria-hidden="true" />
                     </ConfirmButton>
@@ -233,7 +409,12 @@ export default function GestaoServicosPage() {
         </Table>
         <Pagination meta={list.data?.meta} onPage={setPage} />
       </DataState>
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={editing === "new" ? "Novo serviço" : "Editar serviço"} size="xl">
+      <Dialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={editing === "new" ? "Novo serviço" : "Editar serviço"}
+        size="xl"
+      >
         {editing && (
           <ServiceForm
             key={editing === "new" ? "new" : editing.id}

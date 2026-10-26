@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DEFAULT_BRANDING,
-  parseBrandingCookie,
-  serializeBrandingCookie,
-} from "./brandingConfig";
+import { DEFAULT_BRANDING, parseBrandingCookie, serializeBrandingCookie } from "./brandingConfig";
 
 describe("parseBrandingCookie", () => {
   it("sem valor → DEFAULT_BRANDING", () => {

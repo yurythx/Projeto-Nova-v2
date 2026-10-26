@@ -2,7 +2,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 const getServerSession = vi.fn();
-vi.mock("next-auth/next", () => ({ getServerSession: (...a: unknown[]) => getServerSession(...a) }));
+vi.mock("next-auth/next", () => ({
+  getServerSession: (...a: unknown[]) => getServerSession(...a),
+}));
 vi.mock("@/lib/auth/options", () => ({ authOptions: {} }));
 const updateTag = vi.fn();
 vi.mock("next/cache", () => ({ updateTag: (t: string) => updateTag(t) }));

@@ -62,7 +62,11 @@ export async function serverApiGet<T>(
   try {
     json = await res.json();
   } catch {
-    throw new ApiError(res.status, "INVALID_RESPONSE", "O servidor retornou uma resposta ilegível.");
+    throw new ApiError(
+      res.status,
+      "INVALID_RESPONSE",
+      "O servidor retornou uma resposta ilegível.",
+    );
   }
 
   if (!res.ok || json.error) {

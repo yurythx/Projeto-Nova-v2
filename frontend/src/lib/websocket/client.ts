@@ -126,7 +126,8 @@ export class RealtimeClient {
     socket.onopen = () => {
       this.attempt = 0;
       this.setState("open");
-      for (const topic of this.topics.keys()) socket.send(JSON.stringify({ type: "subscribe", topic }));
+      for (const topic of this.topics.keys())
+        socket.send(JSON.stringify({ type: "subscribe", topic }));
     };
     socket.onmessage = (ev) => {
       const frame = parseFrame(typeof ev.data === "string" ? ev.data : "");

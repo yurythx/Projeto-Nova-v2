@@ -57,7 +57,9 @@ export default async function VerificarPage({ params }: { params: Promise<{ id: 
               </span>
             </div>
             <p className="dateline mt-1 text-xs opacity-90">Verificação de autenticidade</p>
-            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{v.title}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {v.title}
+            </h1>
           </div>
         </div>
 
@@ -76,7 +78,9 @@ export default async function VerificarPage({ params }: { params: Promise<{ id: 
           </div>
           <div>
             <dt className="text-xs text-muted">Código Verificador (UUID)</dt>
-            <dd className="break-all font-mono text-xs select-all text-primary font-semibold">{v.envelope_id}</dd>
+            <dd className="break-all font-mono text-xs select-all text-primary font-semibold">
+              {v.envelope_id}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-muted">SHA-256 do documento</dt>
@@ -141,7 +145,8 @@ export default async function VerificarPage({ params }: { params: Promise<{ id: 
           <div className="mb-3 flex flex-col gap-1">
             <h3 className="font-semibold text-foreground">Conferência de Integridade do Arquivo</h3>
             <p className="text-xs text-muted">
-              Envie o arquivo PDF original em sua posse para confirmar que ele não sofreu nenhuma alteração desde que foi assinado.
+              Envie o arquivo PDF original em sua posse para confirmar que ele não sofreu nenhuma
+              alteração desde que foi assinado.
             </p>
           </div>
           <VerifyDocument envelopeId={v.envelope_id} />
@@ -150,7 +155,9 @@ export default async function VerificarPage({ params }: { params: Promise<{ id: 
         {/* Respaldo Jurídico para Auditoria */}
         <div className="rounded-xl border border-surface-border/60 bg-surface-subtle/50 p-4 text-xs text-muted leading-relaxed">
           <p>
-            <strong>Nota de fé pública:</strong> Este registro atesta que o documento com o hash criptográfico acima foi submetido à cerimônia de assinatura eletrônica do Projeto Nova, com carimbo de tempo e custódia na trilha de auditoria.
+            <strong>Nota de fé pública:</strong> Este registro atesta que o documento com o hash
+            criptográfico acima foi submetido à cerimônia de assinatura eletrônica do Projeto Nova,
+            com carimbo de tempo e custódia na trilha de auditoria.
           </p>
         </div>
       </div>

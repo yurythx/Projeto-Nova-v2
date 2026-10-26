@@ -47,7 +47,11 @@ export function ContactForm({ defaultServiceSlug }: { defaultServiceSlug?: strin
       });
       setProtocol(out.protocol);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Não foi possível enviar sua mensagem. Tente novamente.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível enviar sua mensagem. Tente novamente.",
+      );
     } finally {
       setPending(false);
     }
@@ -59,7 +63,8 @@ export function ContactForm({ defaultServiceSlug }: { defaultServiceSlug?: strin
         <CheckCircle2 size={36} className="text-success" aria-hidden="true" />
         <h2 className="text-xl font-semibold">Mensagem recebida</h2>
         <p className="text-sm text-muted">
-          Guarde o número de protocolo: <strong className="font-mono text-foreground">{protocol}</strong>
+          Guarde o número de protocolo:{" "}
+          <strong className="font-mono text-foreground">{protocol}</strong>
         </p>
       </div>
     );
@@ -73,10 +78,39 @@ export function ContactForm({ defaultServiceSlug }: { defaultServiceSlug?: strin
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input id="contact-name" name="name" label="Nome *" autoComplete="name" required minLength={2} maxLength={150} />
-        <Input id="contact-email" name="email" type="email" label="E-mail *" autoComplete="email" required maxLength={200} />
-        <Input id="contact-phone" name="phone" type="tel" label="Telefone" autoComplete="tel" maxLength={30} />
-        <Select id="contact-category" name="category" label="Tipo" options={CATEGORIES} defaultValue="duvida" />
+        <Input
+          id="contact-name"
+          name="name"
+          label="Nome *"
+          autoComplete="name"
+          required
+          minLength={2}
+          maxLength={150}
+        />
+        <Input
+          id="contact-email"
+          name="email"
+          type="email"
+          label="E-mail *"
+          autoComplete="email"
+          required
+          maxLength={200}
+        />
+        <Input
+          id="contact-phone"
+          name="phone"
+          type="tel"
+          label="Telefone"
+          autoComplete="tel"
+          maxLength={30}
+        />
+        <Select
+          id="contact-category"
+          name="category"
+          label="Tipo"
+          options={CATEGORIES}
+          defaultValue="duvida"
+        />
       </div>
       <Input
         id="contact-subject"
@@ -87,7 +121,15 @@ export function ContactForm({ defaultServiceSlug }: { defaultServiceSlug?: strin
         maxLength={200}
         defaultValue={defaultServiceSlug ? `Serviço: ${defaultServiceSlug}` : undefined}
       />
-      <Textarea id="contact-message" name="message" label="Mensagem *" rows={6} required minLength={10} maxLength={5000} />
+      <Textarea
+        id="contact-message"
+        name="message"
+        label="Mensagem *"
+        rows={6}
+        required
+        minLength={10}
+        maxLength={5000}
+      />
 
       {/* Honeypot: fora da tela e fora da ordem de tabulação. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
@@ -98,7 +140,8 @@ export function ContactForm({ defaultServiceSlug }: { defaultServiceSlug?: strin
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" name="consent" required className="mt-1 h-4 w-4 accent-primary" />
         <span>
-          Autorizo o tratamento dos meus dados pessoais exclusivamente para responder a esta mensagem, conforme a{" "}
+          Autorizo o tratamento dos meus dados pessoais exclusivamente para responder a esta
+          mensagem, conforme a{" "}
           <Link href="/privacidade" className="text-primary underline underline-offset-2">
             Política de Privacidade
           </Link>{" "}

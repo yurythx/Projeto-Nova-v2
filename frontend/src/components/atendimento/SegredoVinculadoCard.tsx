@@ -52,12 +52,15 @@ export function SegredoVinculadoCard({
 
   async function vincular(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const ok = await run(async () => {
-      await apiClient.put(`v1/atendimento/solicitacoes/${solicitacaoId}/segredo`, {
-        segredo_id: escolhido || null,
-      });
-      onMudou();
-    }, escolhido ? "Segredo vinculado" : "Vínculo removido");
+    const ok = await run(
+      async () => {
+        await apiClient.put(`v1/atendimento/solicitacoes/${solicitacaoId}/segredo`, {
+          segredo_id: escolhido || null,
+        });
+        onMudou();
+      },
+      escolhido ? "Segredo vinculado" : "Vínculo removido",
+    );
     if (ok === undefined) return;
     setSenha(null);
   }
@@ -65,7 +68,10 @@ export function SegredoVinculadoCard({
   async function revelar() {
     if (!segredoId) return;
     const item = await run(
-      () => apiClient.post<Revelado>(`v1/cofre/segredos/${segredoId}/revelar`, {}).then((res) => res.data),
+      () =>
+        apiClient
+          .post<Revelado>(`v1/cofre/segredos/${segredoId}/revelar`, {})
+          .then((res) => res.data),
       "Senha revelada. A consulta ficou na auditoria.",
     );
     if (!item) return;
@@ -79,20 +85,36 @@ export function SegredoVinculadoCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm text-muted">
-          {segredoId ? (nome ?? "Segredo fora do seu alcance") : "Nenhuma senha vinculada. O chamado não guarda o valor."}
+          {segredoId
+            ? (nome ?? "Segredo fora do seu alcance")
+            : "Nenhuma senha vinculada. O chamado não guarda o valor."}
         </p>
         {senha && (
-          <Input id={`senha-do-chamado-${solicitacaoId}`} label="Senha revelada" readOnly value={senha} autoComplete="off" />
+          <Input
+            id={`senha-do-chamado-${solicitacaoId}`}
+            label="Senha revelada"
+            readOnly
+            value={senha}
+            autoComplete="off"
+          />
         )}
         {revela && segredoId && !senha && (
           <div>
-            <Button type="button" variant="secondary" loading={pending} onClick={() => void revelar()}>
+            <Button
+              type="button"
+              variant="secondary"
+              loading={pending}
+              onClick={() => void revelar()}
+            >
               Revelar senha do chamado
             </Button>
           </div>
         )}
         {ve && !finalizada && (
-          <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void vincular(e)}>
+          <form
+            className="flex flex-col gap-2 sm:flex-row sm:items-end"
+            onSubmit={(e) => void vincular(e)}
+          >
             <Select
               id={`segredo-do-chamado-${solicitacaoId}`}
               label="Segredo"

@@ -17,7 +17,14 @@ const ORG = [
   },
 ];
 
-const SEGREDO = { id: "s1", nome: "Correio", usuario: "ana", tipo: "aplicacao", endereco: "https://correio.exemplo", versao: 1 };
+const SEGREDO = {
+  id: "s1",
+  nome: "Correio",
+  usuario: "ana",
+  tipo: "aplicacao",
+  endereco: "https://correio.exemplo",
+  versao: 1,
+};
 
 beforeEach(() => resetNavigation({}, "/cofre"));
 
@@ -28,7 +35,9 @@ describe("Cofre", () => {
       ...identityRoutes(),
       "GET v1/iam/org-tree": { data: ORG },
       "GET v1/cofre/segredos": { data: [SEGREDO] },
-      "POST v1/cofre/segredos/s1/revelar": { data: { ...SEGREDO, senha: "senha-super", notas: "pista" } },
+      "POST v1/cofre/segredos/s1/revelar": {
+        data: { ...SEGREDO, senha: "senha-super", notas: "pista" },
+      },
     });
     renderApp(<CofrePage />);
     expect(await screen.findByText(/ana/)).toBeInTheDocument();
@@ -55,10 +64,28 @@ describe("Cofre", () => {
     mockBackend({
       ...identityRoutes(),
       "GET v1/cofre/segredos": {
-        data: [{ id: "vm", nome: "web", usuario: "root", tipo: "maquina", endereco: "10.0.0.8", versao: 1 }],
+        data: [
+          {
+            id: "vm",
+            nome: "web",
+            usuario: "root",
+            tipo: "maquina",
+            endereco: "10.0.0.8",
+            versao: 1,
+          },
+        ],
       },
       "POST v1/cofre/segredos/vm/revelar": {
-        data: { id: "vm", nome: "web", usuario: "root", tipo: "maquina", endereco: "10.0.0.8", senha: "senha-ssh", notas: "", versao: 1 },
+        data: {
+          id: "vm",
+          nome: "web",
+          usuario: "root",
+          tipo: "maquina",
+          endereco: "10.0.0.8",
+          senha: "senha-ssh",
+          notas: "",
+          versao: 1,
+        },
       },
     });
     renderApp(<CofrePage />);
@@ -79,7 +106,10 @@ describe("Cofre", () => {
       ...identityRoutes(),
       "GET v1/iam/org-tree": { data: ORG },
       "GET v1/cofre/segredos": { data: [] },
-      "POST v1/cofre/segredos": { status: 201, data: { id: "s2", nome: "Wifi", usuario: "rede", versao: 1 } },
+      "POST v1/cofre/segredos": {
+        status: 201,
+        data: { id: "s2", nome: "Wifi", usuario: "rede", versao: 1 },
+      },
     });
     renderApp(<CofrePage />);
     expect(await screen.findByText("Nenhum segredo neste recorte")).toBeInTheDocument();
@@ -116,7 +146,12 @@ describe("Cofre", () => {
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/cofre/segredos": {
-        data: [{ ...SEGREDO, retirada: { usuario_id: "outra", nome: "Bia", ate: "2026-10-25T18:00:00Z" } }],
+        data: [
+          {
+            ...SEGREDO,
+            retirada: { usuario_id: "outra", nome: "Bia", ate: "2026-10-25T18:00:00Z" },
+          },
+        ],
       },
       "POST v1/cofre/segredos/s1/devolver": { status: 204, data: null },
     });
@@ -134,7 +169,9 @@ describe("Cofre", () => {
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/cofre/segredos": { data: [SEGREDO] },
-      "POST v1/cofre/segredos/s1/retirar": { data: { ...SEGREDO, senha: "senha-super", notas: "" } },
+      "POST v1/cofre/segredos/s1/retirar": {
+        data: { ...SEGREDO, senha: "senha-super", notas: "" },
+      },
     });
     renderApp(<CofrePage />);
     await user.click(await screen.findByRole("button", { name: "Correio" }));
@@ -164,7 +201,9 @@ describe("Cofre", () => {
     expect(screen.getByText(/aplique em https:\/\/correio.exemplo/)).toBeInTheDocument();
     expect(screen.queryByText("senha-super")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Já apliquei Correio" }));
-    await waitFor(() => expect(api.to("POST v1/cofre/segredos/s1/rotacao/aplicada")).toHaveLength(1));
+    await waitFor(() =>
+      expect(api.to("POST v1/cofre/segredos/s1/rotacao/aplicada")).toHaveLength(1),
+    );
   });
 
   it("coloca o segredo numa pasta sem pedir a senha de novo", async () => {
@@ -196,7 +235,9 @@ describe("Cofre", () => {
       ...identityRoutes(),
       "GET v1/cofre/segredos": { data: [] },
       "GET v1/cofre/pastas": {
-        data: [{ id: "p1", nome: "Servidores", membros: [{ usuario_id: "u9", pode_revelar: false }] }],
+        data: [
+          { id: "p1", nome: "Servidores", membros: [{ usuario_id: "u9", pode_revelar: false }] },
+        ],
       },
       "GET v1/cofre/pessoas": { data: [{ id: "u9", nome: "Maria" }] },
       "PUT v1/cofre/pastas/p1/membros": { data: { id: "p1", nome: "Servidores" } },
@@ -217,7 +258,9 @@ describe("Cofre", () => {
     await user.click(screen.getByRole("button", { name: "Apagar pasta Servidores" }));
     expect(api.to("DELETE v1/cofre/pastas/p1")).toHaveLength(0);
     expect(screen.getByRole("heading", { name: "Apagar a pasta Servidores?" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Confirmar exclusão da pasta Servidores" }));
+    await user.click(
+      screen.getByRole("button", { name: "Confirmar exclusão da pasta Servidores" }),
+    );
     await waitFor(() => expect(api.to("DELETE v1/cofre/pastas/p1")).toHaveLength(1));
   });
 
@@ -233,9 +276,13 @@ describe("Cofre", () => {
     await user.click(await screen.findByRole("button", { name: "Servidores" }));
     await user.click(screen.getByRole("button", { name: "Opções da pasta Servidores" }));
     await user.click(screen.getByRole("button", { name: "Apagar pasta Servidores" }));
-    expect(screen.getByRole("heading", { name: "A pasta Servidores tem senha" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "A pasta Servidores tem senha" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/não apaga enquanto houver senha/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirmar exclusão da pasta Servidores" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirmar exclusão da pasta Servidores" }),
+    ).not.toBeInTheDocument();
     expect(api.to("DELETE v1/cofre/pastas/p1")).toHaveLength(0);
   });
 

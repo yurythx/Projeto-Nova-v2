@@ -54,10 +54,21 @@ export function ConfiguracaoDeColunas({
   pode: boolean;
 }) {
   const catalogo = useQuadro(quadro, fabrica);
-  const origem = catalogo.colunas.map((coluna) => `${coluna.id}:${coluna.titulo}:${coluna.cor ?? ""}:${coluna.ordem}:${coluna.ativa !== false}`).join("|");
+  const origem = catalogo.colunas
+    .map(
+      (coluna) =>
+        `${coluna.id}:${coluna.titulo}:${coluna.cor ?? ""}:${coluna.ordem}:${coluna.ativa !== false}`,
+    )
+    .join("|");
   const [vista, setVista] = useState({ origem, linhas: paraLinhas(catalogo.colunas), sujo: false });
   const [retirar, setRetirar] = useState<string | null>(null);
-  const [nova, setNova] = useState<{ nome: string; cor: string; ordem: string; de: string[]; para: string[] } | null>(null);
+  const [nova, setNova] = useState<{
+    nome: string;
+    cor: string;
+    ordem: string;
+    de: string[];
+    para: string[];
+  } | null>(null);
   const [erro, setErro] = useState("");
   const [gravando, setGravando] = useState(false);
 
@@ -102,9 +113,14 @@ export function ConfiguracaoDeColunas({
         }
       }
     }
-    const desejada = [...ativas].sort((a, b) => Number(a.ordem) - Number(b.ordem) || a.id.localeCompare(b.id));
-    const atual = ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map((coluna) => coluna.id);
-    const mudouOrdem = atual.length !== desejada.length || atual.some((id, i) => id !== desejada[i]?.id);
+    const desejada = [...ativas].sort(
+      (a, b) => Number(a.ordem) - Number(b.ordem) || a.id.localeCompare(b.id),
+    );
+    const atual = ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map(
+      (coluna) => coluna.id,
+    );
+    const mudouOrdem =
+      atual.length !== desejada.length || atual.some((id, i) => id !== desejada[i]?.id);
     if (mudouOrdem) {
       for (let i = 0; i < desejada.length; i += 1) {
         const ok = await catalogo.gravar(desejada[i]!.id, { ordem: i });
@@ -122,7 +138,10 @@ export function ConfiguracaoDeColunas({
     setNova((atual) => {
       if (!atual) return atual;
       const tem = atual[lista].includes(id);
-      return { ...atual, [lista]: tem ? atual[lista].filter((item) => item !== id) : [...atual[lista], id] };
+      return {
+        ...atual,
+        [lista]: tem ? atual[lista].filter((item) => item !== id) : [...atual[lista], id],
+      };
     });
   }
 
@@ -166,7 +185,11 @@ export function ConfiguracaoDeColunas({
     setGravando(false);
   }
 
-  const ativas = ordenarColunas(vista.linhas.filter((linha) => linha.ativa).map((linha) => ({ ...linha, ordem: Number(linha.ordem) || 0 })));
+  const ativas = ordenarColunas(
+    vista.linhas
+      .filter((linha) => linha.ativa)
+      .map((linha) => ({ ...linha, ordem: Number(linha.ordem) || 0 })),
+  );
   const retiradas = vista.linhas.filter((linha) => !linha.ativa);
 
   return (
@@ -183,12 +206,20 @@ export function ConfiguracaoDeColunas({
       />
 
       {!catalogo.oficial && (
-        <p className="text-sm text-muted">O catálogo não respondeu. O quadro segue o padrão de fábrica até a configuração voltar.</p>
+        <p className="text-sm text-muted">
+          O catálogo não respondeu. O quadro segue o padrão de fábrica até a configuração voltar.
+        </p>
       )}
 
       {pode && catalogo.oficial && !nova && (
         <div>
-          <Button type="button" variant="secondary" onClick={() => setNova({ nome: "", cor: "#2563eb", ordem: String(ativas.length), de: [], para: [] })}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() =>
+              setNova({ nome: "", cor: "#2563eb", ordem: String(ativas.length), de: [], para: [] })
+            }
+          >
             Nova coluna
           </Button>
         </div>
@@ -204,19 +235,46 @@ export function ConfiguracaoDeColunas({
         >
           <h2 className="text-base font-semibold">Nova coluna deste quadro</h2>
           <div className="grid items-end gap-3 md:grid-cols-[6rem_auto_1fr]">
-            <Input id={`nova-posicao-${quadro}`} label="Posição" type="number" min={0} inputMode="numeric" value={nova.ordem} onChange={(e) => setNova({ ...nova, ordem: e.target.value })} />
+            <Input
+              id={`nova-posicao-${quadro}`}
+              label="Posição"
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={nova.ordem}
+              onChange={(e) => setNova({ ...nova, ordem: e.target.value })}
+            />
             <div className="flex flex-col gap-1">
-              <label htmlFor={`nova-cor-${quadro}`} className="text-sm font-medium">Cor</label>
-              <input id={`nova-cor-${quadro}`} type="color" aria-label="Cor da coluna nova" value={nova.cor} onChange={(e) => setNova({ ...nova, cor: e.target.value })} className="h-10 w-14 cursor-pointer rounded-md border border-surface-border bg-surface" />
+              <label htmlFor={`nova-cor-${quadro}`} className="text-sm font-medium">
+                Cor
+              </label>
+              <input
+                id={`nova-cor-${quadro}`}
+                type="color"
+                aria-label="Cor da coluna nova"
+                value={nova.cor}
+                onChange={(e) => setNova({ ...nova, cor: e.target.value })}
+                className="h-10 w-14 cursor-pointer rounded-md border border-surface-border bg-surface"
+              />
             </div>
-            <Input id={`nova-nome-${quadro}`} label="Nome" value={nova.nome} maxLength={80} onChange={(e) => setNova({ ...nova, nome: e.target.value })} />
+            <Input
+              id={`nova-nome-${quadro}`}
+              label="Nome"
+              value={nova.nome}
+              maxLength={80}
+              onChange={(e) => setNova({ ...nova, nome: e.target.value })}
+            />
           </div>
           <fieldset className="grid gap-2">
             <legend className="text-sm font-medium">O card entra a partir de</legend>
             <div className="flex flex-wrap gap-3">
               {ativas.map((linha) => (
                 <label key={`de-${linha.id}`} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={nova.de.includes(linha.id)} onChange={() => marcar("de", linha.id)} />
+                  <input
+                    type="checkbox"
+                    checked={nova.de.includes(linha.id)}
+                    onChange={() => marcar("de", linha.id)}
+                  />
                   {linha.nome}
                 </label>
               ))}
@@ -227,22 +285,33 @@ export function ConfiguracaoDeColunas({
             <div className="flex flex-wrap gap-3">
               {ativas.map((linha) => (
                 <label key={`para-${linha.id}`} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={nova.para.includes(linha.id)} onChange={() => marcar("para", linha.id)} />
+                  <input
+                    type="checkbox"
+                    checked={nova.para.includes(linha.id)}
+                    onChange={() => marcar("para", linha.id)}
+                  />
                   {linha.nome}
                 </label>
               ))}
             </div>
           </fieldset>
           <div className="flex gap-2">
-            <Button type="submit" loading={gravando}>Criar coluna</Button>
-            <Button type="button" variant="secondary" onClick={() => setNova(null)}>Cancelar</Button>
+            <Button type="submit" loading={gravando}>
+              Criar coluna
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setNova(null)}>
+              Cancelar
+            </Button>
           </div>
         </form>
       )}
 
       <ol className="flex flex-col gap-3">
         {ativas.map((linha) => (
-          <li key={linha.id} className="grid items-end gap-3 rounded-xl border border-surface-border bg-surface p-4 md:grid-cols-[6rem_auto_1fr_auto]">
+          <li
+            key={linha.id}
+            className="grid items-end gap-3 rounded-xl border border-surface-border bg-surface p-4 md:grid-cols-[6rem_auto_1fr_auto]"
+          >
             <Input
               id={`posicao-${quadro}-${linha.id}`}
               label="Posição"
@@ -283,15 +352,27 @@ export function ConfiguracaoDeColunas({
                 retirar === linha.id ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-xs text-muted">Retirar esta coluna?</span>
-                    <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => void confirmarRetirada(linha.id)}>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary hover:underline"
+                      onClick={() => void confirmarRetirada(linha.id)}
+                    >
                       Confirmar retirada
                     </button>
-                    <button type="button" className="text-xs font-medium text-muted hover:underline" onClick={() => setRetirar(null)}>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-muted hover:underline"
+                      onClick={() => setRetirar(null)}
+                    >
                       Cancelar
                     </button>
                   </span>
                 ) : (
-                  <button type="button" className="text-left text-xs font-medium text-primary hover:underline" onClick={() => setRetirar(linha.id)}>
+                  <button
+                    type="button"
+                    className="text-left text-xs font-medium text-primary hover:underline"
+                    onClick={() => setRetirar(linha.id)}
+                  >
                     Retirar
                   </button>
                 )
@@ -306,12 +387,19 @@ export function ConfiguracaoDeColunas({
           <h2 className="text-sm font-semibold">Colunas retiradas</h2>
           <ul className="flex flex-col gap-2">
             {retiradas.map((linha) => (
-              <li key={linha.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-surface-border px-4 py-3 text-sm">
+              <li
+                key={linha.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-surface-border px-4 py-3 text-sm"
+              >
                 <span>
                   {linha.nome} <span className="text-muted">· {linha.id}</span>
                 </span>
                 {pode && catalogo.oficial && (
-                  <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => void devolver(linha.id)}>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => void devolver(linha.id)}
+                  >
                     Devolver ao fim
                   </button>
                 )}
@@ -325,7 +413,12 @@ export function ConfiguracaoDeColunas({
 
       {pode && (
         <div>
-          <Button type="button" onClick={() => void salvar()} loading={gravando} disabled={!catalogo.oficial}>
+          <Button
+            type="button"
+            onClick={() => void salvar()}
+            loading={gravando}
+            disabled={!catalogo.oficial}
+          >
             Salvar colunas
           </Button>
         </div>

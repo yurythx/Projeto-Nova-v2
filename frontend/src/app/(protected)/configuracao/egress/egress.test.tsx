@@ -10,11 +10,27 @@ vi.mock("next/navigation", async () => (await import("@/test/navigation")).navig
 import EgressPage from "./page";
 
 const target = (id: string, extra: Record<string, unknown> = {}) => ({
-  id, name: `Destino ${id}`, kind: "n8n", url: `https://n8n.gov.br/${id}`, has_secret: false, event_patterns: [], active: true, created_at: "", ...extra,
+  id,
+  name: `Destino ${id}`,
+  kind: "n8n",
+  url: `https://n8n.gov.br/${id}`,
+  has_secret: false,
+  event_patterns: [],
+  active: true,
+  created_at: "",
+  ...extra,
 });
 const delivery = (id: string, extra: Record<string, unknown> = {}) => ({
-  id, target_id: "t1", target_name: "Destino t1", event_id: "e", event_type: "blog.post.published", status: "delivered", attempts: 1,
-  next_attempt_at: "", created_at: "2026-01-01T00:00:00Z", ...extra,
+  id,
+  target_id: "t1",
+  target_name: "Destino t1",
+  event_id: "e",
+  event_type: "blog.post.published",
+  status: "delivered",
+  attempts: 1,
+  next_attempt_at: "",
+  created_at: "2026-01-01T00:00:00Z",
+  ...extra,
 });
 
 describe("Configurações > Egress", () => {
@@ -23,13 +39,28 @@ describe("Configurações > Egress", () => {
   it("destinos e entregas; testar conexão (ok e falha); reenviar entrega esgotada", async () => {
     const api = mockBackend({
       ...identityRoutes(),
-      "GET v1/egress/targets": { data: [target("t1", { event_patterns: ["blog.*", "tramite.*"] }), target("t2", { active: false })] },
+      "GET v1/egress/targets": {
+        data: [
+          target("t1", { event_patterns: ["blog.*", "tramite.*"] }),
+          target("t2", { active: false }),
+        ],
+      },
       "GET v1/egress/deliveries": (req) =>
         req.query.get("status") === "dead"
-          ? page([delivery("d2", { status: "dead", attempts: 8, last_status_code: 500, last_error: "HTTP 500", target_name: undefined })])
+          ? page([
+              delivery("d2", {
+                status: "dead",
+                attempts: 8,
+                last_status_code: 500,
+                last_error: "HTTP 500",
+                target_name: undefined,
+              }),
+            ])
           : page([delivery("d1")]),
       "POST v1/egress/targets/t1/test": { data: { ok: true, status_code: 200, took_ms: 42 } },
-      "POST v1/egress/targets/t2/test": { data: { ok: false, status_code: 0, error: "endereço bloqueado (SSRF)", took_ms: 1 } },
+      "POST v1/egress/targets/t2/test": {
+        data: { ok: false, status_code: 0, error: "endereço bloqueado (SSRF)", took_ms: 1 },
+      },
       "POST v1/egress/deliveries/d2/redeliver": { data: null },
     });
     renderApp(<EgressPage />);
@@ -47,7 +78,9 @@ describe("Configurações > Egress", () => {
     expect(await screen.findByText("endereço bloqueado (SSRF)")).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByLabelText("Situação"), "dead");
-    expect(await screen.findByText("HTTP 500", { selector: "span.text-danger" })).toBeInTheDocument();
+    expect(
+      await screen.findByText("HTTP 500", { selector: "span.text-danger" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("—")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Reenviar" }));
     await waitFor(() => expect(api.to("POST v1/egress/deliveries/d2/redeliver")).toHaveLength(1));
@@ -70,7 +103,9 @@ describe("Configurações > Egress", () => {
   it("cria destino com segredo e padrões; edita mantendo o segredo; exclui", async () => {
     const api = mockBackend({
       ...identityRoutes(),
-      "GET v1/egress/targets": { data: [target("t1", { has_secret: true, event_patterns: ["a.b"] })] },
+      "GET v1/egress/targets": {
+        data: [target("t1", { has_secret: true, event_patterns: ["a.b"] })],
+      },
       "GET v1/egress/deliveries": page([]),
       "POST v1/egress/targets": { data: target("novo") },
       "PUT v1/egress/targets/t1": { data: target("t1") },
@@ -84,22 +119,37 @@ describe("Configurações > Egress", () => {
     await userEvent.selectOptions(within(dialog).getByLabelText("Tipo"), "zabbix");
     await userEvent.type(within(dialog).getByLabelText("URL *"), "https://zabbix.gov.br/hook");
     await userEvent.type(within(dialog).getByLabelText("Segredo HMAC"), "s3gr3d0");
-    await userEvent.type(within(dialog).getByLabelText("Eventos (um por linha; curinga *)"), "blog.*{Enter}tramite.processo.aberto, signum.*");
+    await userEvent.type(
+      within(dialog).getByLabelText("Eventos (um por linha; curinga *)"),
+      "blog.*{Enter}tramite.processo.aberto, signum.*",
+    );
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar destino" }));
     await waitFor(() => expect(api.to("POST v1/egress/targets")).toHaveLength(1));
     expect(api.to("POST v1/egress/targets")[0]!.body).toEqual({
-      name: "Zabbix", kind: "zabbix", url: "https://zabbix.gov.br/hook", secret: "s3gr3d0",
-      event_patterns: ["blog.*", "tramite.processo.aberto", "signum.*"], active: true,
+      name: "Zabbix",
+      kind: "zabbix",
+      url: "https://zabbix.gov.br/hook",
+      secret: "s3gr3d0",
+      event_patterns: ["blog.*", "tramite.processo.aberto", "signum.*"],
+      active: true,
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Editar Destino t1" }));
     dialog = await screen.findByRole("dialog", { name: "Editar destino" });
-    expect(within(dialog).getByLabelText("Segredo HMAC (deixe em branco para manter)")).toHaveValue("");
+    expect(within(dialog).getByLabelText("Segredo HMAC (deixe em branco para manter)")).toHaveValue(
+      "",
+    );
     await userEvent.click(within(dialog).getByLabelText("Ativo"));
     await userEvent.click(within(dialog).getByRole("button", { name: "Salvar destino" }));
     await waitFor(() => expect(api.to("PUT v1/egress/targets/t1")).toHaveLength(1));
     // em branco: o segredo atual é mantido (campo ausente no corpo)
-    expect(api.to("PUT v1/egress/targets/t1")[0]!.body).toEqual({ name: "Destino t1", kind: "n8n", url: "https://n8n.gov.br/t1", event_patterns: ["a.b"], active: false });
+    expect(api.to("PUT v1/egress/targets/t1")[0]!.body).toEqual({
+      name: "Destino t1",
+      kind: "n8n",
+      url: "https://n8n.gov.br/t1",
+      event_patterns: ["a.b"],
+      active: false,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: /Testar/ }));
     expect(await screen.findByText("egress desativado")).toBeInTheDocument();
@@ -111,7 +161,11 @@ describe("Configurações > Egress", () => {
   });
 
   it("sem destinos e erro nas entregas", async () => {
-    mockBackend({ ...identityRoutes(), "GET v1/egress/targets": { data: [] }, "GET v1/egress/deliveries": fail(500, "sem banco") });
+    mockBackend({
+      ...identityRoutes(),
+      "GET v1/egress/targets": { data: [] },
+      "GET v1/egress/deliveries": fail(500, "sem banco"),
+    });
     renderApp(<EgressPage />);
     expect(await screen.findByText("Nenhum destino configurado")).toBeInTheDocument();
     expect(await screen.findByText("sem banco")).toBeInTheDocument();

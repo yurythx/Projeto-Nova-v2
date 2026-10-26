@@ -48,13 +48,17 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
 
     expect(screen.getByTestId("card-csat-avaliacao")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /5 estrelas: Excelente/i }));
-    await user.type(screen.getByLabelText("Comentário adicional (opcional)"), "Atendimento impecável");
+    await user.type(
+      screen.getByLabelText("Comentário adicional (opcional)"),
+      "Atendimento impecável",
+    );
     await user.click(screen.getByRole("button", { name: /Enviar avaliação/i }));
 
     await waitFor(() => {
       expect(api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")).toHaveLength(1);
     });
-    const enviado = api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")[0]!.body as Record<string, unknown>;
+    const enviado = api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")[0]!
+      .body as Record<string, unknown>;
     expect(enviado.nota).toBe(5);
     expect(enviado.comentario).toBe("Atendimento impecável");
     expect(onAvaliado).toHaveBeenCalled();
@@ -84,9 +88,7 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
 
   it("não exibe para solicitação ainda em aberto", () => {
     const aberta: Solicitacao = { ...solicitacaoResolvida, estado: "em_atendimento" };
-    render(
-      <AvaliacaoAtendimentoCard solicitacao={aberta} solicitante={true} tecnico={false} />,
-    );
+    render(<AvaliacaoAtendimentoCard solicitacao={aberta} solicitante={true} tecnico={false} />);
     expect(screen.queryByTestId("card-csat-avaliacao")).not.toBeInTheDocument();
   });
 

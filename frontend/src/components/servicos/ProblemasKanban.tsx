@@ -3,13 +3,16 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
-import { Badge } from "@/components/ui/Badge";
 import {
-  ESTADO_PROBLEMA,
-  type EstadoProblema,
-  type Problema,
-} from "@/lib/servicos/servicos";
+  NomeClicavel,
+  Quadro,
+  colunasEmOrdem,
+  seloDoEstado,
+  type ColunaFaixa,
+  type ControlesColuna,
+} from "@/components/plataforma/Faixas";
+import { Badge } from "@/components/ui/Badge";
+import { ESTADO_PROBLEMA, type EstadoProblema, type Problema } from "@/lib/servicos/servicos";
 
 export const COLUNAS_PROBLEMA: ColunaFaixa[] = colunasEmOrdem([
   { id: "registrado", titulo: "Registrados", tom: "info" },
@@ -76,7 +79,11 @@ export function ProblemasKanban({
           <>
             <div className="flex items-center justify-between gap-2 text-xs text-muted">
               <span className="font-semibold tabular-nums text-foreground">#{p.numero}</span>
-              <Badge tone={seloDoEstado(colunas, p.estado, ESTADO_PROBLEMA[p.estado as EstadoProblema]).tone}>
+              <Badge
+                tone={
+                  seloDoEstado(colunas, p.estado, ESTADO_PROBLEMA[p.estado as EstadoProblema]).tone
+                }
+              >
                 {seloDoEstado(colunas, p.estado, ESTADO_PROBLEMA[p.estado as EstadoProblema]).label}
               </Badge>
             </div>
@@ -97,10 +104,15 @@ export function ProblemasKanban({
             )}
             {(p.incidentes ?? []).length > 0 && (
               <p className="text-[11px] text-muted">
-                {p.incidentes.length} {p.incidentes.length === 1 ? "incidente ligado" : "incidentes ligados"}
+                {p.incidentes.length}{" "}
+                {p.incidentes.length === 1 ? "incidente ligado" : "incidentes ligados"}
               </p>
             )}
-            <button type="button" className="text-left text-xs font-medium text-primary hover:underline" onClick={() => abrir(p)}>
+            <button
+              type="button"
+              className="text-left text-xs font-medium text-primary hover:underline"
+              onClick={() => abrir(p)}
+            >
               Editar
             </button>
             {moves.length > 0 && (

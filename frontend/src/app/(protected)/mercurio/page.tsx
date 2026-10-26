@@ -2,10 +2,23 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Hash, Pencil, Send, Settings2, Trash2, Users, User as UserIcon } from "lucide-react";
-import { Suspense, useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 
 import { RoomsAdmin } from "@/components/mercurio/RoomsAdmin";
-import { useFrames, useRealtimeSend, useRealtimeState, useTopic } from "@/components/realtime/RealtimeProvider";
+import {
+  useFrames,
+  useRealtimeSend,
+  useRealtimeState,
+  useTopic,
+} from "@/components/realtime/RealtimeProvider";
 import { DataState } from "@/components/plataforma/DataState";
 import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
@@ -55,7 +68,10 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
         if (!active) return;
         setHasMore((data ?? []).length === 50);
         setMessages([...(data ?? [])].reverse());
-        void apiClient.post(`v1/mercurio/rooms/${room.id}/read`).then(onRead).catch(() => undefined);
+        void apiClient
+          .post(`v1/mercurio/rooms/${room.id}/read`)
+          .then(onRead)
+          .catch(() => undefined);
       })
       .catch(() => undefined)
       .finally(() => active && setLoading(false));
@@ -88,7 +104,8 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
       setDropped(true);
     } else if (f.type === "mercurio.typing") {
       const t = f.data as { user_id: string; username: string };
-      if (t.user_id !== me?.id) setTyping((prev) => ({ ...prev, [t.user_id]: { name: t.username, at: Date.now() } }));
+      if (t.user_id !== me?.id)
+        setTyping((prev) => ({ ...prev, [t.user_id]: { name: t.username, at: Date.now() } }));
     }
   });
 
@@ -96,7 +113,9 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
     const id = setInterval(() => {
       setTyping((t) => {
         const now = Date.now();
-        const kept = Object.fromEntries(Object.entries(t).filter(([, v]) => now - v.at < TYPING_TTL));
+        const kept = Object.fromEntries(
+          Object.entries(t).filter(([, v]) => now - v.at < TYPING_TTL),
+        );
         return Object.keys(kept).length === Object.keys(t).length ? t : kept;
       });
     }, 1000);
@@ -108,7 +127,9 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
     const body = draft.trim();
     if (!body) return;
     if (editing) {
-      const res = await run(() => apiClient.patch<ChatMessage>(`v1/mercurio/messages/${editing.id}`, { body }));
+      const res = await run(() =>
+        apiClient.patch<ChatMessage>(`v1/mercurio/messages/${editing.id}`, { body }),
+      );
       if (res) {
         setMessages((prev) => prev.map((x) => (x.id === res.data.id ? res.data : x)));
         setEditing(null);
@@ -116,7 +137,9 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
       }
       return;
     }
-    const res = await run(() => apiClient.post<ChatMessage>(`v1/mercurio/rooms/${room.id}/messages`, { body }));
+    const res = await run(() =>
+      apiClient.post<ChatMessage>(`v1/mercurio/rooms/${room.id}/messages`, { body }),
+    );
     if (res) {
       setMessages((prev) => (prev.some((x) => x.id === res.data.id) ? prev : [...prev, res.data]));
       setDraft("");
@@ -144,16 +167,27 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
       <header className="flex items-center gap-2 border-b border-surface-border px-4 py-3">
         <Icon size={18} aria-hidden="true" className="text-muted" />
         <h2 className="font-semibold">{room.name}</h2>
-        {room.description && <p className="hidden truncate text-xs text-muted md:block">· {room.description}</p>}
-        {connection !== "open" && <Badge tone="warning" className="ml-auto">Tempo real {connection === "connecting" ? "conectando…" : "offline"}</Badge>}
+        {room.description && (
+          <p className="hidden truncate text-xs text-muted md:block">· {room.description}</p>
+        )}
+        {connection !== "open" && (
+          <Badge tone="warning" className="ml-auto">
+            Tempo real {connection === "connecting" ? "conectando…" : "offline"}
+          </Badge>
+        )}
       </header>
       {dropped && (
         <p role="status" className="border-b border-surface-border bg-warning/10 px-4 py-2 text-sm">
-          Esta sala não recebe mais mensagens em tempo real para você: ela foi arquivada ou seu acesso foi removido.
+          Esta sala não recebe mais mensagens em tempo real para você: ela foi arquivada ou seu
+          acesso foi removido.
         </p>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3" aria-live="polite" aria-relevant="additions">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
         {hasMore && (
           <div className="mb-3 text-center">
             <Button variant="ghost" size="sm" onClick={() => void loadOlder()}>
@@ -161,17 +195,32 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
             </Button>
           </div>
         )}
-        <DataState loading={loading} error={null} empty={messages.length === 0} emptyTitle="Nenhuma mensagem ainda" emptyDescription="Seja o primeiro a escrever nesta sala.">
+        <DataState
+          loading={loading}
+          error={null}
+          empty={messages.length === 0}
+          emptyTitle="Nenhuma mensagem ainda"
+          emptyDescription="Seja o primeiro a escrever nesta sala."
+        >
           <ol className="flex flex-col gap-3">
             {messages.map((m) => {
               const mine = m.author_id === me?.id;
               return (
-                <li key={m.id} className={`group flex flex-col ${mine ? "items-end" : "items-start"}`}>
+                <li
+                  key={m.id}
+                  className={`group flex flex-col ${mine ? "items-end" : "items-start"}`}
+                >
                   <span className="text-[11px] text-muted">
-                    {mine ? "Você" : m.author_name} · {new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {mine ? "Você" : m.author_name} ·{" "}
+                    {new Date(m.created_at).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                     {m.edited_at && !m.deleted && " · editada"}
                   </span>
-                  <div className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${m.deleted ? "italic text-muted" : mine ? "bg-primary text-primary-foreground" : "bg-surface-hover"}`}>
+                  <div
+                    className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${m.deleted ? "italic text-muted" : mine ? "bg-primary text-primary-foreground" : "bg-surface-hover"}`}
+                  >
                     {m.deleted ? "mensagem removida" : m.body}
                   </div>
                   {!m.deleted && (mine || can("mercurio:manage")) && (
@@ -193,7 +242,9 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
                         type="button"
                         className="rounded p-1 text-muted hover:text-danger"
                         aria-label="Remover mensagem"
-                        onClick={() => void run(() => apiClient.delete(`v1/mercurio/messages/${m.id}`))}
+                        onClick={() =>
+                          void run(() => apiClient.delete(`v1/mercurio/messages/${m.id}`))
+                        }
                       >
                         <Trash2 size={12} aria-hidden="true" />
                       </button>
@@ -208,7 +259,8 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
       </div>
 
       <p className="h-5 px-4 text-xs text-muted" aria-live="polite">
-        {typingNames.length > 0 && `${typingNames.join(", ")} ${typingNames.length > 1 ? "estão" : "está"} digitando…`}
+        {typingNames.length > 0 &&
+          `${typingNames.join(", ")} ${typingNames.length > 1 ? "estão" : "está"} digitando…`}
       </p>
       <form onSubmit={submit} className="flex items-end gap-2 border-t border-surface-border p-3">
         <label htmlFor="mercurio-draft" className="sr-only">
@@ -221,10 +273,18 @@ function RoomView({ room, onRead }: { room: ChatRoom; onRead: () => void }) {
           onKeyDown={onKey}
           rows={2}
           maxLength={4000}
-          placeholder={editing ? "Editando (Esc cancela)" : "Escreva uma mensagem (Enter envia, Shift+Enter quebra linha)"}
+          placeholder={
+            editing
+              ? "Editando (Esc cancela)"
+              : "Escreva uma mensagem (Enter envia, Shift+Enter quebra linha)"
+          }
           className="min-h-11 flex-1 resize-none rounded-lg border border-surface-border bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         />
-        <Button type="submit" aria-label={editing ? "Salvar edição" : "Enviar"} disabled={!draft.trim()}>
+        <Button
+          type="submit"
+          aria-label={editing ? "Salvar edição" : "Enviar"}
+          disabled={!draft.trim()}
+        >
           <Send size={16} aria-hidden="true" />
         </Button>
       </form>
@@ -256,23 +316,38 @@ function Mercurio() {
 
   return (
     <div className="-mx-4 -mb-10 -mt-6 grid h-[calc(100dvh-var(--topbar-h))] grid-cols-1 sm:-mx-8 md:grid-cols-[16rem_1fr]">
-      <nav aria-label="Salas do Mercúrio" className="hidden min-h-0 overflow-y-auto border-r border-surface-border p-3 md:block">
+      <nav
+        aria-label="Salas do Mercúrio"
+        className="hidden min-h-0 overflow-y-auto border-r border-surface-border p-3 md:block"
+      >
         <div className="mb-3 flex items-center justify-between px-2">
           <div>
             <h1 className="text-lg font-semibold">Mercúrio</h1>
             <p className="text-[11px] text-muted">Canais da Superintendência</p>
           </div>
           {can("mercurio:manage") && (
-            <Button variant="ghost" size="sm" aria-label="Gerenciar salas" onClick={() => setAdmin(true)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Gerenciar salas"
+              onClick={() => setAdmin(true)}
+            >
               <Settings2 size={16} aria-hidden="true" />
             </Button>
           )}
         </div>
-        <DataState loading={rooms.isLoading} error={rooms.error} empty={(rooms.data ?? []).length === 0} emptyTitle="Nenhuma sala">
+        <DataState
+          loading={rooms.isLoading}
+          error={rooms.error}
+          empty={(rooms.data ?? []).length === 0}
+          emptyTitle="Nenhuma sala"
+        >
           {groups.map(([label, list]) =>
             list.length === 0 ? null : (
               <div key={label} className="mb-4">
-                <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</p>
+                <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  {label}
+                </p>
                 <ul className="flex flex-col gap-0.5">
                   {list.map((r) => {
                     const Icon = KIND_ICON[r.kind];
@@ -322,7 +397,11 @@ function Mercurio() {
             ))}
           </select>
         </div>
-        {selected ? <RoomView key={selected.id} room={selected} onRead={refresh} /> : <p className="p-6 text-sm text-muted">Selecione uma sala.</p>}
+        {selected ? (
+          <RoomView key={selected.id} room={selected} onRead={refresh} />
+        ) : (
+          <p className="p-6 text-sm text-muted">Selecione uma sala.</p>
+        )}
       </div>
       <Dialog open={admin} onClose={() => setAdmin(false)} title="Salas do Mercúrio" size="xl">
         {admin && <RoomsAdmin rooms={rooms.data ?? []} onChanged={refresh} />}

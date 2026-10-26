@@ -34,7 +34,8 @@ export function WikiEditor({
   // Uma página não pode ser filha de si mesma nem de descendentes.
   const descendants = new Set<string>();
   if (page) {
-    const walk = (id: string) => pages.filter((p) => p.parent_id === id).forEach((c) => (descendants.add(c.id), walk(c.id)));
+    const walk = (id: string) =>
+      pages.filter((p) => p.parent_id === id).forEach((c) => (descendants.add(c.id), walk(c.id)));
     descendants.add(page.id);
     walk(page.id);
   }
@@ -54,7 +55,10 @@ export function WikiEditor({
       version: page?.version,
     };
     const res = await run(
-      () => (page ? apiClient.put<WikiPage>(`v1/wiki/pages/${page.id}`, payload) : apiClient.post<WikiPage>("v1/wiki/pages", payload)),
+      () =>
+        page
+          ? apiClient.put<WikiPage>(`v1/wiki/pages/${page.id}`, payload)
+          : apiClient.post<WikiPage>("v1/wiki/pages", payload),
       "Página salva",
     );
     if (res) onSaved(res.data);
@@ -63,8 +67,22 @@ export function WikiEditor({
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input id="wiki-title" name="title" label="Título *" required maxLength={200} defaultValue={page?.title} />
-        <Input id="wiki-slug" name="slug" label="Slug" maxLength={100} defaultValue={page?.slug} placeholder="gerado do título" />
+        <Input
+          id="wiki-title"
+          name="title"
+          label="Título *"
+          required
+          maxLength={200}
+          defaultValue={page?.title}
+        />
+        <Input
+          id="wiki-slug"
+          name="slug"
+          label="Slug"
+          maxLength={100}
+          defaultValue={page?.slug}
+          placeholder="gerado do título"
+        />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
         {/* key: select não controlado — se a árvore chega depois de abrir o
@@ -77,22 +95,39 @@ export function WikiEditor({
           label="Página-mãe"
           placeholder="(raiz)"
           defaultValue={page?.parent_id ?? defaultParent ?? ""}
-          options={pages.filter((p) => !descendants.has(p.id)).map((p) => ({ value: p.id, label: p.title }))}
+          options={pages
+            .filter((p) => !descendants.has(p.id))
+            .map((p) => ({ value: p.id, label: p.title }))}
         />
-        <Input id="wiki-position" name="position" type="number" min={0} label="Ordem" defaultValue={page?.position ?? 0} />
+        <Input
+          id="wiki-position"
+          name="position"
+          type="number"
+          min={0}
+          label="Ordem"
+          defaultValue={page?.position ?? 0}
+        />
       </div>
       <UnidadeDonaSelect
         id="wiki-unidade"
         permission="wiki:manage"
         lotacao
         defaultValue={page?.unidade_id}
-        placeholder={page ? "Institucional (sem unidade)" : "Herdar da página-mãe (na raiz: institucional)"}
+        placeholder={
+          page ? "Institucional (sem unidade)" : "Herdar da página-mãe (na raiz: institucional)"
+        }
       />
       {/* Vale com o das páginas acima: a subpágina restringe mais, não abre. */}
       <PublicoAlvoPicker idPrefix="wiki-publico" value={publico} onChange={setPublico} />
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">Conteúdo (Markdown)</span>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setPreview((v) => !v)} aria-pressed={preview}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setPreview((v) => !v)}
+          aria-pressed={preview}
+        >
           {preview ? "Editar" : "Pré-visualizar"}
         </Button>
       </div>
@@ -101,9 +136,22 @@ export function WikiEditor({
           <Markdown source={body || "_(vazio)_"} />
         </div>
       ) : (
-        <Textarea id="wiki-body" aria-label="Conteúdo em Markdown" rows={16} value={body} onChange={(e) => setBody(e.target.value)} className="font-mono" />
+        <Textarea
+          id="wiki-body"
+          aria-label="Conteúdo em Markdown"
+          rows={16}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          className="font-mono"
+        />
       )}
-      <Input id="wiki-summary" name="summary" label="Resumo da alteração" maxLength={300} placeholder="o que mudou nesta versão" />
+      <Input
+        id="wiki-summary"
+        name="summary"
+        label="Resumo da alteração"
+        maxLength={300}
+        placeholder="o que mudou nesta versão"
+      />
       <div className="flex justify-end">
         <Button type="submit" loading={pending}>
           Salvar

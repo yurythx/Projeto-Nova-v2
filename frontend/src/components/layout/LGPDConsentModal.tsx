@@ -81,7 +81,10 @@ export function LGPDConsentModal() {
         // Gap G-11: visitante não autenticado — registro anônimo (sem PII)
         // pelo proxy PÚBLICO (/api/public, allowlist) — o BFF autenticado
         // recusaria a chamada sem sessão.
-        await publicPost("v1/lgpd/accept-anon", { device_hash: getOrCreateDeviceId(), term_version: CURRENT_TERM_VERSION });
+        await publicPost("v1/lgpd/accept-anon", {
+          device_hash: getOrCreateDeviceId(),
+          term_version: CURRENT_TERM_VERSION,
+        });
       }
       try {
         localStorage.setItem("nova_lgpd_consent", CURRENT_TERM_VERSION);
@@ -91,7 +94,11 @@ export function LGPDConsentModal() {
       setIsOpen(false);
     } catch (err) {
       // Sem registro no servidor não há consentimento: o modal continua.
-      setError(err instanceof ApiError ? err.message : "Não foi possível registrar o aceite. Tente novamente.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível registrar o aceite. Tente novamente.",
+      );
     } finally {
       setLoading(false);
     }
@@ -120,18 +127,21 @@ export function LGPDConsentModal() {
           </div>
         </div>
 
-        <div id="lgpd-description" className="flex flex-col gap-3 text-xs text-muted leading-relaxed">
+        <div
+          id="lgpd-description"
+          className="flex flex-col gap-3 text-xs text-muted leading-relaxed"
+        >
           <p>
             Para garantir a transparência e a segurança da sua navegação,{" "}
-            <strong>{branding.orgName}</strong> opera o <strong>{branding.appName}</strong> com estrita
-            observância à LGPD.
+            <strong>{branding.orgName}</strong> opera o <strong>{branding.appName}</strong> com
+            estrita observância à LGPD.
           </p>
           <div className="flex flex-col gap-2 rounded-xl bg-surface-hover p-3 border border-surface-border">
             <div className="flex items-start gap-2">
               <Lock size={14} className="mt-0.5 text-success shrink-0" aria-hidden="true" />
               <span>
-                <strong>Trilha imutável:</strong> seu aceite é registrado em auditoria protegida para
-                garantir a autenticidade do consentimento.
+                <strong>Trilha imutável:</strong> seu aceite é registrado em auditoria protegida
+                para garantir a autenticidade do consentimento.
               </span>
             </div>
             <div className="flex items-start gap-2">

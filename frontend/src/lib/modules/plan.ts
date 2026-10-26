@@ -15,11 +15,16 @@ export interface ToggleStep {
  * Devolve os passos na ordem de execução (o último é o próprio X) ou um
  * erro quando o plano esbarra no núcleo (nunca desativável).
  */
-export function planToggle(modules: ModuleStatus[], key: string, enabled: boolean): { steps: ToggleStep[]; error?: string } {
+export function planToggle(
+  modules: ModuleStatus[],
+  key: string,
+  enabled: boolean,
+): { steps: ToggleStep[]; error?: string } {
   const byKey = new Map(modules.map((m) => [m.key, m]));
   const target = byKey.get(key);
   if (!target) return { steps: [], error: `módulo ${key} desconhecido` };
-  if (!enabled && target.core) return { steps: [], error: `${target.name} é do núcleo e não pode ser desativado` };
+  if (!enabled && target.core)
+    return { steps: [], error: `${target.name} é do núcleo e não pode ser desativado` };
 
   const steps: ToggleStep[] = [];
   const seen = new Set<string>();

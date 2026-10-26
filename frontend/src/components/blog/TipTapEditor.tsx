@@ -36,7 +36,11 @@ interface TipTapEditorProps {
   placeholder?: string;
 }
 
-export function TipTapEditor({ value, onChange, placeholder = "Escreva seu artigo aqui..." }: TipTapEditorProps) {
+export function TipTapEditor({
+  value,
+  onChange,
+  placeholder = "Escreva seu artigo aqui...",
+}: TipTapEditorProps) {
   const [mode, setMode] = useState<"visual" | "markdown">("visual");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +56,8 @@ export function TipTapEditor({ value, onChange, placeholder = "Escreva seu artig
       Image.configure({
         allowBase64: false,
         HTMLAttributes: {
-          class: "rounded-xl border border-surface-border max-h-[500px] my-4 mx-auto object-contain",
+          class:
+            "rounded-xl border border-surface-border max-h-[500px] my-4 mx-auto object-contain",
         },
       }),
       Link.configure({

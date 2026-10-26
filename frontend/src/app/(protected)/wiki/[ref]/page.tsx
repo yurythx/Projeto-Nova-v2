@@ -21,7 +21,9 @@ import type { WikiPage, WikiRevision } from "@/lib/plataforma/types";
 function Revisions({ page, onRestored }: { page: WikiPage; onRestored: () => void }) {
   const revs = useApiQuery<WikiRevision[]>(`v1/wiki/pages/${page.id}/revisions`);
   const [viewing, setViewing] = useState<number | null>(null);
-  const rev = useApiQuery<WikiRevision>(viewing ? `v1/wiki/pages/${page.id}/revisions/${viewing}` : null);
+  const rev = useApiQuery<WikiRevision>(
+    viewing ? `v1/wiki/pages/${page.id}/revisions/${viewing}` : null,
+  );
   const { run, pending } = useAction();
 
   return (
@@ -53,7 +55,15 @@ function Revisions({ page, onRestored }: { page: WikiPage; onRestored: () => voi
                 variant="secondary"
                 className="self-start"
                 loading={pending}
-                onClick={() => void run(() => apiClient.post(`v1/wiki/pages/${page.id}/revisions/${rev.data!.version}/restore`), `Versão ${rev.data!.version} restaurada`).then(onRestored)}
+                onClick={() =>
+                  void run(
+                    () =>
+                      apiClient.post(
+                        `v1/wiki/pages/${page.id}/revisions/${rev.data!.version}/restore`,
+                      ),
+                    `Versão ${rev.data!.version} restaurada`,
+                  ).then(onRestored)
+                }
               >
                 <RotateCcw size={14} aria-hidden="true" className="mr-1" /> Restaurar esta versão
               </Button>
@@ -103,7 +113,8 @@ export default function WikiPageView() {
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <PublicoBadge publico={p.publico} />
                 <span className="text-xs text-muted">
-                  Versão {p.version} · atualizada por {p.updated_by_name} em {fmtDateTime(p.updated_at)}
+                  Versão {p.version} · atualizada por {p.updated_by_name} em{" "}
+                  {fmtDateTime(p.updated_at)}
                 </span>
               </div>
             </div>
@@ -121,12 +132,14 @@ export default function WikiPageView() {
                   description="Subpáginas precisam ser movidas ou excluídas antes."
                   confirmLabel="Excluir"
                   onConfirm={() =>
-                    run(() => apiClient.delete(`v1/wiki/pages/${p.id}`), "Página excluída").then((ok) => {
-                      if (ok !== undefined) {
-                        void tree.mutate();
-                        router.push("/wiki");
-                      }
-                    })
+                    run(() => apiClient.delete(`v1/wiki/pages/${p.id}`), "Página excluída").then(
+                      (ok) => {
+                        if (ok !== undefined) {
+                          void tree.mutate();
+                          router.push("/wiki");
+                        }
+                      },
+                    )
                   }
                 >
                   <Trash2 size={14} aria-hidden="true" />
@@ -136,7 +149,12 @@ export default function WikiPageView() {
           </header>
           <Markdown source={p.body ?? ""} />
 
-          <Dialog open={mode !== null} onClose={() => setMode(null)} title={mode === "edit" ? `Editar — ${p.title}` : "Histórico de versões"} size="xl">
+          <Dialog
+            open={mode !== null}
+            onClose={() => setMode(null)}
+            title={mode === "edit" ? `Editar — ${p.title}` : "Histórico de versões"}
+            size="xl"
+          >
             {mode === "edit" && (
               <WikiEditor
                 page={p}

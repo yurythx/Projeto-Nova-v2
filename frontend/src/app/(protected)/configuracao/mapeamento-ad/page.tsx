@@ -11,7 +11,14 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import type { ADMapping, Perfil, ScopeRef } from "@/lib/plataforma/types";
@@ -51,8 +58,9 @@ export default function MapeamentoADPage() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-muted">
-        Os logins vêm do Keycloak (federação LDAP). Cada grupo do diretório aponta para um perfil do IAM,
-        com escopo por órgão. IAM e Auditoria são o núcleo; os demais plug-ins nascem desligados.
+        Os logins vêm do Keycloak (federação LDAP). Cada grupo do diretório aponta para um perfil do
+        IAM, com escopo por órgão. IAM e Auditoria são o núcleo; os demais plug-ins nascem
+        desligados.
       </p>
       <Card>
         <CardHeader>
@@ -63,14 +71,23 @@ export default function MapeamentoADPage() {
         <CardContent className="pb-5">
           <form key={formKey} onSubmit={submit} className="mt-3 flex flex-col gap-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input id="ad-group" name="ad_group" label="Grupo do AD *" required maxLength={200} placeholder="GRP_RH ou CN=GRP_RH,OU=Grupos,DC=org" />
+              <Input
+                id="ad-group"
+                name="ad_group"
+                label="Grupo do AD *"
+                required
+                maxLength={200}
+                placeholder="GRP_RH ou CN=GRP_RH,OU=Grupos,DC=org"
+              />
               <Select
                 id="ad-perfil"
                 name="perfil_id"
                 label="Perfil *"
                 required
                 placeholder="Selecione…"
-                options={(perfis.data ?? []).filter((p) => p.ativo).map((p) => ({ value: p.id, label: p.nome }))}
+                options={(perfis.data ?? [])
+                  .filter((p) => p.ativo)
+                  .map((p) => ({ value: p.id, label: p.nome }))}
               />
             </div>
             <ScopePicker idPrefix="ad-scope" value={scope} onChange={setScope} />
@@ -123,7 +140,12 @@ export default function MapeamentoADPage() {
                     title="Remover mapeamento?"
                     description={`Membros de ${m.ad_group} perdem o perfil ${m.perfil_nome} no próximo login.`}
                     confirmLabel="Remover"
-                    onConfirm={() => run(() => apiClient.delete(`v1/iam/ad-mappings/${m.id}`), "Mapeamento removido").then(() => mappings.mutate())}
+                    onConfirm={() =>
+                      run(
+                        () => apiClient.delete(`v1/iam/ad-mappings/${m.id}`),
+                        "Mapeamento removido",
+                      ).then(() => mappings.mutate())
+                    }
                   >
                     <Trash2 size={14} aria-hidden="true" />
                   </ConfirmButton>

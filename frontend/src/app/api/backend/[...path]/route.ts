@@ -33,20 +33,33 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   // 401 em looping.
   if (!accessTokenUsable(token)) {
     return NextResponse.json(
-      { data: null, error: { code: "UNAUTHORIZED", message: "sessão expirada — faça login novamente" } },
+      {
+        data: null,
+        error: { code: "UNAUTHORIZED", message: "sessão expirada — faça login novamente" },
+      },
       { status: 401 },
     );
   }
 
   // Previne duplicação caso 'api' ou 'backend' venha nos primeiros elementos do path
   const cleanPathSegments = [...path];
-  while (cleanPathSegments.length > 0 && (cleanPathSegments[0] === "api" || cleanPathSegments[0] === "backend")) {
+  while (
+    cleanPathSegments.length > 0 &&
+    (cleanPathSegments[0] === "api" || cleanPathSegments[0] === "backend")
+  ) {
     cleanPathSegments.shift();
   }
   // ".." normalizaria para fora de /api (ex.: /api/../metrics vira /metrics)
   // levando o bearer do usuário junto — mesma guarda do proxy público.
-  if (cleanPathSegments.some((seg) => seg === ".." || seg === "." || seg.includes("/") || seg.includes("\\"))) {
-    return NextResponse.json({ data: null, error: { code: "NOT_FOUND", message: "rota inexistente" } }, { status: 404 });
+  if (
+    cleanPathSegments.some(
+      (seg) => seg === ".." || seg === "." || seg.includes("/") || seg.includes("\\"),
+    )
+  ) {
+    return NextResponse.json(
+      { data: null, error: { code: "NOT_FOUND", message: "rota inexistente" } },
+      { status: 404 },
+    );
   }
   const targetUrl = new URL(`/api/${cleanPathSegments.join("/")}`, BACKEND_URL);
   targetUrl.search = req.nextUrl.search;
@@ -65,7 +78,8 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   // navegador por apiClient e repassada intacta — o backend deduplica
   // por usuário + chave e devolve a resposta original num reenvio.
   const idempotencyKey = req.headers.get("x-idempotency-key");
-  if (idempotencyKey && /^[A-Za-z0-9_-]{8,128}$/.test(idempotencyKey)) upstreamHeaders["X-Idempotency-Key"] = idempotencyKey;
+  if (idempotencyKey && /^[A-Za-z0-9_-]{8,128}$/.test(idempotencyKey))
+    upstreamHeaders["X-Idempotency-Key"] = idempotencyKey;
   // Leitura por trecho (ADR 037): o visualizador de PDF (pdf.js) pede só
   // as páginas visíveis de um documento digitalizado de centenas de
   // páginas — sem repassar o Range, o proxy baixaria o arquivo inteiro.
@@ -129,7 +143,9 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   // recebeu e o tamanho total; o ETag (SHA-256) valida o cache.
   for (const h of ["content-range", "accept-ranges", "etag", "cache-control"]) {
     const v = backendResponse.headers.get(h);
-    if (v) headers[h.replace(/(^|-)([a-z])/g, (_m, sep: string, c: string) => sep + c.toUpperCase())] = v;
+    if (v)
+      headers[h.replace(/(^|-)([a-z])/g, (_m, sep: string, c: string) => sep + c.toUpperCase())] =
+        v;
   }
   // 204/205/304 não podem ter corpo — nem string vazia: o construtor de
   // Response lança TypeError e a chamada virava 500 (ex.: POST
@@ -170,7 +186,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ path
   return proxy(req, path);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await params;
   return proxy(req, path);
 }

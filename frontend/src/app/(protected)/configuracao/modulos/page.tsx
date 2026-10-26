@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowDownToLine, ArrowUpFromLine, LayoutGrid, Lock, Network, TriangleAlert } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  LayoutGrid,
+  Lock,
+  Network,
+  TriangleAlert,
+} from "lucide-react";
 import { useState } from "react";
 
 import { ModuleIcon } from "@/components/layout/ModuleIcon";
@@ -44,16 +51,28 @@ export default function ModulosPage() {
     setBusy(true);
     try {
       for (const step of steps) {
-        await apiClient.patch<ModuleStatus>(`v1/admin/modules/${step.key}`, { enabled: step.enabled });
+        await apiClient.patch<ModuleStatus>(`v1/admin/modules/${step.key}`, {
+          enabled: step.enabled,
+        });
       }
       const last = steps[steps.length - 1];
       showToast({
         title: last ? `${last.name} ${last.enabled ? "ativado" : "desativado"}` : "Nada a alterar",
-        description: steps.length > 1 ? `Também ${last?.enabled ? "ativados" : "desativados"}: ${steps.slice(0, -1).map((s) => s.name).join(", ")}` : undefined,
+        description:
+          steps.length > 1
+            ? `Também ${last?.enabled ? "ativados" : "desativados"}: ${steps
+                .slice(0, -1)
+                .map((s) => s.name)
+                .join(", ")}`
+            : undefined,
         tone: "success",
       });
     } catch (err) {
-      showToast({ title: "Operação não concluída", description: err instanceof ApiError ? err.message : "Falha ao alterar o módulo.", tone: "danger" });
+      showToast({
+        title: "Operação não concluída",
+        description: err instanceof ApiError ? err.message : "Falha ao alterar o módulo.",
+        tone: "danger",
+      });
     } finally {
       setBusy(false);
       setPending(null);
@@ -76,12 +95,23 @@ export default function ModulosPage() {
   const cascade = pending?.steps.filter((s) => s.key !== pending.target.key) ?? [];
 
   return (
-    <DataState loading={loading && modules.length === 0} error={null} empty={modules.length === 0} emptyTitle="Nenhum módulo registrado">
-      <div role="group" aria-label="Visualização" className="mb-4 inline-flex w-fit self-start rounded-lg border border-surface-border p-0.5">
-        {([
-          ["cards", "Cartões", LayoutGrid],
-          ["graph", "Grafo de dependências", Network],
-        ] as const).map(([v, label, Icon]) => (
+    <DataState
+      loading={loading && modules.length === 0}
+      error={null}
+      empty={modules.length === 0}
+      emptyTitle="Nenhum módulo registrado"
+    >
+      <div
+        role="group"
+        aria-label="Visualização"
+        className="mb-4 inline-flex w-fit self-start rounded-lg border border-surface-border p-0.5"
+      >
+        {(
+          [
+            ["cards", "Cartões", LayoutGrid],
+            ["graph", "Grafo de dependências", Network],
+          ] as const
+        ).map(([v, label, Icon]) => (
           <button
             key={v}
             type="button"
@@ -123,7 +153,10 @@ export default function ModulosPage() {
                       <p className="mt-1 text-sm text-muted">{m.description}</p>
                     </div>
                     {m.core ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted" title="Módulo do núcleo — nunca desativável">
+                      <span
+                        className="inline-flex items-center gap-1 text-xs text-muted"
+                        title="Módulo do núcleo — nunca desativável"
+                      >
                         <Lock size={14} aria-hidden="true" /> Sempre ativo
                       </span>
                     ) : (
@@ -137,11 +170,24 @@ export default function ModulosPage() {
                   </div>
 
                   {waiting && (
-                    <p role="status" className="flex items-start gap-2 rounded-md bg-warning/10 p-2 text-xs text-foreground">
-                      <TriangleAlert size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-warning" />
-                      Configurado como ativo, mas indisponível: depende de {moduleNames(modules, m.blocked_by)}, que está inativo.
+                    <p
+                      role="status"
+                      className="flex items-start gap-2 rounded-md bg-warning/10 p-2 text-xs text-foreground"
+                    >
+                      <TriangleAlert
+                        size={14}
+                        aria-hidden="true"
+                        className="mt-0.5 shrink-0 text-warning"
+                      />
+                      Configurado como ativo, mas indisponível: depende de{" "}
+                      {moduleNames(modules, m.blocked_by)}, que está inativo.
                       {canManage && (
-                        <Button variant="ghost" size="sm" className="ml-auto -my-1" onClick={() => request(m, true)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto -my-1"
+                          onClick={() => request(m, true)}
+                        >
                           Ativar dependências
                         </Button>
                       )}
@@ -159,7 +205,9 @@ export default function ModulosPage() {
                             <dd key={d}>
                               <Badge tone={byKey.get(d)?.enabled ? "success" : "warning"}>
                                 {byKey.get(d)?.name ?? d}
-                                <span className="sr-only">{byKey.get(d)?.enabled ? " (ativo)" : " (inativo)"}</span>
+                                <span className="sr-only">
+                                  {byKey.get(d)?.enabled ? " (ativo)" : " (inativo)"}
+                                </span>
                               </Badge>
                             </dd>
                           ))}
@@ -174,7 +222,9 @@ export default function ModulosPage() {
                             <dd key={d}>
                               <Badge tone={byKey.get(d)?.enabled ? "info" : "neutral"}>
                                 {byKey.get(d)?.name ?? d}
-                                <span className="sr-only">{byKey.get(d)?.enabled ? " (ativo)" : " (inativo)"}</span>
+                                <span className="sr-only">
+                                  {byKey.get(d)?.enabled ? " (ativo)" : " (inativo)"}
+                                </span>
                               </Badge>
                             </dd>
                           ))}
@@ -185,11 +235,14 @@ export default function ModulosPage() {
 
                   {m.permissions.length > 0 && (
                     <details className="text-xs">
-                      <summary className="cursor-pointer text-muted hover:text-foreground">{m.permissions.length} permissões declaradas</summary>
+                      <summary className="cursor-pointer text-muted hover:text-foreground">
+                        {m.permissions.length} permissões declaradas
+                      </summary>
                       <ul className="mt-2 flex flex-col gap-1">
                         {m.permissions.map((p) => (
                           <li key={p.key}>
-                            <code className="font-mono">{p.key}</code> — <span className="text-muted">{p.description}</span>
+                            <code className="font-mono">{p.key}</code> —{" "}
+                            <span className="text-muted">{p.description}</span>
                           </li>
                         ))}
                       </ul>
@@ -237,7 +290,8 @@ export default function ModulosPage() {
         </ol>
         {pending && !pending.enabled && (
           <p className="mt-3 text-xs text-muted">
-            Módulos desativados respondem 404 na API, param workers e filas (eventos ficam retidos até a reativação) e somem do menu e do site.
+            Módulos desativados respondem 404 na API, param workers e filas (eventos ficam retidos
+            até a reativação) e somem do menu e do site.
           </p>
         )}
       </Dialog>

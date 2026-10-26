@@ -14,7 +14,8 @@ export async function listPublishedServices(): Promise<CatalogService[]> {
 /** Serviço publicado pelo slug; null quando não existe (ou módulo inativo). */
 export async function getPublishedService(slug: string): Promise<CatalogService | null> {
   try {
-    return (await publicGet<CatalogService>(`catalog/services/${encodeURIComponent(slug)}`, 0)).data;
+    return (await publicGet<CatalogService>(`catalog/services/${encodeURIComponent(slug)}`, 0))
+      .data;
   } catch (err) {
     if (err instanceof PublicApiError && err.status === 404) return null;
     throw err;

@@ -28,7 +28,8 @@ export function DataState({
   children: ReactNode;
 }) {
   if (error) {
-    const message = error instanceof ApiError ? error.message : "Não foi possível carregar os dados.";
+    const message =
+      error instanceof ApiError ? error.message : "Não foi possível carregar os dados.";
     return <ErrorState message={message} onRetry={onRetry} />;
   }
   if (loading) {

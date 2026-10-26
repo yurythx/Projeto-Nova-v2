@@ -9,9 +9,12 @@ export const NEEDS_ADMIN =
 /** Aceita o termo LGPD sempre que o modal aparecer (ele abre com atraso e
  * cobriria o que o teste está clicando). */
 export async function autoAcceptConsent(page: Page) {
-  await page.addLocatorHandler(page.getByRole("button", { name: "Concordar e Continuar" }), async (button) => {
-    await button.click();
-  });
+  await page.addLocatorHandler(
+    page.getByRole("button", { name: "Concordar e Continuar" }),
+    async (button) => {
+      await button.click();
+    },
+  );
 }
 
 /** Login local pela tela real; termina no dashboard. */

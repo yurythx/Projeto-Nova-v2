@@ -30,9 +30,16 @@ describe("ContactForm", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: /Autorizo o tratamento/ }));
     await userEvent.click(screen.getByRole("button", { name: "Enviar mensagem" }));
 
-    expect(publicPost).toHaveBeenCalledWith("v1/contact/messages", expect.objectContaining({
-      name: "Maria Silva", email: "maria@example.com", consent: true, website: "", category: "duvida",
-    }));
+    expect(publicPost).toHaveBeenCalledWith(
+      "v1/contact/messages",
+      expect.objectContaining({
+        name: "Maria Silva",
+        email: "maria@example.com",
+        consent: true,
+        website: "",
+        category: "duvida",
+      }),
+    );
     expect(await screen.findByText("CT-2026-000123")).toBeInTheDocument();
   });
 

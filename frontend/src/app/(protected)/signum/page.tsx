@@ -22,7 +22,6 @@ import { useApiQuery, withQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { Envelope } from "@/lib/plataforma/types";
 
-
 function OpenEnvelope({ onDone }: { onDone: (e: Envelope) => void }) {
   const { run, pending } = useAction();
   const [hash, setHash] = useState("");
@@ -56,14 +55,30 @@ function OpenEnvelope({ onDone }: { onDone: (e: Envelope) => void }) {
           setFileName(name);
         }}
       />
-      <Input id="env-title" name="title" label="Título" maxLength={200} placeholder={fileName || "nome do documento"} />
+      <Input
+        id="env-title"
+        name="title"
+        label="Título"
+        maxLength={200}
+        placeholder={fileName || "nome do documento"}
+      />
       <Textarea id="env-desc" name="description" label="Descrição" rows={2} maxLength={2000} />
-      <UserPicker idPrefix="env-signers" label="Signatários *" value={signers} onChange={setSigners} />
+      <UserPicker
+        idPrefix="env-signers"
+        label="Signatários *"
+        value={signers}
+        onChange={setSigners}
+      />
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="sequential" className="h-4 w-4 accent-primary" /> Assinatura sequencial (na ordem da lista)
+        <input type="checkbox" name="sequential" className="h-4 w-4 accent-primary" /> Assinatura
+        sequencial (na ordem da lista)
       </label>
       <div className="flex justify-end">
-        <Button type="submit" loading={pending} disabled={hash.length !== 64 || signers.length === 0}>
+        <Button
+          type="submit"
+          loading={pending}
+          disabled={hash.length !== 64 || signers.length === 0}
+        >
           Abrir envelope
         </Button>
       </div>
@@ -98,13 +113,22 @@ export default function SignumPage() {
         }
       />
       <SectionTabsInline label="Filtro de envelopes" tabs={tabs} value={role} onChange={setRole} />
-      <DataState loading={list.isLoading} error={list.error} onRetry={() => void list.mutate()} empty={(list.data ?? []).length === 0} emptyTitle="Nenhum envelope">
+      <DataState
+        loading={list.isLoading}
+        error={list.error}
+        onRetry={() => void list.mutate()}
+        empty={(list.data ?? []).length === 0}
+        emptyTitle="Nenhum envelope"
+      >
         <ul className="flex flex-col gap-2">
           {(list.data ?? []).map((e) => {
             const signed = e.signers.filter((s) => s.status === "signed").length;
             return (
               <li key={e.id}>
-                <Link href={`/signum/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-surface-border bg-surface p-4 hover:border-primary/50">
+                <Link
+                  href={`/signum/${e.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-surface-border bg-surface p-4 hover:border-primary/50"
+                >
                   <div className="flex items-start gap-3">
                     <PenTool size={18} aria-hidden="true" className="mt-0.5 text-primary" />
                     <div>
@@ -119,7 +143,9 @@ export default function SignumPage() {
                     <span className="text-muted">
                       {signed}/{e.signers.length} assinaturas
                     </span>
-                    <Badge tone={ENVELOPE_STATUS[e.status].tone}>{ENVELOPE_STATUS[e.status].label}</Badge>
+                    <Badge tone={ENVELOPE_STATUS[e.status].tone}>
+                      {ENVELOPE_STATUS[e.status].label}
+                    </Badge>
                   </div>
                 </Link>
               </li>
@@ -127,7 +153,12 @@ export default function SignumPage() {
           })}
         </ul>
       </DataState>
-      <Dialog open={opening} onClose={() => setOpening(false)} title="Novo envelope de assinatura" size="lg">
+      <Dialog
+        open={opening}
+        onClose={() => setOpening(false)}
+        title="Novo envelope de assinatura"
+        size="lg"
+      >
         {opening && <OpenEnvelope onDone={(e) => router.push(`/signum/${e.id}`)} />}
       </Dialog>
     </div>

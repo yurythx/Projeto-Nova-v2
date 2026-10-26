@@ -47,7 +47,8 @@ function mesclar(fabrica: readonly ColunaFaixa[], remotas: ColunaRemota[]): Colu
     };
   });
   for (const coluna of fabrica) {
-    if (!vistas.some((vista) => vista.id === coluna.id)) vistas.push({ ...coluna, ativa: true, entrada: coluna.ordem === 0 });
+    if (!vistas.some((vista) => vista.id === coluna.id))
+      vistas.push({ ...coluna, ativa: true, entrada: coluna.ordem === 0 });
   }
   return ordenarColunas(vistas);
 }
@@ -62,7 +63,13 @@ export function useQuadro(quadro: string, fabrica: readonly ColunaFaixa[]) {
   );
   const { run } = useAction();
 
-  async function criar(corpo: { nome: string; cor: string; ordem: number; de: string[]; para: string[] }) {
+  async function criar(corpo: {
+    nome: string;
+    cor: string;
+    ordem: number;
+    de: string[];
+    para: string[];
+  }) {
     const ok = await run(async () => {
       await apiClient.post(`v1/quadros/${quadro}`, corpo);
       await consulta.mutate();
@@ -71,7 +78,10 @@ export function useQuadro(quadro: string, fabrica: readonly ColunaFaixa[]) {
     return ok === true;
   }
 
-  async function gravar(chave: string, corpo: { nome?: string; cor?: string; ordem?: number; ativa?: boolean }) {
+  async function gravar(
+    chave: string,
+    corpo: { nome?: string; cor?: string; ordem?: number; ativa?: boolean },
+  ) {
     const ok = await run(async () => {
       await apiClient.put(`v1/quadros/${quadro}/${chave}`, corpo);
       await consulta.mutate();
@@ -89,7 +99,9 @@ export function colunasVisiveis<T>(
   itens: readonly T[],
   colunaDe: (item: T) => string | null,
 ): ColunaFaixa[] {
-  return colunas.filter((coluna) => coluna.ativa !== false || itens.some((item) => colunaDe(item) === coluna.id));
+  return colunas.filter(
+    (coluna) => coluna.ativa !== false || itens.some((item) => colunaDe(item) === coluna.id),
+  );
 }
 
 export function rotuloQuadro(

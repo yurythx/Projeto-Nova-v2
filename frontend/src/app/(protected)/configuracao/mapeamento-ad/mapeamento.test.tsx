@@ -9,7 +9,14 @@ vi.mock("next/navigation", async () => (await import("@/test/navigation")).navig
 
 import MapeamentoADPage from "./page";
 
-const ORG = [{ id: "e1", nome: "Órgão", sigla: "ORG", unidades: [{ id: "u1", nome: "RH", sigla: "", departamentos: [] }] }];
+const ORG = [
+  {
+    id: "e1",
+    nome: "Órgão",
+    sigla: "ORG",
+    unidades: [{ id: "u1", nome: "RH", sigla: "", departamentos: [] }],
+  },
+];
 
 describe("Configurações > Mapeamento AD", () => {
   beforeEach(() => resetNavigation());
@@ -19,11 +26,32 @@ describe("Configurações > Mapeamento AD", () => {
       ...identityRoutes(),
       "GET v1/iam/ad-mappings": {
         data: [
-          { id: "m1", ad_group: "GRP_RH", perfil_id: "p1", perfil_nome: "Gestor", scope_label: "ORG / RH", descricao: "RH", created_at: "2026-01-01T00:00:00Z", created_by: "admin" },
-          { id: "m2", ad_group: "GRP_ALL", perfil_id: "p1", perfil_nome: "Gestor", scope_label: "", created_at: "2026-01-01T00:00:00Z" },
+          {
+            id: "m1",
+            ad_group: "GRP_RH",
+            perfil_id: "p1",
+            perfil_nome: "Gestor",
+            scope_label: "ORG / RH",
+            descricao: "RH",
+            created_at: "2026-01-01T00:00:00Z",
+            created_by: "admin",
+          },
+          {
+            id: "m2",
+            ad_group: "GRP_ALL",
+            perfil_id: "p1",
+            perfil_nome: "Gestor",
+            scope_label: "",
+            created_at: "2026-01-01T00:00:00Z",
+          },
         ],
       },
-      "GET v1/iam/perfis": { data: [{ id: "p1", nome: "Gestor", ativo: true }, { id: "p2", nome: "Antigo", ativo: false }] },
+      "GET v1/iam/perfis": {
+        data: [
+          { id: "p1", nome: "Gestor", ativo: true },
+          { id: "p2", nome: "Antigo", ativo: false },
+        ],
+      },
       "GET v1/iam/org-tree": { data: ORG },
       "POST v1/iam/ad-mappings": { data: {} },
       "DELETE v1/iam/ad-mappings/m1": { data: null },
@@ -41,7 +69,13 @@ describe("Configurações > Mapeamento AD", () => {
     await userEvent.type(screen.getByLabelText("Descrição"), "TI");
     await userEvent.click(screen.getByRole("button", { name: "Adicionar mapeamento" }));
     await waitFor(() => expect(api.to("POST v1/iam/ad-mappings")).toHaveLength(1));
-    expect(api.to("POST v1/iam/ad-mappings")[0]!.body).toEqual({ ad_group: "GRP_TI", perfil_id: "p1", descricao: "TI", entidade_id: "e1", unidade_id: "u1" });
+    expect(api.to("POST v1/iam/ad-mappings")[0]!.body).toEqual({
+      ad_group: "GRP_TI",
+      perfil_id: "p1",
+      descricao: "TI",
+      entidade_id: "e1",
+      unidade_id: "u1",
+    });
     await waitFor(() => expect(screen.getByLabelText("Grupo do AD *")).toHaveValue(""));
     expect(screen.getByLabelText("Entidade")).toHaveValue("");
 
@@ -65,12 +99,19 @@ describe("Configurações > Mapeamento AD", () => {
     await userEvent.type(screen.getByLabelText("Grupo do AD *"), "GRP_X");
     await userEvent.selectOptions(await screen.findByLabelText("Perfil *"), "p1");
     await userEvent.click(screen.getByRole("button", { name: "Adicionar mapeamento" }));
-    expect(await screen.findByText("grupo já mapeado para este perfil e escopo")).toBeInTheDocument();
+    expect(
+      await screen.findByText("grupo já mapeado para este perfil e escopo"),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Grupo do AD *")).toHaveValue("GRP_X");
   });
 
   it("erro ao listar", async () => {
-    mockBackend({ ...identityRoutes(), "GET v1/iam/ad-mappings": fail(500, "fora"), "GET v1/iam/perfis": { data: [] }, "GET v1/iam/org-tree": { data: [] } });
+    mockBackend({
+      ...identityRoutes(),
+      "GET v1/iam/ad-mappings": fail(500, "fora"),
+      "GET v1/iam/perfis": { data: [] },
+      "GET v1/iam/org-tree": { data: [] },
+    });
     renderApp(<MapeamentoADPage />);
     expect(await screen.findByText("fora")).toBeInTheDocument();
   });

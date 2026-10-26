@@ -113,7 +113,9 @@ describe("Mudanças — lista", () => {
     await user.selectOptions(screen.getByLabelText("3. Plano de Reversão"), "3");
 
     // Aplica o risco sugerido (Alto)
-    await user.click(screen.getByRole("button", { name: /Aplicar risco sugerido \(Risco alto\)/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Aplicar risco sugerido \(Risco alto\)/i }),
+    );
 
     // O seletor de risco foi automaticamente atualizado para alto
     expect(screen.getByLabelText("Risco")).toHaveValue("alto");

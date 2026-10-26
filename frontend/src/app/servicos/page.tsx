@@ -16,7 +16,12 @@ export const metadata: Metadata = {
   title: "Carta de serviços",
   description,
   alternates: { canonical: `${APP_URL}/servicos` },
-  openGraph: { title: "Carta de serviços", description, type: "website", url: `${APP_URL}/servicos` },
+  openGraph: {
+    title: "Carta de serviços",
+    description,
+    type: "website",
+    url: `${APP_URL}/servicos`,
+  },
 };
 
 export default async function ServicosPage() {

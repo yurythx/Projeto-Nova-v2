@@ -87,8 +87,7 @@ async function request<T>(
   // é recusa de negócio com a sessão viva — ex.: senha errada na
   // cerimônia de assinatura do Signum (SIGNUM_REAUTH_FAILED): redirecionar
   // derrubava a sessão por um erro de digitação. RBAC negado usa 403.
-  const onProtected =
-    typeof window !== "undefined" && isProtectedPath(window.location.pathname);
+  const onProtected = typeof window !== "undefined" && isProtectedPath(window.location.pathname);
 
   const sessionExpired = res.status === 401 && (!json?.error || json.error.code === "UNAUTHORIZED");
   if (sessionExpired && onProtected && window.location.pathname !== "/login") {

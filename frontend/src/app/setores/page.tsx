@@ -9,7 +9,11 @@ import type { Sector } from "@/lib/plataforma/types";
 
 const description = "Unidades e setores de atendimento, com contatos e endereços.";
 
-export const metadata: Metadata = { title: "Setores", description, alternates: { canonical: `${APP_URL}/setores` } };
+export const metadata: Metadata = {
+  title: "Setores",
+  description,
+  alternates: { canonical: `${APP_URL}/setores` },
+};
 
 export default async function SetoresPage() {
   let sectors: Sector[];
@@ -38,24 +42,37 @@ export default async function SetoresPage() {
               </h2>
               <p className="text-xs text-muted">{u.entidade}</p>
               <ul className="mt-3 flex flex-col gap-1 text-sm">
-                {u.endereco && <li className="flex items-start gap-2"><MapPin size={14} aria-hidden="true" className="mt-0.5" /> {u.endereco}</li>}
-                {u.telefone && <li className="flex items-center gap-2"><Phone size={14} aria-hidden="true" /> {u.telefone}</li>}
+                {u.endereco && (
+                  <li className="flex items-start gap-2">
+                    <MapPin size={14} aria-hidden="true" className="mt-0.5" /> {u.endereco}
+                  </li>
+                )}
+                {u.telefone && (
+                  <li className="flex items-center gap-2">
+                    <Phone size={14} aria-hidden="true" /> {u.telefone}
+                  </li>
+                )}
                 {u.email && (
                   <li className="flex items-center gap-2">
                     <Mail size={14} aria-hidden="true" />
-                    <a href={`mailto:${u.email}`} className="text-primary hover:underline">{u.email}</a>
+                    <a href={`mailto:${u.email}`} className="text-primary hover:underline">
+                      {u.email}
+                    </a>
                   </li>
                 )}
               </ul>
               {sectors.some((d) => d.kind === "departamento" && d.unidade_id === u.id) && (
                 <details className="mt-3 text-sm">
-                  <summary className="cursor-pointer text-muted hover:text-foreground">Departamentos</summary>
+                  <summary className="cursor-pointer text-muted hover:text-foreground">
+                    Departamentos
+                  </summary>
                   <ul className="mt-2 flex flex-col gap-1">
                     {sectors
                       .filter((d) => d.kind === "departamento" && d.unidade_id === u.id)
                       .map((d) => (
                         <li key={d.id}>
-                          {d.nome} {d.telefone && <span className="text-muted">· {d.telefone}</span>}
+                          {d.nome}{" "}
+                          {d.telefone && <span className="text-muted">· {d.telefone}</span>}
                         </li>
                       ))}
                   </ul>

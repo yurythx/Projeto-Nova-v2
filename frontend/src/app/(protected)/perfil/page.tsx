@@ -31,9 +31,17 @@ function DirectoryProfile() {
   const { run, pending } = useAction();
   const [scope, setScope] = useState<ScopeRef | null>(null);
   const p = person.data;
-  if (!p) return <p className="text-sm text-muted">{person.error ? "Perfil do Diretório indisponível." : "Carregando…"}</p>;
+  if (!p)
+    return (
+      <p className="text-sm text-muted">
+        {person.error ? "Perfil do Diretório indisponível." : "Carregando…"}
+      </p>
+    );
 
-  const current: ScopeRef = scope ?? { unidade_id: p.unidade_id, departamento_id: p.departamento_id };
+  const current: ScopeRef = scope ?? {
+    unidade_id: p.unidade_id,
+    departamento_id: p.departamento_id,
+  };
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,16 +64,46 @@ function DirectoryProfile() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      {p.from_ad && <p className="text-xs text-muted">Lotação sincronizada do Active Directory — alterações manuais podem ser sobrescritas na próxima sincronização.</p>}
+      {p.from_ad && (
+        <p className="text-xs text-muted">
+          Lotação sincronizada do Active Directory — alterações manuais podem ser sobrescritas na
+          próxima sincronização.
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-3">
-        <Input id="dir-job" name="job_title" label="Cargo / função" maxLength={120} defaultValue={p.job_title} />
+        <Input
+          id="dir-job"
+          name="job_title"
+          label="Cargo / função"
+          maxLength={120}
+          defaultValue={p.job_title}
+        />
         <Input id="dir-phone" name="phone" label="Telefone" maxLength={30} defaultValue={p.phone} />
-        <Input id="dir-ext" name="extension" label="Ramal" maxLength={15} defaultValue={p.extension} />
+        <Input
+          id="dir-ext"
+          name="extension"
+          label="Ramal"
+          maxLength={15}
+          defaultValue={p.extension}
+        />
       </div>
       <ScopePicker idPrefix="dir-scope" value={current} onChange={setScope} />
-      <Textarea id="dir-bio" name="bio" label="Sobre você" rows={3} maxLength={1000} defaultValue={p.bio} />
+      <Textarea
+        id="dir-bio"
+        name="bio"
+        label="Sobre você"
+        rows={3}
+        maxLength={1000}
+        defaultValue={p.bio}
+      />
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="visible" defaultChecked={p.visible} className="h-4 w-4 accent-primary" /> Aparecer no Diretório interno
+        <input
+          type="checkbox"
+          name="visible"
+          defaultChecked={p.visible}
+          className="h-4 w-4 accent-primary"
+        />{" "}
+        Aparecer no Diretório interno
       </label>
       <div className="flex justify-end">
         <Button type="submit" loading={pending}>
@@ -80,11 +118,17 @@ export default function PerfilPage() {
   const { me, enabled } = usePlataforma();
   const requests = useApiQuery<DSR[]>("v1/lgpd/minhas-solicitacoes");
   const { run } = useAction();
-  const pendingErasure = (requests.data ?? []).some((r) => r.kind === "erasure" && (r.status === "pending" || r.status === "processing"));
+  const pendingErasure = (requests.data ?? []).some(
+    (r) => r.kind === "erasure" && (r.status === "pending" || r.status === "processing"),
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Minha conta" title={me?.name || me?.username || "Meu perfil"} description={me?.email} />
+      <PageHeader
+        eyebrow="Minha conta"
+        title={me?.name || me?.username || "Meu perfil"}
+        description={me?.email}
+      />
 
       <Card>
         <CardHeader>
@@ -94,7 +138,11 @@ export default function PerfilPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 pb-5 pt-3 text-sm">
           <p>
-            Autenticado via <strong>{me?.source === "keycloak" ? "Keycloak (SSO corporativo)" : "credencial local"}</strong>.
+            Autenticado via{" "}
+            <strong>
+              {me?.source === "keycloak" ? "Keycloak (SSO corporativo)" : "credencial local"}
+            </strong>
+            .
           </p>
           <div>
             <p className="text-xs font-semibold text-muted">Lotações</p>
@@ -110,8 +158,12 @@ export default function PerfilPage() {
             </ul>
           </div>
           <details>
-            <summary className="cursor-pointer text-xs text-muted hover:text-foreground">{(me?.permissions ?? []).length} permissões efetivas</summary>
-            <p className="mt-2 font-mono text-xs leading-relaxed">{(me?.permissions ?? []).join(" · ")}</p>
+            <summary className="cursor-pointer text-xs text-muted hover:text-foreground">
+              {(me?.permissions ?? []).length} permissões efetivas
+            </summary>
+            <p className="mt-2 font-mono text-xs leading-relaxed">
+              {(me?.permissions ?? []).join(" · ")}
+            </p>
           </details>
         </CardContent>
       </Card>
@@ -147,7 +199,12 @@ export default function PerfilPage() {
               title="Solicitar anonimização da conta?"
               description="Seus dados pessoais serão anonimizados. Registros exigidos por lei (trilha de auditoria) são preservados de forma pseudonimizada. A ação não pode ser desfeita."
               confirmLabel="Solicitar"
-              onConfirm={() => run(() => apiClient.post("v1/lgpd/solicitar-exclusao"), "Solicitação registrada").then(() => requests.mutate())}
+              onConfirm={() =>
+                run(
+                  () => apiClient.post("v1/lgpd/solicitar-exclusao"),
+                  "Solicitação registrada",
+                ).then(() => requests.mutate())
+              }
             >
               <UserX size={16} aria-hidden="true" className="mr-1" /> Solicitar exclusão
             </ConfirmButton>
@@ -155,11 +212,25 @@ export default function PerfilPage() {
           {(requests.data ?? []).length > 0 && (
             <ul className="flex flex-col divide-y divide-surface-border rounded-lg border border-surface-border">
               {(requests.data ?? []).map((r) => (
-                <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+                >
                   <span>
-                    {r.kind === "erasure" ? "Exclusão / anonimização" : r.kind} · {fmtDateTime(r.created_at)}
+                    {r.kind === "erasure" ? "Exclusão / anonimização" : r.kind} ·{" "}
+                    {fmtDateTime(r.created_at)}
                   </span>
-                  <Badge tone={r.status === "completed" ? "success" : r.status === "rejected" ? "danger" : "warning"}>{r.status}</Badge>
+                  <Badge
+                    tone={
+                      r.status === "completed"
+                        ? "success"
+                        : r.status === "rejected"
+                          ? "danger"
+                          : "warning"
+                    }
+                  >
+                    {r.status}
+                  </Badge>
                 </li>
               ))}
             </ul>

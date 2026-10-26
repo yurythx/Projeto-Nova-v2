@@ -82,7 +82,9 @@ describe("UserMenu", () => {
   // sessão local (signOut), e só então navega até essa URL — nunca a
   // ordem inversa, que deixaria a sessão viva no Keycloak.
   it("Sair busca a URL de logout do Keycloak, encerra a sessão local e navega até ela", async () => {
-    mockLogoutUrlFetch("https://keycloak.example.com/realms/projeto-nova/protocol/openid-connect/logout");
+    mockLogoutUrlFetch(
+      "https://keycloak.example.com/realms/projeto-nova/protocol/openid-connect/logout",
+    );
     const user = userEvent.setup();
     render(<UserMenu userLabel="admin" />);
 

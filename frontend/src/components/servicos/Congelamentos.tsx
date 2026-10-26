@@ -67,12 +67,22 @@ export function Congelamentos() {
           Sem unidade, o congelamento vale para toda a instituição.
         </p>
         <form onSubmit={criar} className="grid gap-3 sm:grid-cols-2">
-          <Input id="congelamento-inicio" name="inicio" type="datetime-local" label="Início *" required />
+          <Input
+            id="congelamento-inicio"
+            name="inicio"
+            type="datetime-local"
+            label="Início *"
+            required
+          />
           <Input id="congelamento-fim" name="fim" type="datetime-local" label="Fim *" required />
           <div className="sm:col-span-2">
             <Input id="congelamento-motivo" name="motivo" label="Motivo" maxLength={4000} />
           </div>
-          <UnidadeDonaSelect id="congelamento-unidade" permission="mudancas:manage" label="Unidade" />
+          <UnidadeDonaSelect
+            id="congelamento-unidade"
+            permission="mudancas:manage"
+            label="Unidade"
+          />
           <div className="flex items-end">
             <Button type="submit" loading={pending}>
               Registrar congelamento
@@ -88,7 +98,8 @@ export function Congelamentos() {
           {itens.map((item) => (
             <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span>
-                {new Date(item.inicio).toLocaleString("pt-BR")} até {new Date(item.fim).toLocaleString("pt-BR")}
+                {new Date(item.inicio).toLocaleString("pt-BR")} até{" "}
+                {new Date(item.fim).toLocaleString("pt-BR")}
                 {item.motivo ? ` · ${item.motivo}` : ""}
                 {item.unidade_id ? "" : " · institucional"}
               </span>

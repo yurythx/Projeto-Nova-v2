@@ -11,10 +11,23 @@ vi.mock("./brandingActions", () => ({ refreshBranding }));
 
 import { BrandingSettingsForm } from "./BrandingSettingsForm";
 
-const SERVER = { ...DEFAULT_BRANDING, appName: "Prefeitura X", orgName: "Município X", tokens: { primary: "#003366" } };
+const SERVER = {
+  ...DEFAULT_BRANDING,
+  appName: "Prefeitura X",
+  orgName: "Município X",
+  tokens: { primary: "#003366" },
+};
 const apiBranding = (extra: Record<string, unknown> = {}) => ({
-  app_name: "Prefeitura X", app_description: "", org_name: "Município X", logo_url: "", favicon_url: "", support_email: "",
-  support_phone: "", support_hours: "", tokens: { primary: "#003366" }, ...extra,
+  app_name: "Prefeitura X",
+  app_description: "",
+  org_name: "Município X",
+  logo_url: "",
+  favicon_url: "",
+  support_email: "",
+  support_phone: "",
+  support_hours: "",
+  tokens: { primary: "#003366" },
+  ...extra,
 });
 
 function AppName() {
@@ -45,7 +58,9 @@ describe("BrandingSettingsForm", () => {
   it("salva no backend (tokens preservados) e a tela passa a usar a identidade salva", async () => {
     const api = mockBackend({
       ...identityRoutes({ permissions: ["branding:manage"] }),
-      "PUT v1/admin/branding": (req) => ({ data: { ...(req.body as object), updated_at: "2026-01-01T00:00:00Z" } }),
+      "PUT v1/admin/branding": (req) => ({
+        data: { ...(req.body as object), updated_at: "2026-01-01T00:00:00Z" },
+      }),
     });
     renderForm();
     const nome = await screen.findByLabelText("Nome da Aplicação / Sistema *");
@@ -53,15 +68,26 @@ describe("BrandingSettingsForm", () => {
     expect(nome).toHaveValue("Prefeitura X");
     await userEvent.clear(nome);
     await userEvent.type(nome, "Portal do Cidadão ");
-    await userEvent.type(screen.getByLabelText("URL da Logomarca (PNG/SVG/WebP)"), "https://cdn.gov.br/logo.png");
-    expect(screen.getByAltText("Logomarca de Portal do Cidadão")).toHaveAttribute("src", "https://cdn.gov.br/logo.png");
+    await userEvent.type(
+      screen.getByLabelText("URL da Logomarca (PNG/SVG/WebP)"),
+      "https://cdn.gov.br/logo.png",
+    );
+    expect(screen.getByAltText("Logomarca de Portal do Cidadão")).toHaveAttribute(
+      "src",
+      "https://cdn.gov.br/logo.png",
+    );
     await userEvent.type(screen.getByLabelText("E-mail de Suporte"), "suporte@x.gov.br");
     await userEvent.click(screen.getByRole("button", { name: /Salvar alterações/ }));
 
     await waitFor(() => expect(api.to("PUT v1/admin/branding")).toHaveLength(1));
-    const sent: Record<string, unknown> = { ...(api.to("PUT v1/admin/branding")[0]!.body as object) };
+    const sent: Record<string, unknown> = {
+      ...(api.to("PUT v1/admin/branding")[0]!.body as object),
+    };
     const expected: Record<string, unknown> = apiBranding({
-      app_name: "Portal do Cidadão", app_description: DEFAULT_BRANDING.appDescription, logo_url: "https://cdn.gov.br/logo.png", support_email: "suporte@x.gov.br",
+      app_name: "Portal do Cidadão",
+      app_description: DEFAULT_BRANDING.appDescription,
+      logo_url: "https://cdn.gov.br/logo.png",
+      support_email: "suporte@x.gov.br",
     });
     delete sent.support_hours;
     delete expected.support_hours;
@@ -75,7 +101,10 @@ describe("BrandingSettingsForm", () => {
   it("recusa do backend (ex.: contraste) não altera a tela", async () => {
     mockBackend({
       ...identityRoutes({ permissions: ["branding:manage"] }),
-      "PUT v1/admin/branding": fail(422, 'contraste entre "primary-foreground" e "primary" é 1.20:1'),
+      "PUT v1/admin/branding": fail(
+        422,
+        'contraste entre "primary-foreground" e "primary" é 1.20:1',
+      ),
     });
     renderForm();
     const nome = await screen.findByLabelText("Nome da Aplicação / Sistema *");
@@ -89,7 +118,10 @@ describe("BrandingSettingsForm", () => {
 
   it("falha ao expirar o cache não desfaz a gravação", async () => {
     refreshBranding.mockRejectedValueOnce(new Error("rede"));
-    mockBackend({ ...identityRoutes({ permissions: ["branding:manage"] }), "PUT v1/admin/branding": (req) => ({ data: req.body }) });
+    mockBackend({
+      ...identityRoutes({ permissions: ["branding:manage"] }),
+      "PUT v1/admin/branding": (req) => ({ data: req.body }),
+    });
     renderForm();
     const nome = await screen.findByLabelText("Nome da Aplicação / Sistema *");
     await waitFor(() => expect(nome).toBeEnabled());
@@ -103,14 +135,24 @@ describe("BrandingSettingsForm", () => {
       "PUT v1/admin/branding": (req) => ({ data: req.body }),
     });
     renderForm();
-    await waitFor(() => expect(screen.getByRole("button", { name: /Restaurar padrões/ })).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Restaurar padrões/ })).toBeEnabled(),
+    );
     await userEvent.click(screen.getByRole("button", { name: /Restaurar padrões/ }));
     const dialog = await screen.findByRole("dialog", { name: "Restaurar configurações padrão?" });
     await userEvent.click(within(dialog).getByRole("button", { name: "Restaurar padrões" }));
     await waitFor(() => expect(api.to("PUT v1/admin/branding")).toHaveLength(1));
-    expect(api.to("PUT v1/admin/branding")[0]!.body).toMatchObject({ app_name: "Projeto Nova", org_name: "Projeto Nova", tokens: {} });
+    expect(api.to("PUT v1/admin/branding")[0]!.body).toMatchObject({
+      app_name: "Projeto Nova",
+      org_name: "Projeto Nova",
+      tokens: {},
+    });
     await waitFor(() => expect(screen.getByTestId("nome")).toHaveTextContent("Projeto Nova"));
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Restaurar configurações padrão?" })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Restaurar configurações padrão?" }),
+      ).not.toBeInTheDocument(),
+    );
 
     // cancelar fecha sem gravar
     await userEvent.click(screen.getByRole("button", { name: /Restaurar padrões/ }));

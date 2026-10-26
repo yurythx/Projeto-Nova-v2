@@ -11,7 +11,9 @@ vi.mock("@/components/realtime/RealtimeProvider", () => ({
   },
 }));
 const refreshModules = vi.fn();
-vi.mock("@/lib/plataforma/PlataformaProvider", () => ({ usePlataforma: () => ({ refreshModules }) }));
+vi.mock("@/lib/plataforma/PlataformaProvider", () => ({
+  usePlataforma: () => ({ refreshModules }),
+}));
 
 import { describeEvent, NotificationCenter } from "./NotificationCenter";
 import { NotificationHistoryProvider, useNotificationHistory } from "./NotificationHistoryProvider";
@@ -36,13 +38,23 @@ function renderCenter() {
 const envelope = (type: string, payload: unknown) => ({
   type: "event",
   topic: "broadcast",
-  data: { id: "e1", type, version: 1, source: "nova", occurred_at: "2026-09-25T12:00:00Z", correlation_id: "c1", payload },
+  data: {
+    id: "e1",
+    type,
+    version: 1,
+    source: "nova",
+    occurred_at: "2026-09-25T12:00:00Z",
+    correlation_id: "c1",
+    payload,
+  },
 });
 
 describe("NotificationCenter", () => {
   it("evento de publicação vira toast + histórico", () => {
     renderCenter();
-    act(() => captured!(envelope("blog.post.published", { title: "Manutenção", kind: "comunicado" })));
+    act(() =>
+      captured!(envelope("blog.post.published", { title: "Manutenção", kind: "comunicado" })),
+    );
     expect(screen.getByText("Novo comunicado")).toBeInTheDocument();
     expect(screen.getByText("Manutenção")).toBeInTheDocument();
     expect(screen.getByTestId("history-count")).toHaveTextContent("1");

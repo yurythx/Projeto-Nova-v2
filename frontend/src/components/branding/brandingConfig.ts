@@ -53,7 +53,8 @@ function sanitizePrefs(p: Partial<Prefs> | null | undefined): Partial<Prefs> {
   const out: Partial<Prefs> = {};
   if (!p || typeof p !== "object") return out;
   if (typeof p.highContrast === "boolean") out.highContrast = p.highContrast;
-  if (typeof p.fontSizeScale === "number" && FONT_SCALES.includes(p.fontSizeScale)) out.fontSizeScale = p.fontSizeScale;
+  if (typeof p.fontSizeScale === "number" && FONT_SCALES.includes(p.fontSizeScale))
+    out.fontSizeScale = p.fontSizeScale;
   return out;
 }
 
@@ -88,7 +89,10 @@ const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const TOKEN_NAME = /^[a-z][a-z-]{1,40}$/;
 
 /** Mescla a identidade vinda da API com as preferências do visitante. */
-export function mergeServerBranding(api: Branding | null, prefs: SystemBrandingConfig): SystemBrandingConfig {
+export function mergeServerBranding(
+  api: Branding | null,
+  prefs: SystemBrandingConfig,
+): SystemBrandingConfig {
   if (!api) return prefs;
   return {
     ...prefs,

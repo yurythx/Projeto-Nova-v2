@@ -37,7 +37,12 @@ export default function WikiLayout({ children }: { children: ReactNode }) {
               aria-hidden="true"
             />
           </button>
-          <Button size="sm" variant="ghost" onClick={() => setCreating(true)} aria-label="Nova página">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setCreating(true)}
+            aria-label="Nova página"
+          >
             <Plus size={16} aria-hidden="true" />
           </Button>
         </div>

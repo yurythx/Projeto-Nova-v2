@@ -19,7 +19,15 @@ import type { Perfil, PermissionGroup } from "@/lib/plataforma/types";
 /** Formulário de Perfil: as permissões vêm do catálogo que cada plug-in
  * declara no seu Manifest (GET /iam/permissions) — nada de decorar
  * strings "recurso:ação". Curingas ("*", "recurso:*") são preservados. */
-function PerfilForm({ perfil, groups, onDone }: { perfil?: Perfil; groups: PermissionGroup[]; onDone: () => void }) {
+function PerfilForm({
+  perfil,
+  groups,
+  onDone,
+}: {
+  perfil?: Perfil;
+  groups: PermissionGroup[];
+  onDone: () => void;
+}) {
   const { run, pending } = useAction();
   const [selected, setSelected] = useState<Set<string>>(new Set(perfil?.permissoes ?? []));
   const known = new Set(groups.flatMap((g) => g.permissions.map((p) => p.key)));
@@ -46,7 +54,10 @@ function PerfilForm({ perfil, groups, onDone }: { perfil?: Perfil; groups: Permi
       ativo: fd.get("ativo") === "on",
     };
     const ok = await run(
-      () => (perfil ? apiClient.put(`v1/iam/perfis/${perfil.id}`, body) : apiClient.post("v1/iam/perfis", body)),
+      () =>
+        perfil
+          ? apiClient.put(`v1/iam/perfis/${perfil.id}`, body)
+          : apiClient.post("v1/iam/perfis", body),
       "Perfil salvo",
     );
     if (ok) onDone();
@@ -55,15 +66,44 @@ function PerfilForm({ perfil, groups, onDone }: { perfil?: Perfil; groups: Permi
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       {readOnly && (
-        <p className="rounded-md bg-accent/10 p-3 text-xs text-accent">Perfil de sistema: as permissões podem ser ajustadas, mas o perfil não pode ser excluído.</p>
+        <p className="rounded-md bg-accent/10 p-3 text-xs text-accent">
+          Perfil de sistema: as permissões podem ser ajustadas, mas o perfil não pode ser excluído.
+        </p>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input id="perfil-nome" name="nome" label="Nome *" required maxLength={120} defaultValue={perfil?.nome} />
-        <Input id="perfil-slug" name="slug" label="Slug" maxLength={80} defaultValue={perfil?.slug} disabled={readOnly} />
+        <Input
+          id="perfil-nome"
+          name="nome"
+          label="Nome *"
+          required
+          maxLength={120}
+          defaultValue={perfil?.nome}
+        />
+        <Input
+          id="perfil-slug"
+          name="slug"
+          label="Slug"
+          maxLength={80}
+          defaultValue={perfil?.slug}
+          disabled={readOnly}
+        />
       </div>
-      <Textarea id="perfil-descricao" name="descricao" label="Descrição" rows={2} maxLength={500} defaultValue={perfil?.descricao} />
+      <Textarea
+        id="perfil-descricao"
+        name="descricao"
+        label="Descrição"
+        rows={2}
+        maxLength={500}
+        defaultValue={perfil?.descricao}
+      />
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="ativo" defaultChecked={perfil?.ativo ?? true} className="h-4 w-4 accent-primary" /> Ativo
+        <input
+          type="checkbox"
+          name="ativo"
+          defaultChecked={perfil?.ativo ?? true}
+          className="h-4 w-4 accent-primary"
+        />{" "}
+        Ativo
       </label>
 
       <fieldset className="flex flex-col gap-3">
@@ -86,7 +126,12 @@ function PerfilForm({ perfil, groups, onDone }: { perfil?: Perfil; groups: Permi
               {g.permissions.map((p) => (
                 <li key={p.key}>
                   <label className="flex items-start gap-2 text-xs">
-                    <input type="checkbox" className="mt-0.5 h-3.5 w-3.5 accent-primary" checked={selected.has(p.key)} onChange={(e) => toggle(p.key, e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      checked={selected.has(p.key)}
+                      onChange={(e) => toggle(p.key, e.target.checked)}
+                    />
                     <span>
                       <code className="font-mono">{p.key}</code>
                       <span className="block text-muted">{p.description}</span>
@@ -101,7 +146,13 @@ function PerfilForm({ perfil, groups, onDone }: { perfil?: Perfil; groups: Permi
           <p className="text-xs text-muted">
             Também concedidas (curingas ou de módulos não carregados):{" "}
             {extra.map((p) => (
-              <button key={p} type="button" onClick={() => toggle(p, false)} className="mr-1 rounded bg-surface-hover px-1.5 font-mono" aria-label={`Remover ${p}`}>
+              <button
+                key={p}
+                type="button"
+                onClick={() => toggle(p, false)}
+                className="mr-1 rounded bg-surface-hover px-1.5 font-mono"
+                aria-label={`Remover ${p}`}
+              >
                 {p} ×
               </button>
             ))}
@@ -128,15 +179,22 @@ export default function PerfisPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-muted">
-          Um Perfil é um conjunto de permissões <code>recurso:ação</code>. Usuários recebem perfis por lotação manual ou pelo mapeamento
-          de grupos do AD, sempre num escopo (Entidade, Unidade ou Departamento).
+          Um Perfil é um conjunto de permissões <code>recurso:ação</code>. Usuários recebem perfis
+          por lotação manual ou pelo mapeamento de grupos do AD, sempre num escopo (Entidade,
+          Unidade ou Departamento).
         </p>
         <Button onClick={() => setEditing("new")}>
           <Plus size={16} aria-hidden="true" className="mr-1" /> Novo perfil
         </Button>
       </div>
 
-      <DataState loading={perfis.isLoading} error={perfis.error} onRetry={() => void perfis.mutate()} empty={(perfis.data ?? []).length === 0} emptyTitle="Nenhum perfil">
+      <DataState
+        loading={perfis.isLoading}
+        error={perfis.error}
+        onRetry={() => void perfis.mutate()}
+        empty={(perfis.data ?? []).length === 0}
+        emptyTitle="Nenhum perfil"
+      >
         <ul className="grid gap-3 md:grid-cols-2">
           {(perfis.data ?? []).map((p) => (
             <li key={p.id}>
@@ -148,7 +206,12 @@ export default function PerfisPage() {
                     <code className="text-xs text-muted">{p.slug}</code>
                   </div>
                   <span className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" aria-label={`Editar ${p.nome}`} onClick={() => setEditing(p)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Editar ${p.nome}`}
+                      onClick={() => setEditing(p)}
+                    >
                       <Pencil size={14} aria-hidden="true" />
                     </Button>
                     {!p.sistema && (
@@ -157,7 +220,12 @@ export default function PerfisPage() {
                         title={`Excluir o perfil "${p.nome}"?`}
                         description="Lotações e mapeamentos AD que usam este perfil impedem a exclusão."
                         confirmLabel="Excluir"
-                        onConfirm={() => run(() => apiClient.delete(`v1/iam/perfis/${p.id}`), "Perfil excluído").then(() => perfis.mutate())}
+                        onConfirm={() =>
+                          run(
+                            () => apiClient.delete(`v1/iam/perfis/${p.id}`),
+                            "Perfil excluído",
+                          ).then(() => perfis.mutate())
+                        }
                       >
                         <Trash2 size={14} aria-hidden="true" />
                       </ConfirmButton>
@@ -168,7 +236,11 @@ export default function PerfisPage() {
                 <div className="mt-auto flex flex-wrap gap-1">
                   {p.sistema && <Badge tone="info">Sistema</Badge>}
                   {!p.ativo && <Badge tone="warning">Inativo</Badge>}
-                  <Badge>{p.permissoes.includes("*") ? "Acesso total (*)" : `${p.permissoes.length} permissões`}</Badge>
+                  <Badge>
+                    {p.permissoes.includes("*")
+                      ? "Acesso total (*)"
+                      : `${p.permissoes.length} permissões`}
+                  </Badge>
                 </div>
               </Card>
             </li>
@@ -176,7 +248,14 @@ export default function PerfisPage() {
         </ul>
       </DataState>
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} size="xl" title={editing === "new" ? "Novo perfil" : `Editar perfil${editing ? ` — ${editing.nome}` : ""}`}>
+      <Dialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        size="xl"
+        title={
+          editing === "new" ? "Novo perfil" : `Editar perfil${editing ? ` — ${editing.nome}` : ""}`
+        }
+      >
         {editing && (
           <PerfilForm
             key={editing === "new" ? "new" : editing.id}

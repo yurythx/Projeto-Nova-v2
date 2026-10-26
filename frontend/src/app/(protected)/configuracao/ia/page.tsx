@@ -26,7 +26,13 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import type { ConexaoIA, ModeloProvedorIA, ProvedorIA, TesteIA, UsoIA } from "@/lib/plataforma/types";
+import type {
+  ConexaoIA,
+  ModeloProvedorIA,
+  ProvedorIA,
+  TesteIA,
+  UsoIA,
+} from "@/lib/plataforma/types";
 
 const USO = "v1/ia/uso/plataforma.ia";
 

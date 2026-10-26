@@ -146,7 +146,12 @@ export function MudancaDetalhe() {
               description={`${TIPO_MUDANCA[m.tipo]} · pedida por ${m.solicitante_nome}`}
               actions={
                 <>
-                  <Button type="button" variant="secondary" size="sm" onClick={() => setFolha(true)}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setFolha(true)}
+                  >
                     Emitir RFC
                   </Button>
                   <Badge tone={RISCO[m.risco].tone}>{RISCO[m.risco].label}</Badge>
@@ -244,7 +249,9 @@ export function MudancaDetalhe() {
                           className="min-h-48"
                         />
                         {pedindo === "concluida" &&
-                          m.vinculos.some((v) => v.tipo === "incidente" || v.tipo === "problema") && (
+                          m.vinculos.some(
+                            (v) => v.tipo === "incidente" || v.tipo === "problema",
+                          ) && (
                             <label className="flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/5 p-3 text-sm">
                               <input
                                 id="mudanca-cascata-chk"
@@ -254,9 +261,10 @@ export function MudancaDetalhe() {
                               />
                               <span className="text-foreground">
                                 <strong>Concluir vínculos junto:</strong> os{" "}
-                                {m.vinculos.filter((v) => v.tipo === "incidente").length} incidentes e os{" "}
-                                {m.vinculos.filter((v) => v.tipo === "problema").length} problemas entram na mesma
-                                gravação. Se algum não puder ser concluído, a mudança permanece como está.
+                                {m.vinculos.filter((v) => v.tipo === "incidente").length} incidentes
+                                e os {m.vinculos.filter((v) => v.tipo === "problema").length}{" "}
+                                problemas entram na mesma gravação. Se algum não puder ser
+                                concluído, a mudança permanece como está.
                               </span>
                             </label>
                           )}

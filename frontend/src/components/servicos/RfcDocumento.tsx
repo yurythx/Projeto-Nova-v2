@@ -14,15 +14,22 @@ const DECISAO: Record<string, string> = {
 /** Folha da RFC para leitura e impressão. O navegador gera o PDF. */
 export function RfcDocumento({ mudanca }: { mudanca: Mudanca }) {
   return (
-    <article id="rfc-documento" className="flex flex-col gap-4 text-sm text-foreground" aria-labelledby="rfc-titulo">
+    <article
+      id="rfc-documento"
+      className="flex flex-col gap-4 text-sm text-foreground"
+      aria-labelledby="rfc-titulo"
+    >
       <header className="border-b border-surface-border pb-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Requisição de mudança</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Requisição de mudança
+        </p>
         <h2 id="rfc-titulo" className="text-lg font-semibold">
           RFC #{mudanca.numero} — {mudanca.titulo}
         </h2>
         <p className="text-muted">
           {TIPO_MUDANCA[mudanca.tipo]} · {RISCO[mudanca.risco].label}
-          {mudanca.risco_score != null ? ` (${mudanca.risco_score}/15)` : ""} · {ESTADO_MUDANCA[mudanca.estado].label}
+          {mudanca.risco_score != null ? ` (${mudanca.risco_score}/15)` : ""} ·{" "}
+          {ESTADO_MUDANCA[mudanca.estado].label}
         </p>
       </header>
       <dl className="grid gap-3 sm:grid-cols-2">
@@ -79,7 +86,8 @@ export function RfcDocumento({ mudanca }: { mudanca: Mudanca }) {
         )}
       </section>
       <p className="text-xs text-muted">
-        A decisão registrada acima é o parecer do comitê. Esta folha não substitui o registro da mudança no sistema.
+        A decisão registrada acima é o parecer do comitê. Esta folha não substitui o registro da
+        mudança no sistema.
       </p>
     </article>
   );

@@ -51,12 +51,7 @@ export function ServicosCatalogClient({ initialServices }: ServicosCatalogClient
       const cat = (svc.category || "").toLowerCase();
       const slug = svc.slug.toLowerCase();
 
-      return (
-        title.includes(q) ||
-        summary.includes(q) ||
-        cat.includes(q) ||
-        slug.includes(q)
-      );
+      return title.includes(q) || summary.includes(q) || cat.includes(q) || slug.includes(q);
     });
   }, [initialServices, selectedCategory, search]);
 
@@ -116,9 +111,7 @@ export function ServicosCatalogClient({ initialServices }: ServicosCatalogClient
                 <span>{cat.name}</span>
                 <span
                   className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                    isSelected
-                      ? "bg-white/20 text-primary-foreground"
-                      : "bg-surface-3 text-muted"
+                    isSelected ? "bg-white/20 text-primary-foreground" : "bg-surface-3 text-muted"
                   }`}
                 >
                   {cat.count}
@@ -159,31 +152,38 @@ export function ServicosCatalogClient({ initialServices }: ServicosCatalogClient
                 <Card className="flex h-full flex-col border-surface-border transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
                   <CardHeader className="flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl shadow-xs transition-transform group-hover:scale-105 ${iconStyle.badge}`}>
+                      <span
+                        className={`inline-flex h-11 w-11 items-center justify-center rounded-xl shadow-xs transition-transform group-hover:scale-105 ${iconStyle.badge}`}
+                      >
                         <ServiceIcon name={svc.icon} size={22} aria-hidden="true" />
                       </span>
                       {svc.category && (
-                        <span className={`rounded-md border px-2.5 py-0.5 text-[11px] font-semibold ${iconStyle.tag}`}>
+                        <span
+                          className={`rounded-md border px-2.5 py-0.5 text-[11px] font-semibold ${iconStyle.tag}`}
+                        >
                           {svc.category}
                         </span>
                       )}
                     </div>
-                    <CardTitle as="h2" className="text-lg font-bold text-foreground group-hover:text-primary">
+                    <CardTitle
+                      as="h2"
+                      className="text-lg font-bold text-foreground group-hover:text-primary"
+                    >
                       {svc.title}
                     </CardTitle>
                   </CardHeader>
-                <CardContent className="flex flex-1 flex-col justify-between gap-4">
-                  <CardDescription className="line-clamp-3 text-sm leading-relaxed text-muted">
-                    {svc.summary}
-                  </CardDescription>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent transition-transform group-hover:translate-x-1">
-                    Ver o serviço <ArrowRight size={13} aria-hidden="true" />
-                  </span>
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
+                  <CardContent className="flex flex-1 flex-col justify-between gap-4">
+                    <CardDescription className="line-clamp-3 text-sm leading-relaxed text-muted">
+                      {svc.summary}
+                    </CardDescription>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent transition-transform group-hover:translate-x-1">
+                      Ver o serviço <ArrowRight size={13} aria-hidden="true" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

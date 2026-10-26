@@ -19,9 +19,7 @@ describe("Seal", () => {
   });
 
   it("renderiza os dizeres curvos passados", () => {
-    const { getByText } = render(
-      <Seal topText="TEXTO DE CIMA" bottomText="TEXTO DE BAIXO" />,
-    );
+    const { getByText } = render(<Seal topText="TEXTO DE CIMA" bottomText="TEXTO DE BAIXO" />);
     expect(getByText("TEXTO DE CIMA")).toBeInTheDocument();
     expect(getByText("TEXTO DE BAIXO")).toBeInTheDocument();
   });

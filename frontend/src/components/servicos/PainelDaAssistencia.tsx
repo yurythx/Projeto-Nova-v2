@@ -49,7 +49,9 @@ export function BarraDeFiltros({
     onChange({ ...filtros, [nome]: valor });
   }
   const [aberto, setAberto] = useState(false);
-  const sujo = Object.entries(filtros).some(([nome, valor]) => (nome === "dias" ? valor !== "90" : valor !== ""));
+  const sujo = Object.entries(filtros).some(([nome, valor]) =>
+    nome === "dias" ? valor !== "90" : valor !== "",
+  );
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -69,111 +71,111 @@ export function BarraDeFiltros({
         ) : null}
       </div>
       {aberto ? (
-    <div id="filtros-assistencia" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Select
-        id="filtro-tipo"
-        label="Tipo do chamado"
-        placeholder="Todos"
-        value={filtros.tipo}
-        onChange={(ev) => campo("tipo", ev.target.value)}
-        options={opcoes([
-          ["incidente", "Incidente"],
-          ["requisicao", "Requisição"],
-        ])}
-      />
-      <Select
-        id="filtro-situacao"
-        label="Situação da fila"
-        placeholder="Em curso"
-        value={filtros.situacao}
-        onChange={(ev) => campo("situacao", ev.target.value)}
-        options={opcoes([
-          ["abertas", "Só abertas"],
-          ["todas", "Incluir encerradas"],
-        ])}
-      />
-      <Select
-        id="filtro-estado-chamado"
-        label="Estado do chamado"
-        placeholder="Qualquer"
-        value={filtros.estadoChamado}
-        onChange={(ev) => campo("estadoChamado", ev.target.value)}
-        options={opcoes([
-          ["aberto", "Aberto"],
-          ["em_atendimento", "Em atendimento"],
-          ["aguardando_servidor", "Aguardando quem pediu"],
-          ["aguardando_terceiro", "Aguardando terceiro"],
-          ["resolvido", "Resolvido"],
-          ["atendido", "Atendido"],
-          ["encerrado", "Encerrado"],
-          ["cancelado", "Cancelado"],
-        ])}
-      />
-      <Select
-        id="filtro-dias"
-        label="Histórico"
-        value={filtros.dias}
-        onChange={(ev) => campo("dias", ev.target.value)}
-        options={opcoes([
-          ["30", "30 dias"],
-          ["90", "90 dias"],
-          ["180", "180 dias"],
-          ["366", "366 dias"],
-        ])}
-      />
-      <Select
-        id="filtro-problema"
-        label="Estado do problema"
-        placeholder="Qualquer"
-        value={filtros.estadoProblema}
-        onChange={(ev) => campo("estadoProblema", ev.target.value)}
-        options={opcoes([
-          ["registrado", "Registrado"],
-          ["em_analise", "Em análise"],
-          ["erro_conhecido", "Erro conhecido"],
-          ["resolvido", "Resolvido"],
-          ["encerrado", "Encerrado"],
-        ])}
-      />
-      <Select
-        id="filtro-mudanca"
-        label="Estado da mudança"
-        placeholder="Qualquer"
-        value={filtros.estadoMudanca}
-        onChange={(ev) => campo("estadoMudanca", ev.target.value)}
-        options={opcoes([
-          ["rascunho", "Rascunho"],
-          ["em_avaliacao", "Em avaliação"],
-          ["aprovada", "Aprovada"],
-          ["rejeitada", "Rejeitada"],
-          ["em_execucao", "Em execução"],
-          ["concluida", "Concluída"],
-          ["falhou", "Falhou"],
-          ["cancelada", "Cancelada"],
-        ])}
-      />
-      <Select
-        id="filtro-projeto"
-        label="Estado do projeto"
-        placeholder="Qualquer"
-        value={filtros.estadoProjeto}
-        onChange={(ev) => campo("estadoProjeto", ev.target.value)}
-        options={opcoes([
-          ["planejado", "Planejado"],
-          ["em_andamento", "Em andamento"],
-          ["suspenso", "Suspenso"],
-          ["concluido", "Concluído"],
-          ["cancelado", "Cancelado"],
-        ])}
-      />
-      {sujo ? (
-        <div className="flex items-end">
-          <Button type="button" variant="secondary" onClick={() => onChange(filtrosIniciais)}>
-            Limpar filtros
-          </Button>
+        <div id="filtros-assistencia" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Select
+            id="filtro-tipo"
+            label="Tipo do chamado"
+            placeholder="Todos"
+            value={filtros.tipo}
+            onChange={(ev) => campo("tipo", ev.target.value)}
+            options={opcoes([
+              ["incidente", "Incidente"],
+              ["requisicao", "Requisição"],
+            ])}
+          />
+          <Select
+            id="filtro-situacao"
+            label="Situação da fila"
+            placeholder="Em curso"
+            value={filtros.situacao}
+            onChange={(ev) => campo("situacao", ev.target.value)}
+            options={opcoes([
+              ["abertas", "Só abertas"],
+              ["todas", "Incluir encerradas"],
+            ])}
+          />
+          <Select
+            id="filtro-estado-chamado"
+            label="Estado do chamado"
+            placeholder="Qualquer"
+            value={filtros.estadoChamado}
+            onChange={(ev) => campo("estadoChamado", ev.target.value)}
+            options={opcoes([
+              ["aberto", "Aberto"],
+              ["em_atendimento", "Em atendimento"],
+              ["aguardando_servidor", "Aguardando quem pediu"],
+              ["aguardando_terceiro", "Aguardando terceiro"],
+              ["resolvido", "Resolvido"],
+              ["atendido", "Atendido"],
+              ["encerrado", "Encerrado"],
+              ["cancelado", "Cancelado"],
+            ])}
+          />
+          <Select
+            id="filtro-dias"
+            label="Histórico"
+            value={filtros.dias}
+            onChange={(ev) => campo("dias", ev.target.value)}
+            options={opcoes([
+              ["30", "30 dias"],
+              ["90", "90 dias"],
+              ["180", "180 dias"],
+              ["366", "366 dias"],
+            ])}
+          />
+          <Select
+            id="filtro-problema"
+            label="Estado do problema"
+            placeholder="Qualquer"
+            value={filtros.estadoProblema}
+            onChange={(ev) => campo("estadoProblema", ev.target.value)}
+            options={opcoes([
+              ["registrado", "Registrado"],
+              ["em_analise", "Em análise"],
+              ["erro_conhecido", "Erro conhecido"],
+              ["resolvido", "Resolvido"],
+              ["encerrado", "Encerrado"],
+            ])}
+          />
+          <Select
+            id="filtro-mudanca"
+            label="Estado da mudança"
+            placeholder="Qualquer"
+            value={filtros.estadoMudanca}
+            onChange={(ev) => campo("estadoMudanca", ev.target.value)}
+            options={opcoes([
+              ["rascunho", "Rascunho"],
+              ["em_avaliacao", "Em avaliação"],
+              ["aprovada", "Aprovada"],
+              ["rejeitada", "Rejeitada"],
+              ["em_execucao", "Em execução"],
+              ["concluida", "Concluída"],
+              ["falhou", "Falhou"],
+              ["cancelada", "Cancelada"],
+            ])}
+          />
+          <Select
+            id="filtro-projeto"
+            label="Estado do projeto"
+            placeholder="Qualquer"
+            value={filtros.estadoProjeto}
+            onChange={(ev) => campo("estadoProjeto", ev.target.value)}
+            options={opcoes([
+              ["planejado", "Planejado"],
+              ["em_andamento", "Em andamento"],
+              ["suspenso", "Suspenso"],
+              ["concluido", "Concluído"],
+              ["cancelado", "Cancelado"],
+            ])}
+          />
+          {sujo ? (
+            <div className="flex items-end">
+              <Button type="button" variant="secondary" onClick={() => onChange(filtrosIniciais)}>
+                Limpar filtros
+              </Button>
+            </div>
+          ) : null}
         </div>
-      ) : null}
-    </div>
       ) : null}
     </div>
   );
@@ -184,12 +186,14 @@ function lerDisposicao(cru: string | null): Disposicao | null {
   try {
     const dado = JSON.parse(cru) as Partial<Disposicao>;
     if (!Array.isArray(dado.ordem) || !Array.isArray(dado.ocultos)) return null;
-    return { ordem: dado.ordem.filter((id) => typeof id === "string"), ocultos: dado.ocultos.filter((id) => typeof id === "string") };
+    return {
+      ordem: dado.ordem.filter((id) => typeof id === "string"),
+      ocultos: dado.ocultos.filter((id) => typeof id === "string"),
+    };
   } catch {
     return null;
   }
 }
-
 
 function textoMedida(valor: number | null | undefined, sufixo: string) {
   if (valor == null) return "sem amostra";
@@ -214,7 +218,9 @@ function Kpi({
         <p className="mt-0.5 text-2xl font-bold text-foreground">{valor}</p>
         <span className="text-[11px] text-muted">{detalhe}</span>
       </div>
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">{icone}</div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        {icone}
+      </div>
     </div>
   );
 }
@@ -258,7 +264,8 @@ export function PainelDaAssistencia({
     "mudancas",
     "projetos",
   ].filter((id) => {
-    if (["fila", "indicadores", "satisfacao", "deflexao", "historico", "atendimento"].includes(id)) return modulos.atendimento;
+    if (["fila", "indicadores", "satisfacao", "deflexao", "historico", "atendimento"].includes(id))
+      return modulos.atendimento;
     if (id === "erros" || id === "problemas") return modulos.problemas;
     if (id === "janelas" || id === "mudancas") return modulos.mudancas;
     return modulos.projetos;
@@ -274,13 +281,19 @@ export function PainelDaAssistencia({
 
   const abertas = solicitacoes.filter((s) => s.estado === "aberto").length;
   const emAtendimento = solicitacoes.filter((s) => s.estado === "em_atendimento").length;
-  const aguardando = solicitacoes.filter((s) => s.estado === "aguardando_servidor" || s.estado === "aguardando_terceiro").length;
-  const concluidas = solicitacoes.filter((s) => s.estado === "resolvido" || s.estado === "atendido").length;
+  const aguardando = solicitacoes.filter(
+    (s) => s.estado === "aguardando_servidor" || s.estado === "aguardando_terceiro",
+  ).length;
+  const concluidas = solicitacoes.filter(
+    (s) => s.estado === "resolvido" || s.estado === "atendido",
+  ).length;
   const incidentes = solicitacoes.filter((s) => s.tipo === "incidente").length;
   const requisicoes = solicitacoes.filter((s) => s.tipo === "requisicao").length;
   const errosConhecidos = problemas.filter((p) => p.estado === "erro_conhecido").length;
   const probEmAnalise = problemas.filter((p) => p.estado === "em_analise").length;
-  const probResolvidos = problemas.filter((p) => p.estado === "resolvido" || p.estado === "encerrado").length;
+  const probResolvidos = problemas.filter(
+    (p) => p.estado === "resolvido" || p.estado === "encerrado",
+  ).length;
   const mudAvaliacao = mudancas.filter((m) => m.estado === "em_avaliacao").length;
   const mudAprovadas = mudancas.filter((m) => m.estado === "aprovada").length;
   const mudExecucao = mudancas.filter((m) => m.estado === "em_execucao").length;
@@ -311,7 +324,16 @@ export function PainelDaAssistencia({
     mudancas: "Mudanças",
     projetos: "Projetos",
   };
-  const largos = new Set(["indicadores", "satisfacao", "deflexao", "historico", "atendimento", "problemas", "mudancas", "projetos"]);
+  const largos = new Set([
+    "indicadores",
+    "satisfacao",
+    "deflexao",
+    "historico",
+    "atendimento",
+    "problemas",
+    "mudancas",
+    "projetos",
+  ]);
   const atual = dispor(ids, disposicao);
   const visiveis = atual.ordem.filter((id) => !atual.ocultos.includes(id));
 
@@ -384,7 +406,8 @@ export function PainelDaAssistencia({
       );
     }
     if (id === "satisfacao") {
-      if (!governanca?.csat) return editar ? <AmostraVazia titulo="Satisfação do atendimento" /> : null;
+      if (!governanca?.csat)
+        return editar ? <AmostraVazia titulo="Satisfação do atendimento" /> : null;
       return (
         <Card>
           <CardHeader>
@@ -392,8 +415,8 @@ export function PainelDaAssistencia({
           </CardHeader>
           <CardContent className="flex flex-col gap-3 pb-5">
             <p className="text-sm">
-              Média <strong>{governanca.csat.media.toLocaleString("pt-BR")}</strong> de 5, em {governanca.csat.total}{" "}
-              {governanca.csat.total === 1 ? "avaliação" : "avaliações"}.
+              Média <strong>{governanca.csat.media.toLocaleString("pt-BR")}</strong> de 5, em{" "}
+              {governanca.csat.total} {governanca.csat.total === 1 ? "avaliação" : "avaliações"}.
             </p>
             <ul className="flex flex-col gap-2">
               {governanca.csat.recentes.map((a) => (
@@ -409,7 +432,8 @@ export function PainelDaAssistencia({
       );
     }
     if (id === "deflexao") {
-      if (!governanca?.deflexao) return editar ? <AmostraVazia titulo="Artigos antes do chamado" /> : null;
+      if (!governanca?.deflexao)
+        return editar ? <AmostraVazia titulo="Artigos antes do chamado" /> : null;
       const deflexao = governanca.deflexao;
       return (
         <Card>
@@ -418,8 +442,9 @@ export function PainelDaAssistencia({
           </CardHeader>
           <CardContent className="pb-5">
             <p className="text-sm">
-              {deflexao.sem_pedido} de {deflexao.viram} {deflexao.viram === 1 ? "pessoa viu" : "pessoas viram"} um artigo e não abriram pedido (
-              {deflexao.taxa.toLocaleString("pt-BR")}%).
+              {deflexao.sem_pedido} de {deflexao.viram}{" "}
+              {deflexao.viram === 1 ? "pessoa viu" : "pessoas viram"} um artigo e não abriram pedido
+              ({deflexao.taxa.toLocaleString("pt-BR")}%).
             </p>
           </CardContent>
         </Card>
@@ -429,10 +454,37 @@ export function PainelDaAssistencia({
       if (!veFila && !editar) return null;
       return <Historico serie={serie} erro={serieErro} />;
     }
-    if (id === "atendimento") return cartaoFila({ abertas, emAtendimento, aguardando, incidentes, requisicoes, concluidas, total: veFila ? totalFila : 0, veFila });
-    if (id === "problemas") return cartaoProblemas(problemas.length, probEmAnalise, errosConhecidos, probResolvidos);
-    if (id === "mudancas") return cartaoMudancas(mudancas.length, mudAvaliacao, mudExecucao, mudAprovadas, mudConcluidas, mudFalhas);
-    if (id === "projetos") return cartaoProjetos(projetos.length, projEmAndamento, projPlanejados, projConcluidos, projSuspensos, totalOrcamento);
+    if (id === "atendimento")
+      return cartaoFila({
+        abertas,
+        emAtendimento,
+        aguardando,
+        incidentes,
+        requisicoes,
+        concluidas,
+        total: veFila ? totalFila : 0,
+        veFila,
+      });
+    if (id === "problemas")
+      return cartaoProblemas(problemas.length, probEmAnalise, errosConhecidos, probResolvidos);
+    if (id === "mudancas")
+      return cartaoMudancas(
+        mudancas.length,
+        mudAvaliacao,
+        mudExecucao,
+        mudAprovadas,
+        mudConcluidas,
+        mudFalhas,
+      );
+    if (id === "projetos")
+      return cartaoProjetos(
+        projetos.length,
+        projEmAndamento,
+        projPlanejados,
+        projConcluidos,
+        projSuspensos,
+        totalOrcamento,
+      );
     return null;
   }
 
@@ -442,7 +494,12 @@ export function PainelDaAssistencia({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted">Cartões ocultos</span>
           {atual.ocultos.map((id) => (
-            <Button key={id} type="button" variant="secondary" onClick={() => aplicar(mostrar(atual, id))}>
+            <Button
+              key={id}
+              type="button"
+              variant="secondary"
+              onClick={() => aplicar(mostrar(atual, id))}
+            >
               Mostrar {titulos[id]}
             </Button>
           ))}
@@ -457,7 +514,12 @@ export function PainelDaAssistencia({
             <div key={id} className={largos.has(id) ? "sm:col-span-2 lg:col-span-4" : ""}>
               {editar ? (
                 <div className="mb-2 flex flex-wrap gap-2">
-                  <Button type="button" variant="secondary" disabled={indice === 0} onClick={() => aplicar(mover(atual, id, -1))}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={indice === 0}
+                    onClick={() => aplicar(mover(atual, id, -1))}
+                  >
                     Subir {titulos[id]}
                   </Button>
                   <Button
@@ -468,7 +530,11 @@ export function PainelDaAssistencia({
                   >
                     Descer {titulos[id]}
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => aplicar(ocultar(atual, id))}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => aplicar(ocultar(atual, id))}
+                  >
                     Ocultar {titulos[id]}
                   </Button>
                 </div>
@@ -502,13 +568,18 @@ function Historico({ serie, erro }: { serie?: PontoIndicador[]; erro?: unknown }
         <CardTitle as="h2">Histórico dos indicadores</CardTitle>
       </CardHeader>
       <CardContent className="pb-5">
-        <p className="mb-3 text-sm text-muted">O dia segue o fuso da unidade. O dia de hoje é atualizado. Os anteriores ficam como foram medidos.</p>
+        <p className="mb-3 text-sm text-muted">
+          O dia segue o fuso da unidade. O dia de hoje é atualizado. Os anteriores ficam como foram
+          medidos.
+        </p>
         {erro ? (
           <p className="text-sm text-danger" role="alert">
             Não foi possível carregar o histórico.
           </p>
         ) : null}
-        {(serie ?? []).length === 0 && !erro ? <p className="text-sm">Ainda não há dia medido neste escopo.</p> : null}
+        {(serie ?? []).length === 0 && !erro ? (
+          <p className="text-sm">Ainda não há dia medido neste escopo.</p>
+        ) : null}
         {(serie ?? []).length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -563,7 +634,9 @@ function cartaoFila(n: {
             <Headphones className="h-5 w-5 text-primary" />
             <CardTitle as="h2">Atendimento</CardTitle>
           </div>
-          <Badge tone={n.abertas > 0 ? "warning" : "success"}>{n.veFila ? `${n.total} na fila` : "fora do alcance"}</Badge>
+          <Badge tone={n.abertas > 0 ? "warning" : "success"}>
+            {n.veFila ? `${n.total} na fila` : "fora do alcance"}
+          </Badge>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-2">
           {n.veFila ? (
@@ -601,7 +674,10 @@ function cartaoFila(n: {
         </CardContent>
       </div>
       <div className="border-t border-surface-border px-5 py-3">
-        <Link href="/atendimento/fila" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+        <Link
+          href="/atendimento/fila"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+        >
           Abrir fila e quadro de atendimento
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -625,7 +701,10 @@ function cartaoProblemas(total: number, analise: number, erros: number, resolvid
         </CardContent>
       </div>
       <div className="border-t border-surface-border px-5 py-3">
-        <Link href="/problemas" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+        <Link
+          href="/problemas"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+        >
           Gerenciar problemas e contornos
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -634,7 +713,14 @@ function cartaoProblemas(total: number, analise: number, erros: number, resolvid
   );
 }
 
-function cartaoMudancas(total: number, avaliacao: number, execucao: number, aprovadas: number, concluidas: number, falhas: number) {
+function cartaoMudancas(
+  total: number,
+  avaliacao: number,
+  execucao: number,
+  aprovadas: number,
+  concluidas: number,
+  falhas: number,
+) {
   return (
     <Card className="flex h-full flex-col justify-between">
       <div>
@@ -651,7 +737,10 @@ function cartaoMudancas(total: number, avaliacao: number, execucao: number, apro
         </CardContent>
       </div>
       <div className="border-t border-surface-border px-5 py-3">
-        <Link href="/mudancas" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+        <Link
+          href="/mudancas"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+        >
           Planejar e acompanhar mudanças
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -660,7 +749,14 @@ function cartaoMudancas(total: number, avaliacao: number, execucao: number, apro
   );
 }
 
-function cartaoProjetos(total: number, andamento: number, planejados: number, concluidos: number, suspensos: number, orcamento: number) {
+function cartaoProjetos(
+  total: number,
+  andamento: number,
+  planejados: number,
+  concluidos: number,
+  suspensos: number,
+  orcamento: number,
+) {
   return (
     <Card className="flex h-full flex-col justify-between">
       <div>
@@ -673,11 +769,18 @@ function cartaoProjetos(total: number, andamento: number, planejados: number, co
           <p>{planejados} planejados</p>
           <p>{concluidos} concluídos</p>
           {suspensos > 0 ? <p>{suspensos} suspensos</p> : null}
-          {orcamento > 0 ? <p>Orçamento alocado R$ {orcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p> : null}
+          {orcamento > 0 ? (
+            <p>
+              Orçamento alocado R$ {orcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </p>
+          ) : null}
         </CardContent>
       </div>
       <div className="border-t border-surface-border px-5 py-3">
-        <Link href="/projetos" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+        <Link
+          href="/projetos"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+        >
           Gerenciar projetos e tarefas
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>

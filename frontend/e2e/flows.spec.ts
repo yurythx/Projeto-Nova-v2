@@ -2,7 +2,14 @@ import { createHash } from "node:crypto";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { ADMIN_PASSWORD, asAdmin, autoAcceptConsent, NEEDS_ADMIN, STORAGE_STATE, uniq } from "./helpers";
+import {
+  ADMIN_PASSWORD,
+  asAdmin,
+  autoAcceptConsent,
+  NEEDS_ADMIN,
+  STORAGE_STATE,
+  uniq,
+} from "./helpers";
 
 // Fluxos críticos de ponta a ponta contra a stack real (API Go, Postgres,
 // RabbitMQ, Redis, MinIO) — nenhum mock: o que a tela faz é o que o
@@ -14,10 +21,15 @@ test.describe("Fluxos críticos", () => {
   test.describe.configure({ mode: "serial" });
 
   function moduleCard(page: Page, name: RegExp) {
-    return page.locator("div.rounded-xl").filter({ has: page.getByRole("heading", { name }) }).first();
+    return page
+      .locator("div.rounded-xl")
+      .filter({ has: page.getByRole("heading", { name }) })
+      .first();
   }
 
-  test("Kernel: desativar um plug-in tira do menu e bloqueia a tela; reativar devolve", async ({ page }) => {
+  test("Kernel: desativar um plug-in tira do menu e bloqueia a tela; reativar devolve", async ({
+    page,
+  }) => {
     await asAdmin(page);
     const menu = page.getByRole("navigation", { name: "Menu principal" });
     await page.goto("/configuracao/modulos");
@@ -71,7 +83,10 @@ test.describe("Fluxos críticos", () => {
     await expect(page.getByRole("link", { name: new RegExp(title) })).toBeVisible();
   });
 
-  test("Contato: visitante envia pelo site, recebe protocolo e a gestão faz a triagem", async ({ page, browser }) => {
+  test("Contato: visitante envia pelo site, recebe protocolo e a gestão faz a triagem", async ({
+    page,
+    browser,
+  }) => {
     const subject = uniq("Buraco na rua");
     const visitor = await browser.newPage();
     await autoAcceptConsent(visitor);
@@ -99,7 +114,9 @@ test.describe("Fluxos críticos", () => {
     await expect(page.getByText("Mensagem atualizada")).toBeVisible();
   });
 
-  test("Signum: envelope, cerimônia de assinatura com reautenticação e verificação pública", async ({ page }, info) => {
+  test("Signum: envelope, cerimônia de assinatura com reautenticação e verificação pública", async ({
+    page,
+  }, info) => {
     const content = `contrato ${Date.now()}`;
     const sha = createHash("sha256").update(content).digest("hex");
     const file = { name: "contrato.txt", mimeType: "text/plain", buffer: Buffer.from(content) };
@@ -141,7 +158,9 @@ test.describe("Fluxos críticos", () => {
     await expect(pub.getByText("Válida")).toBeVisible();
     await pub.getByLabel("Conferir um arquivo").setInputFiles(file);
     await expect(pub.getByText("O arquivo é idêntico ao documento assinado.")).toBeVisible();
-    await pub.getByLabel("Conferir um arquivo").setInputFiles({ ...file, buffer: Buffer.from("adulterado") });
+    await pub
+      .getByLabel("Conferir um arquivo")
+      .setInputFiles({ ...file, buffer: Buffer.from("adulterado") });
     await expect(pub.getByText("O arquivo é diferente do documento assinado.")).toBeVisible();
     await pub.close();
     info.annotations.push({ type: "envelope", description: envelopeId });
@@ -158,7 +177,11 @@ test.describe("Fluxos críticos", () => {
     await expect(page).toHaveURL(/\/arquivos\?pasta=/);
     await expect(page.getByRole("heading", { name: folder })).toBeVisible();
 
-    await page.locator("#file-upload").setInputFiles({ name: "ata.txt", mimeType: "text/plain", buffer: Buffer.from("ata da reunião") });
+    await page.locator("#file-upload").setInputFiles({
+      name: "ata.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("ata da reunião"),
+    });
     await expect(page.getByText("ata.txt enviado")).toBeVisible();
     const row = page.getByRole("row").filter({ hasText: "ata.txt" });
     await expect(row.getByText("envio pendente")).toHaveCount(0);
@@ -170,7 +193,9 @@ test.describe("Fluxos críticos", () => {
     await expect(page.locator("body")).toContainText("ata da reuni");
   });
 
-  test("Auditoria: toda a movimentação acima fica na trilha e a cadeia de hash é íntegra", async ({ page }) => {
+  test("Auditoria: toda a movimentação acima fica na trilha e a cadeia de hash é íntegra", async ({
+    page,
+  }) => {
     await asAdmin(page);
     await page.goto("/auditoria");
     await expect(page.getByRole("table", { name: "Registros de auditoria" })).toBeVisible();

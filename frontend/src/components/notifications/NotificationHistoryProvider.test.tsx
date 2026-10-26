@@ -2,10 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  NotificationHistoryProvider,
-  useNotificationHistory,
-} from "./NotificationHistoryProvider";
+import { NotificationHistoryProvider, useNotificationHistory } from "./NotificationHistoryProvider";
 
 function Probe() {
   const { items, unreadCount, push, markAllRead } = useNotificationHistory();

@@ -5,8 +5,21 @@ import type { ModuleStatus } from "@/lib/plataforma/types";
 
 function mod(key: string, extra: Partial<ModuleStatus> = {}): ModuleStatus {
   return {
-    key, name: key.toUpperCase(), description: "", core: false, default_enabled: true, depends_on: [], permissions: [],
-    public: false, icon: "box", route: `/${key}`, enabled: true, configured: true, dependents: [], blocked_by: [], ...extra,
+    key,
+    name: key.toUpperCase(),
+    description: "",
+    core: false,
+    default_enabled: true,
+    depends_on: [],
+    permissions: [],
+    public: false,
+    icon: "box",
+    route: `/${key}`,
+    enabled: true,
+    configured: true,
+    dependents: [],
+    blocked_by: [],
+    ...extra,
   };
 }
 
@@ -49,11 +62,20 @@ describe("layoutModuleGraph", () => {
 
   it("liga dependência → dependente, marcando as ligações com um lado inativo", () => {
     expect(g.edges.map((e) => `${e.from}>${e.to}`).sort()).toEqual(
-      ["blog>wiki", "files>signum", "files>tramite", "files>wiki", "iam>files", "signum>tramite"].sort(),
+      [
+        "blog>wiki",
+        "files>signum",
+        "files>tramite",
+        "files>wiki",
+        "iam>files",
+        "signum>tramite",
+      ].sort(),
     );
     const e = g.edges.find((x) => x.from === "iam")!;
     expect(e.active).toBe(true);
-    expect(e.path).toMatch(new RegExp(`^M${node("iam").x + NODE_W},${node("iam").y + NODE_H / 2} C`));
+    expect(e.path).toMatch(
+      new RegExp(`^M${node("iam").x + NODE_W},${node("iam").y + NODE_H / 2} C`),
+    );
     expect(g.edges.find((x) => x.to === "wiki")!.active).toBe(false);
   });
 
@@ -75,12 +97,23 @@ describe("layoutModuleGraph", () => {
   });
 
   it("grafo vazio não tem dimensão", () => {
-    expect(layoutModuleGraph([])).toEqual({ nodes: [], edges: [], width: 0, height: 0, isolatedLabelY: null });
+    expect(layoutModuleGraph([])).toEqual({
+      nodes: [],
+      edges: [],
+      width: 0,
+      height: 0,
+      isolatedLabelY: null,
+    });
   });
 
   it("módulos sem ligação vão para uma grade abaixo das colunas, o núcleo primeiro", () => {
     const loose = ["c", "b", "a", "d", "e"].map((k) => mod(k));
-    const g2 = layoutModuleGraph([mod("x", { dependents: ["y"] }), mod("y", { depends_on: ["x"] }), ...loose, mod("z", { core: true })]);
+    const g2 = layoutModuleGraph([
+      mod("x", { dependents: ["y"] }),
+      mod("y", { depends_on: ["x"] }),
+      ...loose,
+      mod("z", { core: true }),
+    ]);
     const at = (k: string) => g2.nodes.find((n) => n.key === k)!;
     const flowBottom = at("x").y + NODE_H;
     expect(g2.isolatedLabelY).toBeGreaterThanOrEqual(flowBottom);

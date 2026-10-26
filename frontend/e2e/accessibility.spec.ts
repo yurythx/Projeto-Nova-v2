@@ -46,6 +46,8 @@ test.describe("Acessibilidade e-MAG / WCAG 2.1 AA", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText("Termos de Privacidade & Proteção de Dados (LGPD)")).toBeVisible();
+    await expect(
+      dialog.getByText("Termos de Privacidade & Proteção de Dados (LGPD)"),
+    ).toBeVisible();
   });
 });

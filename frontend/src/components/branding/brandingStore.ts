@@ -39,7 +39,11 @@ let primedSignature: string | null = null;
  * layout tinha lido antes. */
 export function primeBrandingStore(server: SystemBrandingConfig): void {
   // Sem as preferências do visitante (undefined some do JSON).
-  const signature = JSON.stringify({ ...server, highContrast: undefined, fontSizeScale: undefined });
+  const signature = JSON.stringify({
+    ...server,
+    highContrast: undefined,
+    fontSizeScale: undefined,
+  });
   if (signature === primedSignature) return;
   primedSignature = signature;
   cached = { ...server, ...prefsFromCookie() };
@@ -63,7 +67,10 @@ function emit() {
 }
 
 function persistPrefs(c: SystemBrandingConfig) {
-  writeCookie(BRANDING_COOKIE, JSON.stringify({ highContrast: c.highContrast, fontSizeScale: c.fontSizeScale }));
+  writeCookie(
+    BRANDING_COOKIE,
+    JSON.stringify({ highContrast: c.highContrast, fontSizeScale: c.fontSizeScale }),
+  );
 }
 
 export function updateBrandingStore(partial: Partial<SystemBrandingConfig>): void {

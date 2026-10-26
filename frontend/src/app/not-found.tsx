@@ -23,16 +23,16 @@ export default function NotFound() {
         tabIndex={-1}
         className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center outline-none"
       >
-      <p className="font-mono text-sm text-muted">404</p>
-      <h1 className="text-2xl font-semibold text-foreground">Página não encontrada</h1>
-      <p className="max-w-sm text-sm text-muted">
-        O endereço que você tentou acessar não existe ou foi movido.
-      </p>
-      <Link href="/">
-        <Button size="md" className="mt-2">
-          Voltar para o início
-        </Button>
-      </Link>
+        <p className="font-mono text-sm text-muted">404</p>
+        <h1 className="text-2xl font-semibold text-foreground">Página não encontrada</h1>
+        <p className="max-w-sm text-sm text-muted">
+          O endereço que você tentou acessar não existe ou foi movido.
+        </p>
+        <Link href="/">
+          <Button size="md" className="mt-2">
+            Voltar para o início
+          </Button>
+        </Link>
       </main>
     </div>
   );

@@ -27,9 +27,7 @@ export async function PublicShell({
   }
 
   const featuresResult =
-    explicitEnabled !== undefined
-      ? { features: explicitEnabled ?? {} }
-      : await getFeatures();
+    explicitEnabled !== undefined ? { features: explicitEnabled ?? {} } : await getFeatures();
 
   const features = explicitEnabled !== undefined ? explicitEnabled : featuresResult.features;
   const initialEnabled = features && Object.keys(features).length > 0 ? features : null;

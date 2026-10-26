@@ -12,13 +12,16 @@ import { publicFetch, publicPost } from "@/lib/api/publicClient";
 import { PublicApiError, publicGet, publicGetOr } from "@/lib/api/publicServer";
 import { serverApiGet } from "@/lib/api/server";
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 let f: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   f = vi.fn();
   vi.stubGlobal("fetch", f);
-  getServerToken.mockReset().mockResolvedValue({ accessToken: "tok", accessTokenExpires: Date.now() + 60_000 });
+  getServerToken
+    .mockReset()
+    .mockResolvedValue({ accessToken: "tok", accessTokenExpires: Date.now() + 60_000 });
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -32,7 +35,10 @@ describe("serverApiGet (Server Components)", () => {
     expect(init).toMatchObject({ headers: { Authorization: "Bearer tok" }, cache: "no-store" });
 
     f.mockResolvedValueOnce(json({ data: { n: "um" }, error: null }));
-    await expect(serverApiGet("v1/x", z.object({ n: z.number() }))).rejects.toMatchObject({ status: 502, code: "INVALID_RESPONSE" });
+    await expect(serverApiGet("v1/x", z.object({ n: z.number() }))).rejects.toMatchObject({
+      status: 502,
+      code: "INVALID_RESPONSE",
+    });
     f.mockResolvedValueOnce(json({ data: [1], error: null }));
     expect((await serverApiGet("v1/x")).data).toEqual([1]);
   });
@@ -44,8 +50,14 @@ describe("serverApiGet (Server Components)", () => {
     await expect(serverApiGet("v1/x")).rejects.toMatchObject({ status: 503 });
     f.mockResolvedValueOnce(new Response("<html>", { status: 500 }));
     await expect(serverApiGet("v1/x")).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
-    f.mockResolvedValueOnce(json({ data: null, error: { code: "FORBIDDEN", message: "não" } }, 403));
-    await expect(serverApiGet("v1/x")).rejects.toMatchObject({ status: 403, code: "FORBIDDEN", message: "não" });
+    f.mockResolvedValueOnce(
+      json({ data: null, error: { code: "FORBIDDEN", message: "não" } }, 403),
+    );
+    await expect(serverApiGet("v1/x")).rejects.toMatchObject({
+      status: 403,
+      code: "FORBIDDEN",
+      message: "não",
+    });
     f.mockResolvedValueOnce(json({ data: null }, 500));
     const err = await serverApiGet("v1/x").catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
@@ -65,10 +77,15 @@ describe("publicGet / publicGetOr (site institucional)", () => {
 
   it("erros viram PublicApiError; publicGetOr cai no fallback", async () => {
     f.mockRejectedValueOnce(new Error("down"));
-    await expect(publicGet("x")).rejects.toMatchObject({ status: 503, code: "DEPENDENCY_UNAVAILABLE" });
+    await expect(publicGet("x")).rejects.toMatchObject({
+      status: 503,
+      code: "DEPENDENCY_UNAVAILABLE",
+    });
     f.mockResolvedValueOnce(new Response("x", { status: 502 }));
     await expect(publicGet("x")).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
-    f.mockResolvedValueOnce(json({ data: null, error: { code: "MODULE_DISABLED", message: "desativado" } }, 404));
+    f.mockResolvedValueOnce(
+      json({ data: null, error: { code: "MODULE_DISABLED", message: "desativado" } }, 404),
+    );
     const e = await publicGet("x").catch((err: unknown) => err);
     expect(e).toBeInstanceOf(PublicApiError);
     expect(e).toMatchObject({ status: 404, code: "MODULE_DISABLED", name: "PublicApiError" });
@@ -91,10 +108,18 @@ describe("publicPost / publicFetch (navegador → /api/public)", () => {
 
     f.mockResolvedValueOnce(new Response("x", { status: 502 }));
     await expect(publicPost("v1/x", {})).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
-    f.mockResolvedValueOnce(json({ data: null, error: { code: "RATE_LIMITED", message: "devagar" } }, 429));
-    await expect(publicPost("v1/x", {})).rejects.toMatchObject({ status: 429, code: "RATE_LIMITED" });
+    f.mockResolvedValueOnce(
+      json({ data: null, error: { code: "RATE_LIMITED", message: "devagar" } }, 429),
+    );
+    await expect(publicPost("v1/x", {})).rejects.toMatchObject({
+      status: 429,
+      code: "RATE_LIMITED",
+    });
     f.mockResolvedValueOnce(json({ data: null }, 500));
-    await expect(publicPost("v1/x", {})).rejects.toMatchObject({ code: "UNKNOWN_ERROR", message: "erro inesperado" });
+    await expect(publicPost("v1/x", {})).rejects.toMatchObject({
+      code: "UNKNOWN_ERROR",
+      message: "erro inesperado",
+    });
 
     f.mockResolvedValueOnce(json({ data: [1], error: null }));
     expect(await publicFetch("/v1/catalog/services")).toEqual([1]);

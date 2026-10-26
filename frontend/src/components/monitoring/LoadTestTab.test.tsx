@@ -22,7 +22,9 @@ function respostas(passo: number, ...status: (number | "erro")[]) {
 /** Roda até o fim e abre o diagnóstico do teste mais recente. */
 async function rodar(diagnostico: RegExp) {
   fireEvent.click(screen.getByRole("button", { name: /Iniciar Teste de Carga/ }));
-  await waitFor(() => expect(screen.getByRole("button", { name: /Iniciar Teste de Carga/ })).toBeInTheDocument());
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: /Iniciar Teste de Carga/ })).toBeInTheDocument(),
+  );
   fireEvent.click(screen.getAllByRole("button", { name: "Expandir detalhes" })[0]!);
   expect(screen.getAllByText(diagnostico).length).toBeGreaterThan(0);
   vi.restoreAllMocks();
@@ -36,7 +38,9 @@ afterEach(() => {
 describe("LoadTestTab", () => {
   it("roda o benchmark, classifica os status e registra o histórico com diagnóstico", async () => {
     render(<LoadTestTab />);
-    expect(screen.getByText("Nenhum teste de carga executado ainda nesta sessão.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Nenhum teste de carga executado ainda nesta sessão."),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "5x" }));
     fireEvent.click(screen.getByRole("button", { name: "50" }));
 
@@ -50,7 +54,9 @@ describe("LoadTestTab", () => {
     respostas(1, 503, "erro");
     await rodar(/Alerta de Instabilidade/);
 
-    fireEvent.change(screen.getByLabelText(/Endpoint \/ Cenário Alvo/), { target: { value: "contact_ratelimit" } });
+    fireEvent.change(screen.getByLabelText(/Endpoint \/ Cenário Alvo/), {
+      target: { value: "contact_ratelimit" },
+    });
     const post = respostas(20, 201);
     await rodar(/Desempenho Saudável/);
     expect((post.mock.calls[0] as unknown[])[1]).toMatchObject({ method: "POST" });
@@ -80,7 +86,9 @@ describe("LoadTestTab", () => {
     const fetch = vi.fn(
       (_url: string, init?: RequestInit) =>
         new Promise<Response>((_ok, falha) => {
-          init?.signal?.addEventListener("abort", () => falha(Object.assign(new Error("abortado"), { name: "AbortError" })));
+          init?.signal?.addEventListener("abort", () =>
+            falha(Object.assign(new Error("abortado"), { name: "AbortError" })),
+          );
         }),
     );
     vi.stubGlobal("fetch", fetch);
@@ -89,7 +97,9 @@ describe("LoadTestTab", () => {
     expect(await screen.findByRole("button", { name: /Interromper Teste/ })).toBeInTheDocument();
     expect(screen.getByLabelText(/Endpoint \/ Cenário Alvo/)).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: /Interromper Teste/ }));
-    expect(await screen.findByRole("button", { name: /Iniciar Teste de Carga/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Iniciar Teste de Carga/ }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Expandir detalhes" })).not.toBeInTheDocument();
 
     // Desmontar no meio de outro teste também aborta.

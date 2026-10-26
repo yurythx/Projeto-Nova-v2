@@ -26,8 +26,24 @@ export function Logo({ size = 32, className = "" }: { size?: number; className?:
       <rect x="1" y="1" width="26" height="26" rx="8" fill="#16305a" />
 
       {/* Anéis do carimbo */}
-      <circle cx="14" cy="14" r="10" fill="none" stroke="#F8FAFC" strokeOpacity="0.9" strokeWidth="1" />
-      <circle cx="14" cy="14" r="7.6" fill="none" stroke="#F8FAFC" strokeOpacity="0.32" strokeWidth="0.75" />
+      <circle
+        cx="14"
+        cy="14"
+        r="10"
+        fill="none"
+        stroke="#F8FAFC"
+        strokeOpacity="0.9"
+        strokeWidth="1"
+      />
+      <circle
+        cx="14"
+        cy="14"
+        r="7.6"
+        fill="none"
+        stroke="#F8FAFC"
+        strokeOpacity="0.32"
+        strokeWidth="0.75"
+      />
 
       {/* Monograma: N de Nova */}
       <text

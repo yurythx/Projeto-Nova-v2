@@ -64,7 +64,13 @@ function ficha(tipo: string): Ficha {
       senha: "Senha",
     };
   }
-  return { titulo: "Outro", acesso: "Acesso", endereco: "Endereço", usuario: "Usuário", senha: "Senha" };
+  return {
+    titulo: "Outro",
+    acesso: "Acesso",
+    endereco: "Endereço",
+    usuario: "Usuário",
+    senha: "Senha",
+  };
 }
 
 interface Segredo {
@@ -121,7 +127,9 @@ const PRAZOS = [
 
 function classeNo(ativo: boolean) {
   return `flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-    ativo ? "bg-primary/10 font-medium text-foreground" : "text-foreground hover:bg-black/5 dark:hover:bg-white/10"
+    ativo
+      ? "bg-primary/10 font-medium text-foreground"
+      : "text-foreground hover:bg-black/5 dark:hover:bg-white/10"
   }`;
 }
 
@@ -200,16 +208,29 @@ function PastaCard({
               <FolderOpen aria-hidden className="h-4 w-4 shrink-0" />
               Cofre
             </span>
-            <ul aria-label="Pastas do cofre" className="ml-3 flex flex-col gap-0.5 border-l border-surface-border pl-2">
+            <ul
+              aria-label="Pastas do cofre"
+              className="ml-3 flex flex-col gap-0.5 border-l border-surface-border pl-2"
+            >
               <li>
-                <button type="button" aria-current={vista === "todas" ? "true" : undefined} className={classeNo(vista === "todas")} onClick={() => escolher("todas")}>
+                <button
+                  type="button"
+                  aria-current={vista === "todas" ? "true" : undefined}
+                  className={classeNo(vista === "todas")}
+                  onClick={() => escolher("todas")}
+                >
                   <span>Todas</span>
                   <Contagem n={contagem.total} />
                 </button>
               </li>
               {pastas.map((pasta) => (
                 <li key={pasta.id}>
-                  <button type="button" aria-current={vista === pasta.id ? "true" : undefined} className={classeNo(vista === pasta.id)} onClick={() => escolher(pasta.id)}>
+                  <button
+                    type="button"
+                    aria-current={vista === pasta.id ? "true" : undefined}
+                    className={classeNo(vista === pasta.id)}
+                    onClick={() => escolher(pasta.id)}
+                  >
                     <span className="flex min-w-0 items-center gap-2">
                       <Folder aria-hidden className="h-4 w-4 shrink-0" />
                       <span className="truncate">{pasta.nome}</span>
@@ -219,7 +240,12 @@ function PastaCard({
                 </li>
               ))}
               <li>
-                <button type="button" aria-current={vista === "sem" ? "true" : undefined} className={classeNo(vista === "sem")} onClick={() => escolher("sem")}>
+                <button
+                  type="button"
+                  aria-current={vista === "sem" ? "true" : undefined}
+                  className={classeNo(vista === "sem")}
+                  onClick={() => escolher("sem")}
+                >
                   <span>Sem pasta</span>
                   <Contagem n={contagem.sem} />
                 </button>
@@ -249,8 +275,17 @@ function PastaCard({
           </div>
         ) : null}
         {painel === "menu" && pastaAtual ? (
-          <div role="menu" aria-label={`Opções da pasta ${pastaAtual.nome}`} className="mt-2 flex flex-col gap-1">
-            <Button type="button" variant="secondary" className="justify-start" onClick={() => setPainel("membros")}>
+          <div
+            role="menu"
+            aria-label={`Opções da pasta ${pastaAtual.nome}`}
+            className="mt-2 flex flex-col gap-1"
+          >
+            <Button
+              type="button"
+              variant="secondary"
+              className="justify-start"
+              onClick={() => setPainel("membros")}
+            >
               Quem entra em {pastaAtual.nome}
               {(pastaAtual.membros?.length ?? 0) > 0 ? ` (${pastaAtual.membros?.length})` : ""}
             </Button>
@@ -271,7 +306,12 @@ function PastaCard({
       {gere && aberta ? (
         <form className="grid max-w-xl gap-3 sm:grid-cols-2" onSubmit={(e) => void criar(e)}>
           <Input id="pasta-nome" name="nome" label="Nome da pasta *" required maxLength={160} />
-          <UnidadeDonaSelect id="pasta-unidade" permission="cofre:manage" label="Unidade" optional />
+          <UnidadeDonaSelect
+            id="pasta-unidade"
+            permission="cofre:manage"
+            label="Unidade"
+            optional
+          />
           <div className="sm:col-span-2">
             <Button type="submit" loading={pending}>
               Guardar pasta
@@ -309,7 +349,12 @@ function PastaCard({
         }
         footer={
           confirma && (contagem.porPasta[confirma.id] ?? 0) > 0 ? (
-            <Button type="button" variant="secondary" className="ml-auto" onClick={() => setConfirma(null)}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="ml-auto"
+              onClick={() => setConfirma(null)}
+            >
               Entendi
             </Button>
           ) : (
@@ -356,12 +401,16 @@ function MembrosDaPasta({ pasta, onSaved }: { pasta: Pasta; onSaved: () => void 
   }
 
   const lista = pessoas.data ?? [];
-  const ja = (pasta.membros ?? []).filter((membro) => !lista.some((pessoa) => pessoa.id === membro.usuario_id));
+  const ja = (pasta.membros ?? []).filter(
+    (membro) => !lista.some((pessoa) => pessoa.id === membro.usuario_id),
+  );
   const opcoes = [
     ...lista.map((pessoa) => ({
       id: pessoa.id,
       nome: pessoa.nome,
-      revela: (pasta.membros ?? []).some((membro) => membro.usuario_id === pessoa.id && membro.pode_revelar),
+      revela: (pasta.membros ?? []).some(
+        (membro) => membro.usuario_id === pessoa.id && membro.pode_revelar,
+      ),
       entra: (pasta.membros ?? []).some((membro) => membro.usuario_id === pessoa.id),
     })),
     ...ja.map((membro) => ({
@@ -379,11 +428,21 @@ function MembrosDaPasta({ pasta, onSaved }: { pasta: Pasta; onSaved: () => void 
         {opcoes.map((pessoa) => (
           <div key={pessoa.id} className="flex items-center gap-3 text-sm">
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="pessoa" value={pessoa.id} defaultChecked={pessoa.entra} />
+              <input
+                type="checkbox"
+                name="pessoa"
+                value={pessoa.id}
+                defaultChecked={pessoa.entra}
+              />
               {pessoa.nome}
             </label>
             <label className="flex items-center gap-2 text-muted">
-              <input type="checkbox" name="revela" value={pessoa.id} defaultChecked={pessoa.revela} />
+              <input
+                type="checkbox"
+                name="revela"
+                value={pessoa.id}
+                defaultChecked={pessoa.revela}
+              />
               pode revelar {pessoa.nome}
             </label>
           </div>
@@ -402,7 +461,12 @@ function MembrosDaPasta({ pasta, onSaved }: { pasta: Pasta; onSaved: () => void 
 function hora(iso: string) {
   const data = new Date(iso);
   if (Number.isNaN(data.getTime())) return "";
-  return data.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /** A lista nunca pede a senha. Revelar é um pedido à parte e fica auditado. */
@@ -446,14 +510,22 @@ export default function CofrePage() {
       return acc;
     }, {}),
   };
-  const tituloLista = vista === "todas" ? "Todas as senhas" : vista === "sem" ? "Sem pasta" : (pastaAberta?.nome ?? "Pasta");
+  const tituloLista =
+    vista === "todas"
+      ? "Todas as senhas"
+      : vista === "sem"
+        ? "Sem pasta"
+        : (pastaAberta?.nome ?? "Pasta");
   const nova = ficha(tipoNovo);
 
   if (!ve) {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader eyebrow="Cofre" title="Cofre de senhas" />
-        <EmptyState title="Seu perfil não abre o cofre" description="Peça o acesso à unidade dona do segredo." />
+        <EmptyState
+          title="Seu perfil não abre o cofre"
+          description="Peça o acesso à unidade dona do segredo."
+        />
       </div>
     );
   }
@@ -485,7 +557,10 @@ export default function CofrePage() {
 
   async function revelar(segredo: Segredo) {
     const item = await run(
-      () => apiClient.post<Revelado>(`v1/cofre/segredos/${segredo.id}/revelar`, {}).then((res) => res.data),
+      () =>
+        apiClient
+          .post<Revelado>(`v1/cofre/segredos/${segredo.id}/revelar`, {})
+          .then((res) => res.data),
       "Senha revelada. A consulta ficou na auditoria.",
     );
     if (!item) return;
@@ -516,18 +591,21 @@ export default function CofrePage() {
   }
 
   async function devolver(segredo: Segredo) {
-    await run(async () => {
-      await apiClient.post(`v1/cofre/segredos/${segredo.id}/devolver`, {});
-      setPedido(null);
-      setAbertos((atual) => {
-        const copia = { ...atual };
-        delete copia[segredo.id];
-        return copia;
-      });
-      await lista.mutate();
-    }, segredo.rotaciona
-      ? "Retirada encerrada. A senha do cofre mudou: revele e aplique no endereço."
-      : "Segredo devolvido");
+    await run(
+      async () => {
+        await apiClient.post(`v1/cofre/segredos/${segredo.id}/devolver`, {});
+        setPedido(null);
+        setAbertos((atual) => {
+          const copia = { ...atual };
+          delete copia[segredo.id];
+          return copia;
+        });
+        await lista.mutate();
+      },
+      segredo.rotaciona
+        ? "Retirada encerrada. A senha do cofre mudou: revele e aplique no endereço."
+        : "Segredo devolvido",
+    );
   }
 
   async function aplicada(segredo: Segredo) {
@@ -561,15 +639,18 @@ export default function CofrePage() {
   async function guardarPasta(e: FormEvent<HTMLFormElement>, segredo: Segredo) {
     e.preventDefault();
     const pasta = String(new FormData(e.currentTarget).get("pasta_id") ?? "");
-    await run(async () => {
-      await apiClient.put(`v1/cofre/segredos/${segredo.id}`, {
-        nome: segredo.nome,
-        usuario: segredo.usuario,
-        mover_pasta: true,
-        pasta_id: pasta || null,
-      });
-      await lista.mutate();
-    }, pasta ? "Segredo na pasta" : "Segredo fora da pasta");
+    await run(
+      async () => {
+        await apiClient.put(`v1/cofre/segredos/${segredo.id}`, {
+          nome: segredo.nome,
+          usuario: segredo.usuario,
+          mover_pasta: true,
+          pasta_id: pasta || null,
+        });
+        await lista.mutate();
+      },
+      pasta ? "Segredo na pasta" : "Segredo fora da pasta",
+    );
   }
 
   async function mover(e: FormEvent<HTMLFormElement>, segredo: Segredo) {
@@ -665,7 +746,12 @@ export default function CofrePage() {
             onChange={(ev) => setBusca(ev.target.value)}
             placeholder="Nome ou usuário"
           />
-          <DataState loading={lista.isLoading} error={lista.error} onRetry={() => void lista.mutate()} empty={false}>
+          <DataState
+            loading={lista.isLoading}
+            error={lista.error}
+            onRetry={() => void lista.mutate()}
+            empty={false}
+          >
             {filtrados.length === 0 ? (
               <p className="text-sm text-muted">Nenhum segredo neste recorte</p>
             ) : (
@@ -679,7 +765,9 @@ export default function CofrePage() {
                         aria-label={segredo.nome}
                         aria-current={selecionado === segredo.id ? "true" : undefined}
                         className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left ${
-                          selecionado === segredo.id ? "border-primary bg-primary/5" : "border-surface-border bg-surface"
+                          selecionado === segredo.id
+                            ? "border-primary bg-primary/5"
+                            : "border-surface-border bg-surface"
                         }`}
                         onClick={() => {
                           setSelecionado(segredo.id);
@@ -687,7 +775,9 @@ export default function CofrePage() {
                         }}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate text-base font-semibold text-foreground">{segredo.nome}</span>
+                          <span className="block truncate text-base font-semibold text-foreground">
+                            {segredo.nome}
+                          </span>
                           <span className="mt-0.5 block truncate text-sm text-muted">
                             {segredo.usuario ? `Usuário ${segredo.usuario}` : "Sem usuário"}
                           </span>
@@ -716,7 +806,11 @@ export default function CofrePage() {
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-surface-border px-4 py-3">
             <h2 id={tituloPainel} className="truncate text-base font-semibold">
-              {criando ? (pastaAberta ? `Nova senha em ${pastaAberta.nome}` : "Nova senha") : escolhido?.nome}
+              {criando
+                ? pastaAberta
+                  ? `Nova senha em ${pastaAberta.nome}`
+                  : "Nova senha"
+                : escolhido?.nome}
             </h2>
             <button
               type="button"
@@ -731,255 +825,332 @@ export default function CofrePage() {
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {criando && gere ? (
-            <form className="grid gap-3" onSubmit={(e) => void guardar(e)}>
-              <Select
-                id="cofre-tipo"
-                name="tipo"
-                label="Tipo"
-                value={tipoNovo}
-                onChange={(ev) => setTipoNovo(ev.target.value as Tipo)}
-                options={TIPOS.map((item) => ({ value: item.value, label: item.label }))}
-              />
-              <Input id="cofre-nome" name="nome" label="Nome *" required maxLength={160} />
-              {tipoNovo !== "outro" ? (
-                <Input id="cofre-endereco" name="endereco" label={nova.endereco} maxLength={300} autoComplete="off" />
-              ) : null}
-              <Input
-                id="cofre-usuario"
-                name="usuario"
-                label={tipoNovo === "outro" ? "Usuário" : nova.usuario}
-                maxLength={160}
-                autoComplete="off"
-              />
-              <Input
-                id="cofre-senha"
-                name="senha"
-                type="password"
-                label={tipoNovo === "outro" ? "Senha *" : `${nova.senha} *`}
-                required
-                maxLength={2000}
-                autoComplete="new-password"
-              />
-              <Textarea id="cofre-notas" name="notas" label="Notas" maxLength={4000} rows={2} />
-              <div>
-                <Button type="submit" loading={pending}>
-                  Guardar no cofre
-                </Button>
-              </div>
-            </form>
-          ) : null}
-          {!criando && escolhido ? (
-        <ul className="flex flex-col gap-3">
-          {[escolhido].map((segredo) => {
-            const aberto = abertos[segredo.id];
-            const reserva = segredo.retirada;
-            const minha = reserva?.usuario_id === me?.id;
-            const ocupado = Boolean(reserva) && !minha;
-            const abertoMais = Boolean(mais[segredo.id]);
-            const acesso = ficha(segredo.tipo ?? "outro");
-            return (
-              <li key={segredo.id}>
-                <div className="flex flex-col gap-3">
-                    <div className="rounded-xl border border-surface-border bg-surface p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{acesso.acesso}</p>
-                      <p className="mt-1 text-sm text-muted">
-                        {acesso.titulo}
-                        {nomeDaPasta(pastas.data, segredo.pasta_id)}
-                      </p>
-                      {segredo.endereco ? (
-                        <p className="mt-3">
-                          <span className="block text-sm font-medium">{acesso.endereco}</span>
-                          <span className="text-lg font-semibold">{segredo.endereco}</span>
-                        </p>
-                      ) : null}
-                      <p className="mt-3">
-                        <span className="block text-sm font-medium">{acesso.usuario}</span>
-                        <span className="text-lg font-semibold">{segredo.usuario || "—"}</span>
-                      </p>
-                    </div>
-                    {segredo.rotacao_pendente && (
-                      <p className="text-sm">
-                        A senha do cofre mudou. Revele e aplique
-                        {segredo.endereco ? ` em ${segredo.endereco}` : " no endereço"}. O cofre não entra no destino.
-                      </p>
-                    )}
-                    {reserva && (
-                      <p className="text-sm text-muted">
-                        {minha ? "Você retirou" : `Retirado por ${reserva.nome || "outra pessoa"}`} até {hora(reserva.ate)}
-                      </p>
-                    )}
-                    {segredo.tipo === "painel" && (
-                      <p className="text-sm text-muted">
-                        Administra: {nomesAdministrados(lista.data ?? [], segredo) || "nenhuma máquina"}
-                      </p>
-                    )}
-                    {aberto && (
-                      <div className="flex flex-col gap-2">
-                        <Input
-                          id={`senha-revelada-${segredo.id}`}
-                          label={acesso.senha}
-                          readOnly
-                          value={aberto.senha}
-                          autoComplete="off"
-                        />
-                        {aberto.notas && <p className="text-sm text-muted">{aberto.notas}</p>}
+            {criando && gere ? (
+              <form className="grid gap-3" onSubmit={(e) => void guardar(e)}>
+                <Select
+                  id="cofre-tipo"
+                  name="tipo"
+                  label="Tipo"
+                  value={tipoNovo}
+                  onChange={(ev) => setTipoNovo(ev.target.value as Tipo)}
+                  options={TIPOS.map((item) => ({ value: item.value, label: item.label }))}
+                />
+                <Input id="cofre-nome" name="nome" label="Nome *" required maxLength={160} />
+                {tipoNovo !== "outro" ? (
+                  <Input
+                    id="cofre-endereco"
+                    name="endereco"
+                    label={nova.endereco}
+                    maxLength={300}
+                    autoComplete="off"
+                  />
+                ) : null}
+                <Input
+                  id="cofre-usuario"
+                  name="usuario"
+                  label={tipoNovo === "outro" ? "Usuário" : nova.usuario}
+                  maxLength={160}
+                  autoComplete="off"
+                />
+                <Input
+                  id="cofre-senha"
+                  name="senha"
+                  type="password"
+                  label={tipoNovo === "outro" ? "Senha *" : `${nova.senha} *`}
+                  required
+                  maxLength={2000}
+                  autoComplete="new-password"
+                />
+                <Textarea id="cofre-notas" name="notas" label="Notas" maxLength={4000} rows={2} />
+                <div>
+                  <Button type="submit" loading={pending}>
+                    Guardar no cofre
+                  </Button>
+                </div>
+              </form>
+            ) : null}
+            {!criando && escolhido ? (
+              <ul className="flex flex-col gap-3">
+                {[escolhido].map((segredo) => {
+                  const aberto = abertos[segredo.id];
+                  const reserva = segredo.retirada;
+                  const minha = reserva?.usuario_id === me?.id;
+                  const ocupado = Boolean(reserva) && !minha;
+                  const abertoMais = Boolean(mais[segredo.id]);
+                  const acesso = ficha(segredo.tipo ?? "outro");
+                  return (
+                    <li key={segredo.id}>
+                      <div className="flex flex-col gap-3">
+                        <div className="rounded-xl border border-surface-border bg-surface p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                            {acesso.acesso}
+                          </p>
+                          <p className="mt-1 text-sm text-muted">
+                            {acesso.titulo}
+                            {nomeDaPasta(pastas.data, segredo.pasta_id)}
+                          </p>
+                          {segredo.endereco ? (
+                            <p className="mt-3">
+                              <span className="block text-sm font-medium">{acesso.endereco}</span>
+                              <span className="text-lg font-semibold">{segredo.endereco}</span>
+                            </p>
+                          ) : null}
+                          <p className="mt-3">
+                            <span className="block text-sm font-medium">{acesso.usuario}</span>
+                            <span className="text-lg font-semibold">{segredo.usuario || "—"}</span>
+                          </p>
+                        </div>
+                        {segredo.rotacao_pendente && (
+                          <p className="text-sm">
+                            A senha do cofre mudou. Revele e aplique
+                            {segredo.endereco ? ` em ${segredo.endereco}` : " no endereço"}. O cofre
+                            não entra no destino.
+                          </p>
+                        )}
+                        {reserva && (
+                          <p className="text-sm text-muted">
+                            {minha
+                              ? "Você retirou"
+                              : `Retirado por ${reserva.nome || "outra pessoa"}`}{" "}
+                            até {hora(reserva.ate)}
+                          </p>
+                        )}
+                        {segredo.tipo === "painel" && (
+                          <p className="text-sm text-muted">
+                            Administra:{" "}
+                            {nomesAdministrados(lista.data ?? [], segredo) || "nenhuma máquina"}
+                          </p>
+                        )}
+                        {aberto && (
+                          <div className="flex flex-col gap-2">
+                            <Input
+                              id={`senha-revelada-${segredo.id}`}
+                              label={acesso.senha}
+                              readOnly
+                              value={aberto.senha}
+                              autoComplete="off"
+                            />
+                            {aberto.notas && <p className="text-sm text-muted">{aberto.notas}</p>}
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => void navigator.clipboard.writeText(aberto.senha)}
+                              >
+                                Copiar senha de {segredo.nome}
+                              </Button>
+                              {segredo.usuario ? (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() =>
+                                    void navigator.clipboard.writeText(segredo.usuario)
+                                  }
+                                >
+                                  Copiar usuário de {segredo.nome}
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() =>
+                                  setAbertos((atual) => {
+                                    const copia = { ...atual };
+                                    delete copia[segredo.id];
+                                    return copia;
+                                  })
+                                }
+                              >
+                                Ocultar {segredo.nome}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => void navigator.clipboard.writeText(aberto.senha)}
-                          >
-                            Copiar senha de {segredo.nome}
-                          </Button>
-                          {segredo.usuario ? (
+                          {revela && !aberto && !ocupado && (
                             <Button
                               type="button"
                               variant="secondary"
-                              onClick={() => void navigator.clipboard.writeText(segredo.usuario)}
+                              onClick={() => void revelar(segredo)}
                             >
-                              Copiar usuário de {segredo.nome}
+                              Revelar {segredo.nome}
                             </Button>
-                          ) : null}
-                          <Button type="button" variant="secondary" onClick={() => setAbertos((atual) => {
-                            const copia = { ...atual };
-                            delete copia[segredo.id];
-                            return copia;
-                          })}>
-                            Ocultar {segredo.nome}
-                          </Button>
+                          )}
+                          {(revela || gere || concede) && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              aria-expanded={abertoMais}
+                              onClick={() =>
+                                setMais((atual) => ({ ...atual, [segredo.id]: !atual[segredo.id] }))
+                              }
+                            >
+                              {abertoMais ? `Menos de ${segredo.nome}` : `Mais de ${segredo.nome}`}
+                            </Button>
+                          )}
+                          {(minha || (gere && reserva)) && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => void devolver(segredo)}
+                            >
+                              Devolver {segredo.nome}
+                            </Button>
+                          )}
+                          {gere && segredo.rotacao_pendente && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => void aplicada(segredo)}
+                            >
+                              Já apliquei {segredo.nome}
+                            </Button>
+                          )}
+                          {abertoMais && gere && (
+                            <Button
+                              type="button"
+                              variant="danger"
+                              onClick={() => setExcluirAlvo(segredo)}
+                            >
+                              Excluir {segredo.nome}
+                            </Button>
+                          )}
                         </div>
+                        {abertoMais &&
+                          revela &&
+                          !aberto &&
+                          !ocupado &&
+                          pedido?.id !== segredo.id && (
+                            <div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => setPedido({ id: segredo.id, modo: "retirar" })}
+                              >
+                                Retirar {segredo.nome}
+                              </Button>
+                            </div>
+                          )}
+                        {abertoMais &&
+                          revela &&
+                          !aberto &&
+                          !ocupado &&
+                          pedido?.id === segredo.id &&
+                          pedido.modo === "retirar" && (
+                            <form
+                              className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                              onSubmit={(e) => void retirar(e, segredo)}
+                            >
+                              <Select
+                                id={`prazo-${segredo.id}`}
+                                name="minutos"
+                                label="Por quanto tempo"
+                                defaultValue="60"
+                                options={PRAZOS}
+                              />
+                              <Input
+                                id={`acesso-retirada-${segredo.id}`}
+                                name="senha_de_acesso"
+                                type="password"
+                                label="Sua senha de acesso"
+                                required
+                                autoComplete="current-password"
+                              />
+                              <Button type="submit" variant="secondary">
+                                Confirmar retirada de {segredo.nome}
+                              </Button>
+                            </form>
+                          )}
+                        {abertoMais && gere && (
+                          <form
+                            className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                            onSubmit={(e) => void trocar(e, segredo)}
+                          >
+                            <Input
+                              id={`nova-senha-${segredo.id}`}
+                              name="senha"
+                              type="password"
+                              label={`Nova senha de ${segredo.nome}`}
+                              required
+                              autoComplete="new-password"
+                            />
+                            <Button type="submit" variant="secondary">
+                              Trocar senha de {segredo.nome}
+                            </Button>
+                          </form>
+                        )}
+                        {abertoMais && gere && segredo.tipo === "painel" && (
+                          <form
+                            className="flex flex-col gap-2"
+                            onSubmit={(e) => void ligar(e, segredo)}
+                          >
+                            <MaquinasDoPainel
+                              key={(segredo.administra ?? []).join(",")}
+                              maquinas={(lista.data ?? []).filter(
+                                (item) => item.tipo === "maquina",
+                              )}
+                              marcadas={segredo.administra}
+                              idPrefix={segredo.id}
+                            />
+                            <Button type="submit" variant="secondary">
+                              Guardar máquinas de {segredo.nome}
+                            </Button>
+                          </form>
+                        )}
+                        {abertoMais &&
+                          gere &&
+                          ((pastas.data ?? []).length > 0 || segredo.pasta_id) && (
+                            <form
+                              className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                              onSubmit={(e) => void guardarPasta(e, segredo)}
+                            >
+                              <Select
+                                key={segredo.pasta_id ?? "sem"}
+                                id={`pasta-${segredo.id}`}
+                                name="pasta_id"
+                                label={`Pasta de ${segredo.nome}`}
+                                defaultValue={segredo.pasta_id ?? ""}
+                                options={[
+                                  { value: "", label: "Sem pasta" },
+                                  ...(pastas.data ?? []).map((pasta) => ({
+                                    value: pasta.id,
+                                    label: pasta.nome,
+                                  })),
+                                  ...(segredo.pasta_id &&
+                                  !(pastas.data ?? []).some(
+                                    (pasta) => pasta.id === segredo.pasta_id,
+                                  )
+                                    ? [{ value: segredo.pasta_id, label: "Pasta atual" }]
+                                    : []),
+                                ]}
+                              />
+                              <Button type="submit" variant="secondary">
+                                Guardar pasta de {segredo.nome}
+                              </Button>
+                            </form>
+                          )}
+                        {abertoMais && concede && (
+                          <form
+                            className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                            onSubmit={(e) => void mover(e, segredo)}
+                          >
+                            <UnidadeDonaSelect
+                              id={`mover-${segredo.id}`}
+                              permission="cofre:grant"
+                              label={`Unidade de ${segredo.nome}`}
+                              defaultValue={segredo.unidade_id}
+                            />
+                            <Button type="submit" variant="secondary">
+                              Mover {segredo.nome}
+                            </Button>
+                          </form>
+                        )}
                       </div>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      {revela && !aberto && !ocupado && (
-                        <Button type="button" variant="secondary" onClick={() => void revelar(segredo)}>
-                          Revelar {segredo.nome}
-                        </Button>
-                      )}
-                      {(revela || gere || concede) && (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          aria-expanded={abertoMais}
-                          onClick={() => setMais((atual) => ({ ...atual, [segredo.id]: !atual[segredo.id] }))}
-                        >
-                          {abertoMais ? `Menos de ${segredo.nome}` : `Mais de ${segredo.nome}`}
-                        </Button>
-                      )}
-                      {(minha || (gere && reserva)) && (
-                        <Button type="button" variant="secondary" onClick={() => void devolver(segredo)}>
-                          Devolver {segredo.nome}
-                        </Button>
-                      )}
-                      {gere && segredo.rotacao_pendente && (
-                        <Button type="button" variant="secondary" onClick={() => void aplicada(segredo)}>
-                          Já apliquei {segredo.nome}
-                        </Button>
-                      )}
-                      {abertoMais && gere && (
-                        <Button type="button" variant="danger" onClick={() => setExcluirAlvo(segredo)}>
-                          Excluir {segredo.nome}
-                        </Button>
-                      )}
-                    </div>
-                    {abertoMais && revela && !aberto && !ocupado && pedido?.id !== segredo.id && (
-                      <div>
-                        <Button type="button" variant="secondary" onClick={() => setPedido({ id: segredo.id, modo: "retirar" })}>
-                          Retirar {segredo.nome}
-                        </Button>
-                      </div>
-                    )}
-                    {abertoMais && revela && !aberto && !ocupado && pedido?.id === segredo.id && pedido.modo === "retirar" && (
-                      <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void retirar(e, segredo)}>
-                        <Select
-                          id={`prazo-${segredo.id}`}
-                          name="minutos"
-                          label="Por quanto tempo"
-                          defaultValue="60"
-                          options={PRAZOS}
-                        />
-                        <Input
-                          id={`acesso-retirada-${segredo.id}`}
-                          name="senha_de_acesso"
-                          type="password"
-                          label="Sua senha de acesso"
-                          required
-                          autoComplete="current-password"
-                        />
-                        <Button type="submit" variant="secondary">
-                          Confirmar retirada de {segredo.nome}
-                        </Button>
-                      </form>
-                    )}
-                    {abertoMais && gere && (
-                      <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void trocar(e, segredo)}>
-                        <Input
-                          id={`nova-senha-${segredo.id}`}
-                          name="senha"
-                          type="password"
-                          label={`Nova senha de ${segredo.nome}`}
-                          required
-                          autoComplete="new-password"
-                        />
-                        <Button type="submit" variant="secondary">
-                          Trocar senha de {segredo.nome}
-                        </Button>
-                      </form>
-                    )}
-                    {abertoMais && gere && segredo.tipo === "painel" && (
-                      <form className="flex flex-col gap-2" onSubmit={(e) => void ligar(e, segredo)}>
-                        <MaquinasDoPainel
-                          key={(segredo.administra ?? []).join(",")}
-                          maquinas={(lista.data ?? []).filter((item) => item.tipo === "maquina")}
-                          marcadas={segredo.administra}
-                          idPrefix={segredo.id}
-                        />
-                        <Button type="submit" variant="secondary">
-                          Guardar máquinas de {segredo.nome}
-                        </Button>
-                      </form>
-                    )}
-                    {abertoMais && gere && ((pastas.data ?? []).length > 0 || segredo.pasta_id) && (
-                      <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void guardarPasta(e, segredo)}>
-                        <Select
-                          key={segredo.pasta_id ?? "sem"}
-                          id={`pasta-${segredo.id}`}
-                          name="pasta_id"
-                          label={`Pasta de ${segredo.nome}`}
-                          defaultValue={segredo.pasta_id ?? ""}
-                          options={[
-                            { value: "", label: "Sem pasta" },
-                            ...(pastas.data ?? []).map((pasta) => ({ value: pasta.id, label: pasta.nome })),
-                            ...(segredo.pasta_id && !(pastas.data ?? []).some((pasta) => pasta.id === segredo.pasta_id)
-                              ? [{ value: segredo.pasta_id, label: "Pasta atual" }]
-                              : []),
-                          ]}
-                        />
-                        <Button type="submit" variant="secondary">
-                          Guardar pasta de {segredo.nome}
-                        </Button>
-                      </form>
-                    )}
-                    {abertoMais && concede && (
-                      <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(e) => void mover(e, segredo)}>
-                        <UnidadeDonaSelect
-                          id={`mover-${segredo.id}`}
-                          permission="cofre:grant"
-                          label={`Unidade de ${segredo.nome}`}
-                          defaultValue={segredo.unidade_id}
-                        />
-                        <Button type="submit" variant="secondary">
-                          Mover {segredo.nome}
-                        </Button>
-                      </form>
-                    )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-          ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
           </div>
         </div>
       </ModalShell>
@@ -1010,8 +1181,12 @@ export default function CofrePage() {
 }
 
 function nomesAdministrados(lista: Segredo[], painel: Segredo) {
-  const nomes = new Map(lista.map((item) => [item.id, item.endereco ? `${item.nome} · ${item.endereco}` : item.nome]));
-  return (painel.administra ?? []).map((id) => nomes.get(id) ?? "máquina fora do alcance").join(", ");
+  const nomes = new Map(
+    lista.map((item) => [item.id, item.endereco ? `${item.nome} · ${item.endereco}` : item.nome]),
+  );
+  return (painel.administra ?? [])
+    .map((id) => nomes.get(id) ?? "máquina fora do alcance")
+    .join(", ");
 }
 
 function MaquinasDoPainel({
@@ -1026,9 +1201,15 @@ function MaquinasDoPainel({
   return (
     <fieldset className="flex flex-col gap-2 sm:col-span-2">
       <legend className="text-sm font-medium">Máquinas que este painel administra</legend>
-      {maquinas.length === 0 && <p className="text-sm text-muted">Nenhuma máquina no cofre ainda.</p>}
+      {maquinas.length === 0 && (
+        <p className="text-sm text-muted">Nenhuma máquina no cofre ainda.</p>
+      )}
       {maquinas.map((maquina) => (
-        <label key={maquina.id} className="flex items-center gap-2 text-sm" htmlFor={`${idPrefix}-${maquina.id}`}>
+        <label
+          key={maquina.id}
+          className="flex items-center gap-2 text-sm"
+          htmlFor={`${idPrefix}-${maquina.id}`}
+        >
           <input
             id={`${idPrefix}-${maquina.id}`}
             type="checkbox"

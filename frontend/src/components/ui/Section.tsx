@@ -39,7 +39,11 @@ export function Section({
               className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface-border/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               aria-label={isExpanded ? `Minimizar seção "${title}"` : `Expandir seção "${title}"`}
             >
-              {isExpanded ? <ChevronUp size={20} aria-hidden="true" /> : <ChevronDown size={20} aria-hidden="true" />}
+              {isExpanded ? (
+                <ChevronUp size={20} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={20} aria-hidden="true" />
+              )}
             </button>
           )}
         </div>

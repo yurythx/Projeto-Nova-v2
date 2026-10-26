@@ -3,7 +3,14 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { NomeClicavel, Quadro, colunasEmOrdem, seloDoEstado, type ColunaFaixa, type ControlesColuna } from "@/components/plataforma/Faixas";
+import {
+  NomeClicavel,
+  Quadro,
+  colunasEmOrdem,
+  seloDoEstado,
+  type ColunaFaixa,
+  type ControlesColuna,
+} from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
 import {
   ESTADO_PROJETO,
@@ -89,7 +96,11 @@ export function ProjetosKanban({
               <span className="font-semibold tabular-nums text-foreground">#{p.numero}</span>
               <div className="flex items-center gap-1">
                 {prioridadeMeta && <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>}
-                <Badge tone={seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).tone}>
+                <Badge
+                  tone={
+                    seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).tone
+                  }
+                >
                   {seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).label}
                 </Badge>
               </div>
@@ -108,7 +119,11 @@ export function ProjetosKanban({
                 </span>
               )}
             </div>
-            <button type="button" className="text-left text-xs font-medium text-primary hover:underline" onClick={() => abrir(p)}>
+            <button
+              type="button"
+              className="text-left text-xs font-medium text-primary hover:underline"
+              onClick={() => abrir(p)}
+            >
               Editar
             </button>
             {moves.length > 0 && (

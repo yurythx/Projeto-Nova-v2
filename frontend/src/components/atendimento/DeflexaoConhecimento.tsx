@@ -19,7 +19,10 @@ export function DeflexaoConhecimento({
   const consulta = termo.trim();
   // Cada resultado guarda a consulta de onde veio: digitar outra coisa
   // esconde o anterior sem apagar estado no meio da renderização.
-  const [achado, setAchado] = useState<{ consulta: string; artigos: SearchResult[] }>({ consulta: "", artigos: [] });
+  const [achado, setAchado] = useState<{ consulta: string; artigos: SearchResult[] }>({
+    consulta: "",
+    artigos: [],
+  });
   const [dispensadoEm, setDispensadoEm] = useState<string | null>(null);
   const artigos = consulta.length >= 3 && achado.consulta === consulta ? achado.artigos : [];
   const dispensado = dispensadoEm === consulta;
@@ -33,11 +36,16 @@ export function DeflexaoConhecimento({
         .get<SearchResponse>(`v1/search?${params}`)
         .then((resposta) => {
           if (!vivo) return;
-          const vistos = (resposta.data.results ?? []).filter((item) => item.module === "wiki").slice(0, 4);
+          const vistos = (resposta.data.results ?? [])
+            .filter((item) => item.module === "wiki")
+            .slice(0, 4);
           setAchado({ consulta, artigos: vistos });
           if (vistos.length > 0) {
             void apiClient
-              .post("v1/atendimento/deflexao", { artigos: vistos.map((item) => item.id), resolveu: false })
+              .post("v1/atendimento/deflexao", {
+                artigos: vistos.map((item) => item.id),
+                resolveu: false,
+              })
               .catch(() => undefined);
           }
         })
@@ -65,14 +73,21 @@ export function DeflexaoConhecimento({
       data-testid="deflexao-conhecimento"
       className="flex flex-col gap-2 rounded-lg border border-surface-border p-3"
     >
-      <h3 className="text-sm font-semibold text-foreground">Artigos que podem resolver antes de abrir</h3>
+      <h3 className="text-sm font-semibold text-foreground">
+        Artigos que podem resolver antes de abrir
+      </h3>
       <ul className="flex flex-col gap-2">
         {artigos.map((artigo) => (
           <li key={artigo.id}>
-            <Link href={artigo.url || "/wiki"} className="text-sm font-medium text-primary hover:underline">
+            <Link
+              href={artigo.url || "/wiki"}
+              className="text-sm font-medium text-primary hover:underline"
+            >
               {artigo.title}
             </Link>
-            {artigo.snippet ? <p className="text-xs text-muted line-clamp-2">{artigo.snippet}</p> : null}
+            {artigo.snippet ? (
+              <p className="text-xs text-muted line-clamp-2">{artigo.snippet}</p>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -81,7 +96,10 @@ export function DeflexaoConhecimento({
         className="self-start text-sm text-muted underline-offset-2 hover:underline"
         onClick={() => {
           void apiClient
-            .post("v1/atendimento/deflexao", { artigos: artigos.map((item) => item.id), resolveu: true })
+            .post("v1/atendimento/deflexao", {
+              artigos: artigos.map((item) => item.id),
+              resolveu: true,
+            })
             .catch(() => undefined);
           setDispensadoEm(consulta);
           onResolvido?.();

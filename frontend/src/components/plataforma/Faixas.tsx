@@ -92,7 +92,9 @@ function lerRecolhidas(cru: string | null): string[] {
   if (!cru) return [];
   try {
     const lista = JSON.parse(cru) as unknown;
-    return Array.isArray(lista) ? lista.filter((item): item is string => typeof item === "string") : [];
+    return Array.isArray(lista)
+      ? lista.filter((item): item is string => typeof item === "string")
+      : [];
   } catch {
     return [];
   }
@@ -105,7 +107,9 @@ export function useFaixasRecolhidas(memoria: string) {
   const recolhidas = useMemo(() => lerRecolhidas(cru), [cru]);
 
   function alternar(id: string) {
-    const proxima = recolhidas.includes(id) ? recolhidas.filter((item) => item !== id) : [...recolhidas, id];
+    const proxima = recolhidas.includes(id)
+      ? recolhidas.filter((item) => item !== id)
+      : [...recolhidas, id];
     gravarArmazenado(memoria, JSON.stringify(proxima));
   }
 
@@ -155,12 +159,18 @@ export function useAparencia(memoria: string) {
   const gravado = useMemo(() => lerAparencia(cru), [cru]);
 
   function salvarColuna(id: string, parcial: Aparencia) {
-    const proximo = { ...gravado, colunas: { ...gravado.colunas, [id]: { ...gravado.colunas[id], ...parcial } } };
+    const proximo = {
+      ...gravado,
+      colunas: { ...gravado.colunas, [id]: { ...gravado.colunas[id], ...parcial } },
+    };
     gravarArmazenado(chave, JSON.stringify(proximo));
   }
 
   function salvarCartao(id: string, parcial: Aparencia) {
-    const proximo = { ...gravado, cartoes: { ...gravado.cartoes, [id]: { ...gravado.cartoes[id], ...parcial } } };
+    const proximo = {
+      ...gravado,
+      cartoes: { ...gravado.cartoes, [id]: { ...gravado.cartoes[id], ...parcial } },
+    };
     gravarArmazenado(chave, JSON.stringify(proximo));
   }
 
@@ -176,7 +186,11 @@ export function rotuloDaColuna(
   return gravado.colunas[id]?.titulo || colunas.find((coluna) => coluna.id === id)?.titulo || id;
 }
 
-function pintura(cor: string | undefined, tom: TomFaixa, tipo: "barra" | "cartao"): { className: string; style?: { borderLeftColor: string; backgroundColor: string } } {
+function pintura(
+  cor: string | undefined,
+  tom: TomFaixa,
+  tipo: "barra" | "cartao",
+): { className: string; style?: { borderLeftColor: string; backgroundColor: string } } {
   if (!cor) return { className: ESTILO[tom][tipo] };
   return {
     className: "",
@@ -230,7 +244,9 @@ export function BarraFaixa({
   return (
     <div
       className={`relative rounded-lg border border-surface-border border-l-4 ${faixa.className} ${
-        vertical ? "flex h-full min-h-48 flex-col items-center gap-2 px-1 py-2" : "flex flex-wrap items-center gap-2 px-2 py-1.5"
+        vertical
+          ? "flex h-full min-h-48 flex-col items-center gap-2 px-1 py-2"
+          : "flex flex-wrap items-center gap-2 px-2 py-1.5"
       }`}
       style={faixa.style}
     >
@@ -285,19 +301,19 @@ export function BarraFaixa({
               setEditando(false);
             }}
           >
-          <label className="sr-only" htmlFor={`${tituloId}-nome`}>
-            Nome de {titulo}
-          </label>
-          <input
-            id={`${tituloId}-nome`}
-            value={rascunho}
-            onChange={(e) => setRascunho(e.target.value)}
-            maxLength={80}
-            className="h-8 rounded-md border border-surface-border bg-surface px-2 text-sm"
-          />
-          <button type="submit" className="text-xs font-medium text-primary hover:underline">
-            Salvar nome
-          </button>
+            <label className="sr-only" htmlFor={`${tituloId}-nome`}>
+              Nome de {titulo}
+            </label>
+            <input
+              id={`${tituloId}-nome`}
+              value={rascunho}
+              onChange={(e) => setRascunho(e.target.value)}
+              maxLength={80}
+              className="h-8 rounded-md border border-surface-border bg-surface px-2 text-sm"
+            />
+            <button type="submit" className="text-xs font-medium text-primary hover:underline">
+              Salvar nome
+            </button>
           </form>
         </>
       ) : (
@@ -306,7 +322,11 @@ export function BarraFaixa({
           className={`min-w-0 text-sm font-semibold ${vertical ? "[writing-mode:vertical-lr]" : "break-words"}`}
         >
           {onRenomear ? (
-            <button type="button" className="max-w-full break-words text-left hover:underline" onClick={comecar}>
+            <button
+              type="button"
+              className="max-w-full break-words text-left hover:underline"
+              onClick={comecar}
+            >
               {titulo}
             </button>
           ) : (
@@ -315,7 +335,9 @@ export function BarraFaixa({
         </h2>
       )}
       <span className="text-xs font-normal text-muted">{total}</span>
-      {!vertical && extra && <div className="ml-auto flex flex-wrap items-center gap-2">{extra}</div>}
+      {!vertical && extra && (
+        <div className="ml-auto flex flex-wrap items-center gap-2">{extra}</div>
+      )}
     </div>
   );
 }
@@ -339,7 +361,8 @@ export function NomeClicavel({
   const campo = useId();
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState(nome);
-  const classe = className ?? "line-clamp-2 text-left text-sm font-medium text-primary hover:underline";
+  const classe =
+    className ?? "line-clamp-2 text-left text-sm font-medium text-primary hover:underline";
   if (editando) {
     return (
       <form
@@ -421,7 +444,10 @@ function NovoCard({
         maxLength={160}
         className="h-8 w-full min-w-0 rounded-md border border-surface-border bg-surface px-2 text-xs"
       />
-      <button type="submit" className="h-8 rounded-md border border-surface-border text-xs font-medium text-primary">
+      <button
+        type="submit"
+        className="h-8 rounded-md border border-surface-border text-xs font-medium text-primary"
+      >
         Criar card
       </button>
     </form>
@@ -481,12 +507,19 @@ export function ListaFaixas<T>({
   const look = useAparencia(aparencia ?? memoria);
   const faixas = ordenarColunas(colunas);
   return (
-    <div className="flex min-w-0 max-w-full flex-col gap-2" role="list" aria-label={rotulo} data-testid={testeId}>
+    <div
+      className="flex min-w-0 max-w-full flex-col gap-2"
+      role="list"
+      aria-label={rotulo}
+      data-testid={testeId}
+    >
       {faixas.map((coluna) => {
         const cartoes = itens.filter((item) => colunaDe(item) === coluna.id);
         const recolhida = recolhidas.includes(coluna.id);
         const tituloId = `faixa-${memoria}-${coluna.id}`;
-        const titulo = oficial ? coluna.titulo : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
+        const titulo = oficial
+          ? coluna.titulo
+          : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
         const corColuna = oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
         return (
           <section
@@ -507,13 +540,17 @@ export function ListaFaixas<T>({
               ordem={coluna.ordem}
               corImediata={!oficial}
               onAlternar={() => alternar(coluna.id)}
-              onRenomear={oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })}
+              onRenomear={
+                oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })
+              }
               onCor={oficial ? undefined : (cor) => look.salvarColuna(coluna.id, { cor })}
               extra={extra?.(coluna.id)}
             />
             {!recolhida && (
               <div className="flex flex-col gap-2 p-2">
-                {cartoes.length === 0 && <p className="px-1 py-2 text-sm text-muted">Nenhum item</p>}
+                {cartoes.length === 0 && (
+                  <p className="px-1 py-2 text-sm text-muted">Nenhum item</p>
+                )}
                 {cartoes.length > 0 && (
                   <ul className="flex flex-col">
                     {cartoes.map((item) => {
@@ -547,7 +584,13 @@ export function ListaFaixas<T>({
                     })}
                   </ul>
                 )}
-                {aoCriar && <NovoCard colunaId={coluna.id} titulo={titulo} onCriar={(nome) => aoCriar(coluna.id, nome)} />}
+                {aoCriar && (
+                  <NovoCard
+                    colunaId={coluna.id}
+                    titulo={titulo}
+                    onCriar={(nome) => aoCriar(coluna.id, nome)}
+                  />
+                )}
               </div>
             )}
           </section>
@@ -645,7 +688,9 @@ export function Quadro<T>({
         const recolhida = recolhidas.includes(coluna.id);
         const alvo = arrastado !== null && (podeSoltar?.(arrastado, coluna.id) ?? false);
         const tituloId = `coluna-${memoria}-${coluna.id}`;
-        const titulo = oficial ? coluna.titulo : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
+        const titulo = oficial
+          ? coluna.titulo
+          : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
         const corColuna = oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
         return (
           <section
@@ -684,13 +729,17 @@ export function Quadro<T>({
               ordem={coluna.ordem}
               corImediata={!oficial}
               onAlternar={() => alternar(coluna.id)}
-              onRenomear={oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })}
+              onRenomear={
+                oficial ? undefined : (nome) => look.salvarColuna(coluna.id, { titulo: nome })
+              }
               onCor={oficial ? undefined : (cor) => look.salvarColuna(coluna.id, { cor })}
               extra={!recolhida ? extra?.(coluna.id) : undefined}
             />
             {!recolhida && (
               <>
-                {cartoes.length === 0 && <p className="px-2 py-4 text-center text-xs text-muted">Nenhum item</p>}
+                {cartoes.length === 0 && (
+                  <p className="px-2 py-4 text-center text-xs text-muted">Nenhum item</p>
+                )}
                 {cartoes.length > 0 && (
                   <ul className="flex flex-col gap-2">
                     {cartoes.map((item) => {
@@ -735,7 +784,13 @@ export function Quadro<T>({
                     })}
                   </ul>
                 )}
-                {aoCriar && <NovoCard colunaId={coluna.id} titulo={titulo} onCriar={(nome) => aoCriar(coluna.id, nome)} />}
+                {aoCriar && (
+                  <NovoCard
+                    colunaId={coluna.id}
+                    titulo={titulo}
+                    onCriar={(nome) => aoCriar(coluna.id, nome)}
+                  />
+                )}
               </>
             )}
           </section>

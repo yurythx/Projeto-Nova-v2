@@ -8,10 +8,21 @@ const RS_FACTORS: Record<number, number[]> = {
   10: [0, 251, 67, 46, 61, 118, 70, 64, 94, 32, 45],
   15: [0, 29, 196, 111, 163, 112, 74, 10, 105, 105, 139, 132, 151, 32, 134, 26],
   18: [0, 215, 234, 158, 94, 184, 97, 120, 170, 214, 175, 40, 211, 106, 92, 244, 213, 207, 7],
-  20: [0, 17, 60, 79, 50, 61, 163, 26, 187, 202, 180, 221, 225, 83, 239, 156, 164, 212, 212, 188, 190],
-  24: [0, 117, 144, 219, 168, 90, 158, 226, 71, 76, 54, 36, 122, 129, 150, 194, 205, 207, 158, 236, 220, 42, 173, 219, 211],
-  28: [0, 183, 26, 201, 87, 210, 221, 113, 21, 46, 65, 45, 50, 238, 184, 249, 225, 102, 58, 209, 218, 109, 165, 26, 95, 184, 192, 181, 158],
-  30: [0, 212, 246, 77, 73, 195, 89, 42, 86, 172, 223, 211, 9, 213, 218, 19, 18, 247, 196, 168, 247, 178, 143, 211, 134, 85, 84, 221, 60, 58, 77],
+  20: [
+    0, 17, 60, 79, 50, 61, 163, 26, 187, 202, 180, 221, 225, 83, 239, 156, 164, 212, 212, 188, 190,
+  ],
+  24: [
+    0, 117, 144, 219, 168, 90, 158, 226, 71, 76, 54, 36, 122, 129, 150, 194, 205, 207, 158, 236,
+    220, 42, 173, 219, 211,
+  ],
+  28: [
+    0, 183, 26, 201, 87, 210, 221, 113, 21, 46, 65, 45, 50, 238, 184, 249, 225, 102, 58, 209, 218,
+    109, 165, 26, 95, 184, 192, 181, 158,
+  ],
+  30: [
+    0, 212, 246, 77, 73, 195, 89, 42, 86, 172, 223, 211, 9, 213, 218, 19, 18, 247, 196, 168, 247,
+    178, 143, 211, 134, 85, 84, 221, 60, 58, 77,
+  ],
 };
 
 const EXP_TABLE = new Uint8Array(512);
@@ -45,12 +56,60 @@ interface VersionInfo {
 }
 
 const VERSIONS: VersionInfo[] = [
-  { version: 1, size: 21, dataBytesL: 19, ecBytesL: 7, dataBytesM: 16, ecBytesM: 10, alignments: [] },
-  { version: 2, size: 25, dataBytesL: 34, ecBytesL: 10, dataBytesM: 28, ecBytesM: 16, alignments: [6, 18] },
-  { version: 3, size: 29, dataBytesL: 55, ecBytesL: 15, dataBytesM: 44, ecBytesM: 26, alignments: [6, 22] },
-  { version: 4, size: 33, dataBytesL: 80, ecBytesL: 20, dataBytesM: 64, ecBytesM: 36, alignments: [6, 26] },
-  { version: 5, size: 37, dataBytesL: 108, ecBytesL: 26, dataBytesM: 86, ecBytesM: 48, alignments: [6, 30] },
-  { version: 6, size: 41, dataBytesL: 136, ecBytesL: 36, dataBytesM: 108, ecBytesM: 64, alignments: [6, 34] },
+  {
+    version: 1,
+    size: 21,
+    dataBytesL: 19,
+    ecBytesL: 7,
+    dataBytesM: 16,
+    ecBytesM: 10,
+    alignments: [],
+  },
+  {
+    version: 2,
+    size: 25,
+    dataBytesL: 34,
+    ecBytesL: 10,
+    dataBytesM: 28,
+    ecBytesM: 16,
+    alignments: [6, 18],
+  },
+  {
+    version: 3,
+    size: 29,
+    dataBytesL: 55,
+    ecBytesL: 15,
+    dataBytesM: 44,
+    ecBytesM: 26,
+    alignments: [6, 22],
+  },
+  {
+    version: 4,
+    size: 33,
+    dataBytesL: 80,
+    ecBytesL: 20,
+    dataBytesM: 64,
+    ecBytesM: 36,
+    alignments: [6, 26],
+  },
+  {
+    version: 5,
+    size: 37,
+    dataBytesL: 108,
+    ecBytesL: 26,
+    dataBytesM: 86,
+    ecBytesM: 48,
+    alignments: [6, 30],
+  },
+  {
+    version: 6,
+    size: 41,
+    dataBytesL: 136,
+    ecBytesL: 36,
+    dataBytesM: 108,
+    ecBytesM: 64,
+    alignments: [6, 34],
+  },
 ];
 
 export interface QRCodeData {
@@ -206,9 +265,10 @@ export function generateQRCode(text: string, level: "L" | "M" = "M"): QRCodeData
   let col = size - 1;
   while (col > 0) {
     if (col === 6) col--;
-    const rowRange = dir === -1
-      ? Array.from({ length: size }, (_, i) => size - 1 - i)
-      : Array.from({ length: size }, (_, i) => i);
+    const rowRange =
+      dir === -1
+        ? Array.from({ length: size }, (_, i) => size - 1 - i)
+        : Array.from({ length: size }, (_, i) => i);
 
     for (const r of rowRange) {
       for (const c of [col, col - 1]) {

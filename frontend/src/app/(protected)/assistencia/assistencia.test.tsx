@@ -61,7 +61,9 @@ describe("Dashboard da Assistência", () => {
 
     renderApp(<AssistenciaDashboardPage />);
 
-    expect(await screen.findByRole("heading", { name: "Dashboard de Serviços" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Dashboard de Serviços" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Atendimento" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Problemas" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Mudanças" })).toBeInTheDocument();
@@ -100,10 +102,9 @@ describe("Dashboard da Assistência", () => {
     await user.click(screen.getByRole("button", { name: "Concluir" }));
 
     // Links de atalho
-    expect(screen.getByRole("link", { name: /Abrir fila e quadro de atendimento/ })).toHaveAttribute(
-      "href",
-      "/atendimento/fila",
-    );
+    expect(
+      screen.getByRole("link", { name: /Abrir fila e quadro de atendimento/ }),
+    ).toHaveAttribute("href", "/atendimento/fila");
     expect(screen.getByRole("link", { name: /Gerenciar problemas e contornos/ })).toHaveAttribute(
       "href",
       "/problemas",
@@ -125,7 +126,9 @@ describe("Dashboard da Assistência", () => {
     expect(screen.getByRole("radio", { name: "Barras" })).toHaveAttribute("aria-checked", "true");
     await user.click(screen.getByRole("radio", { name: "Rosca" }));
     expect(screen.getByRole("radio", { name: "Rosca" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByTestId("assistencia-graficos").querySelector("[data-estilo='rosca']")).toBeTruthy();
+    expect(
+      screen.getByTestId("assistencia-graficos").querySelector("[data-estilo='rosca']"),
+    ).toBeTruthy();
   });
 
   it("filtra problemas e oculta um cartão neste navegador", async () => {
@@ -159,7 +162,9 @@ describe("Dashboard da Assistência", () => {
     await user.click(screen.getByRole("button", { name: "Organizar painel" }));
     await user.click(screen.getByRole("button", { name: "Ocultar Atendimento" }));
     expect(screen.queryByRole("heading", { name: "Atendimento" })).not.toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem("nova-assistencia:painel") ?? "{}").ocultos).toContain("atendimento");
+    expect(JSON.parse(localStorage.getItem("nova-assistencia:painel") ?? "{}").ocultos).toContain(
+      "atendimento",
+    );
     await user.click(screen.getByRole("button", { name: "Mostrar Atendimento" }));
     expect(screen.getByRole("heading", { name: "Atendimento" })).toBeInTheDocument();
   });

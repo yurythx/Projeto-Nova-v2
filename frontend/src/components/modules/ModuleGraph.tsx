@@ -5,15 +5,44 @@ import { useId, useMemo, useState, type KeyboardEvent } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Toggle } from "@/components/ui/Toggle";
-import { layoutModuleGraph, NODE_H, NODE_W, relatedModules, type NodeStatus } from "@/lib/modules/graph";
+import {
+  layoutModuleGraph,
+  NODE_H,
+  NODE_W,
+  relatedModules,
+  type NodeStatus,
+} from "@/lib/modules/graph";
 import { moduleNames } from "@/lib/modules/plan";
 import type { ModuleStatus } from "@/lib/plataforma/types";
 
-const STATUS: Record<NodeStatus, { label: string; tone: "info" | "success" | "warning" | "neutral"; box: string; dot: string }> = {
-  core: { label: "Núcleo", tone: "info", box: "fill-primary/10 stroke-primary", dot: "fill-primary" },
-  active: { label: "Ativo", tone: "success", box: "fill-success/10 stroke-success", dot: "fill-success" },
-  waiting: { label: "Aguardando dependência", tone: "warning", box: "fill-warning/10 stroke-warning", dot: "fill-warning" },
-  inactive: { label: "Inativo", tone: "neutral", box: "fill-surface stroke-surface-border", dot: "fill-muted" },
+const STATUS: Record<
+  NodeStatus,
+  { label: string; tone: "info" | "success" | "warning" | "neutral"; box: string; dot: string }
+> = {
+  core: {
+    label: "Núcleo",
+    tone: "info",
+    box: "fill-primary/10 stroke-primary",
+    dot: "fill-primary",
+  },
+  active: {
+    label: "Ativo",
+    tone: "success",
+    box: "fill-success/10 stroke-success",
+    dot: "fill-success",
+  },
+  waiting: {
+    label: "Aguardando dependência",
+    tone: "warning",
+    box: "fill-warning/10 stroke-warning",
+    dot: "fill-warning",
+  },
+  inactive: {
+    label: "Inativo",
+    tone: "neutral",
+    box: "fill-surface stroke-surface-border",
+    dot: "fill-muted",
+  },
 };
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -37,9 +66,13 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
   const layout = useMemo(() => layoutModuleGraph(modules), [modules]);
   const [selected, setSelected] = useState<string | null>(null);
   const current = modules.find((m) => m.key === selected) ?? null;
-  const related = useMemo(() => (selected ? relatedModules(modules, selected) : null), [modules, selected]);
+  const related = useMemo(
+    () => (selected ? relatedModules(modules, selected) : null),
+    [modules, selected],
+  );
 
-  const lit = (key: string) => !related || key === selected || related.up.has(key) || related.down.has(key);
+  const lit = (key: string) =>
+    !related || key === selected || related.up.has(key) || related.down.has(key);
   const select = (key: string) => setSelected((s) => (s === key ? null : key));
   const onKey = (e: KeyboardEvent, key: string) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -62,7 +95,15 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
           className="mx-auto block"
         >
           <defs>
-            <marker id={arrowId} viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <marker
+              id={arrowId}
+              viewBox="0 0 8 8"
+              refX="8"
+              refY="4"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
               <path d="M0,0 L8,4 L0,8 z" className="fill-muted" />
             </marker>
           </defs>
@@ -79,7 +120,11 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
             );
           })}
           {layout.isolatedLabelY !== null && (
-            <text x={8} y={layout.isolatedLabelY + 14} className="fill-muted text-xs font-medium uppercase tracking-wide">
+            <text
+              x={8}
+              y={layout.isolatedLabelY + 14}
+              className="fill-muted text-xs font-medium uppercase tracking-wide"
+            >
               Sem dependências
             </text>
           )}
@@ -91,8 +136,12 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
               m.name,
               s.label,
               m.depends_on.length > 0 ? `depende de ${moduleNames(modules, m.depends_on)}` : "",
-              m.dependents.length > 0 ? `necessário para ${moduleNames(modules, m.dependents)}` : "",
-            ].filter(Boolean).join("; ");
+              m.dependents.length > 0
+                ? `necessário para ${moduleNames(modules, m.dependents)}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("; ");
             return (
               <g
                 key={n.key}
@@ -106,9 +155,19 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
                 onKeyDown={(e) => onKey(e, n.key)}
                 className={`cursor-pointer outline-none transition-opacity focus-visible:[&>rect]:stroke-[3] ${on ? "opacity-100" : "opacity-30"}`}
               >
-                <rect width={NODE_W} height={NODE_H} rx={8} className={`${s.box} ${selected === n.key ? "stroke-[3]" : "stroke-[1.5]"}`} />
+                <rect
+                  width={NODE_W}
+                  height={NODE_H}
+                  rx={8}
+                  className={`${s.box} ${selected === n.key ? "stroke-[3]" : "stroke-[1.5]"}`}
+                />
                 <circle cx={14} cy={NODE_H / 2} r={4} className={s.dot} />
-                <text x={26} y={NODE_H / 2} dominantBaseline="central" className="fill-foreground text-[13px] font-medium">
+                <text
+                  x={26}
+                  y={NODE_H / 2}
+                  dominantBaseline="central"
+                  className="fill-foreground text-[13px] font-medium"
+                >
                   {n.name.length > 20 ? `${n.name.slice(0, 19)}…` : n.name}
                 </text>
               </g>
@@ -124,12 +183,18 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
               {STATUS[k].label}
             </span>
           ))}
-          <span>Seta: da dependência para o módulo que depende dela. Tracejado: ligação com um lado inativo.</span>
+          <span>
+            Seta: da dependência para o módulo que depende dela. Tracejado: ligação com um lado
+            inativo.
+          </span>
         </figcaption>
       </figure>
 
       {current && (
-        <section aria-label={`Detalhes de ${current.name}`} className="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface p-4 text-sm">
+        <section
+          aria-label={`Detalhes de ${current.name}`}
+          className="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface p-4 text-sm"
+        >
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-semibold">{current.name}</h2>
             <code className="text-xs text-muted">{current.key}</code>
@@ -154,11 +219,15 @@ export function ModuleGraph({ modules, canManage, busy, onToggle }: ModuleGraphP
           <p className="text-muted">{current.description}</p>
           <p>
             <span className="font-medium">Depende de:</span>{" "}
-            {related && related.up.size > 0 ? moduleNames(modules, [...related.up]) : "nenhum módulo"}
+            {related && related.up.size > 0
+              ? moduleNames(modules, [...related.up])
+              : "nenhum módulo"}
           </p>
           <p>
             <span className="font-medium">Necessário para:</span>{" "}
-            {related && related.down.size > 0 ? moduleNames(modules, [...related.down]) : "nenhum módulo"}
+            {related && related.down.size > 0
+              ? moduleNames(modules, [...related.down])
+              : "nenhum módulo"}
           </p>
         </section>
       )}

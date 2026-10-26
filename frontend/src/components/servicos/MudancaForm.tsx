@@ -57,7 +57,9 @@ export function MudancaForm({
     const justDigitada = texto("justificativa");
     let justFinal = justDigitada;
     if (justificativaCalculo && !justDigitada.includes("[Cálculo de Risco CAB")) {
-      justFinal = justDigitada ? `${justDigitada}\n\n${justificativaCalculo}` : justificativaCalculo;
+      justFinal = justDigitada
+        ? `${justDigitada}\n\n${justificativaCalculo}`
+        : justificativaCalculo;
     }
 
     onSalvar({

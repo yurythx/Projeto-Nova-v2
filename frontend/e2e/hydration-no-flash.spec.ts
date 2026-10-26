@@ -12,7 +12,10 @@ test.describe("Sem flash de hidratação (branding + Sidebar)", () => {
   test.skip(!ADMIN_PASSWORD, NEEDS_ADMIN);
   test.use({ storageState: STORAGE_STATE });
 
-  test("o HTML do servidor já traz o nome novo, a Sidebar recolhida e o alto contraste", async ({ page, context }) => {
+  test("o HTML do servidor já traz o nome novo, a Sidebar recolhida e o alto contraste", async ({
+    page,
+    context,
+  }) => {
     await asAdmin(page);
 
     const newName = uniq("Portal E2E");
@@ -34,9 +37,13 @@ test.describe("Sem flash de hidratação (branding + Sidebar)", () => {
     // HTML CRU do servidor: o que chega ANTES do React hidratar.
     const html = await (await context.request.get("/dashboard")).text();
     expect(html, "SSR deve trazer o nome novo").toContain(newName);
-    expect(html, "SSR deve trazer a Sidebar recolhida").toContain("md:w-[var(--sidebar-w-collapsed)]");
+    expect(html, "SSR deve trazer a Sidebar recolhida").toContain(
+      "md:w-[var(--sidebar-w-collapsed)]",
+    );
     expect(html).toContain("md:pl-[var(--sidebar-w-collapsed)]");
-    expect(html, "SSR deve carimbar data-high-contrast no <html>").toMatch(/<html[^>]*data-high-contrast="true"/);
+    expect(html, "SSR deve carimbar data-high-contrast no <html>").toMatch(
+      /<html[^>]*data-high-contrast="true"/,
+    );
 
     // devolve o nome original (a suíte roda contra o mesmo banco)
     await page.goto("/configuracao");

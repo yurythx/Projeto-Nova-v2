@@ -15,7 +15,9 @@ function clearCookies() {
 }
 
 function cookieValue(): Record<string, unknown> {
-  const raw = decodeURIComponent(document.cookie.split(`${BRANDING_COOKIE}=`)[1]?.split(";")[0] ?? "{}");
+  const raw = decodeURIComponent(
+    document.cookie.split(`${BRANDING_COOKIE}=`)[1]?.split(";")[0] ?? "{}",
+  );
   return JSON.parse(raw);
 }
 
@@ -31,7 +33,11 @@ describe("brandingStore", () => {
   it("prime aplica a identidade do servidor mantendo as preferências do cookie", async () => {
     document.cookie = `${BRANDING_COOKIE}=${encodeURIComponent(JSON.stringify({ highContrast: true }))}; path=/`;
     const store = await freshStore();
-    store.primeBrandingStore({ ...DEFAULT_BRANDING, appName: "Órgão X", tokens: { primary: "#003366" } });
+    store.primeBrandingStore({
+      ...DEFAULT_BRANDING,
+      appName: "Órgão X",
+      tokens: { primary: "#003366" },
+    });
     const snap = store.getBrandingSnapshot();
     expect(snap.appName).toBe("Órgão X");
     expect(snap.tokens.primary).toBe("#003366");

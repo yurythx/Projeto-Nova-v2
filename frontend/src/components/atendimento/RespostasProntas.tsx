@@ -17,7 +17,9 @@ export function RespostasProntas({
   ofertaId: string;
   onColocar: (texto: string, interna: boolean) => void;
 }) {
-  const respostas = useApiQuery<Resposta>(ofertaId ? `v1/atendimento/ofertas/${ofertaId}/respostas` : null);
+  const respostas = useApiQuery<Resposta>(
+    ofertaId ? `v1/atendimento/ofertas/${ofertaId}/respostas` : null,
+  );
   const item = respostas.data;
   if (!item || (!item.publico && !item.interna)) return null;
 

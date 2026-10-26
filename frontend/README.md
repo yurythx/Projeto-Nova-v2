@@ -15,18 +15,18 @@ npm run dev
 
 ## Scripts
 
-| Comando | Finalidade |
-|---|---|
-| `npm run dev` | Inicia o servidor de desenvolvimento |
-| `npm run build` | Build de produção (`.next/standalone`) |
-| `npm run analyze` | `next experimental-analyze` — UI interativa do bundle (Turbopack; passe `-- --output` pra só gravar em disco, sem servidor) |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Roda a suíte Vitest uma vez |
-| `npm run test:watch` | Vitest em modo watch |
-| `npm run test:e2e` | Playwright, contra uma stack real já rodando (ver README raiz, "Testes") |
-| `npm run test:e2e:ui` | Idem, com a UI interativa do Playwright |
-| `npm run format` | Prettier, modo write |
+| Comando               | Finalidade                                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`         | Inicia o servidor de desenvolvimento                                                                                        |
+| `npm run build`       | Build de produção (`.next/standalone`)                                                                                      |
+| `npm run analyze`     | `next experimental-analyze` — UI interativa do bundle (Turbopack; passe `-- --output` pra só gravar em disco, sem servidor) |
+| `npm run lint`        | ESLint                                                                                                                      |
+| `npm run typecheck`   | `tsc --noEmit`                                                                                                              |
+| `npm test`            | Roda a suíte Vitest uma vez                                                                                                 |
+| `npm run test:watch`  | Vitest em modo watch                                                                                                        |
+| `npm run test:e2e`    | Playwright, contra uma stack real já rodando (ver README raiz, "Testes")                                                    |
+| `npm run test:e2e:ui` | Idem, com a UI interativa do Playwright                                                                                     |
+| `npm run format`      | Prettier, modo write                                                                                                        |
 
 ## Organização
 

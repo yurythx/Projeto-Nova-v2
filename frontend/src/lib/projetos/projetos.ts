@@ -2,12 +2,7 @@
 
 export type Tone = "neutral" | "success" | "danger" | "warning" | "info";
 
-export type EstadoProjeto =
-  | "planejado"
-  | "em_andamento"
-  | "suspenso"
-  | "concluido"
-  | "cancelado";
+export type EstadoProjeto = "planejado" | "em_andamento" | "suspenso" | "concluido" | "cancelado";
 
 export type PrioridadeProjeto = "baixa" | "media" | "alta" | "critica";
 
@@ -46,10 +41,7 @@ export interface VinculoProjeto {
   created_at: string;
 }
 
-export const TIPO_VINCULO_PROJETO: Record<
-  TipoVinculoProjeto,
-  { label: string; tone: Tone }
-> = {
+export const TIPO_VINCULO_PROJETO: Record<TipoVinculoProjeto, { label: string; tone: Tone }> = {
   mudanca: { label: "Mudança", tone: "info" },
   problema: { label: "Problema", tone: "warning" },
   ativo: { label: "Ativo de TI", tone: "neutral" },
@@ -126,4 +118,3 @@ export interface ListarApontamentosResponse {
   items: ApontamentoHora[];
   resumo: ResumoHorasProjeto;
 }
-

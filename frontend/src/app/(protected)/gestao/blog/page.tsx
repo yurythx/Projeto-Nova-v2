@@ -17,7 +17,11 @@ import { useApiPage, withQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { Post } from "@/lib/plataforma/types";
 
-const STATUS_LABEL: Record<Post["status"], string> = { draft: "Rascunho", published: "Publicado", archived: "Arquivado" };
+const STATUS_LABEL: Record<Post["status"], string> = {
+  draft: "Rascunho",
+  published: "Publicado",
+  archived: "Arquivado",
+};
 
 export default function BlogPage() {
   const { can } = usePlataforma();
@@ -27,7 +31,15 @@ export default function BlogPage() {
   const [kind, setKind] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const list = useApiPage<Post>(withQuery("v1/blog/admin/posts", { q: query, kind, status: manage ? status : "", page, page_size: 12 }));
+  const list = useApiPage<Post>(
+    withQuery("v1/blog/admin/posts", {
+      q: query,
+      kind,
+      status: manage ? status : "",
+      page,
+      page_size: 12,
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -90,13 +102,22 @@ export default function BlogPage() {
         </Button>
       </form>
 
-      <DataState loading={list.isLoading} error={list.error} onRetry={() => void list.mutate()} empty={(list.data?.items ?? []).length === 0} emptyTitle="Nenhuma publicação">
+      <DataState
+        loading={list.isLoading}
+        error={list.error}
+        onRetry={() => void list.mutate()}
+        empty={(list.data?.items ?? []).length === 0}
+        emptyTitle="Nenhuma publicação"
+      >
         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {(list.data?.items ?? []).map((p) => {
             const cardHref = manage ? `/gestao/blog/${p.slug}` : `/blog/${p.slug}`;
             return (
               <li key={p.id}>
-                <Link href={cardHref} className="block h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <Link
+                  href={cardHref}
+                  className="block h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
                   <Card className="flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
                     {p.cover_url && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -105,8 +126,12 @@ export default function BlogPage() {
                     <div className="flex flex-1 flex-col gap-2 p-4">
                       <div className="flex flex-wrap items-center gap-1 text-xs text-muted">
                         {p.pinned && <Pin size={12} aria-label="Fixado" />}
-                        <Badge tone={p.kind === "comunicado" ? "info" : "neutral"}>{p.kind === "comunicado" ? "Comunicado" : "Notícia"}</Badge>
-                        {p.status !== "published" && <Badge tone="warning">{STATUS_LABEL[p.status]}</Badge>}
+                        <Badge tone={p.kind === "comunicado" ? "info" : "neutral"}>
+                          {p.kind === "comunicado" ? "Comunicado" : "Notícia"}
+                        </Badge>
+                        {p.status !== "published" && (
+                          <Badge tone="warning">{STATUS_LABEL[p.status]}</Badge>
+                        )}
                         <PublicoBadge publico={p.publico} />
                         <span>{fmtDate(p.published_at ?? p.updated_at)}</span>
                       </div>

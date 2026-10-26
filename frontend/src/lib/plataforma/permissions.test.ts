@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { OrgTree, Scope } from "@/lib/plataforma/types";
 
-import { departamentosGeridos, hasPermission, unidadesGeridas, unidadesLotadas } from "./permissions";
+import {
+  departamentosGeridos,
+  hasPermission,
+  unidadesGeridas,
+  unidadesLotadas,
+} from "./permissions";
 
 const un = (id: string, entidade_id: string, parent_id?: string) => ({
   id,
@@ -116,9 +121,14 @@ describe("departamentosGeridos (ADR 013)", () => {
 describe("unidadesLotadas (ADR 013)", () => {
   it("unidade com as subunidades, entidade inteira, só a unidade do departamento; global não é lotação", () => {
     const r = (scopes: Scope[]) => [...unidadesLotadas({ scopes }, TREE)].sort();
-    expect(r([scope({ entidade_id: "E", unidade_id: "SUB", permissions: [] })])).toEqual(["NETA", "SUB"]);
+    expect(r([scope({ entidade_id: "E", unidade_id: "SUB", permissions: [] })])).toEqual([
+      "NETA",
+      "SUB",
+    ]);
     expect(r([scope({ entidade_id: "X", permissions: [] })])).toEqual(["W"]);
-    expect(r([scope({ entidade_id: "E", unidade_id: "A", departamento_id: "d-A" })])).toEqual(["A"]);
+    expect(r([scope({ entidade_id: "E", unidade_id: "A", departamento_id: "d-A" })])).toEqual([
+      "A",
+    ]);
     expect(r([scope({ departamento_id: "inexistente" }), scope({})])).toEqual([]);
     expect([...unidadesLotadas(undefined, undefined)]).toEqual([]);
   });

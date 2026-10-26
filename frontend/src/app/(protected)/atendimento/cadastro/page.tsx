@@ -14,7 +14,12 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { rotuloTipo, type CampoOferta, type Oferta, type Pessoa } from "@/lib/atendimento/atendimento";
+import {
+  rotuloTipo,
+  type CampoOferta,
+  type Oferta,
+  type Pessoa,
+} from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 interface Produto {
@@ -204,7 +209,9 @@ export default function AtendimentoCadastroPage() {
                       value={campo.rotulo}
                       maxLength={80}
                       onChange={(e) =>
-                        setCampos(campos.map((c, j) => (j === i ? { ...c, rotulo: e.target.value } : c)))
+                        setCampos(
+                          campos.map((c, j) => (j === i ? { ...c, rotulo: e.target.value } : c)),
+                        )
                       }
                     />
                     <Select
@@ -231,7 +238,11 @@ export default function AtendimentoCadastroPage() {
                         checked={campo.obrigatorio}
                         aria-label={`Pergunta ${i + 1} obrigatória`}
                         onChange={(e) =>
-                          setCampos(campos.map((c, j) => (j === i ? { ...c, obrigatorio: e.target.checked } : c)))
+                          setCampos(
+                            campos.map((c, j) =>
+                              j === i ? { ...c, obrigatorio: e.target.checked } : c,
+                            ),
+                          )
                         }
                       />
                       Obrigatória
@@ -259,7 +270,10 @@ export default function AtendimentoCadastroPage() {
                   variant="secondary"
                   disabled={campos.length >= 20}
                   onClick={() =>
-                    setCampos([...campos, { chave: "", rotulo: "", tipo: "texto", obrigatorio: false }])
+                    setCampos([
+                      ...campos,
+                      { chave: "", rotulo: "", tipo: "texto", obrigatorio: false },
+                    ])
                   }
                 >
                   Adicionar pergunta
