@@ -2,7 +2,7 @@
 # Bootstrap da VM Projeto-nova-v2 quando o Ansible não roda no Windows.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-PUBLIC_HOST="${1:-192.168.1.52}"
+PUBLIC_HOST="${1:-192.168.1.70}"
 APP_DIR=/opt/projeto-nova
 
 apt-get update

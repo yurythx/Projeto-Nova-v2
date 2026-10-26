@@ -68,12 +68,14 @@ docs/AD/
 *.tfstate
 *.tfstate.*
 deploy/infra/terraform/terraform.tfvars
+*.tfplan
 .terraform/
 .terraform.lock.hcl
 
 # Ansible
 deploy/infra/ansible/inventory.ini
 deploy/infra/ansible/secrets.yml
+deploy/infra/ansible/cloudflare.secrets.yml
 *.retry
 
 # Relatórios de cobertura gerados localmente

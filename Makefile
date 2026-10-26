@@ -204,6 +204,6 @@ infra-apply: ## Provisiona a VM KVM no Proxmox (192.168.1.13) e gera o inventár
 infra-destroy: ## Destroi a infraestrutura no Proxmox
 	cd deploy/infra/terraform && terraform destroy
 
-infra-deploy: ## Docker + stack Projeto-nova-v2 na VM (SSO oficial se secrets.yml existir)
+infra-deploy: ## Docker + stack na VM (SSO de secrets.yml, túnel de cloudflare.secrets.yml)
 	cd deploy/infra/ansible && ansible-galaxy collection install -r requirements.yml --force && \
-		if [ -f secrets.yml ]; then ansible-playbook site.yml -e @secrets.yml; else ansible-playbook site.yml; fi
+		ansible-playbook site.yml $$(for f in secrets.yml cloudflare.secrets.yml; do [ -f $$f ] && printf -- '-e @%s ' $$f; done)

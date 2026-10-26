@@ -1,17 +1,12 @@
 # ==============================================================================
 # Projeto-nova-v2 no Proxmox VE (192.168.1.13) — VM KVM + inventário Ansible
 # O host 192.168.1.13 é a API do Proxmox, não a VM da aplicação.
-# VMID 220 / projeto-nova-prod-app: VM nova. No pve1 a 201 e a 210 já estão
-# ocupadas; clona o template 9000 (ubuntu-2404-cloud).
+# VMID 240 / projeto-nova-prod-app: VM nova, clonada do template 9000
+# (ubuntu-2404-cloud). As outras VMs do pve1 (201, 210, 220, 230) têm cada
+# uma a sua aplicação: nunca reaproveite nem ligue uma delas daqui.
+# Domínio público: projetonova.cloud (stack ./cloudflare).
 # SSO oficial: sso.rondonopolis.mt.gov.br (não sobe o Keycloak de teste).
 # ==============================================================================
-
-# O módulo se chamava vm_sismarq_app: o state troca de endereço sem
-# recriar a VM.
-moved {
-  from = module.vm_sismarq_app
-  to   = module.vm_app
-}
 
 module "vm_app" {
   source = "./modules/proxmox_vm"
@@ -19,7 +14,7 @@ module "vm_app" {
   node_name         = var.proxmox_node_name
   vm_id             = var.vm_id
   name              = var.vm_name
-  description       = "VM KVM Docker — Projeto-nova-v2 (SSO sso.rondonopolis.mt.gov.br)"
+  description       = "VM KVM Docker — Projeto-nova-v2 (projetonova.cloud)"
   tags              = ["prod", "docker", "projeto-nova", "kvm"]
   cores             = var.vm_cores
   memory            = var.vm_memory

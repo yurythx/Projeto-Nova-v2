@@ -4,7 +4,7 @@ ansible_python_interpreter=/usr/bin/python3
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 [docker_hosts]
-projeto-nova-prod-app ansible_host=192.168.1.52 proxmox_vmid=220
+projeto-nova-prod-app ansible_host=192.168.1.70 proxmox_vmid=240
 
 [app_servers]
 projeto-nova-prod-app

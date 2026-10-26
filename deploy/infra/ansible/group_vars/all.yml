@@ -1,11 +1,24 @@
 ---
-# Valores públicos. Segredo do client Keycloak: secrets.yml (gitignore).
+# Valores públicos. Segredos: secrets.yml (client do SSO) e
+# cloudflare.secrets.yml (token do túnel, copiado do painel) — gitignore.
 
 # Primeira clonagem só se a pasta ainda não existir. Atualizações pelo git
 # (deploy/homolog/sincronizar-vm publica o main do GitHub).
 app_git_repo: "https://github.com/yurythx/Projeto-Nova-v2.git"
 app_git_version: main
 app_dir: /opt/projeto-nova
+
+# Domínio público: a única fonte das URLs que o navegador usa. Precisa
+# bater com os Public Hostnames do túnel no painel da Cloudflare
+# (docs/DEPLOY.md). Vazio = acesso só pelo IP da VM (http://<ip>:3010).
+app_domain: projetonova.cloud
+app_public_url: "https://{{ app_domain }}"
+app_api_url: "https://api.{{ app_domain }}"
+app_ws_url: "wss://{{ app_domain }}/ws"
+app_files_url: "https://arquivos.{{ app_domain }}"
+
+# Preenchido por cloudflare.secrets.yml (ver cloudflare.secrets.yml.example).
+cloudflare_tunnel_token: ""
 
 keycloak_issuer_url: "https://sso.rondonopolis.mt.gov.br/realms/rondonopolis"
 keycloak_realm: rondonopolis
@@ -17,4 +30,6 @@ keycloak_frontend_client_id: projeto-nova
 keycloak_client_secret: ""
 keycloak_frontend_client_secret: ""
 
+# Caddy com CA interna (acesso por IP na rede local). Não combina com
+# app_domain: com o domínio, o TLS é o da Cloudflare.
 enable_https: false

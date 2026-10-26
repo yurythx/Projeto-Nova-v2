@@ -5,6 +5,8 @@
 #   scripts/deploy.sh                 # usa o 1º IP da máquina como host público
 #   scripts/deploy.sh 192.168.1.42    # host/IP/DNS que o navegador vai usar
 #   scripts/deploy.sh --no-pull ...   # não faz git pull antes do build
+#   scripts/deploy.sh --env-only ...  # só gera .env e chaves, sem subir nada
+#                                     # (o Ansible grava o domínio antes do build)
 #
 # Na primeira execução gera .env (segredos aleatórios fortes) e a chave RSA
 # do login local em secrets/. Execuções seguintes reaproveitam os dois —
@@ -18,10 +20,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PULL=1
-if [ "${1:-}" = "--no-pull" ]; then
-  PULL=0
+ENV_ONLY=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-pull) PULL=0 ;;
+    --env-only) ENV_ONLY=1; PULL=0 ;;
+    *) break ;;
+  esac
   shift
-fi
+done
 
 PUBLIC_HOST="${1:-${PUBLIC_HOST:-$(hostname -I | awk '{print $1}')}}"
 # Sem -f: o docker compose lê COMPOSE_FILE do .env (ex.: Keycloak de
@@ -80,6 +87,13 @@ if ! grep -q '^TYPESENSE_API_KEY=.' .env || grep -q '^TYPESENSE_API_KEY=dev-chan
   log "Gerando TYPESENSE_API_KEY (índice da Busca Global, ADR 031)"
   set_kv TYPESENSE_API_KEY "$(openssl rand -hex 32)"
 fi
+# O valor do .env.example é público e a API recusa subir com ele. Só troca
+# o que nunca serviu em produção: uma chave real já embrulha as senhas do
+# cofre e não pode mudar.
+if ! grep -q '^COFRE_MASTER_KEY=.' .env || grep -q '^COFRE_MASTER_KEY=MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=$' .env; then
+  log "Gerando COFRE_MASTER_KEY (cofre de senhas, ADR 053)"
+  set_kv COFRE_MASTER_KEY "$(openssl rand -base64 32)"
+fi
 
 if [ ! -f secrets/local_auth_private_key.pem ]; then
   log "Gerando a chave RSA do login local (secrets/local_auth_private_key.pem)"
@@ -88,6 +102,11 @@ if [ ! -f secrets/local_auth_private_key.pem ]; then
   # O container roda como usuário não-root (nix) e lê a chave pelo bind
   # mount /run/secrets — precisa ser legível por ele.
   chmod 644 secrets/local_auth_private_key.pem
+fi
+
+if [ "$ENV_ONLY" = 1 ]; then
+  log "Pronto (--env-only): .env e chaves gerados, nada subiu"
+  exit 0
 fi
 
 # Borda HTTPS ativa? O Caddy sobe primeiro: a CA interna dele é recriada

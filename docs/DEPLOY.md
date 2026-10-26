@@ -9,7 +9,7 @@ opcionais, ligadas pelo `COMPOSE_FILE` do `.env`:
 | `docker-compose.yml` | a stack | sempre |
 | `docker-compose.keycloak.yml` | Keycloak **de teste** com usuários fictícios | `make demo-keycloak` |
 | `docker-compose.https.yml` | Caddy com HTTPS (CA interna) como única entrada | `scripts/enable-https.sh` |
-| `docker-compose.cloudflare.yml` | Cloudflare Tunnel (Zero Trust Ingress sem portas expostas no firewall) | `COMPOSE_FILE` no `.env` |
+| `docker-compose.cloudflare.yml` | Cloudflare Tunnel de projetonova.cloud (sem portas expostas no firewall) | `make infra-deploy` (Ansible) |
 | `docker-compose.ia.yml` | (opcional) IA local (Ollama, serviço `ia-local`) | acrescentar ao `COMPOSE_FILE` (ver "Inteligência artificial" abaixo) |
 
 ## Pré-requisitos
@@ -94,6 +94,60 @@ quem precisa continuar com acesso amplo (concessão global) antes do deploy.
   limites por IP (login, contato) e a prova de consentimento LGPD perdem o
   sentido. Servido por HTTP num IP da rede, o navegador também desliga
   recursos de "contexto seguro".
+
+## Produção no Proxmox com o domínio projetonova.cloud
+
+O domínio público é **projetonova.cloud**, com DNS na Cloudflare. A VM não
+abre porta para a internet: o `cloudflared` (`docker-compose.cloudflare.yml`)
+roda dentro da stack e abre só conexões de saída.
+
+| Endereço | Destino |
+|---|---|
+| `https://projetonova.cloud` | frontend (`/ws` vai para a API) |
+| `https://api.projetonova.cloud` | API direta (health, integrações) |
+| `https://arquivos.projetonova.cloud` | MinIO (URLs pré-assinadas) |
+| `https://www.projetonova.cloud` | 301 para `projetonova.cloud` |
+
+Tudo é declarado em código:
+
+- `deploy/infra/terraform`: VM 240 (`projeto-nova-prod-app`, 192.168.1.70)
+  no pve1, clonada do template 9000. **As outras VMs do pve1 (201, 210,
+  220, 230) são de outras aplicações**: não reaproveite nem ligue nenhuma
+  delas.
+- Túnel `projeto-nova-prod`: configurado no painel da Cloudflare (tabela
+  abaixo). O token vai em `deploy/infra/ansible/cloudflare.secrets.yml`
+  (gitignore; modelo em `cloudflare.secrets.yml.example`).
+- `deploy/infra/ansible`: `app_domain` em `group_vars/all.yml` é a fonte das
+  quatro URLs públicas do `.env`. Com o domínio, as portas da stack escutam
+  só em 127.0.0.1, o UFW libera só o SSH e `TRUSTED_PROXIES` recebe a
+  sub-rede interna do compose.
+
+Public Hostnames do túnel, **nesta ordem** (a regra do `/ws` antes da raiz).
+O cloudflared roda na rede do compose e chega aos containers pelo nome:
+
+| Subdomain | Domain | Path | Type | URL |
+|---|---|---|---|---|
+| | projetonova.cloud | `^/ws/?$` | HTTP | `backend-api:8010` |
+| | projetonova.cloud | | HTTP | `frontend:3000` |
+| `api` | projetonova.cloud | | HTTP | `backend-api:8010` |
+| `arquivos` | projetonova.cloud | | HTTP | `minio:9000` (sem "HTTP Host Header": é parte da assinatura) |
+| `www` | projetonova.cloud | | HTTP | `frontend:3000` (só cria o DNS; a Redirect Rule manda para a raiz) |
+
+```bash
+make infra-apply      # 1. cria a VM 240 e gera ansible/inventory.ini
+                      # 2. painel: túnel, hostnames, redirect do www; token em cloudflare.secrets.yml
+make infra-deploy     # 3. Docker + stack com o domínio (Ansible; no Windows, pelo WSL)
+```
+
+Na zona, deixe Rocket Loader e Email Address Obfuscation desligados: os dois
+injetam scripts que a CSP do frontend bloqueia.
+
+O SSO oficial (`sso.rondonopolis.mt.gov.br`) precisa aceitar
+`https://projetonova.cloud/*` nas URLs de redirecionamento e de pós-logout
+do client `projeto-nova`, e `https://projetonova.cloud` em Web Origins.
+
+No plano gratuito, a Cloudflare limita o corpo de cada requisição a 100 MB.
+Um envio de arquivo maior que isso falha em `arquivos.projetonova.cloud`.
 
 ## HTTPS (Caddy com CA interna)
 

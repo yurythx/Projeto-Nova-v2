@@ -1,4 +1,15 @@
 ---
+- name: Conferir a combinação de domínio, túnel e HTTPS local
+  ansible.builtin.assert:
+    that:
+      - not (app_domain | length > 0 and enable_https | bool)
+      - app_domain | length == 0 or cloudflare_tunnel_token | length > 0
+    fail_msg: >-
+      Com app_domain, o TLS vem da Cloudflare: deixe enable_https=false e
+      crie ansible/cloudflare.secrets.yml com o token do túnel do painel
+      (ver cloudflare.secrets.yml.example).
+    quiet: true
+
 - name: Criar pasta raiz de projetos
   ansible.builtin.file:
     path: "{{ app_dir | dirname }}"
@@ -19,22 +30,15 @@
     update: false
   when: not app_checkout.stat.exists
 
-- name: Liberar portas no UFW (SSH, HTTP/S e stack)
+# Com o domínio, o cloudflared só abre conexões de saída: nada além do SSH
+# precisa entrar. Sem ele, o navegador fala direto com as portas da stack.
+- name: Liberar portas no UFW
   community.general.ufw:
     rule: allow
     port: "{{ item }}"
     proto: tcp
     comment: Trafego Projeto-nova-v2
-  loop:
-    - "22"
-    - "80"
-    - "443"
-    - "3010"
-    - "8010"
-    - "8443"
-    - "9010"
-    - "9011"
-    - "9443"
+  loop: "{{ ['22'] if app_domain | length > 0 else ['22', '80', '443', '3010', '8010', '8443', '9010', '9011', '9443'] }}"
 
 - name: Garantir execução dos scripts de deploy
   ansible.builtin.file:
@@ -44,12 +48,37 @@
     - scripts/deploy.sh
     - scripts/enable-https.sh
 
-- name: Subir a stack (gera .env e chave RSA na primeira vez)
+- name: Gerar o .env e as chaves (sem subir nada ainda)
   ansible.builtin.command:
-    cmd: "bash scripts/deploy.sh --no-pull {{ ansible_host }}"
+    cmd: "bash scripts/deploy.sh --env-only {{ ansible_host }}"
     chdir: "{{ app_dir }}"
-  register: deploy_result
-  changed_when: true
+  register: env_result
+  changed_when: "'Gerando' in env_result.stdout"
+
+# O frontend embute estas URLs no build: elas entram no .env antes dele.
+# HOST_BIND=127.0.0.1 deixa o túnel como a única entrada — com as portas
+# abertas na rede, o cliente forjaria o X-Forwarded-For.
+- name: Gravar as URLs públicas do domínio no .env
+  ansible.builtin.lineinfile:
+    path: "{{ app_dir }}/.env"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  loop:
+    - { key: FRONTEND_URL, value: "{{ app_public_url }}" }
+    - { key: API_PUBLIC_URL, value: "{{ app_api_url }}" }
+    - { key: WEBSOCKET_PUBLIC_URL, value: "{{ app_ws_url }}" }
+    - { key: MINIO_PUBLIC_URL, value: "{{ app_files_url }}" }
+    - { key: HOST_BIND, value: "127.0.0.1" }
+    - { key: TRUST_PROXY_HEADERS, value: "true" }
+  when: app_domain | length > 0
+
+- name: Gravar o token do túnel Cloudflare no .env
+  ansible.builtin.lineinfile:
+    path: "{{ app_dir }}/.env"
+    regexp: "^CLOUDFLARE_TUNNEL_TOKEN="
+    line: "CLOUDFLARE_TUNNEL_TOKEN={{ cloudflare_tunnel_token }}"
+  when: cloudflare_tunnel_token | length > 0
+  no_log: true
 
 - name: Gravar o SSO oficial no .env (sem Keycloak de teste)
   ansible.builtin.lineinfile:
@@ -71,22 +100,51 @@
     line: "{{ item.key }}={{ item.value }}"
   loop:
     - { key: KEYCLOAK_CLIENT_SECRET, value: "{{ keycloak_client_secret }}" }
-    - { key: KEYCLOAK_FRONTEND_CLIENT_SECRET, value: "{{ keycloak_frontend_client_secret | default(keycloak_client_secret) }}" }
+    - { key: KEYCLOAK_FRONTEND_CLIENT_SECRET, value: "{{ keycloak_frontend_client_secret | default(keycloak_client_secret, true) }}" }
   when: keycloak_client_secret | length > 0
   no_log: true
 
-- name: Garantir COMPOSE_FILE só da stack (sem Keycloak de teste)
+- name: Garantir COMPOSE_FILE da stack (túnel com o domínio, sem Keycloak de teste)
   ansible.builtin.lineinfile:
     path: "{{ app_dir }}/.env"
     regexp: "^COMPOSE_FILE="
-    line: "COMPOSE_FILE=docker-compose.yml"
+    line: "COMPOSE_FILE=docker-compose.yml{{ ':docker-compose.cloudflare.yml' if cloudflare_tunnel_token | length > 0 else '' }}"
     state: present
+  when: not enable_https | bool
 
-- name: Recriar frontend e API com o issuer do SSO
+- name: Subir a stack
   ansible.builtin.command:
-    cmd: docker compose up -d --build frontend backend-api backend-worker
+    cmd: "bash scripts/deploy.sh --no-pull {{ ansible_host }}"
     chdir: "{{ app_dir }}"
-  when: keycloak_issuer_url | length > 0
+  register: deploy_result
+  changed_when: true
+
+# Frontend e cloudflared chegam à API pela rede do compose: só dela a API
+# aceita o X-Forwarded-For (o IP real vem da Cloudflare, à direita).
+- name: Descobrir a sub-rede interna do compose
+  ansible.builtin.shell:
+    cmd: >-
+      docker network inspect
+      "$(docker compose config | sed -n 's/^name: //p' | head -1)_nova_internal"
+      --format '{% raw %}{{range .IPAM.Config}}{{.Subnet}}{{end}}{% endraw %}'
+    chdir: "{{ app_dir }}"
+  register: compose_subnet
+  changed_when: false
+  when: app_domain | length > 0
+
+- name: Confiar no X-Forwarded-For só da rede interna
+  ansible.builtin.lineinfile:
+    path: "{{ app_dir }}/.env"
+    regexp: "^TRUSTED_PROXIES="
+    line: "TRUSTED_PROXIES={{ compose_subnet.stdout | trim }}"
+  register: trusted_proxies
+  when: app_domain | length > 0 and compose_subnet.stdout | trim | length > 0
+
+- name: Recriar API, worker e frontend com o TRUSTED_PROXIES novo
+  ansible.builtin.command:
+    cmd: docker compose up -d backend-api backend-worker frontend
+    chdir: "{{ app_dir }}"
+  when: trusted_proxies is changed
 
 - name: Ativar HTTPS local (Caddy) se pedido
   ansible.builtin.command:

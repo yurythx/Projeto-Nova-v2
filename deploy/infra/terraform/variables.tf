@@ -65,9 +65,9 @@ variable "vm_template_id" {
 }
 
 variable "vm_id" {
-  description = "VMID exclusivo desta instância Projeto-nova-v2 (não reutilize 201 nem o LXC de teste)"
+  description = "VMID exclusivo desta instância (201, 210, 220 e 230 são de outras aplicações)"
   type        = number
-  default     = 220
+  default     = 240
 }
 
 variable "vm_name" {
@@ -79,7 +79,7 @@ variable "vm_name" {
 variable "app_ipv4" {
   description = "IPv4 da VM de aplicação (CIDR). Não use o IP do Proxmox (192.168.1.13)."
   type        = string
-  default     = "192.168.1.52/24"
+  default     = "192.168.1.70/24"
 }
 
 variable "vm_cores" {
