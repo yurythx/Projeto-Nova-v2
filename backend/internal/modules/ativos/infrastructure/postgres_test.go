@@ -24,7 +24,7 @@ func (u umaLinha) Exec(context.Context, string, ...any) (pgconn.CommandTag, erro
 	return pgconn.CommandTag{}, u.err
 }
 func (u umaLinha) Query(context.Context, string, ...any) (pgx.Rows, error) { return nil, u.err }
-func (u umaLinha) QueryRow(context.Context, string, ...any) pgx.Row        { return linha{u.err} }
+func (u umaLinha) QueryRow(context.Context, string, ...any) pgx.Row        { return linha(u) }
 
 func TestRepositorioPropagaFalhas(t *testing.T) {
 	r := NewRepository()

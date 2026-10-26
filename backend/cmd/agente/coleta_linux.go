@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"math"
 	"os"
 	"os/exec"
 	"runtime"
@@ -57,5 +58,9 @@ func bytesDoPonto(ponto string) int64 {
 	if unix.Statfs(ponto, &st) != nil || st.Blocks == 0 || st.Frsize <= 0 {
 		return 0
 	}
-	return int64(st.Frsize) * int64(st.Blocks)
+	// Um tamanho que não cabe em int64 é leitura errada: fica sem amostra.
+	if st.Blocks > uint64(math.MaxInt64/st.Frsize) {
+		return 0
+	}
+	return st.Frsize * int64(st.Blocks) // #nosec G115 -- limite conferido acima
 }

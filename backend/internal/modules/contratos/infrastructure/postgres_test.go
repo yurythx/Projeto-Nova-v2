@@ -76,7 +76,7 @@ func (l linha) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) 
 	return pgconn.CommandTag{}, l.err
 }
 func (l linha) Query(context.Context, string, ...any) (pgx.Rows, error) { return nil, l.err }
-func (l linha) QueryRow(context.Context, string, ...any) pgx.Row        { return linhaRow{l.err} }
+func (l linha) QueryRow(context.Context, string, ...any) pgx.Row        { return linhaRow(l) }
 
 type linhaRow struct{ err error }
 

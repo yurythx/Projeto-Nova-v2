@@ -129,7 +129,6 @@ func (r *Repository) Listar(ctx context.Context, db database.DBTX, f domain.Filt
 	if f.Restrito {
 		q += fmt.Sprintf(` AND (unidade_id = ANY($%d) OR unidade_id IS NULL)`, n)
 		args = append(args, f.Unidades)
-		n++
 	}
 
 	q += ` ORDER BY created_at DESC`

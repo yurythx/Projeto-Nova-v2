@@ -486,7 +486,7 @@ func (s *Service) CriarCongelamento(ctx context.Context, identity auth.Identity,
 
 // ExcluirCongelamento remove a janela.
 func (s *Service) ExcluirCongelamento(ctx context.Context, identity auth.Identity, id uuid.UUID) error {
-	if !slices.Contains(papeis(identity, nil), domain.PapelGestor) && auth.CoverageOf(identity, auth.PermMudancasManage).All == false && len(auth.CoverageOf(identity, auth.PermMudancasManage).Unidades) == 0 {
+	if !slices.Contains(papeis(identity, nil), domain.PapelGestor) && !auth.CoverageOf(identity, auth.PermMudancasManage).All && len(auth.CoverageOf(identity, auth.PermMudancasManage).Unidades) == 0 {
 		return MapError(domain.ErrForaDoEscopo)
 	}
 	return MapError(database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
