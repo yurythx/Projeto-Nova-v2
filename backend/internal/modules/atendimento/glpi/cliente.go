@@ -88,13 +88,17 @@ type Fonte interface {
 var ErrGLPI = errors.New("glpi: resposta inesperada")
 
 // Cliente lê a API REST do GLPI (apirest.php). Abrir troca o token de
-// usuário por uma sessão; Fechar a encerra.
+// usuário (ou, sem ele, o login e a senha) por uma sessão; Fechar a
+// encerra.
 type Cliente struct {
 	Base      string
 	AppToken  string
 	UserToken string
-	HTTP      *http.Client
-	sessao    string
+	// Login e Senha entram só sem UserToken: há GLPI em que o login por
+	// token falha (perfil padrão vazio, por exemplo) e o por credencial não.
+	Login, Senha string
+	HTTP         *http.Client
+	sessao       string
 }
 
 // NovoCliente prepara o cliente para a URL da API (…/apirest.php).
@@ -196,9 +200,12 @@ func (c *Cliente) get(ctx context.Context, caminho string, out any) (http.Header
 	if c.AppToken != "" {
 		req.Header.Set("App-Token", c.AppToken)
 	}
-	if c.sessao != "" {
+	switch {
+	case c.sessao != "":
 		req.Header.Set("Session-Token", c.sessao)
-	} else {
+	case c.UserToken == "" && c.Login != "":
+		req.SetBasicAuth(c.Login, c.Senha)
+	default:
 		req.Header.Set("Authorization", "user_token "+c.UserToken)
 	}
 	resp, err := c.HTTP.Do(req)

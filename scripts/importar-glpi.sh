@@ -8,7 +8,8 @@
 #   bash scripts/importar-glpi.sh --gravar               # grava
 #
 # Variáveis:
-#   GLPI_ENV      arquivo com GLPI_URL, GLPI_APP_TOKEN e GLPI_USER_TOKEN
+#   GLPI_ENV      arquivo com GLPI_URL, GLPI_APP_TOKEN e GLPI_USER_TOKEN (ou,
+#                 sem token, GLPI_LOGIN e GLPI_PASSWORD de uma conta do GLPI)
 #                 (padrão ~/.config/projeto-nova/glpi.env, fora do repositório)
 #   NOVA_SSH      root@<vm> (padrão root@192.168.1.70)
 #   NOVA_SSH_KEY  chave que entra na VM (padrão ~/.ssh/sismarq_deploy)
@@ -24,7 +25,8 @@ vm="${NOVA_SSH:-root@192.168.1.70}"
 chave="${NOVA_SSH_KEY:-$HOME/.ssh/sismarq_deploy}"
 
 [ -f "$glpi_env" ] || { echo "Falta $glpi_env (GLPI_URL, GLPI_APP_TOKEN, GLPI_USER_TOKEN)" >&2; exit 1; }
-grep -q '^GLPI_USER_TOKEN=.' "$glpi_env" || { echo "GLPI_USER_TOKEN vazio em $glpi_env" >&2; exit 1; }
+grep -q -E '^(GLPI_USER_TOKEN|GLPI_PASSWORD)=.' "$glpi_env" ||
+  { echo "Defina GLPI_USER_TOKEN, ou GLPI_LOGIN e GLPI_PASSWORD, em $glpi_env" >&2; exit 1; }
 [ -f "$chave" ] || { echo "Chave SSH não encontrada: $chave (defina NOVA_SSH_KEY)" >&2; exit 1; }
 
 caminho() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else printf '%s' "$1"; fi; }

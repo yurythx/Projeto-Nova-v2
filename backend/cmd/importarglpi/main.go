@@ -32,6 +32,7 @@ import (
 // opcoes é o que a linha de comando e o ambiente dizem.
 type opcoes struct {
 	url, appToken, userToken string
+	login, senha             string
 	unidade                  *uuid.UUID
 	gravar                   bool
 	fuso                     *time.Location
@@ -59,9 +60,10 @@ func ler(args []string, env func(string) string) (opcoes, error) {
 	if err := fs.Parse(args); err != nil {
 		return opcoes{}, err
 	}
-	op := opcoes{url: env("GLPI_URL"), appToken: env("GLPI_APP_TOKEN"), userToken: env("GLPI_USER_TOKEN"), gravar: *gravar, pagina: *pagina}
-	if op.url == "" || op.userToken == "" {
-		return opcoes{}, errors.New("defina GLPI_URL e GLPI_USER_TOKEN (e GLPI_APP_TOKEN, se o GLPI pedir)")
+	op := opcoes{url: env("GLPI_URL"), appToken: env("GLPI_APP_TOKEN"), userToken: env("GLPI_USER_TOKEN"),
+		login: env("GLPI_LOGIN"), senha: env("GLPI_PASSWORD"), gravar: *gravar, pagina: *pagina}
+	if op.url == "" || (op.userToken == "" && (op.login == "" || op.senha == "")) {
+		return opcoes{}, errors.New("defina GLPI_URL e GLPI_USER_TOKEN, ou GLPI_LOGIN e GLPI_PASSWORD (e GLPI_APP_TOKEN, se o GLPI pedir)")
 	}
 	if *unidade != "" {
 		id, err := uuid.Parse(*unidade)
@@ -93,6 +95,7 @@ func rodar(ctx context.Context, op opcoes, saida io.Writer) error {
 
 func importar(ctx context.Context, op opcoes, pool *pgxpool.Pool, saida io.Writer) error {
 	cliente := glpi.NovoCliente(op.url, op.appToken, op.userToken)
+	cliente.Login, cliente.Senha = op.login, op.senha
 	if err := cliente.Abrir(ctx); err != nil {
 		return fmt.Errorf("sessão no GLPI: %w", err)
 	}

@@ -22,6 +22,13 @@ func TestLer(t *testing.T) {
 	if op, err := ler(nil, env); err != nil || op.gravar || op.unidade != nil {
 		t.Fatalf("padrão simula: %+v %v", op, err)
 	}
+	credencial := ambiente(map[string]string{"GLPI_URL": "https://glpi/apirest.php", "GLPI_LOGIN": "svc", "GLPI_PASSWORD": "p"})
+	if op, err := ler(nil, credencial); err != nil || op.login != "svc" || op.senha != "p" {
+		t.Fatalf("login e senha no lugar do token: %+v %v", op, err)
+	}
+	if _, err := ler(nil, ambiente(map[string]string{"GLPI_URL": "https://glpi/apirest.php", "GLPI_LOGIN": "svc"})); err == nil {
+		t.Fatal("login sem senha")
+	}
 	for nome, k := range map[string]struct {
 		args []string
 		env  func(string) string
