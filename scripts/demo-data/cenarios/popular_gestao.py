@@ -31,7 +31,7 @@ SOLICITANTES = rnd.sample([u["usuario"] for u in USERS if not u["usuario"].start
 N_CHAMADOS = int(os.environ.get("CHAMADOS", "450"))
 now = datetime.now(timezone.utc).replace(microsecond=0)
 iso = lambda dt: dt.strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: E731
-dia = lambda d: d.isoformat() + "T00:00:00Z"  # a API quer data e hora (RFC 3339)  # noqa: E731
+rfc3339 = lambda d: d.isoformat() + "T00:00:00Z"  # a API quer data e hora (RFC 3339)  # noqa: E731
 _ids = {}
 
 
@@ -172,7 +172,7 @@ for i, (titulo, forn, meses, valor, prazo) in enumerate([
     if forn not in FORNECEDORES:
         continue
     d = ok(f"contrato {titulo}", *call(ADMIN, "POST", "contratos/contratos", {"titulo": titulo, "fornecedor_id": FORNECEDORES[forn], "numero": f"{i + 1:03d}/2026",
-                                                                              "inicio": dia(inicio), "fim": dia(inicio + timedelta(days=30 * meses)),
+                                                                              "inicio": rfc3339(inicio), "fim": rfc3339(inicio + timedelta(days=30 * meses)),
                                                                               "valor_centavos": valor, "unidade_id": SEDE}))
     if d:
         CONTRATOS.append(d["id"])
@@ -183,7 +183,7 @@ for nome, programa, qtd in [("Escritório", "Suíte de escritório", 400), ("Ant
     forn = rnd.choice(list(FORNECEDORES.values())) if FORNECEDORES else None
     if forn:
         ok(f"licença {nome}", *call(ADMIN, "POST", "contratos/licencas", {"nome": nome, "programa": programa, "quantidade": qtd, "fornecedor_id": forn,
-                                                                          "fim": dia(date(2027, rnd.randint(1, 12), 1)), "unidade_id": SEDE}))
+                                                                          "fim": rfc3339(date(2027, rnd.randint(1, 12), 1)), "unidade_id": SEDE}))
 
 print("== Ativos (inventário das unidades)")
 ATIVOS, ATIVOS_SEDE = [], []
@@ -343,8 +343,8 @@ for titulo, prioridade, orcamento, estado in [
     ini = date.today() - timedelta(days=rnd.randint(10, 200))
     d = ok(f"projeto {titulo}", *call(gerente, "POST", "projetos", {"titulo": titulo, "prioridade": prioridade, "orcamento": orcamento, "unidade_id": SEDE,
                                                                      "objetivo": f"Entregar {titulo.lower()}.", "descricao": "Projeto do plano diretor de TI.",
-                                                                     "gerente_id": uid(gerente), "data_inicio_planejada": dia(ini),
-                                                                     "data_fim_planejada": dia(ini + timedelta(days=rnd.randint(90, 360)))}))
+                                                                     "gerente_id": uid(gerente), "data_inicio_planejada": rfc3339(ini),
+                                                                     "data_fim_planejada": rfc3339(ini + timedelta(days=rnd.randint(90, 360)))}))
     if not d:
         continue
     pid = d["id"]
