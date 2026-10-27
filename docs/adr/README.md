@@ -40,3 +40,5 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [060](060-pasta-vazia-para-apagar.md) | Pasta com senha não apaga; exclusão de pasta e de senha pede confirmação | Aceito e implementado |
 | [061](061-catalogo-de-colunas.md) | Nome, cor e ordem das colunas no banco; a chave continua o estado | Aceito e implementado |
 | [062](062-coluna-nova-no-quadro.md) | Coluna nova nasce só no quadro pedido, com chave gerada e passagens próprias | Aceito e implementado |
+| [063](063-imagens-do-ci-no-registro.md) | Imagens geradas pelo CI no GHCR (assinadas, com SBOM); o servidor só baixa a tag de um commit testado | Aceito e implementado |
+| [064](064-catraca-de-cobertura.md) | Catraca de cobertura: piso por pacote abaixo de 100%, que só sobe; pacote novo continua exigindo 100% | Aceito e implementado |

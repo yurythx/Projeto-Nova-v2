@@ -25,6 +25,7 @@ bin/
 *.out
 # SaÃ­da do go test do CI local (scripts de verificaÃ§Ã£o).
 backend/test.log
+backend/gate.log
 coverage/
 **/coverage/
 backend/coverage
@@ -76,8 +77,13 @@ deploy/infra/terraform/terraform.tfvars
 deploy/infra/ansible/inventory.ini
 deploy/infra/ansible/secrets.yml
 deploy/infra/ansible/cloudflare.secrets.yml
+# Cifrado, mas fora do git: o repositório é público.
+deploy/infra/ansible/secrets.vault.yml
 *.retry
 
 # Relatórios de cobertura gerados localmente
 backend/coverage
 
+# Segredos do monitoramento, gerados na VM pela role nova_monitoring
+deploy/observability/metrics_token
+deploy/observability/.env

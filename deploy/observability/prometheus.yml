@@ -1,6 +1,6 @@
 global:
-  scrape_interval: 10s
-  evaluation_interval: 10s
+  scrape_interval: 15s
+  evaluation_interval: 15s
 
 rule_files:
   - "alert_rules.yml"
@@ -10,6 +10,9 @@ alerting:
     - static_configs:
         - targets: ["alertmanager:9093"]
 
+# O token de /metrics (METRICS_SCRAPE_TOKEN do .env da stack) chega em
+# metrics_token, gravado pelo Ansible. Nunca o escreva aqui: este arquivo
+# é público. A porta 8010 é o HTTP_PORT que scripts/deploy.sh grava.
 scrape_configs:
   - job_name: "prometheus"
     static_configs:
@@ -19,7 +22,7 @@ scrape_configs:
     metrics_path: "/metrics"
     authorization:
       type: Bearer
-      credentials: "6bd2efc30b99a90cf2ab884911c349e2db0679941d3d75e5dc39387c5480e2c4"
+      credentials_file: /etc/prometheus/metrics_token
     static_configs:
       - targets: ["backend-api:8010"]
         labels:
@@ -30,9 +33,16 @@ scrape_configs:
     metrics_path: "/metrics"
     authorization:
       type: Bearer
-      credentials: "6bd2efc30b99a90cf2ab884911c349e2db0679941d3d75e5dc39387c5480e2c4"
+      credentials_file: /etc/prometheus/metrics_token
     static_configs:
       - targets: ["backend-worker:9102"]
         labels:
           service: "backend-worker"
+          env: "production"
+
+  - job_name: "node"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: "vm"
           env: "production"

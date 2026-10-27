@@ -1,3 +1,9 @@
+# Monitoramento do Projeto-nova-v2 (role nova_monitoring do Ansible).
+#
+# As portas escutam só na própria VM: para abrir o Grafana, um túnel SSH
+# (ssh -L 3005:127.0.0.1:3005 root@<vm>). Nada aqui entra no Cloudflare
+# Tunnel. O token de /metrics e a senha do Grafana vêm do servidor
+# (.env e metrics_token, gerados pelo Ansible), nunca do repositório.
 name: nova-observability
 
 networks:
@@ -23,7 +29,7 @@ services:
     networks:
       - nova_internal
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
 
   prometheus:
     image: prom/prometheus:v2.54.0
@@ -31,24 +37,41 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
       - "--web.enable-lifecycle"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - ./metrics_token:/etc/prometheus/metrics_token:ro
       - prometheus_data:/prometheus
     networks:
       - nova_internal
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
+
+  # Disco, memória e CPU da VM, e a idade do último backup (o
+  # scripts/backup.sh grava em /var/lib/node_exporter/textfile).
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+      - "--collector.textfile.directory=/textfile"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+      - /var/lib/node_exporter/textfile:/textfile:ro
+    networks:
+      - nova_internal
 
   grafana:
     image: grafana/grafana:11.2.0
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD precisa estar no .env}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_HTTP_PORT=3000
     volumes:
@@ -57,6 +80,6 @@ services:
     networks:
       - nova_internal
     ports:
-      - "3005:3000"
+      - "127.0.0.1:3005:3000"
     depends_on:
       - prometheus

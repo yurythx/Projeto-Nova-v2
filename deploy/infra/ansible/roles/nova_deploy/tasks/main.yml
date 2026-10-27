@@ -30,6 +30,18 @@
     update: false
   when: not app_checkout.stat.exists
 
+# Compose e scripts do mesmo commit das imagens: sem isso, uma versão nova
+# subiria com o docker-compose.yml de outra. Arquivo versionado alterado
+# à mão no servidor faz o git recusar, de propósito (force: false).
+- name: Alinhar o checkout ao commit da imagem
+  ansible.builtin.git:
+    repo: "{{ app_git_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_image_tag | regex_replace('^sha-', '') }}"
+    force: false
+    update: true
+  when: app_image_tag | length > 0
+
 # Com o domínio, o cloudflared só abre conexões de saída: nada além do SSH
 # precisa entrar. Sem ele, o navegador fala direto com as portas da stack.
 - name: Liberar portas no UFW
@@ -112,6 +124,17 @@
     state: present
   when: not enable_https | bool
 
+- name: Escolher as imagens do registro (versão testada pelo CI)
+  ansible.builtin.lineinfile:
+    path: "{{ app_dir }}/.env"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    state: "{{ 'present' if app_image_tag | length > 0 else 'absent' }}"
+  loop:
+    - { key: NOVA_REGISTRY, value: "{{ app_registry }}" }
+    - { key: NOVA_IMAGE_TAG, value: "{{ app_image_tag }}" }
+    - { key: NOVA_FRONTEND_TAG, value: "{{ app_frontend_ambiente }}-{{ app_image_tag }}" }
+
 - name: Subir a stack
   ansible.builtin.command:
     cmd: "bash scripts/deploy.sh --no-pull {{ ansible_host }}"
@@ -142,7 +165,7 @@
 
 - name: Recriar API, worker e frontend com o TRUSTED_PROXIES novo
   ansible.builtin.command:
-    cmd: docker compose up -d backend-api backend-worker frontend
+    cmd: docker compose up -d --no-build backend-api backend-worker frontend
     chdir: "{{ app_dir }}"
   when: trusted_proxies is changed
 

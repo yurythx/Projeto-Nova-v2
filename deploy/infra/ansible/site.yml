@@ -18,3 +18,16 @@
   become: true
   roles:
     - nova_deploy
+
+- name: Backup (local, cópia cifrada fora e verificação semanal)
+  hosts: app_servers
+  become: true
+  roles:
+    - nova_backup
+
+- name: Monitoramento (Prometheus, alertas, Grafana)
+  hosts: app_servers
+  become: true
+  roles:
+    - role: nova_monitoring
+      when: monitoring_enabled | bool

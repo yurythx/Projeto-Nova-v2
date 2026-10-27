@@ -5,7 +5,8 @@
 	backend-shell frontend-shell rabbitmq-status clean \
 	backend-build backend-test backend-lint backend-sec backend-format test-db-reset \
 	frontend-build frontend-test frontend-lint frontend-format \
-	infra-init infra-plan infra-apply infra-destroy infra-deploy
+	infra-init infra-plan infra-apply infra-destroy infra-deploy \
+	infra-segredos infra-segredos-migrar
 
 ifneq (,$(wildcard .env))
 include .env
@@ -204,6 +205,27 @@ infra-apply: ## Provisiona a VM KVM no Proxmox (192.168.1.13) e gera o inventár
 infra-destroy: ## Destroi a infraestrutura no Proxmox
 	cd deploy/infra/terraform && terraform destroy
 
-infra-deploy: ## Docker + stack na VM (SSO de secrets.yml, túnel de cloudflare.secrets.yml)
+# Segredos do Ansible: secrets.vault.yml (cifrado, preferível) e, para quem
+# ainda não migrou, secrets.yml e cloudflare.secrets.yml em texto. Nenhum
+# entra no git: o repositório é público. A senha do cofre fica fora do
+# repositório, em $(VAULT_PASS) (ou digite: VAULT_PASS= make infra-deploy).
+VAULT_PASS ?= $(HOME)/.config/projeto-nova/vault-pass
+VAULT_ARGS = $(if $(wildcard $(VAULT_PASS)),--vault-password-file $(VAULT_PASS),--ask-vault-pass)
+
+infra-deploy: ## Docker + stack + backup + monitoramento na VM (Ansible; no Windows, pelo WSL)
 	cd deploy/infra/ansible && ansible-galaxy collection install -r requirements.yml --force && \
-		ansible-playbook site.yml $$(for f in secrets.yml cloudflare.secrets.yml; do [ -f $$f ] && printf -- '-e @%s ' $$f; done)
+		ansible-playbook site.yml \
+			$$(for f in secrets.yml cloudflare.secrets.yml; do [ -f $$f ] && printf -- '-e @%s ' $$f; done) \
+			$$([ -f secrets.vault.yml ] && printf -- '-e @secrets.vault.yml $(VAULT_ARGS)')
+
+infra-segredos: ## Abre (ou cria) o cofre cifrado deploy/infra/ansible/secrets.vault.yml
+	cd deploy/infra/ansible && if [ -f secrets.vault.yml ]; then \
+		ansible-vault edit $(VAULT_ARGS) secrets.vault.yml; else \
+		ansible-vault create $(VAULT_ARGS) secrets.vault.yml; fi
+
+infra-segredos-migrar: ## Junta secrets.yml e cloudflare.secrets.yml no cofre cifrado e apaga os abertos
+	cd deploy/infra/ansible && [ ! -f secrets.vault.yml ] && \
+		cat $$(ls secrets.yml cloudflare.secrets.yml 2>/dev/null) > secrets.vault.yml && \
+		ansible-vault encrypt $(VAULT_ARGS) secrets.vault.yml && \
+		shred -u $$(ls secrets.yml cloudflare.secrets.yml 2>/dev/null) && \
+		echo "Cofre criado: secrets.vault.yml (os arquivos abertos foram apagados)"

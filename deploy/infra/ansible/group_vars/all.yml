@@ -2,11 +2,19 @@
 # Valores públicos. Segredos: secrets.yml (client do SSO) e
 # cloudflare.secrets.yml (token do túnel, copiado do painel) — gitignore.
 
-# Primeira clonagem só se a pasta ainda não existir. Atualizações pelo git
-# (deploy/homolog/sincronizar-vm publica o main do GitHub).
+# Primeira clonagem só se a pasta ainda não existir. O checkout traz o
+# compose e os scripts; a versão que roda é a de app_image_tag.
 app_git_repo: "https://github.com/yurythx/Projeto-Nova-v2.git"
 app_git_version: main
 app_dir: /opt/projeto-nova
+
+# Versão instalada (ADR 063): a tag de um commit que passou no CI, como
+# "sha-4121339" (ver Actions > Release). Vazio = compila no servidor.
+# Rollback: a tag anterior, e make infra-deploy de novo.
+app_registry: ghcr.io/yurythx/projeto-nova-v2
+app_image_tag: ""
+# O frontend tem uma imagem por ambiente (as URLs entram no build).
+app_frontend_ambiente: producao
 
 # Domínio público: a única fonte das URLs que o navegador usa. Precisa
 # bater com os Public Hostnames do túnel no painel da Cloudflare
@@ -29,6 +37,20 @@ keycloak_frontend_client_id: projeto-nova
 # Preencha em secrets.yml (não versionado).
 keycloak_client_secret: ""
 keycloak_frontend_client_secret: ""
+
+# Backup (scripts/backup.sh): local todo dia às 02:30, verificação aos
+# domingos. A cópia de fora só sai cifrada com a chave pública age; a
+# privada fica fora da VM (gere com age-keygen na máquina de quem opera).
+# backup_rclone_conf (o destino com credencial) vai em secrets.yml.
+backup_dir: /root/backups/nova
+backup_keep_days: 7
+backup_remote: ""            # ex.: "fora:/backups/projeto-nova"
+backup_age_recipient: ""     # ex.: "age1..."
+backup_remote_keep_days: 30
+backup_rclone_conf: ""
+
+# Prometheus, Alertmanager, Grafana e node-exporter (deploy/observability).
+monitoring_enabled: true
 
 # Caddy com CA interna (acesso por IP na rede local). Não combina com
 # app_domain: com o domínio, o TLS é o da Cloudflare.

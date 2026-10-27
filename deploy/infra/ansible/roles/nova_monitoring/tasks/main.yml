@@ -1,0 +1,42 @@
+---
+# Prometheus, Alertmanager, Grafana e node-exporter na mesma VM
+# (deploy/observability). Portas só em 127.0.0.1: acesso por túnel SSH.
+
+- name: Pasta das métricas do backup (textfile do node-exporter)
+  ansible.builtin.file:
+    path: /var/lib/node_exporter/textfile
+    state: directory
+    mode: "0755"
+
+- name: Ler o .env da stack
+  ansible.builtin.slurp:
+    src: "{{ app_dir }}/.env"
+  register: stack_env
+  no_log: true
+
+# O mesmo token que a API exige em /metrics, gerado por scripts/deploy.sh.
+- name: Token de /metrics para o Prometheus
+  ansible.builtin.copy:
+    dest: "{{ app_dir }}/deploy/observability/metrics_token"
+    content: "{{ stack_env.content | b64decode | regex_search('(?m)^METRICS_SCRAPE_TOKEN=(.+)$', '\\1') | first }}"
+    owner: "65534" # nobody: o usuário do container do Prometheus
+    mode: "0400"
+  no_log: true
+
+- name: Senha do Grafana (gerada uma vez)
+  ansible.builtin.shell:
+    cmd: umask 077 && printf 'GRAFANA_ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 24)" > .env
+    chdir: "{{ app_dir }}/deploy/observability"
+    creates: "{{ app_dir }}/deploy/observability/.env"
+
+- name: Subir o monitoramento
+  ansible.builtin.command:
+    cmd: docker compose -f docker-compose.monitoring.yml up -d --remove-orphans
+    chdir: "{{ app_dir }}/deploy/observability"
+  changed_when: true
+
+- name: Recarregar regras e alvos do Prometheus
+  ansible.builtin.command:
+    cmd: docker compose -f docker-compose.monitoring.yml kill -s SIGHUP prometheus
+    chdir: "{{ app_dir }}/deploy/observability"
+  changed_when: false

@@ -1,0 +1,45 @@
+---
+# Backup diário, cópia cifrada fora da VM e verificação semanal
+# (scripts/backup.sh). Sem backup_remote, só a cópia local.
+
+- name: Conferir a cifra da cópia de fora
+  ansible.builtin.assert:
+    that:
+      - backup_remote | length == 0 or backup_age_recipient is match('^age1')
+      - backup_remote | length == 0 or backup_rclone_conf | length > 0
+    fail_msg: >-
+      backup_remote pede backup_age_recipient (chave pública age, "age1...")
+      e backup_rclone_conf (secrets.yml): o backup leva os segredos do .env.
+    quiet: true
+
+- name: Instalar age e rclone
+  ansible.builtin.apt:
+    name: [age, rclone]
+    state: present
+
+- name: Pasta da configuração do rclone
+  ansible.builtin.file:
+    path: /root/.config/rclone
+    state: directory
+    mode: "0700"
+  when: backup_rclone_conf | length > 0
+
+- name: Destino do rclone (segredo)
+  ansible.builtin.copy:
+    dest: /root/.config/rclone/rclone.conf
+    content: "{{ backup_rclone_conf }}"
+    mode: "0600"
+  when: backup_rclone_conf | length > 0
+  no_log: true
+
+- name: Agendar backup e verificação
+  ansible.builtin.command:
+    cmd: bash scripts/backup.sh --install-cron
+    chdir: "{{ app_dir }}"
+  environment:
+    BACKUP_DIR: "{{ backup_dir }}"
+    BACKUP_KEEP_DAYS: "{{ backup_keep_days }}"
+    BACKUP_REMOTE: "{{ backup_remote }}"
+    BACKUP_AGE_RECIPIENT: "{{ backup_age_recipient }}"
+    BACKUP_REMOTE_KEEP_DAYS: "{{ backup_remote_keep_days }}"
+  changed_when: false

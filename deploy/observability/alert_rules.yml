@@ -28,6 +28,55 @@ groups:
           summary: "Taxa elevada de erros HTTP 5xx no Projeto-nova-v2"
           description: "A taxa de erros 5xx está acima de 1% nos últimos 5 minutos (atual: {{ $value | printf \"%.2f\" }}%)."
 
+      # O servidor de teste chegou a 98% de disco com cache de build: com o
+      # disco cheio, o Postgres para de gravar.
+      - alert: NovaDiscoQuaseCheio
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disco da VM acima de 85%"
+          description: "O disco raiz está em {{ $value | printf \"%.0f\" }}%. Rode make prod-limpeza; acima de 95% o Postgres pode parar."
+
+      - alert: NovaDiscoCritico
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disco da VM acima de 95%"
+          description: "O disco raiz está em {{ $value | printf \"%.0f\" }}%: o Postgres está prestes a parar de gravar."
+
+      # scripts/backup.sh grava a hora do último sucesso (02:30 todo dia).
+      - alert: NovaBackupAtrasado
+        expr: time() - nova_backup_ultimo_ok_timestamp_seconds > 26 * 3600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sem backup bem-sucedido há mais de 26 horas"
+          description: "Veja /var/log/nova-backup.log na VM."
+
+      - alert: NovaBackupSemMetrica
+        expr: absent(nova_backup_ultimo_ok_timestamp_seconds)
+        for: 30h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nenhum backup registrado nesta VM"
+          description: "O agendamento do backup não rodou ou não grava em /var/lib/node_exporter/textfile."
+
+      # A verificação de domingo restaura o backup num banco temporário.
+      - alert: NovaBackupSemVerificacao
+        expr: time() - nova_backup_verificacao_ok_timestamp_seconds > 8 * 86400
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup sem verificação de restauração há mais de 8 dias"
+          description: "A verificação semanal (backup.sh --verificar) falhou ou não rodou. Um backup que não restaura não é backup."
+
       - alert: NovaLatencyP95High
         expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.3
         for: 3m

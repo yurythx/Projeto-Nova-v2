@@ -1,0 +1,73 @@
+# Monitor de fora: o Prometheus mora na mesma VM e cai junto com ela.
+# A cada 5 minutos, o GitHub confere o site e a API pelo domínio público
+# (passa pela Cloudflare e pelo túnel, como quem usa). Se falhar, abre uma
+# issue "Fora do ar"; quando volta, comenta e fecha.
+#
+# Ligue com a variável de repositório MONITORAR_DISPONIBILIDADE=true
+# (Settings > Secrets and variables > Actions > Variables) depois do
+# primeiro deploy: antes disso o site ainda não existe.
+name: Disponibilidade
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: disponibilidade
+
+jobs:
+  conferir:
+    if: vars.MONITORAR_DISPONIBILIDADE == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      SITE: ${{ vars.SITE_URL || 'https://projetonova.cloud' }}
+      API: ${{ vars.API_URL || 'https://api.projetonova.cloud' }}
+      GH_TOKEN: ${{ github.token }}
+      TITULO: "Fora do ar: projetonova.cloud"
+    steps:
+      - id: teste
+        name: Site e API respondem
+        run: |
+          falhas=""
+          # Três tentativas: uma oscilação de rede não vira alarme.
+          for alvo in "$SITE/" "$API/healthz"; do
+            ok=0
+            for _ in 1 2 3; do
+              codigo="$(curl -s -o /dev/null -w '%{http_code}' -m 15 "$alvo" || true)"
+              if [ "$codigo" -ge 200 ] && [ "$codigo" -lt 400 ]; then ok=1; break; fi
+              sleep 10
+            done
+            [ "$ok" = 1 ] || falhas="$falhas\n- $alvo respondeu $codigo"
+          done
+          {
+            echo "falhas<<FIM"
+            printf '%b\n' "$falhas"
+            echo "FIM"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Abrir ou atualizar a issue
+        if: steps.teste.outputs.falhas != ''
+        env:
+          FALHAS: ${{ steps.teste.outputs.falhas }}
+        run: |
+          aberta="$(gh issue list -R "$GITHUB_REPOSITORY" --state open --label fora-do-ar --json number -q '.[0].number')"
+          corpo="$(printf 'Conferido em %s (UTC):\n%s\n\nRunbook: docs/DEPLOY.md, seção "Fora do ar".' "$(date -u '+%F %T')" "$FALHAS")"
+          if [ -z "$aberta" ]; then
+            gh label create fora-do-ar -R "$GITHUB_REPOSITORY" --color B60205 --force >/dev/null
+            gh issue create -R "$GITHUB_REPOSITORY" --title "$TITULO" --label fora-do-ar --body "$corpo"
+          fi
+          exit 1
+
+      - name: Fechar a issue quando volta
+        if: steps.teste.outputs.falhas == ''
+        run: |
+          aberta="$(gh issue list -R "$GITHUB_REPOSITORY" --state open --label fora-do-ar --json number -q '.[0].number')"
+          if [ -n "$aberta" ]; then
+            gh issue close "$aberta" -R "$GITHUB_REPOSITORY" --comment "Voltou: site e API respondendo em $(date -u '+%F %T') (UTC)."
+          fi

@@ -142,6 +142,39 @@ make infra-deploy     # 3. Docker + stack com o domínio (Ansible; no Windows, p
 Na zona, deixe Rocket Loader e Email Address Obfuscation desligados: os dois
 injetam scripts que a CSP do frontend bloqueia.
 
+### Versão instalada e rollback
+
+Cada push na `main` com CI verde gera as imagens daquele commit no GHCR
+(workflow `Release`, [ADR 063](adr/063-imagens-do-ci-no-registro.md)). Para
+instalar, use a tag do commit em `group_vars/all.yml`:
+
+```yaml
+app_image_tag: "sha-4121339"   # Actions > Release mostra a tag de cada commit
+```
+
+e rode `make infra-deploy`. O Ansible alinha o checkout da VM ao mesmo
+commit (compose e scripts batem com as imagens), baixa as imagens e sobe
+sem compilar. **Rollback** é a mesma coisa com a tag anterior. A exceção é
+um commit que migrou o banco: as migrations só vão para a frente, então
+voltar pede uma migration de correção.
+
+Com `app_image_tag: ""`, a VM compila tudo, como antes. Isso vale para o
+primeiro deploy, antes de existir release.
+
+### Segredos do Ansible
+
+`secrets.yml` e `cloudflare.secrets.yml` ficam em texto puro na máquina de
+quem opera. Prefira o cofre cifrado, que também fica fora do git (o
+repositório é público e um cofre versionado ficaria exposto para sempre a
+força bruta):
+
+```bash
+mkdir -p ~/.config/projeto-nova && openssl rand -base64 32 > ~/.config/projeto-nova/vault-pass
+chmod 600 ~/.config/projeto-nova/vault-pass   # guarde também num cofre de senhas
+make infra-segredos-migrar   # junta os dois arquivos no cofre e apaga os abertos
+make infra-segredos          # para editar depois
+```
+
 O SSO oficial (`sso.rondonopolis.mt.gov.br`) precisa aceitar
 `https://projetonova.cloud/*` nas URLs de redirecionamento e de pós-logout
 do client `projeto-nova`, e `https://projetonova.cloud` em Web Origins.
@@ -212,8 +245,81 @@ O volume do Typesense (`typesense_data`) não entra no backup: o índice é
 derivado do banco, e o worker o reconstrói sozinho depois da restauração.
 **O `.env` do backup é indispensável** (senha do banco e
 `CONFIG_ENCRYPTION_KEY`): numa máquina nova, copie `<dir>/config/.env` e
-`<dir>/config/secrets` antes de restaurar. Os backups ficam no mesmo disco —
-copie-os para fora do servidor.
+`<dir>/config/secrets` antes de restaurar.
+
+### Cópia fora da VM e verificação
+
+A cópia local protege contra erro humano, não contra perder a máquina. Com
+`BACKUP_REMOTE`, cada backup também sai, **cifrado**, para um destino do
+`rclone`: SFTP num storage do Proxmox ou num NAS, ou S3. O backup leva o
+`.env` com todos os segredos, então sem `BACKUP_AGE_RECIPIENT` nada sai.
+
+1. Na máquina de quem opera (não na VM): `age-keygen -o projeto-nova-backup.key`.
+   Guarde o arquivo num cofre de senhas: sem ele, a cópia de fora não abre.
+2. Em `group_vars/all.yml`: `backup_remote` (ex.: `fora:/backups/projeto-nova`)
+   e `backup_age_recipient` (a linha `age1...` da chave pública).
+3. Em `secrets.yml`: `backup_rclone_conf`, o destino com credencial (modelo
+   em `secrets.yml.example`).
+4. `make infra-deploy`. A role `nova_backup` instala `age` e `rclone` e agenda
+   o backup (02:30, retenção de 30 dias lá fora) e a verificação (domingo,
+   04:30).
+
+A verificação restaura o último backup num banco temporário e compara as
+contagens (`restore.sh --verify`). Um backup que não restaura não é backup.
+Cada sucesso grava a hora em `.ultimo-ok` e `.ultima-verificacao-ok`, dentro
+de `BACKUP_DIR`.
+
+Restaurar da cópia de fora, numa máquina nova:
+
+```bash
+rclone copy fora:/backups/projeto-nova/projeto-nova-<data-hora>.tar.age .
+age -d -i projeto-nova-backup.key projeto-nova-<data-hora>.tar.age | tar -xf -
+cp <data-hora>/config/.env .env && cp -r <data-hora>/config/secrets .
+scripts/restore.sh --yes <data-hora> --minio
+```
+
+## Monitoramento
+
+A role `nova_monitoring` (`monitoring_enabled: true`) sobe, na mesma VM,
+Prometheus, Alertmanager, Grafana e node-exporter (`deploy/observability`).
+Nada disso passa pelo túnel: as portas escutam só em 127.0.0.1.
+
+```bash
+ssh -L 3005:127.0.0.1:3005 -L 9090:127.0.0.1:9090 -L 9093:127.0.0.1:9093 root@192.168.1.70
+# Grafana http://localhost:3005 (admin; senha em deploy/observability/.env na VM)
+```
+
+O token de `/metrics` e a senha do Grafana são gerados na VM e não entram
+no repositório.
+
+| Alerta | Quando |
+|---|---|
+| `NovaServiceDown` | API ou worker sem responder por 1 min |
+| `NovaHttp5xxErrorRateHigh` | mais de 1% de respostas 5xx em 5 min |
+| `NovaLatencyP95High` | p95 acima de 300 ms por 3 min |
+| `NovaOutboxLagHigh` | mais de 50 eventos parados no outbox |
+| `NovaDiscoQuaseCheio` / `NovaDiscoCritico` | disco raiz acima de 85% / 95% |
+| `NovaBackupAtrasado` | nenhum backup bem-sucedido em 26 h |
+| `NovaBackupSemVerificacao` | nenhuma restauração de teste em 8 dias |
+
+**De fora**, o workflow `Disponibilidade` do GitHub confere o site e a API
+pelo domínio a cada 5 minutos e abre a issue "Fora do ar" quando falham. Ele
+pega o que o Prometheus não vê: a VM inteira fora, o túnel ou o DNS. Ligue
+com a variável de repositório `MONITORAR_DISPONIBILIDADE=true` depois do
+primeiro deploy.
+
+### Fora do ar
+
+1. **Só o site ou também a API?** A issue diz qual endereço falhou.
+2. **O túnel está de pé?** Painel da Cloudflare > Zero Trust > Networks >
+   Tunnels: `projeto-nova-prod` precisa estar *Healthy*. Na VM:
+   `docker compose logs --tail 50 cloudflared`.
+3. **A stack está saudável?** Na VM: `make prod-ps`; um serviço
+   `unhealthy` aponta o culpado (`docker compose logs <serviço>`).
+4. **A VM responde?** Sem SSH em 192.168.1.70, abra o console da VM 240 no
+   Proxmox. Disco cheio é a causa mais comum: `df -h /` e `make prod-limpeza`.
+5. **Voltou?** A issue fecha sozinha na próxima conferência. Registre a
+   causa nela antes, para a revisão do incidente.
 
 ## Inteligência artificial
 
