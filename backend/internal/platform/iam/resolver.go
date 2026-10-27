@@ -43,6 +43,10 @@ const (
 	cacheTTL           = 60 * time.Second
 	invalidateChannel  = "iam:invalidate"
 	maxCachedIdentites = 10000
+
+	// GrupoTodos é o nome de grupo, em ad_group_mappings, que casa com
+	// qualquer pessoa autenticada.
+	GrupoTodos = "*"
 )
 
 type cached struct {
@@ -217,10 +221,13 @@ func (r *Resolver) provision(ctx context.Context, identity auth.Identity) (uuid.
 
 // loadGrants calcula permissões e lotações efetivas.
 func (r *Resolver) loadGrants(ctx context.Context, userID uuid.UUID, identity auth.Identity) ([]string, []auth.Scope, error) {
-	groups := make([]string, 0, len(identity.Groups)*2)
+	groups := make([]string, 0, len(identity.Groups)*2+1)
 	for _, g := range identity.Groups {
 		groups = append(groups, strings.ToLower(strings.TrimSpace(g)), auth.NormalizeGroup(g))
 	}
+	// O mapeamento do grupo "*" vale para todo mundo autenticado: é como a
+	// implantação dá o perfil básico a quem não tem grupo mapeado.
+	groups = append(groups, GrupoTodos)
 	const q = `
 		SELECT p.slug, p.permissoes, s.entidade_id, s.unidade_id, s.departamento_id, 'manual',
 		       nova_unidades_cobertas(s.entidade_id, s.unidade_id, s.departamento_id), nova_unidades_acima(s.unidade_id)

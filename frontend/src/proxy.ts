@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 import { accessTokenUsable } from "@/lib/auth/tokenState";
-import { API_PUBLIC_URL, MINIO_PUBLIC_URL, WS_PUBLIC_URL, toOrigin } from "@/lib/env";
+import { API_PUBLIC_URL, APP_URL, MINIO_PUBLIC_URL, WS_PUBLIC_URL, toOrigin } from "@/lib/env";
 import { isProtectedPath } from "@/lib/nav/protected";
 
 // O Next.js 16 renomeou a convenção middleware.ts para proxy.ts (mesmo
@@ -23,6 +23,9 @@ import { isProtectedPath } from "@/lib/nav/protected";
 //    seção protegida (PROTECTED_PREFIXES) para /login, sem deixar a
 //    página nem começar a renderizar.
 export async function proxy(request: NextRequest) {
+  const canonical = wwwRedirect(request);
+  if (canonical) return NextResponse.redirect(canonical, 308);
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
 
@@ -105,6 +108,20 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", cspHeader);
   return response;
+}
+
+// Quem entra por www.<domínio> vai para o domínio da app. O login pelo SSO
+// guarda o cookie de estado no host em que começou e volta pelo NEXTAUTH_URL:
+// começado no www, o retorno não acha o cookie ("State cookie was missing").
+function wwwRedirect(request: NextRequest): URL | null {
+  let app: URL;
+  try {
+    app = new URL(APP_URL);
+  } catch {
+    return null;
+  }
+  if (request.headers.get("host") !== `www.${app.host}`) return null;
+  return new URL(request.nextUrl.pathname + request.nextUrl.search, app);
 }
 
 export const config = {

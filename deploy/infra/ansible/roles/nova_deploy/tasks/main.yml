@@ -199,6 +199,28 @@
     chdir: "{{ app_dir }}"
   when: trusted_proxies is changed
 
+# Depois de subir: a stack aplica as migrações antes da API. O índice
+# único de ad_group_mappings faz o ON CONFLICT ignorar o que já existe.
+- name: Mapear os grupos do SSO para os perfis
+  ansible.builtin.command:
+    cmd: >-
+      docker compose exec -T postgres sh -c
+      'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+    chdir: "{{ app_dir }}"
+    stdin: |
+      INSERT INTO ad_group_mappings (ad_group, perfil_id, descricao, created_by)
+      SELECT g.grupo, p.id, 'Implantação (iam_mapeamentos)', 'ansible'
+        FROM (VALUES
+          {% for m in iam_mapeamentos %}
+          ('{{ m.grupo | lower | replace("'", "''") }}', '{{ m.perfil | replace("'", "''") }}'){{ ',' if not loop.last else '' }}
+          {% endfor %}
+        ) AS g(grupo, perfil)
+        JOIN perfis p ON p.slug = g.perfil
+      ON CONFLICT DO NOTHING;
+  register: mapeamentos
+  changed_when: "'INSERT 0 0' not in mapeamentos.stdout"
+  when: iam_mapeamentos | length > 0
+
 - name: Ativar HTTPS local (Caddy) se pedido
   ansible.builtin.command:
     cmd: "bash scripts/enable-https.sh {{ ansible_host }}"

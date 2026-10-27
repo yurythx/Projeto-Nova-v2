@@ -51,3 +51,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [071](071-contrato-de-apoio.md) | Contrato de apoio: prazo do fornecedor no contrato, o chamado aponta o contrato (cópia do combinado) e o tempo em "aguardando terceiro" é medido no relatório | Aceito e implementado |
 | [072](072-importador-do-glpi.md) | Importador do GLPI: comando que lê a API REST, simula por padrão, casa pessoas por e-mail e login, e pode rodar de novo sem duplicar | Aceito e implementado |
 | [073](073-ola-no-chamado.md) | OLA no chamado: histórico de atribuição por equipe, tempo sem as esperas pelo servidor e pelo fornecedor, reconstruído para o passado | Aceito e implementado |
+| [074](074-perfis-pelos-grupos-do-sso.md) | Perfis pelos grupos do SSO: o grupo `*` vale para todo mundo autenticado (perfil básico), e os grupos de administração e TI do AD viram administradores pelo Ansible | Aceito e implementado |

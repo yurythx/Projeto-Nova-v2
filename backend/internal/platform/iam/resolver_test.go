@@ -120,6 +120,33 @@ func TestResolverProvisionsFederatedUsersAndMapsADGroups(t *testing.T) {
 	}
 }
 
+func TestResolverGrupoTodosValeParaQualquerUm(t *testing.T) {
+	pool := dbtest.Pool(t)
+	ctx := context.Background()
+	r := NewResolver(pool, nil, quiet())
+	sfx := uuid.NewString()[:8]
+	var perfil, mapeamento uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO perfis (slug, nome, permissoes) VALUES ($1, $1, ARRAY['atendimento:abrir']) RETURNING id`, "basico-"+sfx).Scan(&perfil); err != nil {
+		t.Fatal(err)
+	}
+	// Vale para o banco inteiro: sai no fim, para não vazar a outros testes.
+	if err := pool.QueryRow(ctx, `INSERT INTO ad_group_mappings (ad_group, perfil_id) VALUES ($1, $2) RETURNING id`, GrupoTodos, perfil).Scan(&mapeamento); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM ad_group_mappings WHERE id = $1`, mapeamento)
+	})
+
+	sem, err := r.Enrich(ctx, auth.Identity{Subject: "kc-" + sfx, Source: auth.SourceKeycloak})
+	if err != nil || len(sem.Permissions) != 1 || sem.Permissions[0] != "atendimento:abrir" {
+		t.Fatalf("sem grupo nenhum, o perfil básico: %+v %v", sem.Permissions, err)
+	}
+	com, err := r.Enrich(ctx, auth.Identity{Subject: "kc2-" + sfx, Source: auth.SourceKeycloak, Groups: []string{"Qualquer-" + sfx}})
+	if err != nil || len(com.Scopes) != 1 || com.Scopes[0].Perfil != "basico-"+sfx {
+		t.Fatalf("com grupo sem mapeamento, também: %+v %v", com.Scopes, err)
+	}
+}
+
 func TestResolverDatabaseFailures(t *testing.T) {
 	ctx := context.Background()
 	r := NewResolver(nil, nil, quiet())

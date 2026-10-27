@@ -232,6 +232,14 @@ O SSO oficial (`sso.rondonopolis.mt.gov.br`) precisa aceitar
 `https://projetonova.cloud/*` nas URLs de redirecionamento e de pós-logout
 do client `projeto-nova`, e `https://projetonova.cloud` em Web Origins.
 
+Quem entra pelo SSO ganha o perfil pelos grupos dele (`iam_mapeamentos` em
+`group_vars/all.yml`, [ADR 074](adr/074-perfis-pelos-grupos-do-sso.md)): os
+grupos de administração e TI do AD (`Administrators`, `Domain Admins`,
+`Departamento de Tecnologia da Informação`, `Grupo Seciti Tecnologia`) são
+administradores do sistema, e todo o resto
+recebe o perfil básico `servidor` pelo grupo `*`. O deploy grava esses
+mapeamentos, e os demais se cadastram na tela de IAM.
+
 No plano gratuito, a Cloudflare limita o corpo de cada requisição a 100 MB.
 Um envio de arquivo maior que isso falha em `arquivos.projetonova.cloud`.
 

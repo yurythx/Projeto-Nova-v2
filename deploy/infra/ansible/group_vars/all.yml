@@ -39,6 +39,17 @@ cloudflare_tunnel_token: ""
 # com o token do ambiente. Os dois juntos não combinam.
 cloudflare_conector_ip: "192.168.1.101"
 
+# Grupos do SSO (os nomes do AD, como chegam no token) e o perfil de cada
+# um, com escopo global (ad_group_mappings, visíveis na tela de IAM). "*" é
+# todo mundo autenticado: o perfil básico de quem não tem outro. Tirar um
+# grupo daqui não apaga o mapeamento: isso é feito na tela de IAM.
+iam_mapeamentos:
+  - { grupo: "Administrators", perfil: administrador }
+  - { grupo: "Domain Admins", perfil: administrador }
+  - { grupo: "Departamento de Tecnologia da Informação", perfil: administrador }
+  - { grupo: "Grupo Seciti Tecnologia", perfil: administrador }
+  - { grupo: "*", perfil: servidor }
+
 keycloak_issuer_url: "https://sso.rondonopolis.mt.gov.br/realms/rondonopolis"
 keycloak_realm: rondonopolis
 keycloak_client_id: projeto-nova

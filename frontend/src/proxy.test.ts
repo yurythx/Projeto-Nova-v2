@@ -62,3 +62,24 @@ describe("proxy (middleware) — proteção de rota", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 });
+
+describe("proxy (middleware) — www", () => {
+  function comHost(path: string, host: string): NextRequest {
+    return new NextRequest(new URL(path, "http://localhost:3002"), { headers: { host } });
+  }
+
+  // Login começado no www perdia o cookie de estado na volta do SSO.
+  it("www do domínio da app — 308 para o domínio, com caminho e query", async () => {
+    const res = await proxy(comHost("/atendimento?aba=fila", "www.localhost:3003"));
+
+    expect(res.status).toBe(308);
+    expect(res.headers.get("location")).toBe("http://localhost:3003/atendimento?aba=fila");
+    expect(getToken).not.toHaveBeenCalled();
+  });
+
+  it("o próprio domínio — segue sem redirecionar", async () => {
+    const res = await proxy(comHost("/sobre", "localhost:3003"));
+
+    expect(res.headers.get("location")).toBeNull();
+  });
+});
