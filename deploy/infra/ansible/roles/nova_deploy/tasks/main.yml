@@ -32,6 +32,17 @@
     update: false
   when: not app_checkout.stat.exists
 
+# Sem imagem do registro, a VM compila o que estiver no checkout: ele
+# acompanha app_git_version. Sem force, como abaixo.
+- name: Atualizar o checkout para compilar na VM
+  ansible.builtin.git:
+    repo: "{{ app_git_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_git_version }}"
+    force: false
+    update: true
+  when: app_image_tag | length == 0 and app_checkout.stat.exists
+
 # Compose e scripts do mesmo commit das imagens: sem isso, uma versão nova
 # subiria com o docker-compose.yml de outra. Arquivo versionado alterado
 # à mão no servidor faz o git recusar, de propósito (force: false).
