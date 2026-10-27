@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -48,11 +49,21 @@ type Cliente struct {
 	HTTP *http.Client
 	// Pagina é quantas pessoas vêm por chamada.
 	Pagina int
+	// Paralelo é quantas pessoas têm os grupos lidos ao mesmo tempo.
+	Paralelo int
 }
+
+// Padrões medidos num realm federado ao AD com 7.736 pessoas: a página
+// resumida de 50 sai em meio segundo (a completa consulta o LDAP pessoa a
+// pessoa e passa de 3 minutos), e os grupos de uma pessoa levam 0,3 s.
+const (
+	paginaPadrao   = 50
+	paraleloPadrao = 8
+)
 
 // Novo cria o cliente com um tempo limite por chamada.
 func Novo() *Cliente {
-	return &Cliente{HTTP: &http.Client{Timeout: 30 * time.Second}, Pagina: 200}
+	return &Cliente{HTTP: &http.Client{Timeout: 2 * time.Minute}, Pagina: paginaPadrao, Paralelo: paraleloPadrao}
 }
 
 // enderecos tira do issuer (https://sso/realms/x) o endpoint do token e a
@@ -70,7 +81,9 @@ func enderecos(issuer string) (token, admin string, err error) {
 	return u.String() + "/protocol/openid-connect/token", base + "/admin" + u.Path[i:], nil
 }
 
-// Usuarios lê todas as pessoas do realm, página a página, com os grupos.
+// Usuarios lê todas as pessoas do realm, página a página (representação
+// resumida), com os grupos lidos em paralelo. O token é renovado a cada
+// página: o da conta de serviço dura minutos, e a leitura toda, mais.
 func (c *Cliente) Usuarios(ctx context.Context, cfg Config) ([]Usuario, error) {
 	if cfg.IssuerURL == "" || cfg.ClientID == "" || cfg.ClientSecret == "" {
 		return nil, ErrNaoConfigurado
@@ -79,36 +92,62 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config) ([]Usuario, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, err := c.token(ctx, tokenURL, cfg)
-	if err != nil {
-		return nil, err
-	}
-	pagina := c.Pagina
+	pagina, paralelo := c.Pagina, c.Paralelo
 	if pagina <= 0 {
-		pagina = 200
+		pagina = paginaPadrao
+	}
+	if paralelo <= 0 {
+		paralelo = paraleloPadrao
 	}
 	out := []Usuario{}
 	for primeiro := 0; ; primeiro += pagina {
-		var lote []Usuario
-		if err := c.get(ctx, token, fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=false", admin, primeiro, pagina), &lote); err != nil {
+		token, err := c.token(ctx, tokenURL, cfg)
+		if err != nil {
 			return nil, err
 		}
-		for _, u := range lote {
-			var grupos []struct {
-				Nome string `json:"name"`
-			}
-			if err := c.get(ctx, token, admin+"/users/"+url.PathEscape(u.ID)+"/groups?briefRepresentation=true", &grupos); err != nil {
-				return nil, err
-			}
-			for _, g := range grupos {
-				u.Grupos = append(u.Grupos, g.Nome)
-			}
-			out = append(out, u)
+		var lote []Usuario
+		if err := c.get(ctx, token, fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=true", admin, primeiro, pagina), &lote); err != nil {
+			return nil, err
 		}
+		if err := c.grupos(ctx, token, admin, lote, paralelo); err != nil {
+			return nil, err
+		}
+		out = append(out, lote...)
 		if len(lote) < pagina {
 			return out, nil
 		}
 	}
+}
+
+// grupos preenche os grupos de cada pessoa do lote, paralelo de cada vez.
+// O primeiro erro vence; os demais pedidos param com ele.
+func (c *Cliente) grupos(ctx context.Context, token, admin string, lote []Usuario, paralelo int) error {
+	ctx, parar := context.WithCancel(ctx)
+	defer parar()
+	vagas := make(chan struct{}, paralelo)
+	erros := make(chan error, len(lote))
+	var espera sync.WaitGroup
+	for i := range lote {
+		espera.Add(1)
+		vagas <- struct{}{}
+		go func(u *Usuario) {
+			defer func() { <-vagas; espera.Done() }()
+			var grupos []struct {
+				Nome string `json:"name"`
+			}
+			if err := c.get(ctx, token, admin+"/users/"+url.PathEscape(u.ID)+"/groups?briefRepresentation=true", &grupos); err != nil {
+				erros <- err
+				parar()
+				return
+			}
+			for _, g := range grupos {
+				u.Grupos = append(u.Grupos, g.Nome)
+			}
+		}(&lote[i])
+	}
+	espera.Wait()
+	close(erros)
+	return <-erros
 }
 
 // token troca o client e o segredo pelo token da conta de serviço.

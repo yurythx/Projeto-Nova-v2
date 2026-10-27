@@ -14,6 +14,10 @@ A conta de quem usa o SSO nasce no primeiro login. Até lá, a pessoa não exist
 2. **O que lê:** a API de administração do Keycloak, com uma conta de serviço do client do Projeto Nova. Essa conta só tem a função `view-users` do realm. A configuração do SSO já existente traz o endereço, o client e o segredo.
 3. **O que grava:** a mesma linha que o primeiro login gravaria, com o mesmo `keycloak_subject`, usuário, e-mail, nome e grupos. Quem entra depois cai na conta que já existe. Quem foi desativado no SSO é desativado aqui. Ninguém é apagado: a autoria dos registros continua.
 4. **Conta local com o mesmo usuário ou e-mail não é vinculada**, como no primeiro login. Ela aparece no relatório para um administrador resolver.
+5. **Em segundo plano.** Um realm federado ao AD, com milhares de pessoas, leva minutos para ler, e a Cloudflare corta a requisição em 100 s. Por isso:
+   - o pedido só começa a sincronização (202) e devolve 409 se já há uma em andamento na réplica;
+   - a tela consulta `GET /iam/sso/sincronizacao`, que diz se há uma em andamento e traz a última terminada (do registro de auditoria);
+   - a leitura usa a representação resumida, em páginas de 50, com os grupos lidos em paralelo e o token renovado a cada página.
 
 ## Consequências
 

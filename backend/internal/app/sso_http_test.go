@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -57,9 +58,13 @@ func TestSincronizacaoSSOHTTP(t *testing.T) {
 	mod.Servico().WithDiretorio(porta, slog.New(slog.DiscardHandler))
 
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/iam/sso/sincronizar", comum, "")
-	rel := data[iamapp.RelatorioSSO](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/iam/sso/sincronizar", admin, ""))
-	if rel.Criados != 1 {
-		t.Fatalf("relatório: %+v", rel)
+	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/iam/sso/sincronizacao", comum, "")
+	h.expect(http.StatusAccepted, http.MethodPost, "/api/v1/iam/sso/sincronizar", admin, "")
+	mod.Servico().AguardarSSO()
+	estado := data[iamapp.EstadoSSO](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/iam/sso/sincronizacao", admin, ""))
+	var rel iamapp.RelatorioSSO
+	if estado.Andamento || estado.Ultima == nil || json.Unmarshal(estado.Ultima.Relatorio, &rel) != nil || rel.Criados != 1 {
+		t.Fatalf("estado: %+v %+v", estado, rel)
 	}
 	t.Cleanup(func() { _, _ = h.d.DB.Exec(context.Background(), `DELETE FROM users WHERE keycloak_subject = $1`, sub) })
 
@@ -67,6 +72,10 @@ func TestSincronizacaoSSOHTTP(t *testing.T) {
 	mod.Servico().WithDiretorio(portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) { return "", "", "" }},
 		slog.New(slog.DiscardHandler))
 	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/iam/sso/sincronizar", admin, "")
+	semConfig := portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) { return "", "", "" }}
+	if _, err := semConfig.Usuarios(context.Background()); !errors.Is(err, iamapp.ErrSemSSO) {
+		t.Fatalf("sem configuração: %v", err)
+	}
 	if _, err := (portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) {
 		return "http://127.0.0.1:1/realms/x", "p", "s"
 	}}).Usuarios(context.Background()); err == nil || errors.Is(err, iamapp.ErrSemSSO) {

@@ -19,6 +19,12 @@ type portaSSO struct {
 
 var _ iamapp.DiretorioSSO = portaSSO{}
 
+// Configurado: com issuer, client e segredo, a leitura pode começar.
+func (p portaSSO) Configurado(ctx context.Context) bool {
+	issuer, client, secret := p.credenciais(ctx)
+	return issuer != "" && client != "" && secret != ""
+}
+
 func (p portaSSO) Usuarios(ctx context.Context) ([]iamdomain.UsuarioSSO, error) {
 	issuer, client, secret := p.credenciais(ctx)
 	pessoas, err := p.cli.Usuarios(ctx, keycloakadmin.Config{IssuerURL: issuer, ClientID: client, ClientSecret: secret})

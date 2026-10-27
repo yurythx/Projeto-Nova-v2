@@ -365,3 +365,13 @@ func (fr *faultRepo) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	defer fr.post(ctx, db)
 	return fr.inner.UpsertSSO(ctx, db, u)
 }
+
+func (fr *faultRepo) UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (domain.SincronizacaoSSO, bool, error) {
+	if err := fr.hook("UltimaSincronizacaoSSO"); err != nil {
+		var z0 domain.SincronizacaoSSO
+		var z1 bool
+		return z0, z1, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.UltimaSincronizacaoSSO(ctx, db)
+}

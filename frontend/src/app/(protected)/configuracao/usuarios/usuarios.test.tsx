@@ -91,21 +91,64 @@ describe("Configurações > Usuários", () => {
     );
   });
 
-  it("sincroniza com o SSO e mostra quem conflita com conta local", async () => {
+  it("sincroniza com o SSO, acompanha e mostra quem conflita com conta local", async () => {
+    let rodando = false;
     const api = mockBackend({
       ...identityRoutes(),
       "GET v1/users": page([]),
-      "POST v1/iam/sso/sincronizar": {
-        data: { lidos: 3, criados: 2, atualizados: 1, desativados: 0, conflitos: ["ana.local"] },
+      "POST v1/iam/sso/sincronizar": () => {
+        rodando = true;
+        return { status: 202, data: { iniciada: true } };
+      },
+      "GET v1/iam/sso/sincronizacao": () => {
+        if (rodando) {
+          rodando = false;
+          return { data: { andamento: true } };
+        }
+        return {
+          data: {
+            andamento: false,
+            ultima: {
+              em: "2026-10-27T12:00:00Z",
+              relatorio: {
+                lidos: 3,
+                criados: 2,
+                atualizados: 1,
+                desativados: 0,
+                conflitos: ["ana.local"],
+              },
+            },
+          },
+        };
       },
     });
     renderApp(<UsuariosPage />);
-    await userEvent.click(await screen.findByRole("button", { name: /Sincronizar com o SSO/ }));
-    expect(await screen.findByText(/3 pessoas lidas/)).toHaveTextContent(
-      "3 pessoas lidas: 2 novas, 1 atualizadas, 0 desativadas. Com conta local de mesmo usuário ou e-mail (vincule à mão): ana.local.",
+    expect(await screen.findByText(/3 pessoas lidas/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Sincronizar com o SSO/ }));
+    expect(await screen.findByText(/pode levar alguns minutos/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/3 pessoas lidas/, undefined, { timeout: 5000 }),
+    ).toHaveTextContent(
+      "3 pessoas lidas, 2 novas, 1 atualizadas, 0 desativadas. Com conta local de mesmo usuário ou e-mail (vincule à mão): ana.local.",
     );
     expect(api.to("POST v1/iam/sso/sincronizar")).toHaveLength(1);
     await waitFor(() => expect(api.to("GET v1/users").length).toBeGreaterThan(1));
+  }, 10_000);
+
+  it("falha da sincronização com o SSO aparece na tela", async () => {
+    mockBackend({
+      ...identityRoutes(),
+      "GET v1/users": page([]),
+      "GET v1/iam/sso/sincronizacao": { data: { andamento: false } },
+      "POST v1/iam/sso/sincronizar": fail(
+        409,
+        "já há uma sincronização com o SSO em andamento",
+        "CONFLICT",
+      ),
+    });
+    renderApp(<UsuariosPage />);
+    await userEvent.click(await screen.findByRole("button", { name: /Sincronizar com o SSO/ }));
+    expect(await screen.findByText(/já há uma sincronização/)).toBeInTheDocument();
   });
 
   it("conta local: desativa, redefine a senha, adiciona e remove lotação", async () => {

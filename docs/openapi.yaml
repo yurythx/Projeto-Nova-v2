@@ -4841,6 +4841,16 @@ components:
                 - nome
             type: object
             x-projeto-nova-generated: true
+        IamEstadoSSO:
+            properties:
+                andamento:
+                    type: boolean
+                ultima:
+                    $ref: '#/components/schemas/IamSincronizacaoSSO'
+            required:
+                - andamento
+            type: object
+            x-projeto-nova-generated: true
         IamLotacao:
             properties:
                 created_at:
@@ -5164,26 +5174,15 @@ components:
                 - key
             type: object
             x-projeto-nova-generated: true
-        IamRelatorioSSO:
+        IamSincronizacaoSSO:
             properties:
-                atualizados:
-                    type: integer
-                conflitos:
-                    items:
-                        type: string
-                    type: array
-                criados:
-                    type: integer
-                desativados:
-                    type: integer
-                lidos:
-                    type: integer
+                em:
+                    format: date-time
+                    type: string
+                relatorio: {}
             required:
-                - atualizados
-                - conflitos
-                - criados
-                - desativados
-                - lidos
+                - em
+                - relatorio
             type: object
             x-projeto-nova-generated: true
         IamUnidade:
@@ -16424,12 +16423,10 @@ paths:
             summary: IAM & Usuários — Listar/consultar /iam/permissions
             tags:
                 - iam
-    /api/v1/iam/sso/sincronizar:
-        post:
-            description: 'Traz agora todas as pessoas do realm pela API de administração do Keycloak (ADR 077), com a conta de serviço do client: cria ou atualiza pelo keycloak_subject, desativa quem foi desativado no SSO e lista em conflitos quem tem o usuário ou o e-mail de uma conta local. Exige users:manage global; o worker repete todo dia.'
-            operationId: postIamSsoSincronizar
-            parameters:
-                - $ref: '#/components/parameters/IdempotencyKey'
+    /api/v1/iam/sso/sincronizacao:
+        get:
+            description: 'Diz se há uma sincronização com o SSO em andamento nesta réplica e devolve a última terminada (de qualquer réplica ou do worker), com o momento e o relatório: lidos, criados, atualizados, desativados e conflitos. Exige users:manage global.'
+            operationId: getIamSsoSincronizacao
             responses:
                 "200":
                     content:
@@ -16439,7 +16436,43 @@ paths:
                                     - $ref: '#/components/schemas/Envelope'
                                     - properties:
                                         data:
-                                            $ref: '#/components/schemas/IamRelatorioSSO'
+                                            $ref: '#/components/schemas/IamEstadoSSO'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: IAM — estado da sincronização com o SSO
+            tags:
+                - iam
+    /api/v1/iam/sso/sincronizar:
+        post:
+            description: 'Começa em segundo plano a leitura de todas as pessoas do realm pela API de administração do Keycloak (ADR 077), com a conta de serviço do client: cria ou atualiza pelo keycloak_subject, desativa quem foi desativado no SSO e lista em conflitos quem tem o usuário ou o e-mail de uma conta local. Responde 202 na hora; o resultado sai em GET /api/v1/iam/sso/sincronizacao. 409 se já há uma em andamento; 422 sem client e segredo. Exige users:manage global; o worker repete todo dia.'
+            operationId: postIamSsoSincronizar
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "202":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            additionalProperties:
+                                                type: boolean
+                                            type: object
                                       type: object
                     description: Sucesso — payload em `data`.
                     x-projeto-nova-generated: true

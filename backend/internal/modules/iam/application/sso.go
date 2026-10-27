@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -16,8 +18,11 @@ import (
 )
 
 // DiretorioSSO lista as pessoas do SSO (ADR 077). O app liga a API de
-// administração do Keycloak; sem SSO configurado, devolve ErrSemSSO.
+// administração do Keycloak.
 type DiretorioSSO interface {
+	// Configurado diz se há client e segredo para ler o SSO.
+	Configurado(ctx context.Context) bool
+	// Usuarios devolve todas as pessoas; sem configuração, ErrSemSSO.
 	Usuarios(ctx context.Context) ([]domain.UsuarioSSO, error)
 }
 
@@ -35,27 +40,77 @@ type RelatorioSSO struct {
 	Conflitos []string `json:"conflitos"`
 }
 
+// EstadoSSO é o que a tela mostra: se há uma sincronização rodando nesta
+// réplica e a última terminada (de qualquer réplica ou do worker).
+type EstadoSSO struct {
+	Andamento bool                     `json:"andamento"`
+	Ultima    *domain.SincronizacaoSSO `json:"ultima,omitempty"`
+}
+
+// ssoEmCurso guarda a sincronização pedida pela tela: uma por réplica.
+type ssoEmCurso struct {
+	ativa  atomic.Bool
+	espera sync.WaitGroup
+}
+
+// TempoSSO limita a sincronização pedida pela tela.
+var TempoSSO = 30 * time.Minute
+
 // WithDiretorio liga a sincronização com o SSO.
 func (s *Service) WithDiretorio(d DiretorioSSO, logger *slog.Logger) *Service {
 	s.diretorio, s.logger = d, logger
 	return s
 }
 
-// SincronizarSSO traz as pessoas do SSO agora. Só a administração global
-// de contas: a sincronização mexe em todas.
-func (s *Service) SincronizarSSO(ctx context.Context) (RelatorioSSO, error) {
+func (s *Service) podeSincronizar(ctx context.Context) error {
 	identity, _ := auth.IdentityFromContext(ctx)
 	if !auth.CanGlobal(identity, auth.PermUsersManage) {
-		return RelatorioSSO{}, apperrors.Forbidden("só a administração global de contas sincroniza com o SSO")
+		return apperrors.Forbidden("só a administração global de contas sincroniza com o SSO")
 	}
-	if s.diretorio == nil {
-		return RelatorioSSO{}, apperrors.Validation("a sincronização com o SSO não está ligada")
+	return nil
+}
+
+// SincronizarSSO começa a sincronização em segundo plano: com milhares de
+// pessoas ela leva minutos, mais do que uma requisição aguenta atrás do
+// proxy. O resultado sai em EstadoDoSSO.
+func (s *Service) SincronizarSSO(ctx context.Context) error {
+	if err := s.podeSincronizar(ctx); err != nil {
+		return err
 	}
-	rel, err := s.sincronizar(ctx)
-	if errors.Is(err, ErrSemSSO) {
-		return rel, apperrors.Validation("configure o client e o segredo do SSO, com a conta de serviço habilitada, antes de sincronizar")
+	switch {
+	case s.diretorio == nil:
+		return apperrors.Validation("a sincronização com o SSO não está ligada")
+	case !s.diretorio.Configurado(ctx):
+		return apperrors.Validation("configure o client e o segredo do SSO, com a conta de serviço habilitada, antes de sincronizar")
+	case !s.sso.ativa.CompareAndSwap(false, true):
+		return apperrors.Conflict("já há uma sincronização com o SSO em andamento")
 	}
-	return rel, err
+	s.sso.espera.Add(1)
+	fundo, parar := context.WithTimeout(context.WithoutCancel(ctx), TempoSSO)
+	go func() {
+		defer func() { parar(); s.sso.ativa.Store(false); s.sso.espera.Done() }()
+		s.registrarSSO(s.sincronizar(fundo))
+	}()
+	return nil
+}
+
+// AguardarSSO espera a sincronização pedida pela tela terminar.
+func (s *Service) AguardarSSO() { s.sso.espera.Wait() }
+
+// EstadoDoSSO diz se há sincronização em andamento e como foi a última.
+func (s *Service) EstadoDoSSO(ctx context.Context) (EstadoSSO, error) {
+	if err := s.podeSincronizar(ctx); err != nil {
+		return EstadoSSO{}, err
+	}
+	e := EstadoSSO{Andamento: s.sso.ativa.Load()}
+	ultima, ok, err := s.repo.UltimaSincronizacaoSSO(ctx, s.pool)
+	if err != nil {
+		return EstadoSSO{}, MapError(err)
+	}
+	if ok {
+		e.Ultima = &ultima
+	}
+	return e, nil
 }
 
 // sincronizar grava cada pessoa na sua transação: o conflito de uma não
@@ -97,6 +152,18 @@ func (s *Service) sincronizar(ctx context.Context) (RelatorioSSO, error) {
 	return rel, err
 }
 
+// registrarSSO deixa no registro o fim de uma sincronização. Sem SSO
+// configurado, silêncio: não é falha.
+func (s *Service) registrarSSO(rel RelatorioSSO, err error) {
+	switch {
+	case err == nil:
+		s.logger.Info("iam: usuários do SSO sincronizados", slog.Int("lidos", rel.Lidos), slog.Int("criados", rel.Criados),
+			slog.Int("desativados", rel.Desativados), slog.Int("conflitos", len(rel.Conflitos)))
+	case !errors.Is(err, ErrSemSSO) && !errors.Is(err, context.Canceled):
+		s.logger.Warn("iam: sincronização com o SSO", slog.Any("error", err))
+	}
+}
+
 // IntervaloSSO é de quanto em quanto o worker sincroniza.
 var IntervaloSSO = 24 * time.Hour
 
@@ -110,14 +177,7 @@ func (s *Service) RunSincronizacaoSSO(ctx context.Context) error {
 	t := time.NewTicker(IntervaloSSO)
 	defer t.Stop()
 	for {
-		rel, err := s.sincronizar(ctx)
-		switch {
-		case err == nil:
-			s.logger.Info("iam: usuários do SSO sincronizados", slog.Int("lidos", rel.Lidos), slog.Int("criados", rel.Criados),
-				slog.Int("desativados", rel.Desativados), slog.Int("conflitos", len(rel.Conflitos)))
-		case !errors.Is(err, ErrSemSSO) && ctx.Err() == nil:
-			s.logger.Warn("iam: sincronização com o SSO", slog.Any("error", err))
-		}
+		s.registrarSSO(s.sincronizar(ctx))
 		select {
 		case <-ctx.Done():
 			return nil

@@ -140,12 +140,22 @@ func (h *Handlers) Unlock(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteNoContent(w)
 }
 
-// SincronizarSSO traz agora as pessoas do SSO (ADR 077) e devolve o relatório.
+// SincronizarSSO começa a sincronização com o SSO (ADR 077): 202, e o
+// resultado sai em EstadoSSO.
 func (h *Handlers) SincronizarSSO(w http.ResponseWriter, r *http.Request) {
-	rel, err := h.svc.SincronizarSSO(r.Context())
+	if err := h.svc.SincronizarSSO(r.Context()); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusAccepted, map[string]bool{"iniciada": true}, nil)
+}
+
+// EstadoSSO diz se há sincronização em andamento e como foi a última.
+func (h *Handlers) EstadoSSO(w http.ResponseWriter, r *http.Request) {
+	e, err := h.svc.EstadoDoSSO(r.Context())
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-	httputil.WriteOK(w, rel)
+	httputil.WriteOK(w, e)
 }

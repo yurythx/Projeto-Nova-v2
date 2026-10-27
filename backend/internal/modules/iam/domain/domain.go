@@ -5,6 +5,7 @@ package domain
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"regexp"
 	"time"
@@ -176,6 +177,13 @@ type UsuarioSSO struct {
 	Grupos   []string
 }
 
+// SincronizacaoSSO é a última sincronização terminada, como a auditoria
+// guardou: quando e o relatório.
+type SincronizacaoSSO struct {
+	Em        time.Time       `json:"em"`
+	Relatorio json.RawMessage `json:"relatorio"`
+}
+
 // ResultadoSSO diz o que a gravação de uma pessoa fez.
 type ResultadoSSO struct {
 	Criado     bool
@@ -232,4 +240,7 @@ type Repository interface {
 	// UpsertSSO grava a pessoa do SSO pelo keycloak_subject, como o
 	// primeiro login. Desativada no SSO, desativa aqui; nunca reativa.
 	UpsertSSO(ctx context.Context, db database.DBTX, u UsuarioSSO) (ResultadoSSO, error)
+	// UltimaSincronizacaoSSO lê da auditoria a última sincronização (ok
+	// false: nunca houve).
+	UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (SincronizacaoSSO, bool, error)
 }

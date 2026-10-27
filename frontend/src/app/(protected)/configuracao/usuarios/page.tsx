@@ -344,31 +344,56 @@ interface RelatorioSSO {
   conflitos: string[];
 }
 
-/** Traz agora as pessoas do SSO (ADR 077); o worker repete todo dia. */
+interface EstadoSSO {
+  andamento: boolean;
+  ultima?: { em: string; relatorio: RelatorioSSO };
+}
+
+/**
+ * Traz as pessoas do SSO (ADR 077); o worker repete todo dia. Com milhares
+ * de pessoas leva minutos: o pedido só começa, e a tela acompanha o estado.
+ */
 function SincronizarSSO({ onFeito }: { onFeito: () => void }) {
   const { run, pending } = useAction();
-  const [rel, setRel] = useState<RelatorioSSO | null>(null);
+  const [acompanhando, setAcompanhando] = useState(false);
+  const estado = useApiQuery<EstadoSSO>("v1/iam/sso/sincronizacao", {
+    refreshInterval: (e) => (e?.andamento || acompanhando ? 3000 : 0),
+    onSuccess: (e) => {
+      if (acompanhando && !e.andamento) {
+        setAcompanhando(false);
+        onFeito();
+      }
+    },
+  });
+  const andamento = acompanhando || !!estado.data?.andamento;
+  const ultima = estado.data?.ultima;
 
   async function sincronizar() {
-    const out = await run(() => apiClient.post<RelatorioSSO>("v1/iam/sso/sincronizar"));
-    if (out) {
-      setRel(out.data);
-      onFeito();
+    if (await run(() => apiClient.post("v1/iam/sso/sincronizar"))) {
+      setAcompanhando(true);
+      void estado.mutate();
     }
   }
 
   return (
     <div className="flex flex-col gap-1">
-      <Button variant="secondary" onClick={() => void sincronizar()} loading={pending}>
+      <Button variant="secondary" onClick={() => void sincronizar()} loading={pending || andamento}>
         <RefreshCw size={16} aria-hidden="true" className="mr-1" /> Sincronizar com o SSO
       </Button>
-      {rel && (
+      {andamento ? (
         <p role="status" className="text-xs text-muted">
-          {rel.lidos} pessoas lidas: {rel.criados} novas, {rel.atualizados} atualizadas,{" "}
-          {rel.desativados} desativadas.
-          {rel.conflitos.length > 0 &&
-            ` Com conta local de mesmo usuário ou e-mail (vincule à mão): ${rel.conflitos.join(", ")}.`}
+          Sincronizando com o SSO; pode levar alguns minutos.
         </p>
+      ) : (
+        ultima && (
+          <p role="status" className="text-xs text-muted">
+            Última sincronização em {fmtDateTime(ultima.em)}: {ultima.relatorio.lidos} pessoas
+            lidas, {ultima.relatorio.criados} novas, {ultima.relatorio.atualizados} atualizadas,{" "}
+            {ultima.relatorio.desativados} desativadas.
+            {ultima.relatorio.conflitos.length > 0 &&
+              ` Com conta local de mesmo usuário ou e-mail (vincule à mão): ${ultima.relatorio.conflitos.join(", ")}.`}
+          </p>
+        )
       )}
     </div>
   );

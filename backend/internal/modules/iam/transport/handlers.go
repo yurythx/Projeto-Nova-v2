@@ -93,6 +93,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		adm.Post("/users/{id}/password", h.ResetPassword)
 		adm.Post("/users/{id}/unlock", h.Unlock)
 		adm.Post("/iam/sso/sincronizar", h.SincronizarSSO)
+		adm.Get("/iam/sso/sincronizacao", h.EstadoSSO)
 	})
 }
 

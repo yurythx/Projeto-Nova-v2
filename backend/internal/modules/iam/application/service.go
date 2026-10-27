@@ -31,6 +31,7 @@ type Service struct {
 	hash         func(password string) (string, error)
 	diretorio    DiretorioSSO
 	logger       *slog.Logger
+	sso          ssoEmCurso
 }
 
 // NewService cria o serviço.

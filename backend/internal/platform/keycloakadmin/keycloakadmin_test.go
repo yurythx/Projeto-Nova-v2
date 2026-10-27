@@ -68,7 +68,7 @@ func TestUsuarios(t *testing.T) {
 	if err != nil || len(us) != 3 || us[0].Nome() != "Ana Souza" || us[1].Enabled || len(us[2].Grupos) != 2 || us[2].Grupos[0] != "Administrators" {
 		t.Fatalf("usuários: %+v %v", us, err)
 	}
-	c.Pagina = 0
+	c.Pagina, c.Paralelo = 0, 0
 	if us, err := c.Usuarios(ctx, cfg); err != nil || len(us) != 3 {
 		t.Fatalf("página padrão: %d %v", len(us), err)
 	}

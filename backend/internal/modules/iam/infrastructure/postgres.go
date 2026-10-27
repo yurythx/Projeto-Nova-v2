@@ -602,3 +602,16 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	res.Desativado = antes != nil && *antes && !depois
 	return res, nil
 }
+
+// UltimaSincronizacaoSSO lê da auditoria a última sincronização com o SSO.
+func (r *Repository) UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (domain.SincronizacaoSSO, bool, error) {
+	var s domain.SincronizacaoSSO
+	var rel []byte
+	err := db.QueryRow(ctx, `SELECT created_at, coalesce(diff_after, '{}') FROM audit_logs
+		WHERE action = 'iam.sso.sincronizado' ORDER BY created_at DESC LIMIT 1`).Scan(&s.Em, &rel)
+	if database.IsNoRows(err) {
+		return s, false, nil
+	}
+	s.Relatorio = rel
+	return s, err == nil, wrap("ultima sincronizacao sso", err)
+}
