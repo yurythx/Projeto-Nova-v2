@@ -55,6 +55,8 @@ func TestImportarSimulaERecusaSessao(t *testing.T) {
 		case strings.HasSuffix(r.URL.Path, "/Ticket"):
 			w.Header().Set("Content-Range", "0-0/0")
 			_, _ = w.Write([]byte(`[]`))
+		case strings.HasSuffix(r.URL.Path, "/getMyProfiles"):
+			_, _ = w.Write([]byte(`{"myprofiles":[]}`))
 		default:
 			_, _ = w.Write([]byte(`[]`))
 		}

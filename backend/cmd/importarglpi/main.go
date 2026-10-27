@@ -8,9 +8,14 @@
 //	GLPI_URL=https://glpi.prefeitura/apirest.php GLPI_APP_TOKEN=... GLPI_USER_TOKEN=... \
 //	DB_HOST=... DB_PORT=5432 DB_NAME=nova DB_USER=nova DB_PASSWORD=... \
 //	  go run ./cmd/importarglpi --unidade <uuid> [--gravar]
+//
+// Sem token de usuário, GLPI_LOGIN e GLPI_PASSWORD abrem a sessão.
+// GLPI_PERFIL escolhe o perfil (padrão: Super-Admin, se a conta tiver):
+// o perfil decide quais entidades e categorias a API mostra.
 package main
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -32,7 +37,7 @@ import (
 // opcoes é o que a linha de comando e o ambiente dizem.
 type opcoes struct {
 	url, appToken, userToken string
-	login, senha             string
+	login, senha, perfil     string
 	unidade                  *uuid.UUID
 	gravar                   bool
 	fuso                     *time.Location
@@ -61,7 +66,7 @@ func ler(args []string, env func(string) string) (opcoes, error) {
 		return opcoes{}, err
 	}
 	op := opcoes{url: env("GLPI_URL"), appToken: env("GLPI_APP_TOKEN"), userToken: env("GLPI_USER_TOKEN"),
-		login: env("GLPI_LOGIN"), senha: env("GLPI_PASSWORD"), gravar: *gravar, pagina: *pagina}
+		login: env("GLPI_LOGIN"), senha: env("GLPI_PASSWORD"), perfil: env("GLPI_PERFIL"), gravar: *gravar, pagina: *pagina}
 	if op.url == "" || (op.userToken == "" && (op.login == "" || op.senha == "")) {
 		return opcoes{}, errors.New("defina GLPI_URL e GLPI_USER_TOKEN, ou GLPI_LOGIN e GLPI_PASSWORD (e GLPI_APP_TOKEN, se o GLPI pedir)")
 	}
@@ -95,10 +100,12 @@ func rodar(ctx context.Context, op opcoes, saida io.Writer) error {
 
 func importar(ctx context.Context, op opcoes, pool *pgxpool.Pool, saida io.Writer) error {
 	cliente := glpi.NovoCliente(op.url, op.appToken, op.userToken)
-	cliente.Login, cliente.Senha = op.login, op.senha
+	cliente.Login, cliente.Senha, cliente.Perfil = op.login, op.senha, op.perfil
 	if err := cliente.Abrir(ctx); err != nil {
 		return fmt.Errorf("sessão no GLPI: %w", err)
 	}
+	// O perfil decide o que a API mostra: outro perfil, outras entidades.
+	fmt.Fprintf(os.Stderr, "importarglpi: perfil no GLPI: %s\n", cmp.Or(cliente.PerfilAtivo, "o padrão da conta"))
 	defer func() { _ = cliente.Fechar(context.WithoutCancel(ctx)) }()
 	im := &glpi.Importador{Fonte: cliente, Pool: pool, Repo: infrastructure.NewRepository(), Unidade: op.unidade,
 		Gravar: op.gravar, Fuso: op.fuso, Pagina: op.pagina}

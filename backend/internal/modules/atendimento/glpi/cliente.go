@@ -1,6 +1,7 @@
 package glpi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -97,9 +98,19 @@ type Cliente struct {
 	// Login e Senha entram só sem UserToken: há GLPI em que o login por
 	// token falha (perfil padrão vazio, por exemplo) e o por credencial não.
 	Login, Senha string
-	HTTP         *http.Client
-	sessao       string
+	// Perfil é o perfil do GLPI em que a sessão trabalha (vazio =
+	// PerfilPadrao, se a conta o tiver). A sessão abre no perfil padrão da
+	// conta, que pode ver menos entidades ou nem ler as categorias.
+	Perfil string
+	// PerfilAtivo é o perfil que Abrir escolheu (vazio = o da conta).
+	PerfilAtivo string
+	HTTP        *http.Client
+	sessao      string
 }
+
+// PerfilPadrao é o perfil escolhido quando Perfil não diz outro: o que vê
+// todas as entidades e as categorias.
+const PerfilPadrao = "Super-Admin"
 
 // NovoCliente prepara o cliente para a URL da API (…/apirest.php).
 func NovoCliente(base, appToken, userToken string) *Cliente {
@@ -118,6 +129,37 @@ func (c *Cliente) Abrir(ctx context.Context) error {
 		return fmt.Errorf("%w: sessão vazia", ErrGLPI)
 	}
 	c.sessao = out.Sessao
+	return c.escolherPerfil(ctx)
+}
+
+// escolherPerfil troca a sessão para Perfil (ou PerfilPadrao). Pedido
+// explícito que a conta não tem é erro; o padrão ausente fica no da conta.
+func (c *Cliente) escolherPerfil(ctx context.Context) error {
+	var meus struct {
+		Perfis []struct {
+			ID   int    `json:"id"`
+			Nome string `json:"name"`
+		} `json:"myprofiles"`
+	}
+	if _, err := c.get(ctx, "/getMyProfiles", &meus); err != nil {
+		return err
+	}
+	quero := c.Perfil
+	if quero == "" {
+		quero = PerfilPadrao
+	}
+	for _, p := range meus.Perfis {
+		if strings.EqualFold(p.Nome, quero) {
+			if _, err := c.chamar(ctx, http.MethodPost, "/changeActiveProfile", map[string]int{"profiles_id": p.ID}, nil); err != nil {
+				return err
+			}
+			c.PerfilAtivo = p.Nome
+			return nil
+		}
+	}
+	if c.Perfil != "" {
+		return fmt.Errorf("%w: a conta não tem o perfil %q", ErrGLPI, c.Perfil)
+	}
 	return nil
 }
 
@@ -192,7 +234,19 @@ func (c *Cliente) Pessoa(ctx context.Context, id int) (Pessoa, error) {
 // []) são respostas válidas; o GLPI também responde 400 com
 // ERROR_RANGE_EXCEED_TOTAL quando a página passa do fim.
 func (c *Cliente) get(ctx context.Context, caminho string, out any) (http.Header, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.Base+caminho, nil)
+	return c.chamar(ctx, http.MethodGet, caminho, nil, out)
+}
+
+func (c *Cliente) chamar(ctx context.Context, metodo, caminho string, envio, out any) (http.Header, error) {
+	var corpoEnvio io.Reader
+	if envio != nil {
+		b, err := json.Marshal(envio)
+		if err != nil {
+			return nil, err
+		}
+		corpoEnvio = bytes.NewReader(b)
+	}
+	req, err := http.NewRequestWithContext(ctx, metodo, c.Base+caminho, corpoEnvio)
 	if err != nil {
 		return nil, err
 	}

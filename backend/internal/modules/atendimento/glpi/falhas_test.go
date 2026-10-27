@@ -145,6 +145,7 @@ func TestClienteFalhas(t *testing.T) {
 		t.Fatalf("sessão vazia: %v", err)
 	}
 	resposta["/initSession"] = `{"session_token":"s"}`
+	resposta["/getMyProfiles"] = `{"myprofiles":[]}`
 	if err := c.Abrir(ctx); err != nil {
 		t.Fatal(err)
 	}
