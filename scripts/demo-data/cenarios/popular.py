@@ -242,7 +242,7 @@ MSGS = [("Maria Cidadã", "duvida", "Horário da sala de vacina", "Qual o horár
         ("Pedro Pai de Aluno", "sugestao", "Transporte escolar", "Sugiro um ponto de ônibus escolar próximo ao bairro novo."),
         ("Carla Contribuinte", "outro", "Certidão negativa", "Como solicito a certidão negativa de débitos municipais?")]
 for i, (nome, cat, assunto, msg) in enumerate(MSGS):
-    req = urllib.request.Request(f"{FE}/api/public/v1/contact/messages", method="POST", headers={"Content-Type": "application/json"},
+    req = urllib.request.Request(f"{FE}/api/public/v1/contact/messages", method="POST", headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (povoador de teste)"},
                                  data=json.dumps({"name": nome, "email": f"cidadao{i}@exemplo.test", "subject": assunto, "category": cat,
                                                   "message": msg, "consent": True, "website": ""}).encode())
     try:

@@ -8,6 +8,7 @@ TI da Prefeitura e os pedidos vêm de servidores de todas as unidades.
     python3 popular_gestao.py            # só roda uma vez (marca em .demo-gestao)
     python3 popular_gestao.py --force    # roda de novo (cria duplicatas)
     CHAMADOS=800 python3 popular_gestao.py
+    SEMENTE=1 python3 popular_gestao.py   # repete os mesmos sorteios
 """
 import random
 import secrets
@@ -21,7 +22,8 @@ if os.path.exists(MARK) and "--force" not in sys.argv:
     print(f"Já povoado em {open(MARK).read().strip()} — use --force para repetir.")
     sys.exit(0)
 
-rnd = random.Random(20261027)
+# Semente nova a cada rodada: rodar de novo soma dados diferentes.
+rnd = random.Random(os.environ.get("SEMENTE") or secrets.randbits(32))
 ADMIN = "teste.admin"
 TECS = [u for u in users_in("PREF-SEDE-TI") if not u.startswith("teste.")]
 DIRETOR_TI = TECS[0]
@@ -29,6 +31,7 @@ SOLICITANTES = rnd.sample([u["usuario"] for u in USERS if not u["usuario"].start
 N_CHAMADOS = int(os.environ.get("CHAMADOS", "450"))
 now = datetime.now(timezone.utc).replace(microsecond=0)
 iso = lambda dt: dt.strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: E731
+dia = lambda d: d.isoformat() + "T00:00:00Z"  # a API quer data e hora (RFC 3339)  # noqa: E731
 _ids = {}
 
 
@@ -169,7 +172,7 @@ for i, (titulo, forn, meses, valor, prazo) in enumerate([
     if forn not in FORNECEDORES:
         continue
     d = ok(f"contrato {titulo}", *call(ADMIN, "POST", "contratos/contratos", {"titulo": titulo, "fornecedor_id": FORNECEDORES[forn], "numero": f"{i + 1:03d}/2026",
-                                                                              "inicio": inicio.isoformat(), "fim": (inicio + timedelta(days=30 * meses)).isoformat(),
+                                                                              "inicio": dia(inicio), "fim": dia(inicio + timedelta(days=30 * meses)),
                                                                               "valor_centavos": valor, "unidade_id": SEDE}))
     if d:
         CONTRATOS.append(d["id"])
@@ -180,14 +183,15 @@ for nome, programa, qtd in [("Escritório", "Suíte de escritório", 400), ("Ant
     forn = rnd.choice(list(FORNECEDORES.values())) if FORNECEDORES else None
     if forn:
         ok(f"licença {nome}", *call(ADMIN, "POST", "contratos/licencas", {"nome": nome, "programa": programa, "quantidade": qtd, "fornecedor_id": forn,
-                                                                          "fim": date(2027, rnd.randint(1, 12), 1).isoformat(), "unidade_id": SEDE}))
+                                                                          "fim": dia(date(2027, rnd.randint(1, 12), 1)), "unidade_id": SEDE}))
 
 print("== Ativos (inventário das unidades)")
-ATIVOS = []
+ATIVOS, ATIVOS_SEDE = [], []
 for unome, uid_ in unidades.items():
     sigla = "".join(w[0] for w in unome.split() if w[0].isupper())[:5]
     sw = ok(f"switch {unome}", *call(TECS[3], "POST", "ativos", {"nome": f"Switch {sigla}", "tipo": "rede", "estado": "em_uso", "unidade_id": uid_,
-                                                                  "identificador": f"SW-{sigla}-01", "produto_id": PRODUTOS.get("Rede corporativa")}))
+                                                                  "identificador": f"SW-{sigla}-01",
+                                                                  "produto_id": PRODUTOS.get("Rede corporativa") if uid_ == SEDE else None}))
     for n in range(rnd.randint(5, 9)):
         tipo, nome = rnd.choice([("hardware", "Desktop"), ("hardware", "Desktop"), ("hardware", "Notebook"), ("hardware", "Impressora"), ("hardware", "Monitor")])
         estado = rnd.choices(["em_uso", "manutencao", "planejado", "desativado"], [80, 8, 6, 6])[0]
@@ -203,6 +207,7 @@ for nome, tipo in [("Servidor de arquivos", "hardware"), ("Servidor de e-mail", 
                                                               "identificador": f"DC-{rnd.randint(100, 999)}", "descricao": "Datacenter da sede"}))
     if d:
         ATIVOS.append(d["id"])
+        ATIVOS_SEDE.append(d["id"])
 
 print(f"== Chamados ({N_CHAMADOS}) — abertura, atendimento, conversa e conclusão")
 INCIDENTES, chamados = [], 0
@@ -292,7 +297,7 @@ for titulo, causa in [("Quedas recorrentes de internet nas PSFs", "Link de rádi
         continue
     for sid in rnd.sample(INCIDENTES, min(len(INCIDENTES), rnd.randint(2, 6))):
         ok("vínculo incidente", *call(tec, "PUT", f"problemas/{d['id']}/incidentes/{sid}"))
-    for aid in rnd.sample(ATIVOS, min(len(ATIVOS), rnd.randint(1, 3))):
+    for aid in rnd.sample(ATIVOS_SEDE, min(len(ATIVOS_SEDE), rnd.randint(1, 3))):
         ok("vínculo ativo", *call(tec, "PUT", f"problemas/{d['id']}/ativos/{aid}"))
     for estado in ["em_analise", "erro_conhecido", "resolvido", "encerrado"][:rnd.randint(0, 4)]:
         if estado == "erro_conhecido":
@@ -338,8 +343,8 @@ for titulo, prioridade, orcamento, estado in [
     ini = date.today() - timedelta(days=rnd.randint(10, 200))
     d = ok(f"projeto {titulo}", *call(gerente, "POST", "projetos", {"titulo": titulo, "prioridade": prioridade, "orcamento": orcamento, "unidade_id": SEDE,
                                                                      "objetivo": f"Entregar {titulo.lower()}.", "descricao": "Projeto do plano diretor de TI.",
-                                                                     "gerente_id": uid(gerente), "data_inicio_planejada": ini.isoformat(),
-                                                                     "data_fim_planejada": (ini + timedelta(days=rnd.randint(90, 360))).isoformat()}))
+                                                                     "gerente_id": uid(gerente), "data_inicio_planejada": dia(ini),
+                                                                     "data_fim_planejada": dia(ini + timedelta(days=rnd.randint(90, 360)))}))
     if not d:
         continue
     pid = d["id"]
@@ -356,11 +361,11 @@ for titulo, prioridade, orcamento, estado in [
 
 print("== Cofre de senhas")
 for pasta, membros in [("Infraestrutura", TECS[3:9]), ("Sistemas", TECS[1:3] + TECS[7:8]), ("Telefonia", TECS[3:5])]:
-    p = ok(f"pasta {pasta}", *call(DIRETOR_TI, "POST", "cofre/pastas", {"nome": pasta, "unidade_id": SEDE,
+    p = ok(f"pasta {pasta}", *call(ADMIN, "POST", "cofre/pastas", {"nome": pasta, "unidade_id": SEDE,
                                                                        "membros": [{"usuario_id": uid(m), "pode_revelar": True} for m in membros]}))
     for n in range(rnd.randint(4, 7)):
         tipo = rnd.choice(["maquina", "aplicacao", "painel", "outro"])
-        ok("segredo", *call(DIRETOR_TI, "POST", "cofre/segredos", {"nome": f"{pasta} — {tipo} {n + 1}", "tipo": tipo, "usuario": rnd.choice(["admin", "root", "suporte"]),
+        ok("segredo", *call(ADMIN, "POST", "cofre/segredos", {"nome": f"{pasta} — {tipo} {n + 1}", "tipo": tipo, "usuario": rnd.choice(["admin", "root", "suporte"]),
                                                                   "senha": secrets.token_urlsafe(18), "endereco": f"10.0.{rnd.randint(0, 9)}.{rnd.randint(2, 250)}",
                                                                   "pasta_id": p["id"] if p else None, "unidade_id": SEDE, "notas": "Senha de teste (fictícia)."}))
 
