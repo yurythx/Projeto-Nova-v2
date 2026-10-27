@@ -139,3 +139,13 @@ func (h *Handlers) Unlock(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteNoContent(w)
 }
+
+// SincronizarSSO traz agora as pessoas do SSO (ADR 077) e devolve o relatório.
+func (h *Handlers) SincronizarSSO(w http.ResponseWriter, r *http.Request) {
+	rel, err := h.svc.SincronizarSSO(r.Context())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, rel)
+}

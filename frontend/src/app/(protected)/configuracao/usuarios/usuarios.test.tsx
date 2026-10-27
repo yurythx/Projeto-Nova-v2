@@ -91,6 +91,23 @@ describe("Configurações > Usuários", () => {
     );
   });
 
+  it("sincroniza com o SSO e mostra quem conflita com conta local", async () => {
+    const api = mockBackend({
+      ...identityRoutes(),
+      "GET v1/users": page([]),
+      "POST v1/iam/sso/sincronizar": {
+        data: { lidos: 3, criados: 2, atualizados: 1, desativados: 0, conflitos: ["ana.local"] },
+      },
+    });
+    renderApp(<UsuariosPage />);
+    await userEvent.click(await screen.findByRole("button", { name: /Sincronizar com o SSO/ }));
+    expect(await screen.findByText(/3 pessoas lidas/)).toHaveTextContent(
+      "3 pessoas lidas: 2 novas, 1 atualizadas, 0 desativadas. Com conta local de mesmo usuário ou e-mail (vincule à mão): ana.local.",
+    );
+    expect(api.to("POST v1/iam/sso/sincronizar")).toHaveLength(1);
+    await waitFor(() => expect(api.to("GET v1/users").length).toBeGreaterThan(1));
+  });
+
   it("conta local: desativa, redefine a senha, adiciona e remove lotação", async () => {
     let current = user("1");
     const api = mockBackend({

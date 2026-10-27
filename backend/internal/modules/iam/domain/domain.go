@@ -165,6 +165,23 @@ type Area struct {
 
 // Repository é a porta de persistência do IAM. Todo método recebe o DBTX
 // para rodar dentro da transação que também grava a auditoria.
+// UsuarioSSO é uma pessoa do SSO como a sincronização a traz (ADR 077):
+// os mesmos dados que o token traria no primeiro login.
+type UsuarioSSO struct {
+	Subject  string
+	Username string
+	Email    string
+	Nome     string
+	Ativo    bool
+	Grupos   []string
+}
+
+// ResultadoSSO diz o que a gravação de uma pessoa fez.
+type ResultadoSSO struct {
+	Criado     bool
+	Desativado bool
+}
+
 type Repository interface {
 	ListEntidades(ctx context.Context, db database.DBTX) ([]Entidade, error)
 	GetEntidade(ctx context.Context, db database.DBTX, id uuid.UUID) (Entidade, error)
@@ -212,4 +229,7 @@ type Repository interface {
 	CreateLocalUser(ctx context.Context, db database.DBTX, username, email, displayName, hash string, roles []string) (uuid.UUID, error)
 	SetPassword(ctx context.Context, db database.DBTX, id uuid.UUID, hash string) error
 	Unlock(ctx context.Context, db database.DBTX, id uuid.UUID) error
+	// UpsertSSO grava a pessoa do SSO pelo keycloak_subject, como o
+	// primeiro login. Desativada no SSO, desativa aqui; nunca reativa.
+	UpsertSSO(ctx context.Context, db database.DBTX, u UsuarioSSO) (ResultadoSSO, error)
 }

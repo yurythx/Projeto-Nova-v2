@@ -356,3 +356,12 @@ func (fr *faultRepo) Unlock(ctx context.Context, db database.DBTX, id uuid.UUID)
 	defer fr.post(ctx, db)
 	return fr.inner.Unlock(ctx, db, id)
 }
+
+func (fr *faultRepo) UpsertSSO(ctx context.Context, db database.DBTX, u domain.UsuarioSSO) (domain.ResultadoSSO, error) {
+	if err := fr.hook("UpsertSSO"); err != nil {
+		var z0 domain.ResultadoSSO
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.UpsertSSO(ctx, db, u)
+}

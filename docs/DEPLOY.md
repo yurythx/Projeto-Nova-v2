@@ -240,6 +240,14 @@ administradores do sistema, e todo o resto
 recebe o perfil básico `servidor` pelo grupo `*`. O deploy grava esses
 mapeamentos, e os demais se cadastram na tela de IAM.
 
+As contas do SSO também são trazidas de uma vez, sem esperar o primeiro login
+([ADR 077](adr/077-usuarios-do-sso.md)): botão **Sincronizar com o SSO** em
+Configurações > Usuários, e o worker repete todo dia. No Keycloak, o client
+`projeto-nova` precisa de **Service accounts** habilitado e, na aba *Service
+account roles*, a função `view-users` do client `realm-management`. Quem é
+desativado no SSO é desativado aqui; quem tem o usuário ou o e-mail de uma
+conta local aparece em conflitos, para vincular à mão.
+
 No plano gratuito, a Cloudflare limita o corpo de cada requisição a 100 MB.
 Um envio de arquivo maior que isso falha em `arquivos.projetonova.cloud`.
 

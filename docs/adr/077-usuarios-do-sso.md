@@ -1,6 +1,6 @@
 # 077 — Usuários do SSO trazidos de uma vez, e não só no primeiro login
 
-- **Status:** Aceito
+- **Status:** Aceito e implementado
 - **Data:** 2026-10-27
 - **Relacionado:** [ADR 074](074-perfis-pelos-grupos-do-sso.md), [ADR 076](076-modulo-de-integracoes.md)
 

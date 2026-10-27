@@ -40,6 +40,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/iaconfig"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/keycloakadmin"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/lgpd"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
@@ -73,6 +74,8 @@ func registerPlugins(d *Dependencies) {
 	ligado := d.Kernel.Enabled
 	atendimentoModule := atendimento.New(deps, produtoPort{repo: produtosModule.Repositorio(), ativo: func() bool { return d.Kernel.Enabled(produtos.Key) }})
 	ativosModule := ativos.New(deps, portaProdutoAtivos(produtosModule.Repositorio(), ligado))
+	iamModule := iam.New(deps, d.permissionCatalog)
+	iamModule.Servico().WithDiretorio(portaSSO{cli: keycloakadmin.Novo(), credenciais: d.keycloakCredentials}, d.Logger)
 	integracoesModule := integracoes.New(deps)
 	integracoesModule.Servico().WithExtrator(extratorGLPI{abrir: abrirGLPI}).
 		WithCarregador(carregadorGLPI{pool: d.DB, ativo: func() bool { return d.Kernel.Enabled(atendimento.Key) }})
@@ -101,7 +104,7 @@ func registerPlugins(d *Dependencies) {
 
 	d.Kernel.MustRegister(
 		// Core imutável (nunca desativável).
-		iam.New(deps, d.permissionCatalog),
+		iamModule,
 		auditoria.New(deps),
 		// Plugins (ativação em runtime).
 		mercurio.New(deps),

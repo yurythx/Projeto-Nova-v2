@@ -92,6 +92,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		adm.Patch("/users/{id}", h.UpdateUser)
 		adm.Post("/users/{id}/password", h.ResetPassword)
 		adm.Post("/users/{id}/unlock", h.Unlock)
+		adm.Post("/iam/sso/sincronizar", h.SincronizarSSO)
 	})
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, Lock, Plus, Search, Trash2, Unlock, UserCog } from "lucide-react";
+import { KeyRound, Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserCog } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { ScopePicker } from "@/components/iam/ScopePicker";
@@ -336,6 +336,44 @@ function UserDetail({ userId, onChanged }: { userId: string; onChanged: () => vo
   );
 }
 
+interface RelatorioSSO {
+  lidos: number;
+  criados: number;
+  atualizados: number;
+  desativados: number;
+  conflitos: string[];
+}
+
+/** Traz agora as pessoas do SSO (ADR 077); o worker repete todo dia. */
+function SincronizarSSO({ onFeito }: { onFeito: () => void }) {
+  const { run, pending } = useAction();
+  const [rel, setRel] = useState<RelatorioSSO | null>(null);
+
+  async function sincronizar() {
+    const out = await run(() => apiClient.post<RelatorioSSO>("v1/iam/sso/sincronizar"));
+    if (out) {
+      setRel(out.data);
+      onFeito();
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button variant="secondary" onClick={() => void sincronizar()} loading={pending}>
+        <RefreshCw size={16} aria-hidden="true" className="mr-1" /> Sincronizar com o SSO
+      </Button>
+      {rel && (
+        <p role="status" className="text-xs text-muted">
+          {rel.lidos} pessoas lidas: {rel.criados} novas, {rel.atualizados} atualizadas,{" "}
+          {rel.desativados} desativadas.
+          {rel.conflitos.length > 0 &&
+            ` Com conta local de mesmo usuário ou e-mail (vincule à mão): ${rel.conflitos.join(", ")}.`}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function UsuariosPage() {
   const { can } = usePlataforma();
   const [q, setQ] = useState("");
@@ -386,9 +424,12 @@ export default function UsuariosPage() {
           </Button>
         </form>
         {can("users:manage") && (
-          <Button onClick={() => setCreating(true)}>
-            <Plus size={16} aria-hidden="true" className="mr-1" /> Conta local
-          </Button>
+          <div className="flex flex-wrap items-start gap-2">
+            <SincronizarSSO onFeito={() => void list.mutate()} />
+            <Button onClick={() => setCreating(true)}>
+              <Plus size={16} aria-hidden="true" className="mr-1" /> Conta local
+            </Button>
+          </div>
         )}
       </div>
 

@@ -6,6 +6,7 @@ package application
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"slices"
 	"strings"
 
@@ -28,6 +29,8 @@ type Service struct {
 	invalidate   func(ctx context.Context)
 	resetLockout func(ctx context.Context, username string) error
 	hash         func(password string) (string, error)
+	diretorio    DiretorioSSO
+	logger       *slog.Logger
 }
 
 // NewService cria o serviço.
@@ -35,7 +38,7 @@ func NewService(pool *pgxpool.Pool, repo domain.Repository, invalidate func(cont
 	if invalidate == nil {
 		invalidate = func(context.Context) {}
 	}
-	return &Service{pool: pool, repo: repo, invalidate: invalidate, hash: passwords.Hash}
+	return &Service{pool: pool, repo: repo, invalidate: invalidate, hash: passwords.Hash, logger: slog.Default()}
 }
 
 // WithLoginLockoutReset conecta a limpeza do bloqueio progressivo de login

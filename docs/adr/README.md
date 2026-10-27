@@ -54,4 +54,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [074](074-perfis-pelos-grupos-do-sso.md) | Perfis pelos grupos do SSO: o grupo `*` vale para todo mundo autenticado (perfil básico), e os grupos de administração e TI do AD viram administradores pelo Ansible | Aceito e implementado |
 | [075](075-de-para-do-glpi.md) | Tabela de-para do GLPI: secretaria e categoria → unidade, oferta e prioridade; regra da fila para os pedidos novos; metas só para quem teve SLA no GLPI | Aceito e implementado |
 | [076](076-modulo-de-integracoes.md) | Módulo de integrações: extrair para a área de preparo, revisar a tabela de-para e carregar pela tela, com um conector na rede da origem | Aceito e implementado |
-| [077](077-usuarios-do-sso.md) | Usuários do SSO trazidos de uma vez pela API de administração do Keycloak, e não só no primeiro login | Aceito |
+| [077](077-usuarios-do-sso.md) | Usuários do SSO trazidos de uma vez pela API de administração do Keycloak, e não só no primeiro login | Aceito e implementado |

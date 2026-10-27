@@ -564,3 +564,41 @@ func (r *Repository) Unlock(ctx context.Context, db database.DBTX, id uuid.UUID)
 	}
 	return wrap("unlock", err)
 }
+
+// UpsertSSO grava a pessoa do SSO (ADR 077). O e-mail ou o usuário de uma
+// conta local volta como ErrConflict: nunca se vincula sozinho.
+func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.UsuarioSSO) (domain.ResultadoSSO, error) {
+	username, email := u.Username, u.Email
+	if username == "" {
+		username = u.Subject
+	}
+	if email == "" {
+		email = u.Subject + "@sem-email.invalid"
+	}
+	grupos := u.Grupos
+	if grupos == nil {
+		grupos = []string{}
+	}
+	var res domain.ResultadoSSO
+	var antes *bool
+	var depois bool
+	err := db.QueryRow(ctx, `
+		WITH antes AS (SELECT active FROM users WHERE keycloak_subject = $2)
+		INSERT INTO users (id, keycloak_subject, username, email, display_name, groups, active, created_at, updated_at, ad_synced_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now(), now())
+		ON CONFLICT (keycloak_subject) DO UPDATE
+		SET username = EXCLUDED.username,
+		    email = EXCLUDED.email,
+		    display_name = CASE WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name ELSE users.display_name END,
+		    groups = EXCLUDED.groups,
+		    active = users.active AND EXCLUDED.active,
+		    ad_synced_at = now()
+		RETURNING (SELECT active FROM antes), active`,
+		uuid.New(), u.Subject, username, email, u.Nome, grupos, u.Ativo).Scan(&antes, &depois)
+	if err != nil {
+		return res, wrap("upsert sso", err)
+	}
+	res.Criado = antes == nil
+	res.Desativado = antes != nil && *antes && !depois
+	return res, nil
+}

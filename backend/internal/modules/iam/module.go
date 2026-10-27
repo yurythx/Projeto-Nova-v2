@@ -17,6 +17,7 @@ const Key = "iam"
 
 // Module é o plugin do IAM.
 type Module struct {
+	svc      *application.Service
 	handlers *transport.Handlers
 }
 
@@ -25,7 +26,7 @@ type Module struct {
 func New(deps modkit.Deps, catalog transport.PermissionCatalog) *Module {
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.InvalidatePermissions).
 		WithLoginLockoutReset(deps.ResetLoginLockout)
-	return &Module{handlers: transport.NewHandlers(svc, catalog, deps.Logger, deps.Config.MaxPageSize)}
+	return &Module{svc: svc, handlers: transport.NewHandlers(svc, catalog, deps.Logger, deps.Config.MaxPageSize)}
 }
 
 // Manifest implementa kernel.Plugin.
@@ -54,4 +55,13 @@ func (m *Module) Manifest() kernel.Manifest {
 // RegisterRoutes implementa kernel.RouteProvider.
 func (m *Module) RegisterRoutes(r kernel.Routes) {
 	m.handlers.RegisterRoutes(r.Authed)
+}
+
+// Servico liga a sincronização com o SSO (porta no app).
+func (m *Module) Servico() *application.Service { return m.svc }
+
+// Workers implementa kernel.WorkerProvider: a sincronização diária com o
+// SSO (ADR 077) roda no worker.
+func (m *Module) Workers() []kernel.Worker {
+	return []kernel.Worker{{Name: "iam-sso", Process: kernel.ProcessWorker, Run: m.svc.RunSincronizacaoSSO}}
 }
