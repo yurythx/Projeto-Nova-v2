@@ -25,3 +25,6 @@ vm_admin_password = "TroqueEstaSenhaDoConsole"
 
 # Chave do operador que vai rodar o Ansible (máquina com make infra-deploy).
 admin_ssh_public_key = "ssh-ed25519 AAAA... admin@infra"
+
+# Homologação (VM 241, 192.168.1.71). Desligada: o pve1 tem 11 GB de RAM.
+# homologacao = { criar = true }

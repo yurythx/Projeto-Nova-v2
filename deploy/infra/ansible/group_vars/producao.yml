@@ -1,0 +1,10 @@
+---
+# Produção: VM 240 (192.168.1.70), https://projetonova.cloud
+
+app_domain: projetonova.cloud
+# Imagem do frontend com as URLs deste domínio (workflow Release).
+app_frontend_ambiente: producao
+# Tag sha-<commit> de Actions > Release; vazio compila na VM.
+app_image_tag: ""
+
+cloudflare_tunnel_token: "{{ cloudflare_tunnel_token_producao | default('') }}"

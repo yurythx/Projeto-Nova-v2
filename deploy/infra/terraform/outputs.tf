@@ -1,11 +1,16 @@
 output "app_vm_id" {
-  description = "VMID da aplicação no Proxmox"
-  value       = module.vm_app.id
+  description = "VMID da produção no Proxmox"
+  value       = module.vm["producao"].id
 }
 
 output "app_vm_ip" {
-  description = "IPv4 da VM de aplicação"
-  value       = module.vm_app.ipv4_address
+  description = "IPv4 da VM de produção"
+  value       = module.vm["producao"].ipv4_address
+}
+
+output "vms" {
+  description = "VMID e IPv4 de cada ambiente"
+  value       = { for amb, vm in module.vm : amb => { id = vm.id, ipv4 = vm.ipv4_address } }
 }
 
 output "proxmox_api" {

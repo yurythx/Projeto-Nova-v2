@@ -1,0 +1,32 @@
+# State remoto (docs/DEPLOY.md, "State do Terraform"). Hoje o state fica no
+# notebook de quem opera, com a senha da VM dentro: perder o disco tira do
+# Terraform o controle das VMs, e duas pessoas aplicando ao mesmo tempo
+# corrompem o arquivo.
+#
+# Para ligar: copie para backend.tf, crie o bucket (privado) e rode
+#   terraform init -migrate-state
+# As credenciais vêm de AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY (token
+# R2 com leitura e escrita só neste bucket), nunca deste arquivo.
+terraform {
+  backend "s3" {
+    bucket = "projeto-nova-tfstate"
+    key    = "proxmox/terraform.tfstate"
+    region = "auto"
+
+    # Cloudflare R2 (S3 compatível): troque <conta> pelo Account ID.
+    endpoints = {
+      s3 = "https://<conta>.r2.cloudflarestorage.com"
+    }
+
+    # Trava por arquivo no próprio bucket: um apply por vez.
+    use_lockfile = true
+
+    # O R2 não é a AWS: sem estas, o provider tenta validar com a AWS.
+    skip_credentials_validation = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_s3_checksum            = true
+    use_path_style              = true
+  }
+}

@@ -6,7 +6,8 @@
 #   ghcr.io/yurythx/projeto-nova-v2/frontend:<ambiente>-sha-<commit>
 #
 # O frontend embute as URLs públicas no build (NEXT_PUBLIC_*): sai uma
-# imagem por ambiente, com as URLs do GitHub Environment de mesmo nome.
+# imagem por ambiente, com as URLs fixadas na matriz abaixo. Elas precisam
+# bater com app_domain de deploy/infra/ansible/group_vars/<ambiente>.yml.
 # Rollback: instalar a tag de um commit anterior.
 name: Release
 
@@ -91,8 +92,15 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        ambiente: [producao]
-    environment: ${{ matrix.ambiente }}
+        include:
+          - ambiente: producao
+            api: https://api.projetonova.cloud
+            ws: wss://projetonova.cloud/ws
+            arquivos: https://arquivos.projetonova.cloud
+          - ambiente: homologacao
+            api: https://api-homolog.projetonova.cloud
+            ws: wss://homolog.projetonova.cloud/ws
+            arquivos: https://arquivos-homolog.projetonova.cloud
     steps:
       - uses: actions/checkout@v4
         with:
@@ -122,11 +130,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Variáveis do GitHub Environment; sem elas, o domínio de produção.
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.API_PUBLIC_URL || 'https://api.projetonova.cloud' }}
-            NEXT_PUBLIC_WS_URL=${{ vars.WEBSOCKET_PUBLIC_URL || 'wss://projetonova.cloud/ws' }}
-            NEXT_PUBLIC_MINIO_URL=${{ vars.MINIO_PUBLIC_URL || 'https://arquivos.projetonova.cloud' }}
+            NEXT_PUBLIC_API_URL=${{ matrix.api }}
+            NEXT_PUBLIC_WS_URL=${{ matrix.ws }}
+            NEXT_PUBLIC_MINIO_URL=${{ matrix.arquivos }}
           provenance: mode=max
           sbom: true
           cache-from: type=gha,scope=frontend-${{ matrix.ambiente }}

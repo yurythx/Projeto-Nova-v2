@@ -115,10 +115,10 @@ Tudo é declarado em código:
   220, 230) são de outras aplicações**: não reaproveite nem ligue nenhuma
   delas.
 - Túnel `projeto-nova-prod`: configurado no painel da Cloudflare (tabela
-  abaixo). O token vai em `deploy/infra/ansible/cloudflare.secrets.yml`
-  (gitignore; modelo em `cloudflare.secrets.yml.example`).
-- `deploy/infra/ansible`: `app_domain` em `group_vars/all.yml` é a fonte das
-  quatro URLs públicas do `.env`. Com o domínio, as portas da stack escutam
+  abaixo). O token vai em `cloudflare_tunnel_token_producao`, no cofre ou em
+  `deploy/infra/ansible/cloudflare.secrets.yml` (modelo no `.example`).
+- `deploy/infra/ansible`: `app_domain` em `group_vars/producao.yml` é a fonte
+  das quatro URLs públicas do `.env`. Com o domínio, as portas da stack escutam
   só em 127.0.0.1, o UFW libera só o SSH e `TRUSTED_PROXIES` recebe a
   sub-rede interna do compose.
 
@@ -135,7 +135,7 @@ O cloudflared roda na rede do compose e chega aos containers pelo nome:
 
 ```bash
 make infra-apply      # 1. cria a VM 240 e gera ansible/inventory.ini
-                      # 2. painel: túnel, hostnames, redirect do www; token em cloudflare.secrets.yml
+                      # 2. painel: túnel, hostnames, redirect do www; token no cofre
 make infra-deploy     # 3. Docker + stack com o domínio (Ansible; no Windows, pelo WSL)
 ```
 
@@ -146,7 +146,7 @@ injetam scripts que a CSP do frontend bloqueia.
 
 Cada push na `main` com CI verde gera as imagens daquele commit no GHCR
 (workflow `Release`, [ADR 063](adr/063-imagens-do-ci-no-registro.md)). Para
-instalar, use a tag do commit em `group_vars/all.yml`:
+instalar, use a tag do commit em `group_vars/producao.yml`:
 
 ```yaml
 app_image_tag: "sha-4121339"   # Actions > Release mostra a tag de cada commit
@@ -174,6 +174,39 @@ chmod 600 ~/.config/projeto-nova/vault-pass   # guarde também num cofre de senh
 make infra-segredos-migrar   # junta os dois arquivos no cofre e apaga os abertos
 make infra-segredos          # para editar depois
 ```
+
+### Homologação
+
+A VM 241 (`projeto-nova-homolog-app`, 192.168.1.71, 3 GB) existe no código,
+mas está desligada: o pve1 tem 11 GB de RAM, e cada VM de outra aplicação
+reserva 4 GB. Para ligar, quando houver memória:
+
+1. `homologacao = { criar = true }` em `terraform.tfvars` e `make infra-apply`.
+   O inventário ganha o grupo `homologacao`.
+2. No painel, um túnel `projeto-nova-homolog` com os mesmos hostnames da
+   tabela acima, trocando `projetonova.cloud` por `homolog.projetonova.cloud`
+   e `api`/`arquivos` por `api-homolog`/`arquivos-homolog`. Os nomes ficam um
+   nível abaixo do domínio porque o certificado universal da Cloudflare
+   cobre `*.projetonova.cloud`, não `*.homolog.projetonova.cloud`.
+3. O token em `cloudflare_tunnel_token_homologacao`, e
+   `make infra-deploy ANSIBLE_ARGS="--limit homologacao"` (sem ele, os dois).
+
+O workflow `Release` já gera a imagem do frontend de homologação
+(`frontend:homologacao-sha-<commit>`). A homologação não manda backup para
+fora e não sobe o monitoramento (`group_vars/homologacao.yml`).
+
+### State do Terraform
+
+O state (`deploy/infra/terraform/terraform.tfstate`) fica no notebook de
+quem opera, com a senha da VM dentro. Perder esse disco tira do Terraform o
+controle das VMs. Para levar o state a um bucket privado (R2 da Cloudflare,
+com trava contra dois `apply` ao mesmo tempo):
+
+1. Crie o bucket `projeto-nova-tfstate` e um token R2 só para ele.
+2. Copie `backend.tf.example` para `backend.tf` e troque `<conta>`.
+3. `AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... terraform init -migrate-state`.
+
+Depois disso, apague o `terraform.tfstate` local e os `*.backup`.
 
 O SSO oficial (`sso.rondonopolis.mt.gov.br`) precisa aceitar
 `https://projetonova.cloud/*` nas URLs de redirecionamento e de pós-logout

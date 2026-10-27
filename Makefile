@@ -211,12 +211,14 @@ infra-destroy: ## Destroi a infraestrutura no Proxmox
 # repositório, em $(VAULT_PASS) (ou digite: VAULT_PASS= make infra-deploy).
 VAULT_PASS ?= $(HOME)/.config/projeto-nova/vault-pass
 VAULT_ARGS = $(if $(wildcard $(VAULT_PASS)),--vault-password-file $(VAULT_PASS),--ask-vault-pass)
+# Argumentos extras do ansible-playbook: make infra-deploy ANSIBLE_ARGS="--limit homologacao"
+ANSIBLE_ARGS ?=
 
 infra-deploy: ## Docker + stack + backup + monitoramento na VM (Ansible; no Windows, pelo WSL)
 	cd deploy/infra/ansible && ansible-galaxy collection install -r requirements.yml --force && \
 		ansible-playbook site.yml \
 			$$(for f in secrets.yml cloudflare.secrets.yml; do [ -f $$f ] && printf -- '-e @%s ' $$f; done) \
-			$$([ -f secrets.vault.yml ] && printf -- '-e @secrets.vault.yml $(VAULT_ARGS)')
+			$$([ -f secrets.vault.yml ] && printf -- '-e @secrets.vault.yml $(VAULT_ARGS)') 			$(ANSIBLE_ARGS)
 
 infra-segredos: ## Abre (ou cria) o cofre cifrado deploy/infra/ansible/secrets.vault.yml
 	cd deploy/infra/ansible && if [ -f secrets.vault.yml ]; then \

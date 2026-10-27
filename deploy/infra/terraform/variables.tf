@@ -103,3 +103,17 @@ variable "vm_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "homologacao" {
+  description = "VM de homologação. Desligada por padrão: o pve1 tem 11 GB de RAM e cada VM de outra aplicação reserva 4 GB."
+  type = object({
+    criar   = bool
+    vm_id   = optional(number, 241)
+    nome    = optional(string, "projeto-nova-homolog-app")
+    ipv4    = optional(string, "192.168.1.71/24")
+    cores   = optional(number, 2)
+    memoria = optional(number, 3072)
+    disco   = optional(number, 40)
+  })
+  default = { criar = false }
+}

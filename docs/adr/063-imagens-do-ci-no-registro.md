@@ -18,7 +18,7 @@ O workflow `Release` roda depois do CI verde num push na `main` e gera as imagen
 | `ghcr.io/yurythx/projeto-nova-v2/worker` | `sha-<commit>` e `main` |
 | `ghcr.io/yurythx/projeto-nova-v2/frontend` | `<ambiente>-sha-<commit>` e `<ambiente>` |
 
-O frontend embute as URLs públicas no build (`NEXT_PUBLIC_*`), então sai uma imagem por ambiente. As URLs vêm das variáveis do GitHub Environment de mesmo nome; sem elas, as de `projetonova.cloud`. API e worker são os mesmos em todos os ambientes.
+O frontend embute as URLs públicas no build (`NEXT_PUBLIC_*`), então sai uma imagem por ambiente (`producao`, `homologacao`). As URLs de cada uma ficam fixadas na matriz do workflow, ao lado do `app_domain` do Ansible: uma variável ausente nunca leva as URLs de produção para a homologação. API e worker são os mesmos em todos os ambientes.
 
 Cada imagem leva proveniência (SLSA, `mode=max`), SBOM e assinatura keyless do cosign, feita com o OIDC do GitHub, sem chave guardada.
 
@@ -32,4 +32,4 @@ A versão em produção é um commit que passou por testes, análise de seguran�
 
 O repositório é público, e as imagens também; a VM baixa sem credencial. Se o repositório fechar, a VM precisa de `docker login ghcr.io` com um token só de leitura.
 
-Uma imagem de frontend com o domínio errado sobe sem erro e não fala com a API. O ambiente do Ansible (`app_frontend_ambiente`) e o domínio (`app_domain`) precisam bater com as variáveis do GitHub Environment.
+Uma imagem de frontend com o domínio errado sobe sem erro e não fala com a API. O ambiente do Ansible (`app_frontend_ambiente`) e o domínio (`app_domain`) precisam bater com a matriz do workflow `Release`.

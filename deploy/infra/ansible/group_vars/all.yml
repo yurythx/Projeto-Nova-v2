@@ -1,6 +1,8 @@
 ---
-# Valores públicos. Segredos: secrets.yml (client do SSO) e
-# cloudflare.secrets.yml (token do túnel, copiado do painel) — gitignore.
+# Valores públicos, comuns aos ambientes. O que muda por ambiente está em
+# producao.yml e homologacao.yml (o nome do grupo no inventory.ini).
+# Segredos: secrets.vault.yml (ou secrets.yml e cloudflare.secrets.yml),
+# fora do git.
 
 # Primeira clonagem só se a pasta ainda não existir. O checkout traz o
 # compose e os scripts; a versão que roda é a de app_image_tag.
@@ -9,23 +11,25 @@ app_git_version: main
 app_dir: /opt/projeto-nova
 
 # Versão instalada (ADR 063): a tag de um commit que passou no CI, como
-# "sha-4121339" (ver Actions > Release). Vazio = compila no servidor.
-# Rollback: a tag anterior, e make infra-deploy de novo.
+# "sha-4121339" (ver Actions > Release), definida em cada ambiente.
+# Vazio = compila no servidor. Rollback: a tag anterior e make infra-deploy.
 app_registry: ghcr.io/yurythx/projeto-nova-v2
 app_image_tag: ""
-# O frontend tem uma imagem por ambiente (as URLs entram no build).
-app_frontend_ambiente: producao
 
-# Domínio público: a única fonte das URLs que o navegador usa. Precisa
-# bater com os Public Hostnames do túnel no painel da Cloudflare
-# (docs/DEPLOY.md). Vazio = acesso só pelo IP da VM (http://<ip>:3010).
-app_domain: projetonova.cloud
+# Domínio público: a única fonte das URLs que o navegador usa, definido em
+# cada ambiente. Precisa bater com os Public Hostnames do túnel no painel
+# da Cloudflare (docs/DEPLOY.md). Vazio = acesso só pelo IP da VM.
+app_domain: ""
+app_api_host: "api.{{ app_domain }}"
+app_files_host: "arquivos.{{ app_domain }}"
 app_public_url: "https://{{ app_domain }}"
-app_api_url: "https://api.{{ app_domain }}"
+app_api_url: "https://{{ app_api_host }}"
 app_ws_url: "wss://{{ app_domain }}/ws"
-app_files_url: "https://arquivos.{{ app_domain }}"
+app_files_url: "https://{{ app_files_host }}"
 
-# Preenchido por cloudflare.secrets.yml (ver cloudflare.secrets.yml.example).
+# Cada ambiente lê o seu token (cloudflare_tunnel_token_<ambiente>): os
+# segredos entram com -e, que passa por cima das variáveis de grupo, e um
+# nome só levaria o token de produção para a homologação.
 cloudflare_tunnel_token: ""
 
 keycloak_issuer_url: "https://sso.rondonopolis.mt.gov.br/realms/rondonopolis"

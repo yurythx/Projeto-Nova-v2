@@ -1,0 +1,19 @@
+---
+# Homologação: VM 241 (192.168.1.71), https://homolog.projetonova.cloud.
+# Só existe com homologacao.criar = true no Terraform.
+#
+# Os nomes têm um nível só abaixo do domínio (api-homolog, não
+# api.homolog): o certificado universal da Cloudflare cobre
+# *.projetonova.cloud, e não *.homolog.projetonova.cloud.
+
+app_domain: homolog.projetonova.cloud
+app_api_host: api-homolog.projetonova.cloud
+app_files_host: arquivos-homolog.projetonova.cloud
+app_frontend_ambiente: homologacao
+app_image_tag: ""
+
+cloudflare_tunnel_token: "{{ cloudflare_tunnel_token_homologacao | default('') }}"
+
+# Homologação não guarda backup fora nem precisa de alerta de madrugada.
+backup_remote: ""
+monitoring_enabled: false

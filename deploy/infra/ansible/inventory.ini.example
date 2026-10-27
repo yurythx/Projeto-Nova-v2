@@ -1,10 +1,14 @@
+# Gerado pelo Terraform (make infra-apply); este é só o modelo.
 [all:vars]
 ansible_user=root
 ansible_python_interpreter=/usr/bin/python3
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
-[docker_hosts]
+[producao]
 projeto-nova-prod-app ansible_host=192.168.1.70 proxmox_vmid=240
 
-[app_servers]
-projeto-nova-prod-app
+[docker_hosts:children]
+producao
+
+[app_servers:children]
+producao
