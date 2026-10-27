@@ -88,6 +88,9 @@ func (m *Module) Repositorio() domain.Repository { return m.repo }
 // ComSegredo liga a porta do cofre. Sem ela, o chamado não recebe segredo.
 func (m *Module) ComSegredo(segredos application.Segredos) { m.svc.WithSegredo(segredos) }
 
+// ComAssistente liga a IA de quem atende (ADR 065). Sem ela, não há IA.
+func (m *Module) ComAssistente(a application.Assistente) { m.svc.WithAssistente(a) }
+
 // ConcluirPorMudanca conclui o incidente na transação de quem chama.
 func (m *Module) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uuid.UUID, numero int64, titulo, texto string) (func(context.Context), error) {
 	return m.svc.ConcluirPorMudanca(ctx, tx, id, autor, numero, titulo, texto)

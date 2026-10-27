@@ -160,3 +160,28 @@ func TestRoteador(t *testing.T) {
 		t.Fatal("uso")
 	}
 }
+
+func TestDisponivelSemConversar(t *testing.T) {
+	ctx := context.Background()
+	ambiente := &Conexao{Nome: "ambiente", Endpoint: "http://127.0.0.1:1", Modelo: "m", TimeoutSegundos: 1}
+	if ok, err := NovoRoteador(novoMem(), NovoCliente(), nil, logger).Disponivel(ctx, FuncaoAtendimento); ok || err != nil {
+		t.Fatalf("sem nada: %v %v", ok, err)
+	}
+	// O ambiente basta, mesmo fora do ar: Disponivel não conversa.
+	if ok, err := NovoRoteador(novoMem(), NovoCliente(), ambiente, logger).Disponivel(ctx, FuncaoAtendimento); !ok || err != nil {
+		t.Fatalf("ambiente: %v %v", ok, err)
+	}
+	desligada := novoMem()
+	desligada.uso = &Uso{Configurado: true}
+	if ok, err := NovoRoteador(desligada, NovoCliente(), ambiente, logger).Disponivel(ctx, FuncaoAtendimento); ok || err != nil {
+		t.Fatalf("desligada pela tela: %v %v", ok, err)
+	}
+	quebrado := novoMem()
+	quebrado.errUso = errors.New("banco fora")
+	if ok, err := NovoRoteador(quebrado, NovoCliente(), ambiente, logger).Disponivel(ctx, FuncaoAtendimento); ok || err == nil {
+		t.Fatalf("falha do banco: %v %v", ok, err)
+	}
+	if !FuncaoValida(FuncaoAtendimento) {
+		t.Fatal("a função do atendimento é configurável")
+	}
+}

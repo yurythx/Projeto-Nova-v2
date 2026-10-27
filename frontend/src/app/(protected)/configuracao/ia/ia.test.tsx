@@ -247,6 +247,52 @@ describe("Configurações > Inteligência artificial", () => {
     });
   });
 
+  it("a IA do atendimento tem conexão própria e mostra o aceite das sugestões", async () => {
+    const backend = mockBackend(
+      rotas({
+        "GET v1/ia/uso/atendimento.assistente": {
+          data: { ...USO, funcao: "atendimento.assistente", ambiente: null },
+        },
+        "PUT v1/ia/uso/atendimento.assistente": {
+          data: { ...USO, funcao: "atendimento.assistente", configurado: true, principal_id: "c1" },
+        },
+        "GET v1/atendimento/ia/indicadores": {
+          data: [
+            { tipo: "classificacao", total: 5, aceitas: 3, recusadas: 1, pendentes: 1 },
+            { tipo: "resumo", total: 2, aceitas: 0, recusadas: 0, pendentes: 2 },
+          ],
+        },
+      }),
+    );
+    renderApp(<IAPage />);
+
+    await screen.findByText("Conexão c1");
+    expect(backend.to("GET v1/atendimento/ia/indicadores")).toHaveLength(0);
+    await userEvent.click(screen.getByRole("tab", { name: "Atendimento" }));
+    expect(screen.getByRole("tab", { name: "Atendimento" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(await screen.findByText(/quem atende decide/)).toBeInTheDocument();
+
+    const aceite = await screen.findByRole("region", { name: "Aceite das sugestões" });
+    expect(
+      within(aceite).getByText(
+        /Classificação: 5 sugestões, 75% aceitas entre as decididas \(1 sem decisão\)/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(aceite).getByText(/Resumo: 2 sugestões, nenhuma decidida ainda/),
+    ).toBeInTheDocument();
+
+    await userEvent.selectOptions(await screen.findByLabelText("Conexão principal"), "c1");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(backend.to("PUT v1/ia/uso/atendimento.assistente")[0]!.body).toMatchObject({
+      principal_id: "c1",
+    });
+    expect(backend.to("PUT v1/ia/uso/plataforma.ia")).toHaveLength(0);
+  });
+
   it("assistente configurado (autorização registrada) ou desligado; sem ambiente; lista vazia", async () => {
     mockBackend(
       rotas({

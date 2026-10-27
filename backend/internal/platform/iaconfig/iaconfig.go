@@ -83,10 +83,14 @@ func modelo(p Provedor) (Modelo, bool) {
 }
 
 // Funções que usam IA. Cada uma tem principal e reserva (Uso).
-const FuncaoPlataforma = "plataforma.ia"
+const (
+	FuncaoPlataforma = "plataforma.ia"
+	// FuncaoAtendimento sugere classificação e resumo a quem atende (ADR 065).
+	FuncaoAtendimento = "atendimento.assistente"
+)
 
 // Funcoes lista as funções configuráveis.
-var Funcoes = []string{FuncaoPlataforma}
+var Funcoes = []string{FuncaoPlataforma, FuncaoAtendimento}
 
 // FuncaoValida informa se a função existe.
 func FuncaoValida(f string) bool {

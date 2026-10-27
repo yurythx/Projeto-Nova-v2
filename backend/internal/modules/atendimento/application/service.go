@@ -66,6 +66,8 @@ type Service struct {
 	caixa     mail.Caixa       // entrada de e-mail (WithCaixa); nil = desligada
 	segredos  Segredos         // nome do segredo no cofre; nil recusa o vínculo
 	passagens Passagens        // caminhos acrescentados na fila; nil = só o fluxo de fábrica
+	// assistente é a IA de quem atende (WithAssistente, ADR 065); nil = sem IA.
+	assistente Assistente
 }
 
 // Passagens lê os caminhos acrescentados no quadro.
@@ -117,6 +119,12 @@ func MapError(err error) error {
 		return nil
 	case errors.Is(err, domain.ErrNaoEncontrado):
 		return causa(err, apperrors.NotFound("registro de atendimento não encontrado"))
+	case errors.Is(err, domain.ErrSemIA):
+		return causa(err, apperrors.FeatureDisabled("a IA do atendimento não está configurada"))
+	case errors.Is(err, domain.ErrRespostaDaIA):
+		return causa(err, apperrors.DependencyUnavailable("a IA não respondeu agora; tente de novo ou siga sem ela"))
+	case errors.Is(err, domain.ErrSugestaoDecidida):
+		return causa(err, apperrors.Conflict("esta sugestão já foi decidida"))
 	case errors.Is(err, domain.ErrEntradaInvalida):
 		return causa(err, apperrors.Validation("informe o nome (até 160 caracteres); a descrição cabe em 4000 e a equipe em 100 pessoas"))
 	case errors.Is(err, domain.ErrForaDoEscopo):

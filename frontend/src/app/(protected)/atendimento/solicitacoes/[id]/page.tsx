@@ -6,6 +6,7 @@ import { usePainelEmbutido, useIdDaRota } from "@/components/plataforma/PainelDo
 import { type FormEvent, type ReactNode, useCallback, useRef, useState } from "react";
 
 import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
+import { AssistenteIA } from "@/components/atendimento/AssistenteIA";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
 import { SegredoVinculadoCard } from "@/components/atendimento/SegredoVinculadoCard";
 import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAtendimentoCard";
@@ -78,12 +79,13 @@ export function SolicitacaoDetalhe() {
     if (ok) void detalhe.mutate();
   }
 
-  async function classificar(impacto: number, urgencia: number) {
+  async function classificar(impacto: number, urgencia: number): Promise<boolean> {
     const ok = await run(
       () => apiClient.put(`v1/atendimento/solicitacoes/${id}/classificacao`, { impacto, urgencia }),
       "Classificação atualizada",
     );
     if (ok) void detalhe.mutate();
+    return Boolean(ok);
   }
 
   async function atribuir(responsavel: string) {
@@ -271,6 +273,14 @@ export function SolicitacaoDetalhe() {
                 editavel={!finalizada}
                 pending={pending}
                 onClassificar={(impacto, urgencia) => void classificar(impacto, urgencia)}
+              />
+            )}
+
+            {tecnico && (
+              <AssistenteIA
+                solicitacaoId={s.id}
+                editavel={!finalizada}
+                onAplicarClassificacao={classificar}
               />
             )}
 

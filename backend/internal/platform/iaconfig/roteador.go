@@ -2,6 +2,7 @@ package iaconfig
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 
@@ -82,6 +83,16 @@ func (r *Roteador) candidatas(ctx context.Context, funcao string) ([]Conexao, bo
 		return nil, false, ErrSemConexao
 	}
 	return out, u.MascararDadosPessoais, nil
+}
+
+// Disponivel diz se a função tem ao menos uma conexão (sem conversar com
+// ela): é o que decide se a tela oferece a IA.
+func (r *Roteador) Disponivel(ctx context.Context, funcao string) (bool, error) {
+	_, _, err := r.candidatas(ctx, funcao)
+	if errors.Is(err, ErrSemConexao) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // Conversar atende o pedido com a primeira conexão que responder. Sem

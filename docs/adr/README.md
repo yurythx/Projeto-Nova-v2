@@ -42,3 +42,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [062](062-coluna-nova-no-quadro.md) | Coluna nova nasce só no quadro pedido, com chave gerada e passagens próprias | Aceito e implementado |
 | [063](063-imagens-do-ci-no-registro.md) | Imagens geradas pelo CI no GHCR (assinadas, com SBOM); o servidor só baixa a tag de um commit testado | Aceito e implementado |
 | [064](064-catraca-de-cobertura.md) | Catraca de cobertura: piso por pacote abaixo de 100%, que só sobe; pacote novo continua exigindo 100% | Aceito e implementado |
+| [065](065-ia-assistiva-no-atendimento.md) | IA assistiva no atendimento: sugere classificação e resumo a quem atende; cada sugestão e decisão é registrada e auditada; nada no chamado muda sem a pessoa | Aceito e implementado |

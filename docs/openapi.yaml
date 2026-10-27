@@ -445,6 +445,20 @@ components:
                 - urgencia
             type: object
             x-projeto-nova-generated: true
+        AtendimentoClassificacaoSugerida:
+            properties:
+                impacto:
+                    type: integer
+                motivo:
+                    type: string
+                urgencia:
+                    type: integer
+            required:
+                - impacto
+                - motivo
+                - urgencia
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoComentario:
             properties:
                 autor_id:
@@ -483,6 +497,15 @@ components:
                     type: string
             required:
                 - texto
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoDecisaoRequest:
+            properties:
+                aceita:
+                    nullable: true
+                    type: boolean
+            required:
+                - aceita
             type: object
             x-projeto-nova-generated: true
         AtendimentoDeflexao:
@@ -618,6 +641,14 @@ components:
                     type: string
             required:
                 - nome
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoEstadoIA:
+            properties:
+                disponivel:
+                    type: boolean
+            required:
+                - disponivel
             type: object
             x-projeto-nova-generated: true
         AtendimentoEstadoRequest:
@@ -770,6 +801,26 @@ components:
                 - mtbf_horas
                 - mttr_horas
                 - sla_percentual
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoIndicadorIA:
+            properties:
+                aceitas:
+                    type: integer
+                pendentes:
+                    type: integer
+                recusadas:
+                    type: integer
+                tipo:
+                    type: string
+                total:
+                    type: integer
+            required:
+                - aceitas
+                - pendentes
+                - recusadas
+                - tipo
+                - total
             type: object
             x-projeto-nova-generated: true
         AtendimentoMeta:
@@ -1301,6 +1352,44 @@ components:
                 - titulo
                 - updated_at
                 - urgencia
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoSugestao:
+            properties:
+                classificacao:
+                    $ref: '#/components/schemas/AtendimentoClassificacaoSugerida'
+                conexao:
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                decidida_em:
+                    format: date-time
+                    type: string
+                decidida_por:
+                    format: uuid
+                    type: string
+                decisao:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                pedida_por:
+                    format: uuid
+                    type: string
+                resumo:
+                    type: string
+                solicitacao_id:
+                    format: uuid
+                    type: string
+                tipo:
+                    type: string
+            required:
+                - conexao
+                - created_at
+                - id
+                - solicitacao_id
+                - tipo
             type: object
             x-projeto-nova-generated: true
         AtendimentoTopicosResponse:
@@ -7799,6 +7888,124 @@ paths:
             summary: Atendimento — Listar/consultar /atendimento/governanca/serie
             tags:
                 - atendimento
+    /api/v1/atendimento/ia:
+        get:
+            description: Diz se a função de IA atendimento.assistente tem conexão (ADR 065). Só quem atende alguma unidade recebe true; a tela usa isto para mostrar os botões.
+            operationId: getAtendimentoIa
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoEstadoIA'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — IA assistiva disponível?
+            tags:
+                - atendimento
+    /api/v1/atendimento/ia/indicadores:
+        get:
+            description: 'Por tarefa (classificacao, resumo): quantas sugestões houve no escopo de quem consulta, quantas foram aceitas, recusadas e ficaram sem decisão (ADR 065).'
+            operationId: getAtendimentoIaIndicadores
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtendimentoIndicadorIA'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Sugestões da IA nos últimos 30 dias
+            tags:
+                - atendimento
+    /api/v1/atendimento/ia/sugestoes/{id}/decisao:
+        post:
+            description: 'Quem atende a unidade do chamado registra se aceitou ou recusou a sugestão. Uma decisão só (409 na segunda). Aceitar não muda o chamado: a classificação segue por PUT .../classificacao (ADR 065).'
+            operationId: postAtendimentoIaSugestoesIdDecisao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoDecisaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoSugestao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: A sugestão já foi decidida.
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Decidir sobre a sugestão da IA
+            tags:
+                - atendimento
     /api/v1/atendimento/minhas:
         get:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -8754,6 +8961,88 @@ paths:
             security:
                 - bearerAuth: []
             summary: Atendimento — Executar ação /atendimento/solicitacoes/{id}/estado
+            tags:
+                - atendimento
+    /api/v1/atendimento/solicitacoes/{id}/ia/classificacao:
+        post:
+            description: A IA sugere impacto e urgência (1 a 3) com o motivo, a partir de oferta, título e descrição. O chamado não muda; a sugestão e o pedido ficam registrados e auditados. 503 sem IA configurada (FEATURE_DISABLED) ou quando ela não responde no formato pedido (ADR 065).
+            operationId: postAtendimentoSolicitacoesIdIaClassificacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoSugestao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+                "503":
+                    $ref: '#/components/responses/IntegrationUnavailable'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Pedir à IA impacto e urgência
+            tags:
+                - atendimento
+    /api/v1/atendimento/solicitacoes/{id}/ia/resumo:
+        post:
+            description: 'Até 5 linhas: o problema, o que já foi feito e o que falta, a partir da conversa (inclusive notas internas, porque só a equipe vê). Sem nomes de pessoas na pergunta. 503 sem IA ou sem resposta aproveitável (ADR 065).'
+            operationId: postAtendimentoSolicitacoesIdIaResumo
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoSugestao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+                "503":
+                    $ref: '#/components/responses/IntegrationUnavailable'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — Pedir à IA o resumo do chamado
             tags:
                 - atendimento
     /api/v1/atendimento/solicitacoes/{id}/responsaveis:

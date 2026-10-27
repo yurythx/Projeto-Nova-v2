@@ -61,3 +61,23 @@ Implementado, com o limite que a comparação pediu.
   processadores, memória, discos locais e programas (nome e versão).
   Não varre a rede e não altera patrimônio cadastrado à mão. A
   credencial da máquina substitui a senha de uma pessoa.
+
+## Leva 4 — ITIL 5
+
+A comparação com o ITIL 5 e com o mercado (ServiceNow, Jira Service
+Management, Freshservice, GLPI) pediu IA com governança, incidente grave
+com comunicação, eventos do monitoramento, aprovação em etapas,
+experiência medida e nível de serviço por secretaria.
+
+| Entrega | Estado |
+|---|---|
+| IA assistiva: classificação e resumo para quem atende, cada sugestão e decisão registrada ([ADR 065](adr/065-ia-assistiva-no-atendimento.md)) | Implementada |
+| Incidente grave e página de status pública | A seguir |
+| Eventos do monitoramento viram incidente | A seguir |
+| Aprovação em etapas; admissão e desligamento de servidores | A seguir |
+| Experiência medida além do CSAT (XLA) | A seguir |
+| SLA, OLA e contrato de apoio; relatório por secretaria | A seguir |
+| Importador do GLPI | A seguir |
+
+A IA continua sem conversar com quem abre o chamado: o atendente virtual
+segue fora (acima, "Não se constrói").

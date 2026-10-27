@@ -17,6 +17,7 @@ import { useState, type FormEvent } from "react";
 import { useToast } from "@/components/notifications/ToastProvider";
 import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
 import { DataState } from "@/components/plataforma/DataState";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
+import { TAREFA_IA, taxaDeAceite, type IndicadorIA } from "@/lib/atendimento/ia";
 import type {
   ConexaoIA,
   ModeloProvedorIA,
@@ -34,7 +36,22 @@ import type {
   UsoIA,
 } from "@/lib/plataforma/types";
 
-const USO = "v1/ia/uso/plataforma.ia";
+type Funcao = "plataforma.ia" | "atendimento.assistente";
+
+/** Cada função tem principal e reserva próprios (ADR 020 e 065). */
+const FUNCOES: { value: Funcao; label: string; descricao: string }[] = [
+  {
+    value: "plataforma.ia",
+    label: "Plataforma",
+    descricao: "Redação e textos da plataforma.",
+  },
+  {
+    value: "atendimento.assistente",
+    label: "Atendimento",
+    descricao:
+      "Sugere classificação e resume chamados para quem atende. A IA não muda o chamado: quem atende decide.",
+  },
+];
 
 /** Último teste da conexão: resultado, tempo de resposta e quando. */
 function UltimoTeste({ t }: { t: TesteIA | null }) {
@@ -202,12 +219,14 @@ function ConexaoForm({
   );
 }
 
-/** Qual conexão a plataforma usa: principal, reserva, LGPD. */
+/** Qual conexão a função usa: principal, reserva, LGPD. */
 function UsoDaIA({
+  funcao,
   uso,
   conexoes,
   onSaved,
 }: {
+  funcao: Funcao;
   uso: UsoIA;
   conexoes: ConexaoIA[];
   onSaved: () => void;
@@ -223,7 +242,7 @@ function UsoDaIA({
     e.preventDefault();
     const ok = await run(
       () =>
-        apiClient.put(USO, {
+        apiClient.put(`v1/ia/uso/${funcao}`, {
           principal_id: principal || null,
           reserva_id: principal && reserva ? reserva : null,
           mascarar_dados_pessoais: mascarar,
@@ -323,11 +342,39 @@ function UsoDaIA({
   );
 }
 
+/** Quanto do que a IA sugeriu no atendimento foi aceito (30 dias). Taxa
+ * baixa é sinal para trocar o modelo, não para confiar mais nele. */
+function AceiteDaIA() {
+  const ind = useApiQuery<IndicadorIA[]>("v1/atendimento/ia/indicadores");
+  if (!ind.data) return null;
+  return (
+    <section
+      aria-label="Aceite das sugestões"
+      className="flex flex-col gap-2 border-t border-surface-border pt-4"
+    >
+      <h3 className="text-sm font-semibold">Aceite das sugestões nos últimos 30 dias</h3>
+      <ul className="flex flex-col gap-1 text-sm">
+        {ind.data.map((i) => {
+          const taxa = taxaDeAceite(i);
+          return (
+            <li key={i.tipo}>
+              {TAREFA_IA[i.tipo]}: {i.total} {i.total === 1 ? "sugestão" : "sugestões"}
+              {taxa === null ? ", nenhuma decidida ainda" : `, ${taxa}% aceitas entre as decididas`}
+              {i.pendentes > 0 && ` (${i.pendentes} sem decisão)`}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 /** Configurações > Inteligência artificial (ia:manage — ADR 020). */
 export default function IAPage() {
   const conexoes = useApiQuery<ConexaoIA[]>("v1/ia/conexoes");
   const provedores = useApiQuery<ModeloProvedorIA[]>("v1/ia/provedores");
-  const uso = useApiQuery<UsoIA>(USO);
+  const [funcao, setFuncao] = useState<Funcao>("plataforma.ia");
+  const uso = useApiQuery<UsoIA>(`v1/ia/uso/${funcao}`);
   const [editando, setEditando] = useState<ConexaoIA | "nova" | null>(null);
   const { run } = useAction();
   const { showToast } = useToast();
@@ -362,7 +409,14 @@ export default function IAPage() {
             <Bot size={18} aria-hidden="true" className="text-primary" /> Inteligência artificial
           </CardTitle>
         </CardHeader>
-        <CardContent className="pb-5 pt-3">
+        <CardContent className="flex flex-col gap-4 pb-5 pt-3">
+          <SectionTabsInline
+            label="Função que usa a IA"
+            tabs={FUNCOES}
+            value={funcao}
+            onChange={setFuncao}
+          />
+          <p className="text-sm text-muted">{FUNCOES.find((f) => f.value === funcao)?.descricao}</p>
           <DataState
             loading={uso.isLoading || conexoes.isLoading}
             error={uso.error ?? conexoes.error}
@@ -370,13 +424,15 @@ export default function IAPage() {
           >
             {uso.data && (
               <UsoDaIA
-                key={`${uso.data.updated_at}-${lista.length}`}
+                key={`${funcao}-${uso.data.updated_at}-${lista.length}`}
+                funcao={funcao}
                 uso={uso.data}
                 conexoes={lista}
                 onSaved={() => void uso.mutate()}
               />
             )}
           </DataState>
+          {funcao === "atendimento.assistente" && <AceiteDaIA />}
         </CardContent>
       </Card>
 

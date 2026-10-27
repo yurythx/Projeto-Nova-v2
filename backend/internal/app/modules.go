@@ -36,6 +36,7 @@ import (
 	tramiteDomain "github.com/yurythx/projeto-nova-v2/internal/modules/tramite/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/wiki"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/iaconfig"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/lgpd"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
@@ -87,6 +88,9 @@ func registerPlugins(d *Dependencies) {
 	cofreModule := cofre.New(deps)
 	cofreModule.ComConfirmacao(confirmaSenha{reauth: signumModule.Reautenticador()}, d.RateLimiters.Lockout)
 	atendimentoModule.ComSegredo(portaSegredo{svc: cofreModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(cofre.Key) }})
+	ia := d.Config.IA
+	atendimentoModule.ComAssistente(portaIA{roteador: iaconfig.NovoRoteador(iaconfig.NewPostgresStore(d.DB, d.Cipher),
+		iaconfig.NovoCliente(), iaconfig.ConexaoDoAmbiente(ia.Endpoint, ia.APIKey, ia.Modelo, int(ia.Timeout.Seconds())), d.Logger)})
 
 	d.Kernel.MustRegister(
 		// Core imutável (nunca desativável).

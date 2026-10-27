@@ -114,6 +114,19 @@ type SolicitacaoRepository interface {
 	DeleteApontamento(ctx context.Context, db database.DBTX, solicitacaoID, apontamentoID uuid.UUID) error
 
 	PrazoRepository
+	IARepository
+}
+
+// IARepository guarda as sugestões da IA e o que quem atende decidiu
+// (ADR 065).
+type IARepository interface {
+	InsertSugestao(ctx context.Context, db database.DBTX, s Sugestao) error
+	// TravarSugestao lê a sugestão e bloqueia a linha até o fim da
+	// transação: duas decisões simultâneas são serializadas.
+	TravarSugestao(ctx context.Context, db database.DBTX, id uuid.UUID) (Sugestao, error)
+	DecidirSugestao(ctx context.Context, db database.DBTX, s Sugestao) error
+	// IndicadoresIA conta, por tarefa, as sugestões desde a data no escopo.
+	IndicadoresIA(ctx context.Context, db database.DBTX, desde time.Time, restrito bool, unidades []uuid.UUID) ([]IndicadorIA, error)
 }
 
 // PrazoRepository persiste a política de prazo e os feriados, e lê o que

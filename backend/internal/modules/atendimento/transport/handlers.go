@@ -66,6 +66,12 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Put("/atendimento/solicitacoes/{id}/responsavel", h.Atribuir)
 		r.Get("/atendimento/solicitacoes/{id}/responsaveis", h.Responsaveis)
 		r.Put("/atendimento/solicitacoes/{id}/classificacao", h.Classificar)
+		// IA assistiva (ADR 065): sugere a quem atende, que decide.
+		r.Get("/atendimento/ia", h.EstadoDaIA)
+		r.Get("/atendimento/ia/indicadores", h.IndicadoresIA)
+		r.Post("/atendimento/solicitacoes/{id}/ia/classificacao", h.SugerirClassificacao)
+		r.Post("/atendimento/solicitacoes/{id}/ia/resumo", h.Resumir)
+		r.Post("/atendimento/ia/sugestoes/{id}/decisao", h.DecidirSugestao)
 		r.Put("/atendimento/solicitacoes/{id}/segredo", h.VincularSegredo)
 		r.Post("/atendimento/solicitacoes/{id}/visitas", h.IniciarVisita)
 		r.Post("/atendimento/visitas/{id}/checkout", h.ConcluirVisita)
