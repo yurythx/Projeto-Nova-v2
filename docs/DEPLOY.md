@@ -458,6 +458,22 @@ o que o escopo restringe ou não): [REGRAS_DE_NEGOCIO.md](REGRAS_DE_NEGOCIO.md#6
 
 ## Migrar do GLPI
 
+O caminho recomendado é a tela **Integrações** ([ADR 076](adr/076-modulo-de-integracoes.md)), com o módulo ligado e a permissão `integracoes:manage` global:
+
+1. Crie a conexão. Se o servidor não alcança o GLPI (o caso comum), escolha **conector** e emita o token.
+2. Numa máquina da rede do GLPI, rode o conector com o token e as credenciais do GLPI. Elas ficam nessa máquina:
+
+   ```bash
+   NOVA_API=https://api.projetonova.cloud NOVA_TOKEN=nova_con_... \
+   GLPI_URL=http://helpdesk/apirest.php GLPI_APP_TOKEN=... GLPI_LOGIN=... GLPI_PASSWORD=... \
+     go run ./cmd/conector --vigiar
+   ```
+
+   Com `--vigiar`, ele atende cada extração pedida na tela. Sem a opção, atende a extração pendente e sai.
+3. Na tela: **Extrair**, conferir o **inventário**, **sugerir a tabela de-para** com a unidade de cada secretaria, revisar, **simular** e **carregar**. Repita a extração e a carga até a virada: só entra o que mudou.
+
+O comando `importarglpi`, abaixo, continua para quem implanta sem a tela.
+
 O comando `importarglpi` traz o histórico do GLPI para o atendimento ([ADR 072](adr/072-importador-do-glpi.md)): categorias viram ofertas **inativas** (revise o catálogo e ative as que valem), chamados viram solicitações com a conversa e a avaliação, e as pessoas são casadas pelo e-mail e depois pelo login com quem já existe aqui. Quem não casa fica na conta de sistema "Importação", e o nome original vai no texto.
 
 1. No GLPI, ative a API REST (Configurar > Geral > API), crie um cliente de API (App-Token) e gere o token de API de um usuário que veja todos os chamados.

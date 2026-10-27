@@ -25,6 +25,7 @@ import {
   Users,
   Wallet,
   type LucideProps,
+  Plug,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -49,6 +50,7 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   briefcase: Briefcase,
   "clipboard-list": ClipboardList,
   package: Package,
+  plug: Plug,
   server: Server,
   bug: Bug,
   "git-pull-request": GitPullRequest,

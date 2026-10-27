@@ -33,6 +33,8 @@ type Importador struct {
 	// Mapa leva cada categoria à oferta, unidade e prioridade revisadas
 	// (ADR 075). Pede uma Fonte que também seja Estrutura.
 	Mapa *Mapa
+	// Progresso recebe, a cada página, os chamados lidos e o total.
+	Progresso func(feitos, total int)
 
 	categorias  map[int]string
 	secretarias map[int]string // entidade do GLPI -> secretaria
@@ -116,6 +118,12 @@ func (im *Importador) Executar(ctx context.Context) (Relatorio, error) {
 				continue
 			}
 			rel.Importados++
+		}
+		if im.Progresso != nil {
+			im.Progresso(rel.Lidos, total)
+		}
+		if err := ctx.Err(); err != nil {
+			return rel, err
 		}
 		if len(pagina) == 0 || de+len(pagina) >= total {
 			break

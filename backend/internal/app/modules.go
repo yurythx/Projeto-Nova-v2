@@ -24,6 +24,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/files"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/iam"
 	iamTransport "github.com/yurythx/projeto-nova-v2/internal/modules/iam/transport"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/integracoes"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/mercurio"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/mudancas"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ocorrencias"
@@ -72,7 +73,10 @@ func registerPlugins(d *Dependencies) {
 	ligado := d.Kernel.Enabled
 	atendimentoModule := atendimento.New(deps, produtoPort{repo: produtosModule.Repositorio(), ativo: func() bool { return d.Kernel.Enabled(produtos.Key) }})
 	ativosModule := ativos.New(deps, portaProdutoAtivos(produtosModule.Repositorio(), ligado))
-	d.Credencial = ativosModule.Reconhecer
+	integracoesModule := integracoes.New(deps)
+	integracoesModule.Servico().WithExtrator(extratorGLPI{abrir: abrirGLPI}).
+		WithCarregador(carregadorGLPI{pool: d.DB, ativo: func() bool { return d.Kernel.Enabled(atendimento.Key) }})
+	d.Credencial = credenciais(ativosModule.Reconhecer, integracoesModule.Reconhecer)
 	problemasModule := problemas.New(deps, portasProblemas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
 		ativosModule.Repositorio(), ligado))
 	alvos, produtoDaMudanca := portasMudancas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
@@ -122,6 +126,7 @@ func registerPlugins(d *Dependencies) {
 		quadrosModule,
 		contratosModule,
 		cofreModule,
+		integracoesModule,
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

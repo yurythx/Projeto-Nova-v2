@@ -36,6 +36,8 @@ type Chamado struct {
 	// SLAs que o GLPI aplicou (0 = nenhum): tempo de solução e de resposta.
 	SLASolucao  int `json:"slas_id_ttr"`
 	SLAResposta int `json:"slas_id_tto"`
+	// Modificado muda quando o chamado muda: é a versão da extração.
+	Modificado string `json:"date_mod"`
 }
 
 // Entidade é um nó da árvore de entidades do GLPI.
@@ -47,6 +49,7 @@ type Entidade struct {
 // SLA é um tempo do GLPI: Tempo em Unidade (minute, hour, day).
 type SLA struct {
 	ID      int    `json:"id"`
+	Nome    string `json:"name"`
 	Tempo   int    `json:"number_time"`
 	Unidade string `json:"definition_time"`
 }

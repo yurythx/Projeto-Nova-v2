@@ -74,6 +74,10 @@ const (
 	PermExampleManage Permission = "example:manage"
 	// PermIAManage: conexões de inteligência artificial (Configurações).
 	PermIAManage Permission = "ia:manage"
+	// Integrações (ADR 076): migrar de outra ferramenta. A do conector é
+	// só do token de máquina, nunca de um perfil.
+	PermIntegracoesManage   Permission = "integracoes:manage"
+	PermIntegracoesConector Permission = "integracoes:conector"
 )
 
 // HasPermission reporta se identity possui permission, considerando os

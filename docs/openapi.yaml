@@ -5373,6 +5373,245 @@ components:
                 - username
             type: object
             x-projeto-nova-generated: true
+        IntegracoesConexao:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                created_by:
+                    type: string
+                extraido_em:
+                    format: date-time
+                    type: string
+                fuso:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                modo:
+                    type: string
+                nome:
+                    type: string
+                perfil:
+                    type: string
+                tem_credenciais:
+                    type: boolean
+                tem_token:
+                    type: boolean
+                tipo:
+                    type: string
+                token_em:
+                    format: date-time
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                url:
+                    type: string
+            required:
+                - created_at
+                - created_by
+                - fuso
+                - id
+                - modo
+                - nome
+                - perfil
+                - tem_credenciais
+                - tem_token
+                - tipo
+                - updated_at
+                - url
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesConexaoRequest:
+            properties:
+                fuso:
+                    maxLength: 60
+                    type: string
+                modo:
+                    maxLength: 20
+                    type: string
+                nome:
+                    maxLength: 160
+                    type: string
+                perfil:
+                    maxLength: 80
+                    type: string
+                tipo:
+                    maxLength: 20
+                    type: string
+                url:
+                    maxLength: 500
+                    type: string
+            required:
+                - nome
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesCredenciaisRequest:
+            properties:
+                app_token:
+                    maxLength: 200
+                    type: string
+                login:
+                    maxLength: 200
+                    type: string
+                senha:
+                    maxLength: 200
+                    type: string
+                user_token:
+                    maxLength: 200
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesFimRequest:
+            properties:
+                erro:
+                    maxLength: 2000
+                    type: string
+                relatorio: {}
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesItem:
+            properties:
+                categoria:
+                    type: integer
+                classe:
+                    type: string
+                dados: {}
+                data:
+                    type: string
+                entidade:
+                    type: integer
+                id:
+                    type: integer
+                minutos:
+                    type: integer
+                nome:
+                    type: string
+                sla:
+                    type: integer
+                tipo:
+                    type: string
+                versao:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesItensRequest:
+            properties:
+                itens:
+                    items:
+                        $ref: '#/components/schemas/IntegracoesItem'
+                    type: array
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesLinha:
+            properties:
+                categoria:
+                    type: integer
+                categoria_nome:
+                    type: string
+                chamados:
+                    type: integer
+                com_prazo:
+                    type: integer
+                nivel:
+                    type: string
+                oferta:
+                    type: string
+                prioridade:
+                    type: string
+                secretaria:
+                    type: string
+                tipo:
+                    type: string
+                unidade_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                unidade_nome:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesProgressoRequest:
+            properties:
+                feitos:
+                    minimum: 0
+                    type: integer
+                total:
+                    minimum: 0
+                    type: integer
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesSugestaoRequest:
+            properties:
+                unidades:
+                    additionalProperties:
+                        format: uuid
+                        type: string
+                    type: object
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesTabelaRequest:
+            properties:
+                linhas:
+                    items:
+                        $ref: '#/components/schemas/IntegracoesLinha'
+                    maxItems: 2000
+                    type: array
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesTarefa:
+            properties:
+                batida_em:
+                    format: date-time
+                    type: string
+                conexao_id:
+                    format: uuid
+                    type: string
+                criada_em:
+                    format: date-time
+                    type: string
+                erro:
+                    type: string
+                estado:
+                    type: string
+                feitos:
+                    type: integer
+                id:
+                    format: uuid
+                    type: string
+                iniciada_em:
+                    format: date-time
+                    type: string
+                pedida_por:
+                    type: string
+                relatorio: {}
+                terminada_em:
+                    format: date-time
+                    type: string
+                tipo:
+                    type: string
+                total:
+                    type: integer
+            required:
+                - conexao_id
+                - criada_em
+                - estado
+                - feitos
+                - id
+                - pedida_por
+                - tipo
+                - total
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesTarefaRequest:
+            properties:
+                tipo:
+                    type: string
+            required:
+                - tipo
+            type: object
+            x-projeto-nova-generated: true
         Integration:
             properties:
                 enabled:
@@ -16336,6 +16575,751 @@ paths:
             summary: IAM & Usuários — Salvar /iam/unidades/{id}
             tags:
                 - iam
+    /api/v1/integracoes/conector/itens:
+        post:
+            description: Só com o token do conector. De 1 a 200 itens (chamado, pessoa, categoria, entidade, sla), cada um com até 900 KB.
+            operationId: postIntegracoesConectorItens
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesItensRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Conector — enviar um lote
+            tags:
+                - integracoes
+    /api/v1/integracoes/conector/tarefa:
+        post:
+            description: Só com o token do conector. Devolve a extração pedida na tela, marcada em andamento, ou 204 se não houver.
+            operationId: postIntegracoesConectorTarefa
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/IntegracoesTarefa'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Conector — pegar a extração pedida
+            tags:
+                - integracoes
+    /api/v1/integracoes/conector/tarefas/{id}/fim:
+        post:
+            description: Só com o token do conector. O resumo, ou o erro que interrompeu a extração.
+            operationId: postIntegracoesConectorTarefasIdFim
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesFimRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Conector — encerrar a extração
+            tags:
+                - integracoes
+    /api/v1/integracoes/conector/tarefas/{id}/progresso:
+        post:
+            description: 'Só com o token do conector. Devolve o estado da tarefa: cancelada diz para parar.'
+            operationId: postIntegracoesConectorTarefasIdProgresso
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesProgressoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Conector — informar o andamento
+            tags:
+                - integracoes
+    /api/v1/integracoes/conector/versoes:
+        get:
+            description: 'Só com o token do conector. A versão de cada chamado e as pessoas já na área de preparo: a extração traz só o que mudou.'
+            operationId: getIntegracoesConectorVersoes
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            additionalProperties: {}
+                                            type: object
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Conector — o que já foi extraído
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes:
+        get:
+            description: Conexões com as ferramentas de origem (GLPI). Exige integracoes:manage com alcance global.
+            operationId: getIntegracoesConexoes
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — listar as conexões
+            tags:
+                - integracoes
+        post:
+            description: Tipo glpi; modo direto (o servidor lê a origem, pela URL da API) ou conector (um programa na rede da origem envia os dados).
+            operationId: postIntegracoesConexoes
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesConexaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/IntegracoesConexao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — criar uma conexão
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}:
+        delete:
+            description: Apaga a conexão com a área de preparo, a tabela de-para e as tarefas. O que já foi carregado fica.
+            operationId: deleteIntegracoesConexoesId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — encerrar a conexão
+            tags:
+                - integracoes
+        get:
+            description: 'A conexão, sem as credenciais: tem_credenciais e tem_token dizem só se existem.'
+            operationId: getIntegracoesConexoesId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — obter a conexão
+            tags:
+                - integracoes
+        put:
+            description: Nome, endereço, perfil e fuso. Tipo e modo não mudam.
+            operationId: putIntegracoesConexoesId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesConexaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — editar a conexão
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/credenciais:
+        put:
+            description: Só no modo direto. Token de usuário, ou login e senha; ficam cifradas e a API nunca as devolve.
+            operationId: putIntegracoesConexoesIdCredenciais
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesCredenciaisRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — definir as credenciais da origem
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/inventario:
+        get:
+            description: Quantos itens foram extraídos, os chamados por secretaria e categoria (com o prazo que tiveram na origem) e os prazos da origem com a prioridade sugerida.
+            operationId: getIntegracoesConexoesIdInventario
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — inventário da área de preparo
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/tabela:
+        get:
+            description: 'Para cada secretaria e categoria da origem (-1 é qualquer outra): a unidade, a oferta, o tipo e a prioridade daqui (ADR 075).'
+            operationId: getIntegracoesConexoesIdTabela
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — tabela de-para
+            tags:
+                - integracoes
+        put:
+            description: Troca a tabela inteira pela revisada. Uma linha por secretaria e categoria.
+            operationId: putIntegracoesConexoesIdTabela
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesTabelaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — salvar a tabela de-para
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/tabela/sugestao:
+        post:
+            description: Monta a tabela a partir do inventário e a grava, levando cada secretaria à unidade informada.
+            operationId: postIntegracoesConexoesIdTabelaSugestao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesSugestaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — sugerir a tabela de-para
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/tarefas:
+        get:
+            description: As últimas extrações, simulações e cargas, com o andamento e o relatório.
+            operationId: getIntegracoesConexoesIdTarefas
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data: {}
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — tarefas da conexão
+            tags:
+                - integracoes
+        post:
+            description: extracao, simulacao ou carga. Uma por conexão de cada vez; o que falta para rodar é recusado com 422. A extração do modo conector espera o conector.
+            operationId: postIntegracoesConexoesIdTarefas
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesTarefaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/IntegracoesTarefa'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — pedir uma tarefa
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/token:
+        delete:
+            description: O conector da conexão deixa de entrar.
+            operationId: deleteIntegracoesConexoesIdToken
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — revogar o token do conector
+            tags:
+                - integracoes
+        post:
+            description: Só no modo conector. O token aparece só nesta resposta; um novo substitui o anterior.
+            operationId: postIntegracoesConexoesIdToken
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            additionalProperties:
+                                                type: string
+                                            type: object
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — emitir o token do conector
+            tags:
+                - integracoes
+    /api/v1/integracoes/tarefas/{id}/cancelar:
+        post:
+            description: Para a tarefa pendente ou em andamento; quem executa percebe no próximo andamento.
+            operationId: postIntegracoesTarefasIdCancelar
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — cancelar a tarefa
+            tags:
+                - integracoes
     /api/v1/lgpd/accept:
         post:
             description: |
@@ -21227,6 +22211,8 @@ tags:
     - name: ia
     - description: IAM & Usuários. Núcleo — Identidades, sessões, RBAC multi-escopo (Entidades, Unidades, Departamentos) e mapeamento de grupos do AD.
       name: iam
+    - description: 'Integrações. Plug-in — Migrar de outra ferramenta (GLPI): extrair, revisar a tabela de-para e carregar, com um conector na rede da origem.'
+      name: integracoes
     - name: kernel
     - description: |
         Consentimento (Lei 13.709/2018) e direitos do titular (art. 18): cada usuário só consulta, aceita, exporta ou solicita a exclusão do PRÓPRIO dado — não há leitura de terceiros. Inclui a rota pública de consentimento anônimo para visitantes não autenticados.

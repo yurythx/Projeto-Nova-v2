@@ -5,9 +5,9 @@
 # Medido em 2026-10-27, com Postgres, RabbitMQ, MinIO e Typesense, menos
 # 0,2 ponto de margem para testes que variam com o tempo.
 
-app                      94.8
-atendimento              90.6
-ativos                   72.2
+app                      95.7
+atendimento              91.2
+ativos                   72.9
 cofre                    64.1
 contratos                70.3
 mudancas                 90.7

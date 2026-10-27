@@ -108,6 +108,27 @@ func LerMapa(r io.Reader, unidades map[string]uuid.UUID) (*Mapa, error) {
 	return m, nil
 }
 
+// LinhaMapa é uma linha da tabela já resolvida: a tela das integrações
+// guarda a unidade pelo id. Categoria -1 é o "*".
+type LinhaMapa struct {
+	Secretaria string
+	Categoria  int
+	Destino    Destino
+}
+
+// NovoMapa monta o mapa das linhas resolvidas.
+func NovoMapa(linhas []LinhaMapa) *Mapa {
+	m := &Mapa{linhas: map[chaveMapa]Destino{}}
+	for _, l := range linhas {
+		m.linhas[chaveMapa{strings.ToUpper(strings.TrimSpace(l.Secretaria)), l.Categoria}] = l.Destino
+		if l.Destino.Unidade == nil && !slices.Contains(m.Faltam, l.Destino.UnidadeNome) {
+			m.Faltam = append(m.Faltam, l.Destino.UnidadeNome)
+		}
+	}
+	slices.Sort(m.Faltam)
+	return m
+}
+
 // Destino acha a linha da secretaria e da categoria, ou o "*" da secretaria.
 func (m *Mapa) Destino(secretaria string, categoria int) (Destino, bool) {
 	s := strings.ToUpper(strings.TrimSpace(secretaria))

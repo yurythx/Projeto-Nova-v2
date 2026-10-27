@@ -2,6 +2,7 @@ package glpi
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -221,5 +222,81 @@ func TestRegraRespeitaOTeto(t *testing.T) {
 	im.Repo = infrastructure.NewRepository()
 	if err := im.regra(ctx, tx, Destino{Unidade: &u, Oferta: "Nova", Prioridade: "urgente"}, uuid.New()); err == nil {
 		t.Fatal("prioridade inválida")
+	}
+}
+
+// ofertaFalha recusa gravar a oferta.
+type ofertaFalha struct{ domain.Repository }
+
+func (ofertaFalha) InsertOferta(context.Context, database.DBTX, domain.Oferta) (domain.Oferta, error) {
+	return domain.Oferta{}, errFonte
+}
+
+func TestOfertaDoMapaFalhas(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	u := dbtest.Unidade(t, pool)
+	t.Cleanup(func() {
+		ctx := context.Background()
+		_, _ = pool.Exec(ctx, `DELETE FROM atendimento_regras WHERE unidade_id = $1`, u)
+		_, _ = pool.Exec(ctx, `DELETE FROM atendimento_ofertas WHERE unidade_id = $1`, u)
+		_, _ = pool.Exec(ctx, `DELETE FROM atendimento_importacao WHERE origem = 'glpi' AND id_origem LIKE 'mapa:teste-%'`)
+	})
+	ok := Destino{Unidade: &u, UnidadeNome: "U", Oferta: "PCs", Tipo: "incidente", Prioridade: "alta"}
+	tentar := func(repo domain.Repository, d Destino, chave string) error {
+		t.Helper()
+		tx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = tx.Rollback(ctx) }()
+		im := &Importador{Repo: repo, ofertas: map[string]uuid.UUID{}}
+		_, err = im.ofertaDoMapa(ctx, tx, chave, d)
+		return err
+	}
+	real := infrastructure.NewRepository()
+	ruim := ok
+	ruim.Tipo = "problema"
+	if err := tentar(real, ruim, "mapa:teste-tipo"); err == nil {
+		t.Error("tipo que o atendimento não tem")
+	}
+	ruim = ok
+	ruim.Prioridade = "urgente"
+	if err := tentar(real, ruim, "mapa:teste-prioridade"); err == nil {
+		t.Error("prioridade que a regra não aceita")
+	}
+	if err := tentar(ofertaFalha{real}, ok, "mapa:teste-insert"); !errors.Is(err, errFonte) {
+		t.Errorf("gravar a oferta: %v", err)
+	}
+	// A transação já desfeita não consulta.
+	tx, _ := pool.Begin(ctx)
+	_ = tx.Rollback(ctx)
+	if _, err := (&Importador{Repo: real, ofertas: map[string]uuid.UUID{}}).ofertaDoMapa(ctx, tx, "mapa:teste-tx", ok); err == nil {
+		t.Error("consulta numa transação encerrada")
+	}
+	// A chave já marcada por outra execução: a marcação repete e falha.
+	tx, _ = pool.Begin(ctx)
+	if err := marcar(ctx, tx, "oferta", "mapa:teste-dup", uuid.New()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (&Importador{Repo: real, ofertas: map[string]uuid.UUID{}}).ofertaDoMapa(ctx, tx, "mapa:teste-dup", ok); err == nil {
+		t.Error("marcação repetida")
+	}
+	_ = tx.Rollback(ctx)
+}
+
+func TestExecutarParaQuandoCancelado(t *testing.T) {
+	pool := dbtest.Pool(t)
+	ctx, cancelar := context.WithCancel(context.Background())
+	defer cancelar()
+	m := novaMemoria()
+	for i := 1; i <= 3; i++ {
+		m.guardar(ItemPreparo{Tipo: ItemChamado, ID: 9000 + i, Dados: dados(t, Pacote{Chamado: Chamado{ID: 9000 + i, Titulo: "x", Tipo: 1}})})
+	}
+	im := &Importador{Fonte: &FontePreparo{Leitor: m}, Pool: pool, Repo: infrastructure.NewRepository(), Pagina: 1,
+		Progresso: func(int, int) { cancelar() }}
+	rel, err := im.Executar(ctx)
+	if !errors.Is(err, context.Canceled) || rel.Lidos != 1 {
+		t.Fatalf("parou na primeira página: %+v %v", rel, err)
 	}
 }

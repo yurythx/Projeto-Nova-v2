@@ -1,7 +1,7 @@
 # Handover: gestão de serviços (Projeto Nova v2)
 
 - **Atualizado em:** 27/10/2026
-- **Branch:** `feat/gestao-de-servicos` (commits locais; ainda não publicada nem integrada à `main`)
+- **Branch:** `feat/gestao-de-servicos` (publicada; PR para a `main` pendente)
 - **Para quem:** quem continuar o trabalho, pessoa ou IA. O que já está decidido está nos ADRs; aqui fica o mapa e o que falta.
 
 ## 1. O que a branch entrega
@@ -19,6 +19,9 @@ A branch leva o atendimento do Projeto Nova ao padrão do ITIL 4 e 5. As entrega
 | Contrato de apoio (prazo do fornecedor) | [071](adr/071-contrato-de-apoio.md) | `atendimento/*/contrato_apoio.go`, `app/contrato_porta.go`, plug-in `contratos` |
 | Importador do GLPI | [072](adr/072-importador-do-glpi.md) | `atendimento/glpi`, `cmd/importarglpi`, [DEPLOY.md](DEPLOY.md#migrar-do-glpi) |
 | OLA no chamado (histórico de atribuição) | [073](adr/073-ola-no-chamado.md) | `atendimento/*/atribuicao.go`, `domain/relatorio.go` |
+| Perfis pelos grupos do SSO | [074](adr/074-perfis-pelos-grupos-do-sso.md) | `platform/iam/resolver.go`, `iam_mapeamentos` no Ansible |
+| Tabela de-para do GLPI | [075](adr/075-de-para-do-glpi.md) | `atendimento/glpi/mapa.go` |
+| Módulo de integrações e conector | [076](adr/076-modulo-de-integracoes.md) | plug-in `modules/integracoes`, `app/integracoes_porta.go`, `cmd/conector`, tela `/integracoes` |
 
 A infraestrutura de produção (Proxmox, Terraform, Ansible, domínio `projetonova.cloud`, backup e monitoramento) está em [DEPLOY.md](DEPLOY.md). As imagens do CI estão no [ADR 063](adr/063-imagens-do-ci-no-registro.md), e a catraca de cobertura no [ADR 064](adr/064-catraca-de-cobertura.md).
 
@@ -56,9 +59,9 @@ Na última execução, tudo passou: a suíte completa do backend com o portão, 
 
 Depende de quem opera:
 
-1. **Produção:** token do túnel Cloudflare, segredo e endereços de retorno do SSO, destino do backup (rclone e age) e bucket R2 para o estado do Terraform. Depois, `make infra-deploy`. Ver [DEPLOY.md](DEPLOY.md).
-2. **Migração do GLPI:** rodar a simulação contra o GLPI real e revisar o relatório (a lista `sem_par`) antes de gravar. O importador só foi testado contra um GLPI simulado.
-3. **Publicar a branch:** push, PR para a `main`, proteção do branch e Renovate.
+1. **Produção no ar** (VM 240, `projetonova.cloud`): falta o destino do backup fora da VM (rclone e age) e o bucket R2 para o estado do Terraform. Ver [DEPLOY.md](DEPLOY.md).
+2. **Migração do GLPI** pela tela de Integrações, com o conector na rede da prefeitura. A simulação real (14.994 chamados) passou com a tabela de-para; antes da carga: limpar a base de teste, cadastrar a estrutura real e trazer os usuários do SSO ([ADR 077](adr/077-usuarios-do-sso.md), que pede a conta de serviço no Keycloak).
+3. **PR para a `main`**, proteção do branch e Renovate.
 
 Melhorias registradas nos ADRs, sem pressa:
 
