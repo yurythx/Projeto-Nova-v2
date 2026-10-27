@@ -40,6 +40,8 @@ def done():
 
 
 def env(key):
+    if os.environ.get(key):
+        return os.environ[key]
     for line in open(os.path.join(ROOT, ".env"), encoding="utf-8"):
         if line.startswith(key + "="):
             return line.split("=", 1)[1].strip()

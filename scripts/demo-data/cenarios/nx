@@ -3,12 +3,14 @@
 # Sessões em ~/.cache/nova-nx (apague para forçar novo login).
 # Loga pelo Keycloak (fluxo NextAuth do navegador) uma vez por usuário e
 # chama o BFF (/api/backend/v1/...). Imprime "HTTP <code>" + corpo.
+# NX_LOGIN=local entra pela conta local (onde não há o Keycloak de teste).
+# DEMO_USER_PASSWORD no ambiente vale mais que a do .env.
 set -uo pipefail
 cd "$(dirname "$(readlink -f "$0")")/../../.."
 FE=$(grep ^FRONTEND_URL= .env | cut -d= -f2-)
 # HTTPS com a CA interna (scripts/enable-https.sh): curl confia nela.
 [ -f secrets/ca/nova-ca.crt ] && export CURL_CA_BUNDLE="$PWD/secrets/ca/nova-ca.crt"
-PW=$(grep ^DEMO_USER_PASSWORD= .env | cut -d= -f2-)
+PW=${DEMO_USER_PASSWORD:-$(grep ^DEMO_USER_PASSWORD= .env | cut -d= -f2-)}
 user="$1"; method="$2"; path="${3#/}"; body="${4:-}"
 SESS=${NX_SESSIONS:-$HOME/.cache/nova-nx}; mkdir -p "$SESS"; J=$SESS/$user.jar
 
@@ -23,13 +25,30 @@ login() {
   cb=$(curl -s -c $J -b $J -o /dev/null -w '%{redirect_url}' -X POST "$action" --data-urlencode "username=$user" --data-urlencode "password=$PW")
   case "$cb" in *"/api/auth/callback/keycloak"*) curl -s -c $J -b $J -o /dev/null "$cb" ;; *) echo "LOGIN FALHOU: $user" >&2; exit 2 ;; esac
 }
-[ -s $J ] || login
+
+# O login local tem limite por IP (10 por minuto): no 429, espera e tenta.
+login_local() {
+  local csrf resp tentativa
+  for tentativa in 1 2 3 4 5 6; do
+    rm -f $J
+    csrf=$(curl -s -c $J -b $J "$FE/api/auth/csrf" | sed -E 's/.*"csrfToken":"([^"]+)".*/\1/')
+    resp=$(curl -s -c $J -b $J -X POST "$FE/api/auth/callback/local" -H 'Content-Type: application/x-www-form-urlencoded' \
+      --data-urlencode "csrfToken=$csrf" --data-urlencode "username=$user" --data-urlencode "password=$PW" \
+      --data-urlencode "callbackUrl=$FE/dashboard" --data-urlencode "json=true")
+    grep -q "session-token" $J && return 0
+    case "$resp" in *TooManyAttempts*) sleep 65 ;; *) break ;; esac
+  done
+  echo "LOGIN FALHOU: $user" >&2; exit 2
+}
+entrar() { if [ "${NX_LOGIN:-}" = local ]; then login_local; else login; fi; }
+
+[ -s $J ] || entrar
 call() {
   local args=(-s -c $J -b $J -X "$method" -w '\nHTTP %{http_code}' -H 'Content-Type: application/json' -H "X-Idempotency-Key: nx-$(openssl rand -hex 12)")
   [ -n "$body" ] && args+=(--data "$body")
   curl "${args[@]}" "$FE/api/backend/v1/$path"
 }
 out=$(call)
-if [[ "$out" == *"HTTP 401" ]]; then login; out=$(call); fi
+if [[ "$out" == *"HTTP 401" ]]; then entrar; out=$(call); fi
 code=${out##*HTTP }; resp=${out%$'\n'HTTP *}
 echo "HTTP $code"; printf '%s\n' "$resp"
