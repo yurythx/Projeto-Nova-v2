@@ -44,8 +44,9 @@ type TarefaMedida struct {
 	FeitaEm    *time.Time
 }
 
-// LinhaEquipe é o OLA de uma equipe no período. A dispensada não conta:
-// não houve trabalho a medir.
+// LinhaEquipe é o OLA de uma equipe no período: as tarefas da requisição
+// e os trechos em que um chamado esteve com ela (ADR 073). A tarefa
+// dispensada não conta: não houve trabalho a medir.
 type LinhaEquipe struct {
 	EquipeID          uuid.UUID `json:"equipe_id"`
 	Nome              string    `json:"nome"`
@@ -56,6 +57,14 @@ type LinhaEquipe struct {
 	MedianaHoras      *float64  `json:"mediana_horas"`
 	Pendentes         int       `json:"pendentes"`
 	Atrasadas         int       `json:"atrasadas"`
+	// Chamados são os trechos já encerrados (o chamado foi concluído ou
+	// passou para outra equipe); ComAEquipe, os que ainda estão com ela.
+	Chamados                  int      `json:"chamados"`
+	ChamadosNoPrazo           int      `json:"chamados_no_prazo"`
+	ChamadosNoPrazoPercentual *float64 `json:"chamados_no_prazo_percentual"`
+	ChamadosMedianaHoras      *float64 `json:"chamados_mediana_horas"`
+	ComAEquipe                int      `json:"com_a_equipe"`
+	ChamadosAtrasados         int      `json:"chamados_atrasados"`
 }
 
 // LinhaDe resume um grupo de solicitações: volume, os indicadores da
@@ -127,19 +136,41 @@ func PorSecretaria(lista []Solicitacao, secretarias map[uuid.UUID]Secretaria, pa
 }
 
 // ResumirEquipes calcula o OLA de cada equipe. Pendente atrasada é a que
-// passou do prazo da equipe e ainda não foi feita.
-func ResumirEquipes(tarefas []TarefaMedida, agora time.Time) []LinhaEquipe {
+// passou do prazo da equipe e ainda não foi feita. No chamado, o tempo é
+// o do trecho com a equipe, sem as esperas pelo servidor e pelo fornecedor.
+func ResumirEquipes(tarefas []TarefaMedida, atribuicoes []Atribuicao, passagens map[uuid.UUID][]Passagem, agora time.Time) []LinhaEquipe {
 	idx := map[uuid.UUID]int{}
 	out := []LinhaEquipe{}
 	horas := map[uuid.UUID][]float64{}
-	for _, t := range tarefas {
-		i, ok := idx[t.EquipeID]
+	horasChamados := map[uuid.UUID][]float64{}
+	linha := func(id uuid.UUID, nome string, ola *int) *LinhaEquipe {
+		i, ok := idx[id]
 		if !ok {
 			i = len(out)
-			idx[t.EquipeID] = i
-			out = append(out, LinhaEquipe{EquipeID: t.EquipeID, Nome: t.EquipeNome, OLAHoras: t.OLAHoras})
+			idx[id] = i
+			out = append(out, LinhaEquipe{EquipeID: id, Nome: nome, OLAHoras: ola})
 		}
-		l := &out[i]
+		return &out[i]
+	}
+	for _, a := range atribuicoes {
+		l := linha(a.EquipeID, a.EquipeNome, a.OLAHoras)
+		tempo := TempoDaEquipe(a, passagens[a.SolicitacaoID], agora)
+		fora := a.OLAHoras != nil && tempo > time.Duration(*a.OLAHoras)*time.Hour
+		if a.Fim == nil {
+			l.ComAEquipe++
+			if fora {
+				l.ChamadosAtrasados++
+			}
+			continue
+		}
+		l.Chamados++
+		horasChamados[a.EquipeID] = append(horasChamados[a.EquipeID], tempo.Hours())
+		if a.OLAHoras != nil && !fora {
+			l.ChamadosNoPrazo++
+		}
+	}
+	for _, t := range tarefas {
+		l := linha(t.EquipeID, t.EquipeNome, t.OLAHoras)
 		var limite *time.Time
 		if t.OLAHoras != nil {
 			v := t.CreatedAt.Add(time.Duration(*t.OLAHoras) * time.Hour)
@@ -166,6 +197,12 @@ func ResumirEquipes(tarefas []TarefaMedida, agora time.Time) []LinhaEquipe {
 		}
 		if h := horas[l.EquipeID]; len(h) > 0 {
 			l.MedianaHoras = arredondar(mediana(h))
+		}
+		if l.OLAHoras != nil && l.Chamados > 0 {
+			l.ChamadosNoPrazoPercentual = percentual(l.ChamadosNoPrazo, l.Chamados)
+		}
+		if h := horasChamados[l.EquipeID]; len(h) > 0 {
+			l.ChamadosMedianaHoras = arredondar(mediana(h))
 		}
 	}
 	slices.SortFunc(out, func(a, b LinhaEquipe) int { return cmp.Compare(a.Nome, b.Nome) })

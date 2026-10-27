@@ -80,6 +80,7 @@ experiência medida e nível de serviço por secretaria.
 | Relatório por secretaria e OLA das equipes ([ADR 070](adr/070-relatorio-por-secretaria-e-ola.md)) | Implementada |
 | Contrato de apoio: prazo do fornecedor no "aguardando terceiro" ([ADR 071](adr/071-contrato-de-apoio.md)) | Implementada |
 | Importador do GLPI ([ADR 072](adr/072-importador-do-glpi.md)) | Implementada |
+| OLA também no chamado, pelo histórico de atribuição ([ADR 073](adr/073-ola-no-chamado.md)) | Implementada |
 
 A IA continua sem conversar com quem abre o chamado: o atendente virtual
 segue fora (acima, "Não se constrói").

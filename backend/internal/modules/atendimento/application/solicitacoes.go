@@ -430,6 +430,14 @@ func (s *Service) Atribuir(ctx context.Context, identity auth.Identity, id, resp
 		if err := s.repo.UpdateSolicitacao(ctx, tx, next); err != nil {
 			return nil, err
 		}
+		// O chamado muda de mãos: fecha o trecho de quem estava e abre o
+		// de quem assume (ADR 073).
+		if err := s.repo.FecharAtribuicao(ctx, tx, next.ID, next.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if err := s.repo.AbrirAtribuicao(ctx, tx, next.ID, responsavel, next.UnidadeID, next.UpdatedAt); err != nil {
+			return nil, err
+		}
 		if next.Estado != sol.Estado {
 			de := sol.Estado
 			if _, err := s.passar(ctx, tx, next, &de, identity.UserID); err != nil {
@@ -545,6 +553,9 @@ func (s *Service) gravarPassagem(ctx context.Context, tx pgx.Tx, identity auth.I
 		return nil, err
 	}
 	if err := s.repo.UpdateSolicitacao(ctx, tx, next); err != nil {
+		return nil, err
+	}
+	if err := s.acompanharAtribuicao(ctx, tx, prev, next); err != nil {
 		return nil, err
 	}
 	de := prev.Estado

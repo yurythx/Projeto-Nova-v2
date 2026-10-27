@@ -18,13 +18,14 @@ A branch leva o atendimento do Projeto Nova ao padrão do ITIL 4 e 5. As entrega
 | Relatório por secretaria e OLA das equipes | [070](adr/070-relatorio-por-secretaria-e-ola.md) | `atendimento/*/relatorio.go`, tela `/atendimento/relatorio` |
 | Contrato de apoio (prazo do fornecedor) | [071](adr/071-contrato-de-apoio.md) | `atendimento/*/contrato_apoio.go`, `app/contrato_porta.go`, plug-in `contratos` |
 | Importador do GLPI | [072](adr/072-importador-do-glpi.md) | `atendimento/glpi`, `cmd/importarglpi`, [DEPLOY.md](DEPLOY.md#migrar-do-glpi) |
+| OLA no chamado (histórico de atribuição) | [073](adr/073-ola-no-chamado.md) | `atendimento/*/atribuicao.go`, `domain/relatorio.go` |
 
 A infraestrutura de produção (Proxmox, Terraform, Ansible, domínio `projetonova.cloud`, backup e monitoramento) está em [DEPLOY.md](DEPLOY.md). As imagens do CI estão no [ADR 063](adr/063-imagens-do-ci-no-registro.md), e a catraca de cobertura no [ADR 064](adr/064-catraca-de-cobertura.md).
 
 ## 2. Como o código está organizado
 
 - **Backend** (`backend/`, Go): microkernel. Cada plug-in fica em `internal/modules/<nome>` com as camadas `domain`, `application`, `infrastructure` e `transport`. Um plug-in não importa outro: as portas entre eles ficam em `internal/app` (exemplos: `cofre_porta.go`, `contrato_porta.go`). Toda gravação de negócio leva evento no outbox e auditoria na mesma transação.
-- **Migrações:** `backend/migrations/0000NN_*.sql` (goose). A última é a 000028.
+- **Migrações:** `backend/migrations/0000NN_*.sql` (goose). A última é a 000029.
 - **Contrato da API:** `backend/docs/openapi.json` é a fonte, e `docs/openapi.yaml` é gerado. Rota nova sem documentação quebra o teste `TestOpenAPIMatchesRouter`. Para regenerar, rode com `UPDATE_OPENAPI=1` e escreva à mão o `summary` e a `description` da rota nova.
 - **Frontend** (`frontend/`, Next.js 16 e React 19): as telas ficam em `src/app/(protected)`, os componentes em `src/components`, e os tipos da API em `src/lib/<plug-in>`.
 
@@ -61,6 +62,5 @@ Depende de quem opera:
 
 Melhorias registradas nos ADRs, sem pressa:
 
-- OLA também no incidente. Hoje mede só as tarefas da requisição; falta o histórico de qual equipe estava com o chamado ([ADR 070](adr/070-relatorio-por-secretaria-e-ola.md)).
 - Prazo do fornecedor em horas úteis. Hoje é corrido ([ADR 071](adr/071-contrato-de-apoio.md)).
 - Anexos do GLPI na importação ([ADR 072](adr/072-importador-do-glpi.md)).

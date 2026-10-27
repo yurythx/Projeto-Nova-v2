@@ -1071,6 +1071,20 @@ components:
             properties:
                 atrasadas:
                     type: integer
+                chamados:
+                    type: integer
+                chamados_atrasados:
+                    type: integer
+                chamados_mediana_horas:
+                    nullable: true
+                    type: number
+                chamados_no_prazo:
+                    type: integer
+                chamados_no_prazo_percentual:
+                    nullable: true
+                    type: number
+                com_a_equipe:
+                    type: integer
                 concluidas:
                     type: integer
                 equipe_id:
@@ -1093,6 +1107,12 @@ components:
                     type: integer
             required:
                 - atrasadas
+                - chamados
+                - chamados_atrasados
+                - chamados_mediana_horas
+                - chamados_no_prazo
+                - chamados_no_prazo_percentual
+                - com_a_equipe
                 - concluidas
                 - equipe_id
                 - mediana_horas

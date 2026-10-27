@@ -59,11 +59,16 @@ const COLUNAS_EQUIPE: { rotulo: string; valor: (e: LinhaEquipe) => string }[] = 
     rotulo: "Prazo da equipe",
     valor: (e) => (e.ola_horas == null ? "sem OLA" : `${e.ola_horas} h`),
   },
-  { rotulo: "Concluídas", valor: (e) => v(e.concluidas) },
-  { rotulo: "No prazo", valor: (e) => v(e.no_prazo_percentual, "%") },
-  { rotulo: "Mediana", valor: (e) => v(e.mediana_horas, " h") },
-  { rotulo: "Pendentes", valor: (e) => v(e.pendentes) },
-  { rotulo: "Atrasadas", valor: (e) => v(e.atrasadas) },
+  { rotulo: "Chamados", valor: (e) => v(e.chamados) },
+  { rotulo: "Chamados no prazo", valor: (e) => v(e.chamados_no_prazo_percentual, "%") },
+  { rotulo: "Chamados: mediana", valor: (e) => v(e.chamados_mediana_horas, " h") },
+  { rotulo: "Com a equipe", valor: (e) => v(e.com_a_equipe) },
+  { rotulo: "Chamados atrasados", valor: (e) => v(e.chamados_atrasados) },
+  { rotulo: "Tarefas feitas", valor: (e) => v(e.concluidas) },
+  { rotulo: "Tarefas no prazo", valor: (e) => v(e.no_prazo_percentual, "%") },
+  { rotulo: "Tarefas: mediana", valor: (e) => v(e.mediana_horas, " h") },
+  { rotulo: "Tarefas pendentes", valor: (e) => v(e.pendentes) },
+  { rotulo: "Tarefas atrasadas", valor: (e) => v(e.atrasadas) },
 ];
 
 const COLUNAS_CONTRATO: { rotulo: string; valor: (c: LinhaContrato) => string }[] = [
@@ -221,9 +226,7 @@ export default function AtendimentoRelatorioPage() {
               </CardHeader>
               <CardContent className="overflow-x-auto pb-5">
                 {r.equipes.length === 0 ? (
-                  <p className="text-sm">
-                    Nenhuma tarefa de equipe no período. O OLA mede as tarefas da requisição.
-                  </p>
+                  <p className="text-sm">Nenhuma equipe com chamado ou tarefa no período.</p>
                 ) : (
                   <table className="w-full text-left text-sm">
                     <thead>

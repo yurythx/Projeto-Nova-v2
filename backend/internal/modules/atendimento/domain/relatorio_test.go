@@ -84,7 +84,7 @@ func TestResumirEquipes(t *testing.T) {
 		{EquipeID: suporte, EquipeNome: "Atendimento", Estado: TarefaConcluida, CreatedAt: criada, FeitaEm: h(5)},
 		{EquipeID: suporte, EquipeNome: "Atendimento", Estado: TarefaPendente, CreatedAt: criada},
 	}
-	linhas := ResumirEquipes(tarefas, agora)
+	linhas := ResumirEquipes(tarefas, nil, nil, agora)
 	if len(linhas) != 2 || linhas[0].Nome != "Atendimento" {
 		t.Fatalf("por nome: %+v", linhas)
 	}
@@ -96,7 +96,7 @@ func TestResumirEquipes(t *testing.T) {
 	if r.Concluidas != 2 || r.NoPrazo != 1 || *r.NoPrazoPercentual != 50 || *r.MedianaHoras != 20 || r.Pendentes != 2 || r.Atrasadas != 1 {
 		t.Fatalf("OLA da rede: %+v", r)
 	}
-	if out := ResumirEquipes(nil, agora); len(out) != 0 {
+	if out := ResumirEquipes(nil, nil, nil, agora); len(out) != 0 {
 		t.Fatal("vazio")
 	}
 }

@@ -86,7 +86,23 @@ func (s *Service) RelatorioPorSecretaria(ctx context.Context, identity auth.Iden
 	if err != nil {
 		return Relatorio{}, MapError(err)
 	}
-	out.Equipes = domain.ResumirEquipes(tarefas, agora)
+	atribuicoes, err := s.repo.AtribuicoesDoPeriodo(ctx, s.pool, restrito, cob.Unidades, desde)
+	if err != nil {
+		return Relatorio{}, MapError(err)
+	}
+	comEquipe := map[uuid.UUID][]domain.Passagem{}
+	if len(atribuicoes) > 0 {
+		ids := []uuid.UUID{}
+		for _, a := range atribuicoes {
+			if !slices.Contains(ids, a.SolicitacaoID) {
+				ids = append(ids, a.SolicitacaoID)
+			}
+		}
+		if comEquipe, err = s.repo.PassagensDe(ctx, s.pool, ids); err != nil {
+			return Relatorio{}, MapError(err)
+		}
+	}
+	out.Equipes = domain.ResumirEquipes(tarefas, atribuicoes, comEquipe, agora)
 	comContrato, err := s.repo.ComContratoNoPeriodo(ctx, s.pool, restrito, cob.Unidades, desde)
 	if err != nil {
 		return Relatorio{}, MapError(err)

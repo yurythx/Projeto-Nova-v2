@@ -244,6 +244,14 @@ export interface LinhaEquipe {
   mediana_horas: number | null;
   pendentes: number;
   atrasadas: number;
+  /** Trechos em que um chamado esteve com a equipe (ADR 073), sem as
+   * esperas pelo servidor e pelo fornecedor. */
+  chamados: number;
+  chamados_no_prazo: number;
+  chamados_no_prazo_percentual: number | null;
+  chamados_mediana_horas: number | null;
+  com_a_equipe: number;
+  chamados_atrasados: number;
 }
 
 export interface RelatorioSecretarias {

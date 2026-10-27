@@ -70,7 +70,8 @@ func TestRelatorioPorSecretaria(t *testing.T) {
 	if len(rel.Secretarias) != 1 || rel.Secretarias[0].UnidadeID == nil || *rel.Secretarias[0].UnidadeID != c.unidade || *rel.Secretarias[0].Experiencia.CSAT.Valor != 5 {
 		t.Fatalf("a unidade de topo é a secretaria: %+v", rel.Secretarias)
 	}
-	if len(rel.Equipes) != 2 {
+	// Rede e Suporte pelas tarefas; N1 porque esteve com o incidente concluído.
+	if len(rel.Equipes) != 3 {
 		t.Fatalf("OLA das equipes: %+v", rel.Equipes)
 	}
 	for _, e := range rel.Equipes {
@@ -82,6 +83,10 @@ func TestRelatorioPorSecretaria(t *testing.T) {
 		case "Suporte":
 			if e.Pendentes != 1 || e.OLAHoras != nil {
 				t.Errorf("suporte: %+v", e)
+			}
+		case "N1":
+			if e.Chamados != 1 || e.ChamadosMedianaHoras == nil {
+				t.Errorf("n1: %+v", e)
 			}
 		}
 	}

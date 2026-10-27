@@ -19,6 +19,6 @@ Os acordos de nível do ITIL se encadeiam. O **SLA** é o que a central promete 
 
 A central leva à reunião um número por secretaria em vez de um total que esconde as diferenças. O OLA torna visível qual equipe segura o pedido de admissão ou de desligamento.
 
-O OLA mede só as tarefas da requisição. A passagem do chamado entre equipes no incidente não tem histórico por equipe hoje. Se precisar, entra depois, a partir das passagens de responsável.
+O OLA media só as tarefas da requisição. O [ADR 073](073-ola-no-chamado.md) estende o OLA ao chamado, pelo histórico de atribuição.
 
 O **contrato de apoio** fica para a entrega seguinte. Ele precisa ligar o pedido em "aguardando terceiro" a um contrato do plug-in Contratos, com o prazo do fornecedor, e isso pede uma porta entre os dois plug-ins.

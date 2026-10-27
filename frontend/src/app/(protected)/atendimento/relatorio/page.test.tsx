@@ -84,6 +84,12 @@ const relatorio = {
       mediana_horas: 10,
       pendentes: 1,
       atrasadas: 1,
+      chamados: 6,
+      chamados_no_prazo: 5,
+      chamados_no_prazo_percentual: 83.3,
+      chamados_mediana_horas: 3.5,
+      com_a_equipe: 2,
+      chamados_atrasados: 1,
     },
     {
       equipe_id: "e2",
@@ -95,6 +101,12 @@ const relatorio = {
       mediana_horas: null,
       pendentes: 2,
       atrasadas: 0,
+      chamados: 0,
+      chamados_no_prazo: 0,
+      chamados_no_prazo_percentual: null,
+      chamados_mediana_horas: null,
+      com_a_equipe: 0,
+      chamados_atrasados: 0,
     },
   ],
   contratos: [
@@ -145,6 +157,8 @@ describe("Relatório por secretaria", () => {
     const rede = screen.getByRole("row", { name: /^Rede/ });
     expect(within(rede).getByText("24 h")).toBeInTheDocument();
     expect(within(rede).getByText("75%")).toBeInTheDocument();
+    expect(within(rede).getByText("83,3%")).toBeInTheDocument();
+    expect(within(rede).getByText("3,5 h")).toBeInTheDocument();
     expect(screen.getByRole("row", { name: /^Patrimônio/ })).toHaveTextContent("sem OLA");
     const link = screen.getByRole("row", { name: /Link \(Provedor\)/ });
     expect(within(link).getByText("9,5 h")).toBeInTheDocument();
@@ -218,7 +232,9 @@ describe("Relatório por secretaria", () => {
       },
     });
     renderApp(<RelatorioPage />);
-    expect(await screen.findByText(/Nenhuma tarefa de equipe no período/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Nenhuma equipe com chamado ou tarefa no período/),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Contratos de apoio" })).not.toBeInTheDocument();
   });
 });

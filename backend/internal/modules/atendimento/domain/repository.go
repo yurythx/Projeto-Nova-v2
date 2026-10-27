@@ -49,6 +49,10 @@ type SolicitacaoRepository interface {
 	SetSegredo(ctx context.Context, db database.DBTX, id uuid.UUID, segredo *uuid.UUID, agora time.Time) error
 	// SetContratoApoio grava ou limpa (nil) o contrato de apoio (ADR 071).
 	SetContratoApoio(ctx context.Context, db database.DBTX, id uuid.UUID, c *ContratoDeApoio, agora time.Time) error
+	// AbrirAtribuicao abre o trecho do responsável, com a equipe dele na
+	// unidade; FecharAtribuicao fecha o trecho aberto, se houver (ADR 073).
+	AbrirAtribuicao(ctx context.Context, db database.DBTX, solicitacao, responsavel uuid.UUID, unidade *uuid.UUID, em time.Time) error
+	FecharAtribuicao(ctx context.Context, db database.DBTX, solicitacao uuid.UUID, em time.Time) error
 
 	InsertPassagem(ctx context.Context, db database.DBTX, p Passagem) (Passagem, error)
 	ListPassagens(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Passagem, error)
@@ -144,6 +148,9 @@ type RelatorioRepository interface {
 	// ComContratoNoPeriodo lê os chamados do escopo, abertos desde a data,
 	// que apontam para um contrato de apoio.
 	ComContratoNoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]Solicitacao, error)
+	// AtribuicoesDoPeriodo lê os trechos com equipe dos chamados do escopo
+	// que começaram desde a data ou que seguem abertos (ADR 073).
+	AtribuicoesDoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]Atribuicao, error)
 }
 
 // TarefaRepository guarda o modelo de tarefas da oferta e as tarefas de
