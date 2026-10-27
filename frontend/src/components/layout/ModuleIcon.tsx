@@ -18,6 +18,7 @@ import {
   Package,
   PenTool,
   Search,
+  Siren,
   Send,
   Server,
   ShieldCheck,
@@ -53,6 +54,7 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   "git-pull-request": GitPullRequest,
   wallet: Wallet,
   lock: Lock,
+  siren: Siren,
 };
 
 export function ModuleIcon({ name, ...props }: { name: string } & LucideProps) {

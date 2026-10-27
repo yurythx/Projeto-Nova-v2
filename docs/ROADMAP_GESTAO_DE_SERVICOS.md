@@ -72,7 +72,7 @@ experiência medida e nível de serviço por secretaria.
 | Entrega | Estado |
 |---|---|
 | IA assistiva: classificação e resumo para quem atende, cada sugestão e decisão registrada ([ADR 065](adr/065-ia-assistiva-no-atendimento.md)) | Implementada |
-| Incidente grave e página de status pública | A seguir |
+| Incidente grave e página de status pública ([ADR 066](adr/066-ocorrencias-e-pagina-de-status.md)) | Implementada |
 | Eventos do monitoramento viram incidente | A seguir |
 | Aprovação em etapas; admissão e desligamento de servidores | A seguir |
 | Experiência medida além do CSAT (XLA) | A seguir |

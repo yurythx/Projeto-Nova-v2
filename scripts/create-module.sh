@@ -37,7 +37,7 @@ MODULES_GO="${ROOT}/backend/internal/app/modules.go"
 MIGRATIONS="${ROOT}/backend/migrations"
 PAGE_SRC="${ROOT}/frontend/src/app/(protected)/exemplos/page.tsx"
 PAGE_DIR="${ROOT}/frontend/src/app/(protected)/${NAME}"
-PROXY="${ROOT}/frontend/src/proxy.ts"
+PROXY="${ROOT}/frontend/src/lib/nav/protected.ts"
 
 for reserved in example iam audit auditoria kernel platform app; do
     if [ "$NAME" = "$reserved" ]; then
@@ -130,7 +130,7 @@ echo "✅ Plug-in '${NAME}' gerado:"
 echo "   - Backend:   ${DST}"
 echo "   - Migration: ${MIGRATION}"
 echo "   - Kernel:    registrado em ${MODULES_GO}"
-echo "   - Frontend:  ${PAGE_DIR}/page.tsx (rota protegida em src/proxy.ts)"
+echo "   - Frontend:  ${PAGE_DIR}/page.tsx (rota protegida em src/lib/nav/protected.ts)"
 echo
 echo "Próximos passos:"
 echo "   1. Modele o domínio (domain/) e ajuste a migration antes de aplicá-la (make migrate-up)."

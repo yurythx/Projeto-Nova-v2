@@ -94,6 +94,11 @@ export function GovFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/status" className="underline-offset-2 hover:underline">
+                Situação dos serviços
+              </Link>
+            </li>
+            <li>
               <Link href="/verificar" className="underline-offset-2 hover:underline">
                 Verificar assinatura eletrônica
               </Link>

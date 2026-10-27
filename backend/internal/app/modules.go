@@ -26,6 +26,7 @@ import (
 	iamTransport "github.com/yurythx/projeto-nova-v2/internal/modules/iam/transport"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/mercurio"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/mudancas"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/ocorrencias"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos"
@@ -111,6 +112,7 @@ func registerPlugins(d *Dependencies) {
 		tramite.New(deps, &signaturePort{svc: signumModule.Service(), enabled: func() bool { return d.Kernel.Enabled(signum.Key) }}),
 		produtosModule,
 		atendimentoModule,
+		ocorrencias.New(deps),
 		ativosModule,
 		problemasModule,
 		mudancasModule,

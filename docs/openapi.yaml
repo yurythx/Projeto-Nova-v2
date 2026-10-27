@@ -5484,6 +5484,230 @@ components:
                 - modulo
             type: object
             x-projeto-nova-generated: true
+        OcorrenciasAtualizacao:
+            properties:
+                autor_id:
+                    format: uuid
+                    type: string
+                autor_nome:
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                estado:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                impacto:
+                    type: string
+                ocorrencia_id:
+                    format: uuid
+                    type: string
+                texto:
+                    type: string
+            required:
+                - created_at
+                - estado
+                - id
+                - impacto
+                - ocorrencia_id
+                - texto
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasAtualizacaoPublica:
+            properties:
+                em:
+                    format: date-time
+                    type: string
+                estado:
+                    type: string
+                texto:
+                    type: string
+            required:
+                - em
+                - estado
+                - texto
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasAtualizacaoRequest:
+            properties:
+                estado:
+                    enum:
+                        - investigando
+                        - identificado
+                        - monitorando
+                        - resolvido
+                    type: string
+                impacto:
+                    enum:
+                        - degradado
+                        - parcial
+                        - fora
+                    type: string
+                texto:
+                    maxLength: 4000
+                    type: string
+            required:
+                - estado
+                - impacto
+                - texto
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasCoordenadorRequest:
+            properties:
+                user_id:
+                    format: uuid
+                    type: string
+            required:
+                - user_id
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasDeclaracaoRequest:
+            properties:
+                chamado_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                impacto:
+                    enum:
+                        - degradado
+                        - parcial
+                        - fora
+                    type: string
+                servicos:
+                    items:
+                        type: string
+                    maxItems: 10
+                    minItems: 1
+                    type: array
+                texto:
+                    maxLength: 4000
+                    type: string
+                titulo:
+                    maxLength: 160
+                    type: string
+            required:
+                - impacto
+                - servicos
+                - texto
+                - titulo
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasOcorrencia:
+            properties:
+                atualizacoes:
+                    items:
+                        $ref: '#/components/schemas/OcorrenciasAtualizacao'
+                    type: array
+                chamado_id:
+                    format: uuid
+                    type: string
+                coordenador_id:
+                    format: uuid
+                    type: string
+                coordenador_nome:
+                    type: string
+                estado:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                impacto:
+                    type: string
+                iniciada_em:
+                    format: date-time
+                    type: string
+                resolvida_em:
+                    format: date-time
+                    type: string
+                revisada_em:
+                    format: date-time
+                    type: string
+                revisao:
+                    type: string
+                servicos:
+                    items:
+                        type: string
+                    type: array
+                titulo:
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+            required:
+                - atualizacoes
+                - estado
+                - id
+                - impacto
+                - iniciada_em
+                - servicos
+                - titulo
+                - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasPublica:
+            properties:
+                atualizacoes:
+                    items:
+                        $ref: '#/components/schemas/OcorrenciasAtualizacaoPublica'
+                    type: array
+                estado:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                impacto:
+                    type: string
+                iniciada_em:
+                    format: date-time
+                    type: string
+                resolvida_em:
+                    format: date-time
+                    type: string
+                servicos:
+                    items:
+                        type: string
+                    type: array
+                titulo:
+                    type: string
+            required:
+                - atualizacoes
+                - estado
+                - id
+                - impacto
+                - iniciada_em
+                - servicos
+                - titulo
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasRevisaoRequest:
+            properties:
+                texto:
+                    maxLength: 4000
+                    type: string
+            required:
+                - texto
+            type: object
+            x-projeto-nova-generated: true
+        OcorrenciasSituacao:
+            properties:
+                abertas:
+                    items:
+                        $ref: '#/components/schemas/OcorrenciasPublica'
+                    type: array
+                geral:
+                    type: string
+                recentes:
+                    items:
+                        $ref: '#/components/schemas/OcorrenciasPublica'
+                    type: array
+            required:
+                - abertas
+                - geral
+                - recentes
+            type: object
+            x-projeto-nova-generated: true
         OutboxCounts:
             properties:
                 failed:
@@ -15992,6 +16216,274 @@ paths:
             summary: Salvar /notificacoes/preferencias
             tags:
                 - notificacoes
+    /api/v1/ocorrencias:
+        get:
+            description: Abertas primeiro (a mais antiga sem notícia no topo), depois as resolvidas mais recentes, até 50, com a linha do tempo.
+            operationId: getOcorrencias
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/OcorrenciasOcorrencia'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ocorrências — painel da coordenação
+            tags:
+                - ocorrencias
+        post:
+            description: Abre em investigando, com a primeira notícia ao público. Título e serviços são escritos para o público, não copiados do chamado. Quem declara coordena. Evento ocorrencias.declarada e auditoria na mesma transação.
+            operationId: postOcorrencias
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/OcorrenciasDeclaracaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/OcorrenciasOcorrencia'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ocorrências — declarar incidente grave
+            tags:
+                - ocorrencias
+    /api/v1/ocorrencias/{id}:
+        get:
+            description: A ocorrência com a linha do tempo, o coordenador e a revisão interna.
+            operationId: getOcorrenciasId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/OcorrenciasOcorrencia'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ocorrências — detalhe
+            tags:
+                - ocorrencias
+    /api/v1/ocorrencias/{id}/atualizacoes:
+        post:
+            description: Novo estado, impacto e texto ao público. resolvido encerra e registra o fim; a resolvida não recebe atualização (409).
+            operationId: postOcorrenciasIdAtualizacoes
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/OcorrenciasAtualizacaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/OcorrenciasOcorrencia'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: A ocorrência já foi resolvida, ou a revisão veio antes de resolver.
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ocorrências — publicar atualização
+            tags:
+                - ocorrencias
+    /api/v1/ocorrencias/{id}/coordenador:
+        put:
+            description: Só enquanto aberta (409 depois de resolvida); a pessoa precisa existir (422).
+            operationId: putOcorrenciasIdCoordenador
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/OcorrenciasCoordenadorRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/OcorrenciasOcorrencia'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: A ocorrência já foi resolvida, ou a revisão veio antes de resolver.
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ocorrências — trocar o coordenador
+            tags:
+                - ocorrencias
+    /api/v1/ocorrencias/{id}/revisao:
+        put:
+            description: Causa, o que funcionou e o que fazer. Só depois de resolver (409 antes); é interna e nunca vai para a página pública.
+            operationId: putOcorrenciasIdRevisao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/OcorrenciasRevisaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/OcorrenciasOcorrencia'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: A ocorrência já foi resolvida, ou a revisão veio antes de resolver.
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Ocorrências — revisão pós-incidente
+            tags:
+                - ocorrencias
     /api/v1/problemas:
         get:
             operationId: getProblemas
@@ -17737,6 +18229,33 @@ paths:
             summary: Signum — Obter /signum/verify/{id}
             tags:
                 - signum
+    /api/v1/status:
+        get:
+            description: 'Sem login, com limite por IP e Cache-Control de 30 s. Situação geral (o pior impacto em aberto, ou operacional), as ocorrências abertas e as resolvidas nos últimos 7 dias, só com campos públicos: sem coordenador, autor, chamado ou revisão (ADR 066).'
+            operationId: getStatus
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/OcorrenciasSituacao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Página de status pública
+            tags:
+                - ocorrencias
     /api/v1/system/modules:
         get:
             operationId: getSystemModules
@@ -19449,6 +19968,8 @@ tags:
     - description: Mudanças. Plug-in — Alterações no que está em operação, com janela planejada, plano de reversão e aprovação registrada.
       name: mudancas
     - name: notificacoes
+    - description: 'Ocorrências. Plug-in — Incidente grave: coordenação, linha do tempo e a página de status pública (/status).'
+      name: ocorrencias
     - name: plataforma
     - description: Problemas. Plug-in — A causa por trás dos incidentes que se repetem e a base de erros conhecidos com a solução de contorno.
       name: problemas

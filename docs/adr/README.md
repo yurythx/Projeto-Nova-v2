@@ -43,3 +43,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [063](063-imagens-do-ci-no-registro.md) | Imagens geradas pelo CI no GHCR (assinadas, com SBOM); o servidor só baixa a tag de um commit testado | Aceito e implementado |
 | [064](064-catraca-de-cobertura.md) | Catraca de cobertura: piso por pacote abaixo de 100%, que só sobe; pacote novo continua exigindo 100% | Aceito e implementado |
 | [065](065-ia-assistiva-no-atendimento.md) | IA assistiva no atendimento: sugere classificação e resumo a quem atende; cada sugestão e decisão é registrada e auditada; nada no chamado muda sem a pessoa | Aceito e implementado |
+| [066](066-ocorrencias-e-pagina-de-status.md) | Incidente grave: plug-in Ocorrências com coordenação, linha do tempo e revisão; página de status pública em /status, só com o que é público | Aceito e implementado |
