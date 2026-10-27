@@ -49,3 +49,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [069](069-experiencia-de-quem-pede-xla.md) | Experiência de quem pede (XLA): facilidade na avaliação, reabertura, idas e voltas e espera em horas corridas, com metas da instituição | Aceito e implementado |
 | [070](070-relatorio-por-secretaria-e-ola.md) | Relatório por secretaria (unidade de topo da árvore) com prazo, primeiro contato e experiência; OLA das equipes medido nas tarefas | Aceito e implementado |
 | [071](071-contrato-de-apoio.md) | Contrato de apoio: prazo do fornecedor no contrato, o chamado aponta o contrato (cópia do combinado) e o tempo em "aguardando terceiro" é medido no relatório | Aceito e implementado |
+| [072](072-importador-do-glpi.md) | Importador do GLPI: comando que lê a API REST, simula por padrão, casa pessoas por e-mail e login, e pode rodar de novo sem duplicar | Aceito e implementado |

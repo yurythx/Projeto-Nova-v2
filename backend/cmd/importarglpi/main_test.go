@@ -1,0 +1,76 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
+)
+
+func ambiente(v map[string]string) func(string) string { return func(k string) string { return v[k] } }
+
+func TestLer(t *testing.T) {
+	env := ambiente(map[string]string{"GLPI_URL": "https://glpi/apirest.php", "GLPI_USER_TOKEN": "u", "GLPI_APP_TOKEN": "a"})
+	op, err := ler([]string{"--unidade", "6d6f6e69-746f-4072-a000-6d656e746f00", "--gravar", "--pagina", "50"}, env)
+	if err != nil || !op.gravar || op.unidade == nil || op.pagina != 50 || op.fuso.String() != "America/Sao_Paulo" || op.appToken != "a" {
+		t.Fatalf("opções: %+v %v", op, err)
+	}
+	if op, err := ler(nil, env); err != nil || op.gravar || op.unidade != nil {
+		t.Fatalf("padrão simula: %+v %v", op, err)
+	}
+	for nome, k := range map[string]struct {
+		args []string
+		env  func(string) string
+	}{
+		"sem URL":         {nil, ambiente(nil)},
+		"unidade errada":  {[]string{"--unidade", "x"}, env},
+		"fuso errado":     {[]string{"--fuso", "Lugar/Nenhum"}, env},
+		"opção que falta": {[]string{"--nada"}, env},
+	} {
+		if _, err := ler(k.args, k.env); err == nil {
+			t.Errorf("%s: aceitou", nome)
+		}
+	}
+}
+
+func TestImportarSimulaERecusaSessao(t *testing.T) {
+	pool := dbtest.Pool(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/initSession") && r.Header.Get("Authorization") == "user_token u":
+			_, _ = w.Write([]byte(`{"session_token":"s"}`))
+		case strings.HasSuffix(r.URL.Path, "/initSession"):
+			w.WriteHeader(http.StatusUnauthorized)
+		case strings.HasSuffix(r.URL.Path, "/Ticket"):
+			w.Header().Set("Content-Range", "0-0/0")
+			_, _ = w.Write([]byte(`[]`))
+		default:
+			_, _ = w.Write([]byte(`[]`))
+		}
+	}))
+	t.Cleanup(srv.Close)
+	op, err := ler(nil, ambiente(map[string]string{"GLPI_URL": srv.URL, "GLPI_USER_TOKEN": "u"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saida bytes.Buffer
+	if err := importar(context.Background(), op, pool, &saida); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(saida.String(), `"lidos": 0`) || !strings.Contains(saida.String(), "Simulação") {
+		t.Fatalf("relatório: %s", saida.String())
+	}
+	op.userToken = "errado"
+	if err := importar(context.Background(), op, pool, &saida); err == nil || !strings.Contains(err.Error(), "sessão") {
+		t.Fatalf("sessão recusada: %v", err)
+	}
+	t.Setenv("DB_HOST", "")
+	t.Setenv("DB_NAME", "")
+	if err := rodar(context.Background(), op, &saida); err == nil {
+		t.Fatal("sem banco configurado")
+	}
+}

@@ -428,6 +428,22 @@ fictícia.
 Como desenhar entidades, unidades, departamentos, grupos e mapeamentos (e
 o que o escopo restringe ou não): [REGRAS_DE_NEGOCIO.md](REGRAS_DE_NEGOCIO.md#6-como-modelar-uma-implantação).
 
+## Migrar do GLPI
+
+O comando `importarglpi` traz o histórico do GLPI para o atendimento ([ADR 072](adr/072-importador-do-glpi.md)): categorias viram ofertas **inativas** (revise o catálogo e ative as que valem), chamados viram solicitações com a conversa e a avaliação, e as pessoas são casadas pelo e-mail e depois pelo login com quem já existe aqui. Quem não casa fica na conta de sistema "Importação", e o nome original vai no texto.
+
+1. No GLPI, ative a API REST (Configurar > Geral > API), crie um cliente de API (App-Token) e gere o token de API de um usuário que veja todos os chamados.
+2. Rode a **simulação** (não grava nada) e leia o relatório: quantos chamados, quantas ofertas novas e a lista `sem_par`, das pessoas sem par.
+
+   ```bash
+   GLPI_URL=https://glpi.prefeitura/apirest.php GLPI_APP_TOKEN=... GLPI_USER_TOKEN=...    DB_HOST=... DB_PORT=5432 DB_NAME=nova DB_USER=nova DB_PASSWORD=...      go run ./cmd/importarglpi --unidade <uuid da unidade dona>
+   ```
+
+3. Corrija no AD/SSO o e-mail de quem ficou sem par, se for o caso, e rode de novo com `--gravar`.
+4. Rodar de novo só traz o que é novo. Faça uma carga grande antes da virada e uma final no dia em que o GLPI deixar de receber chamados.
+
+Os tokens ficam no ambiente, não na linha de comando. As datas do GLPI vêm sem fuso; o padrão é `--fuso America/Sao_Paulo`. A importação não avisa ninguém nem publica eventos, e registra uma linha na auditoria com os totais. Anexos e ativos do GLPI não entram.
+
 ## Ambiente de teste: Keycloak + dados fictícios
 
 Enquanto não há um Keycloak oficial, `make demo-keycloak` sobe um
