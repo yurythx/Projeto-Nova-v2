@@ -98,8 +98,9 @@ quem precisa continuar com acesso amplo (concessão global) antes do deploy.
 ## Produção no Proxmox com o domínio projetonova.cloud
 
 O domínio público é **projetonova.cloud**, com DNS na Cloudflare. A VM não
-abre porta para a internet: o `cloudflared` (`docker-compose.cloudflare.yml`)
-roda dentro da stack e abre só conexões de saída.
+abre porta para a internet: o túnel é o do `cloudflared` que já roda no
+**LXC 101** do pve1 (192.168.1.101) e atende outras aplicações. Ele só abre conexões de
+saída e chega à VM pela rede local.
 
 | Endereço | Destino |
 |---|---|
@@ -114,28 +115,42 @@ Tudo é declarado em código:
   no pve1, clonada do template 9000. **As outras VMs do pve1 (201, 210,
   220, 230) são de outras aplicações**: não reaproveite nem ligue nenhuma
   delas.
-- Túnel `projeto-nova-prod`: configurado no painel da Cloudflare (tabela
-  abaixo). O token vai em `cloudflare_tunnel_token_producao`, no cofre ou em
-  `deploy/infra/ansible/cloudflare.secrets.yml` (modelo no `.example`).
+- Túnel: o do LXC 101, configurado no painel da Cloudflare (tabela abaixo).
+  O LXC 101 não muda: só ganha hostnames no painel. O IP dele vai em
+  `cloudflare_conector_ip` (`group_vars/all.yml`), e com ele a VM não roda
+  cloudflared nem precisa de token.
 - `deploy/infra/ansible`: `app_domain` em `group_vars/producao.yml` é a fonte
-  das quatro URLs públicas do `.env`. Com o domínio, as portas da stack escutam
-  só em 127.0.0.1, o UFW libera só o SSH e `TRUSTED_PROXIES` recebe a
-  sub-rede interna do compose.
+  das quatro URLs públicas do `.env`. Com o conector de fora, as portas da
+  stack escutam no IP da VM, e a cadeia `DOCKER-USER` (em
+  `/etc/ufw/after.rules`) só deixa entrar conexão nova vinda do LXC 101. O
+  filtro fica ali porque as portas publicadas pelo Docker não passam pelas
+  regras comuns do UFW. Qualquer outra máquina da rede que tentar a porta
+  direto é descartada, e por isso ninguém forja o `X-Forwarded-For`. O UFW
+  libera só o SSH, e `TRUSTED_PROXIES` recebe a sub-rede interna do compose
+  e o IP do LXC 101.
 
-Public Hostnames do túnel, **nesta ordem** (a regra do `/ws` antes da raiz).
-O cloudflared roda na rede do compose e chega aos containers pelo nome:
+Public Hostnames no túnel do LXC 101, **nesta ordem** (a regra do `/ws`
+antes da raiz). As outras rotas do túnel ficam como estão:
 
 | Subdomain | Domain | Path | Type | URL |
 |---|---|---|---|---|
-| | projetonova.cloud | `^/ws/?$` | HTTP | `backend-api:8010` |
-| | projetonova.cloud | | HTTP | `frontend:3000` |
-| `api` | projetonova.cloud | | HTTP | `backend-api:8010` |
-| `arquivos` | projetonova.cloud | | HTTP | `minio:9000` (sem "HTTP Host Header": é parte da assinatura) |
-| `www` | projetonova.cloud | | HTTP | `frontend:3000` (só cria o DNS; a Redirect Rule manda para a raiz) |
+| | projetonova.cloud | `^/ws/?$` | HTTP | `192.168.1.70:8010` |
+| | projetonova.cloud | | HTTP | `192.168.1.70:3010` |
+| `api` | projetonova.cloud | | HTTP | `192.168.1.70:8010` |
+| `arquivos` | projetonova.cloud | | HTTP | `192.168.1.70:9010` (sem "HTTP Host Header": é parte da assinatura) |
+| `www` | projetonova.cloud | | HTTP | `192.168.1.70:3010` (só cria o DNS; a Redirect Rule manda para a raiz) |
+
+Um túnel só do Projeto Nova continua possível: um token em
+`cloudflare_tunnel_token_producao` (`cloudflare.secrets.yml`), com
+`cloudflare_conector_ip` vazio, liga o `cloudflared` do compose. Aí as URLs
+viram os nomes dos containers (`frontend:3000`, `backend-api:8010`,
+`minio:9000`), e as portas voltam para 127.0.0.1. **Não use o token do LXC
+101 na VM.** Seriam dois conectores do mesmo túnel, a Cloudflare reparte as
+requisições entre eles, e cada lado recebe as rotas do outro.
 
 ```bash
 make infra-apply      # 1. cria a VM 240 e gera ansible/inventory.ini
-                      # 2. painel: túnel, hostnames, redirect do www; token no cofre
+                      # 2. painel: hostnames no túnel do LXC 101, redirect do www
 make infra-deploy     # 3. Docker + stack com o domínio (Ansible; no Windows, pelo WSL)
 ```
 
@@ -183,13 +198,12 @@ reserva 4 GB. Para ligar, quando houver memória:
 
 1. `homologacao = { criar = true }` em `terraform.tfvars` e `make infra-apply`.
    O inventário ganha o grupo `homologacao`.
-2. No painel, um túnel `projeto-nova-homolog` com os mesmos hostnames da
-   tabela acima, trocando `projetonova.cloud` por `homolog.projetonova.cloud`
+2. No túnel do LXC 101, os mesmos hostnames da tabela acima, com o IP
+   192.168.1.71, trocando `projetonova.cloud` por `homolog.projetonova.cloud`
    e `api`/`arquivos` por `api-homolog`/`arquivos-homolog`. Os nomes ficam um
    nível abaixo do domínio porque o certificado universal da Cloudflare
    cobre `*.projetonova.cloud`, não `*.homolog.projetonova.cloud`.
-3. O token em `cloudflare_tunnel_token_homologacao`, e
-   `make infra-deploy ANSIBLE_ARGS="--limit homologacao"` (sem ele, os dois).
+3. `make infra-deploy ANSIBLE_ARGS="--limit homologacao"` (sem ele, os dois).
 
 O workflow `Release` já gera a imagem do frontend de homologação
 (`frontend:homologacao-sha-<commit>`). A homologação não manda backup para

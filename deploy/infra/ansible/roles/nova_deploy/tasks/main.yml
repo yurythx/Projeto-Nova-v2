@@ -3,11 +3,13 @@
   ansible.builtin.assert:
     that:
       - not (app_domain | length > 0 and enable_https | bool)
-      - app_domain | length == 0 or cloudflare_tunnel_token | length > 0
+      - app_domain | length == 0 or cloudflare_tunnel_token | length > 0 or cloudflare_conector_ip | length > 0
+      - not (cloudflare_tunnel_token | length > 0 and cloudflare_conector_ip | length > 0)
     fail_msg: >-
       Com app_domain, o TLS vem da Cloudflare: deixe enable_https=false e
-      crie ansible/cloudflare.secrets.yml com o token do túnel do painel
-      (ver cloudflare.secrets.yml.example).
+      escolha um conector, nunca os dois: cloudflare_conector_ip (o
+      cloudflared do LXC 101, em group_vars/all.yml) ou o token de um túnel
+      próprio em ansible/cloudflare.secrets.yml.
     quiet: true
 
 - name: Criar pasta raiz de projetos
@@ -69,7 +71,8 @@
 
 # O frontend embute estas URLs no build: elas entram no .env antes dele.
 # HOST_BIND=127.0.0.1 deixa o túnel como a única entrada — com as portas
-# abertas na rede, o cliente forjaria o X-Forwarded-For.
+# abertas na rede, o cliente forjaria o X-Forwarded-For. Com o conector de
+# fora, as portas vão para o IP da VM e o filtro abaixo deixa só ele entrar.
 - name: Gravar as URLs públicas do domínio no .env
   ansible.builtin.lineinfile:
     path: "{{ app_dir }}/.env"
@@ -80,7 +83,7 @@
     - { key: API_PUBLIC_URL, value: "{{ app_api_url }}" }
     - { key: WEBSOCKET_PUBLIC_URL, value: "{{ app_ws_url }}" }
     - { key: MINIO_PUBLIC_URL, value: "{{ app_files_url }}" }
-    - { key: HOST_BIND, value: "127.0.0.1" }
+    - { key: HOST_BIND, value: "{{ ansible_host if cloudflare_conector_ip | length > 0 else '127.0.0.1' }}" }
     - { key: TRUST_PROXY_HEADERS, value: "true" }
   when: app_domain | length > 0
 
@@ -135,6 +138,31 @@
     - { key: NOVA_IMAGE_TAG, value: "{{ app_image_tag }}" }
     - { key: NOVA_FRONTEND_TAG, value: "{{ app_frontend_ambiente }}-{{ app_image_tag }}" }
 
+# As portas que o Docker publica não passam pelo INPUT do UFW: vão direto
+# para o FORWARD. A cadeia DOCKER-USER, que o Docker consulta antes das
+# suas, é o lugar do filtro. Pela interface da rede, só entra conexão nova
+# do conector. Vai antes de subir a stack, para as portas nunca ficarem
+# abertas. No after.rules, o UFW recarrega o filtro no boot e no reload.
+- name: Deixar só o conector do túnel chegar às portas da stack
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/after.rules
+    marker: "# {mark} Projeto-nova-v2: só o conector do túnel"
+    block: |
+      *filter
+      :DOCKER-USER - [0:0]
+      -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+      -A DOCKER-USER -i {{ ansible_default_ipv4.interface }} -s {{ cloudflare_conector_ip }} -j RETURN
+      -A DOCKER-USER -i {{ ansible_default_ipv4.interface }} -j DROP
+      -A DOCKER-USER -j RETURN
+      COMMIT
+    state: "{{ 'present' if cloudflare_conector_ip | length > 0 else 'absent' }}"
+  register: filtro_conector
+
+- name: Recarregar o UFW com o filtro do conector
+  ansible.builtin.command:
+    cmd: ufw reload
+  when: filtro_conector is changed
+
 - name: Subir a stack
   ansible.builtin.command:
     cmd: "bash scripts/deploy.sh --no-pull {{ ansible_host }}"
@@ -143,7 +171,8 @@
   changed_when: true
 
 # Frontend e cloudflared chegam à API pela rede do compose: só dela a API
-# aceita o X-Forwarded-For (o IP real vem da Cloudflare, à direita).
+# aceita o X-Forwarded-For (o IP real vem da Cloudflare, à direita). O
+# conector de fora chega pelo IP dele, que entra na lista.
 - name: Descobrir a sub-rede interna do compose
   ansible.builtin.shell:
     cmd: >-
@@ -159,7 +188,7 @@
   ansible.builtin.lineinfile:
     path: "{{ app_dir }}/.env"
     regexp: "^TRUSTED_PROXIES="
-    line: "TRUSTED_PROXIES={{ compose_subnet.stdout | trim }}"
+    line: "TRUSTED_PROXIES={{ ([compose_subnet.stdout | trim] + ([cloudflare_conector_ip] if cloudflare_conector_ip | length > 0 else [])) | join(',') }}"
   register: trusted_proxies
   when: app_domain | length > 0 and compose_subnet.stdout | trim | length > 0
 

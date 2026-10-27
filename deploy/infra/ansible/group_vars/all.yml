@@ -32,6 +32,13 @@ app_files_url: "https://{{ app_files_host }}"
 # nome só levaria o token de produção para a homologação.
 cloudflare_tunnel_token: ""
 
+# Conector de fora da VM: o cloudflared do LXC 101 do pve1, que já atende
+# outras aplicações e passou a atender o Projeto Nova também. Com o IP dele,
+# a VM não roda cloudflared, publica as portas da stack no IP da rede e só
+# aceita conexão nova vinda desse IP. Vazio = o cloudflared roda no compose
+# com o token do ambiente. Os dois juntos não combinam.
+cloudflare_conector_ip: "192.168.1.101"
+
 keycloak_issuer_url: "https://sso.rondonopolis.mt.gov.br/realms/rondonopolis"
 keycloak_realm: rondonopolis
 keycloak_client_id: projeto-nova
