@@ -92,6 +92,10 @@ func (m *Module) Repositorio() domain.Repository { return m.repo }
 // ComSegredo liga a porta do cofre. Sem ela, o chamado não recebe segredo.
 func (m *Module) ComSegredo(segredos application.Segredos) { m.svc.WithSegredo(segredos) }
 
+// ComContratos liga os contratos de apoio (ADR 071). Sem ele, o chamado
+// não aponta contrato.
+func (m *Module) ComContratos(c application.ContratosDeApoio) { m.svc.WithContratos(c) }
+
 // ComAssistente liga a IA de quem atende (ADR 065). Sem ela, não há IA.
 func (m *Module) ComAssistente(a application.Assistente) { m.svc.WithAssistente(a) }
 

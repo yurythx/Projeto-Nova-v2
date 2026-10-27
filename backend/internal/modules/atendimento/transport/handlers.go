@@ -68,6 +68,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/atendimento/governanca/serie", h.Serie)
 		r.Get("/atendimento/xla", h.MetasXLA)
 		r.Get("/atendimento/relatorio/secretarias", h.RelatorioPorSecretaria)
+		r.Get("/atendimento/contratos-de-apoio", h.ContratosDeApoio)
+		r.Put("/atendimento/solicitacoes/{id}/contrato", h.VincularContrato)
 		r.Get("/atendimento/fila/topicos", h.TopicosDaFila)
 		r.Put("/atendimento/solicitacoes/{id}/responsavel", h.Atribuir)
 		r.Get("/atendimento/solicitacoes/{id}/responsaveis", h.Responsaveis)

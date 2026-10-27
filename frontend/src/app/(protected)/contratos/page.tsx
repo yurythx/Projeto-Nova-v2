@@ -30,6 +30,43 @@ interface Contrato {
   inicio: string;
   fim: string;
   valor_centavos: number;
+  /** Prazo de atendimento do fornecedor, em horas (ADR 071). */
+  prazo_horas?: number;
+}
+
+/** O prazo que o fornecedor assume: o atendimento mede contra ele o
+ * tempo que o chamado passa esperando o terceiro. */
+function PrazoDoFornecedor({ contrato, onSalvo }: { contrato: Contrato; onSalvo: () => void }) {
+  const { run, pending } = useAction();
+  async function salvar(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const v = String(new FormData(e.currentTarget).get("prazo_horas") ?? "").trim();
+    const ok = await run(
+      () =>
+        apiClient.put(`v1/contratos/contratos/${contrato.id}/prazo`, {
+          prazo_horas: v ? Number(v) : null,
+        }),
+      v ? "Prazo do fornecedor salvo" : "Prazo do fornecedor retirado",
+    );
+    if (ok !== undefined) onSalvo();
+  }
+  return (
+    <form onSubmit={(e) => void salvar(e)} className="flex items-end gap-2">
+      <Input
+        id={`prazo-${contrato.id}`}
+        name="prazo_horas"
+        type="number"
+        min={1}
+        max={8760}
+        label={`Prazo do fornecedor (h): ${contrato.numero || contrato.titulo}`}
+        defaultValue={contrato.prazo_horas}
+        className="w-28"
+      />
+      <Button type="submit" variant="ghost" loading={pending}>
+        Salvar prazo
+      </Button>
+    </form>
+  );
 }
 
 interface Licenca {
@@ -280,10 +317,11 @@ export default function ContratosPage() {
           >
             <ul className="divide-y divide-surface-border text-sm">
               {(contratos.data ?? []).map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-2 py-2">
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span>
                     {c.numero} · {c.titulo} · {c.fornecedor_nome} · até {c.fim.slice(0, 10)}
                   </span>
+                  <PrazoDoFornecedor contrato={c} onSalvo={() => void contratos.mutate()} />
                   <Button
                     type="button"
                     variant="secondary"

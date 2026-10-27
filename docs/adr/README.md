@@ -48,3 +48,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [068](068-aprovacao-em-etapas-e-tarefas.md) | Requisição com aprovação em etapas (a chefia decide sem permissão do atendimento; recusa com motivo cancela) e tarefas por equipe | Aceito e implementado |
 | [069](069-experiencia-de-quem-pede-xla.md) | Experiência de quem pede (XLA): facilidade na avaliação, reabertura, idas e voltas e espera em horas corridas, com metas da instituição | Aceito e implementado |
 | [070](070-relatorio-por-secretaria-e-ola.md) | Relatório por secretaria (unidade de topo da árvore) com prazo, primeiro contato e experiência; OLA das equipes medido nas tarefas | Aceito e implementado |
+| [071](071-contrato-de-apoio.md) | Contrato de apoio: prazo do fornecedor no contrato, o chamado aponta o contrato (cópia do combinado) e o tempo em "aguardando terceiro" é medido no relatório | Aceito e implementado |

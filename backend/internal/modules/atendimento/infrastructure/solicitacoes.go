@@ -20,6 +20,7 @@ func nomeDe(alias string) string {
 var solicitacaoSelect = `SELECT s.id, s.numero, s.tipo, s.estado, s.titulo, s.descricao, s.oferta_id, s.produto_id,
 	s.unidade_id, s.solicitante_id, s.responsavel_id, s.resolvida_em, s.encerrada_em, s.created_at, s.updated_at,
 	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id, s.etapa_atual,
+	s.contrato_apoio_id, s.contrato_apoio, s.contrato_prazo_horas,
 	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, '')
 	FROM atendimento_solicitacoes s
 	JOIN atendimento_ofertas o ON o.id = s.oferta_id
@@ -58,6 +59,7 @@ func scanSolicitacao(row interface{ Scan(...any) error }) (domain.Solicitacao, e
 	err := row.Scan(&s.ID, &s.Numero, &s.Tipo, &s.Estado, &s.Titulo, &s.Descricao, &s.OfertaID, &s.ProdutoID,
 		&s.UnidadeID, &s.SolicitanteID, &s.ResponsavelID, &s.ResolvidaEm, &s.EncerradaEm, &s.CreatedAt, &s.UpdatedAt,
 		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID, &s.EtapaAtual,
+		&s.ContratoApoioID, &s.ContratoApoio, &s.ContratoPrazoHoras,
 		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome)
 	if err != nil {
 		return domain.Solicitacao{}, err
@@ -172,6 +174,26 @@ func (r *Repository) UpdateSolicitacao(ctx context.Context, db database.DBTX, s 
 			impacto = $6, urgencia = $7, prioridade = $8, meta_resposta_min = $9, meta_solucao_min = $10, etapa_atual = $11
 		WHERE id = $1`, s.ID, s.Estado, s.ResponsavelID, s.ResolvidaEm, s.EncerradaEm,
 		s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin, s.EtapaAtual)
+	if err != nil {
+		return mapDB(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
+	}
+	return nil
+}
+
+// SetContratoApoio grava o contrato de apoio com o rótulo e o prazo
+// copiados, ou limpa os três quando c é nulo.
+func (r *Repository) SetContratoApoio(ctx context.Context, db database.DBTX, id uuid.UUID, c *domain.ContratoDeApoio, agora time.Time) error {
+	var contrato *uuid.UUID
+	rotulo := ""
+	var prazo *int
+	if c != nil {
+		contrato, rotulo, prazo = &c.ID, c.Rotulo, c.PrazoHoras
+	}
+	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes SET contrato_apoio_id = $2, contrato_apoio = $3, contrato_prazo_horas = $4, updated_at = $5
+		WHERE id = $1`, id, contrato, rotulo, prazo, agora)
 	if err != nil {
 		return mapDB(err)
 	}

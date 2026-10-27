@@ -47,6 +47,8 @@ type SolicitacaoRepository interface {
 	UpdateSolicitacao(ctx context.Context, db database.DBTX, s Solicitacao) error
 	// SetSegredo grava ou limpa o id do cofre. Não grava senha.
 	SetSegredo(ctx context.Context, db database.DBTX, id uuid.UUID, segredo *uuid.UUID, agora time.Time) error
+	// SetContratoApoio grava ou limpa (nil) o contrato de apoio (ADR 071).
+	SetContratoApoio(ctx context.Context, db database.DBTX, id uuid.UUID, c *ContratoDeApoio, agora time.Time) error
 
 	InsertPassagem(ctx context.Context, db database.DBTX, p Passagem) (Passagem, error)
 	ListPassagens(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Passagem, error)
@@ -139,6 +141,9 @@ type RelatorioRepository interface {
 	// TarefasDoPeriodo lê as tarefas dos pedidos do escopo abertos desde a
 	// data, com a equipe e o prazo dela.
 	TarefasDoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]TarefaMedida, error)
+	// ComContratoNoPeriodo lê os chamados do escopo, abertos desde a data,
+	// que apontam para um contrato de apoio.
+	ComContratoNoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]Solicitacao, error)
 }
 
 // TarefaRepository guarda o modelo de tarefas da oferta e as tarefas de

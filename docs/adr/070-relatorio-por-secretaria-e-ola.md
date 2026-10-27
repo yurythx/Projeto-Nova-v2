@@ -1,6 +1,6 @@
 # 070 — Relatório por secretaria e OLA das equipes
 
-- **Status:** Aceito e implementado (o contrato de apoio fica para a próxima entrega)
+- **Status:** Aceito e implementado (o contrato de apoio está no [ADR 071](071-contrato-de-apoio.md))
 - **Data:** 2026-10-27
 - **Relacionado:** [ADR 068](068-aprovacao-em-etapas-e-tarefas.md) (tarefas por equipe), [ADR 069](069-experiencia-de-quem-pede-xla.md) (experiência)
 

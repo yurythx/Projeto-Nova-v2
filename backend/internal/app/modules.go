@@ -89,6 +89,8 @@ func registerPlugins(d *Dependencies) {
 	cofreModule := cofre.New(deps)
 	cofreModule.ComConfirmacao(confirmaSenha{reauth: signumModule.Reautenticador()}, d.RateLimiters.Lockout)
 	atendimentoModule.ComSegredo(portaSegredo{svc: cofreModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(cofre.Key) }})
+	contratosModule := contratos.New(deps, programasDoAtivo{mod: ativosModule, ativo: func() bool { return d.Kernel.Enabled(ativos.Key) }})
+	atendimentoModule.ComContratos(portaContratos{svc: contratosModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(contratos.Key) }})
 	ia := d.Config.IA
 	atendimentoModule.ComAssistente(portaIA{roteador: iaconfig.NovoRoteador(iaconfig.NewPostgresStore(d.DB, d.Cipher),
 		iaconfig.NovoCliente(), iaconfig.ConexaoDoAmbiente(ia.Endpoint, ia.APIKey, ia.Modelo, int(ia.Timeout.Seconds())), d.Logger)})
@@ -118,7 +120,7 @@ func registerPlugins(d *Dependencies) {
 		mudancasModule,
 		projetosModule,
 		quadrosModule,
-		contratos.New(deps, programasDoAtivo{mod: ativosModule, ativo: func() bool { return d.Kernel.Enabled(ativos.Key) }}),
+		contratosModule,
 		cofreModule,
 		example.New(deps),
 	)

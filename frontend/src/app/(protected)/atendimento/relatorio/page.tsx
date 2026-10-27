@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
 import type {
+  LinhaContrato,
   LinhaEquipe,
   LinhaSecretaria,
   MedidaXLA,
@@ -65,6 +66,19 @@ const COLUNAS_EQUIPE: { rotulo: string; valor: (e: LinhaEquipe) => string }[] = 
   { rotulo: "Atrasadas", valor: (e) => v(e.atrasadas) },
 ];
 
+const COLUNAS_CONTRATO: { rotulo: string; valor: (c: LinhaContrato) => string }[] = [
+  {
+    rotulo: "Prazo do fornecedor",
+    valor: (c) => (c.prazo_horas == null ? "sem prazo" : `${c.prazo_horas} h`),
+  },
+  { rotulo: "Chamados", valor: (c) => v(c.pedidos) },
+  { rotulo: "Voltaram", valor: (c) => v(c.medidos) },
+  { rotulo: "No prazo", valor: (c) => v(c.no_prazo_percentual, "%") },
+  { rotulo: "Mediana", valor: (c) => v(c.mediana_horas, " h") },
+  { rotulo: "Com o fornecedor", valor: (c) => v(c.com_fornecedor) },
+  { rotulo: "Atrasados", valor: (c) => v(c.atrasados) },
+];
+
 function nomeDe(l: LinhaSecretaria) {
   return l.sigla ? `${l.nome} (${l.sigla})` : l.nome;
 }
@@ -77,6 +91,9 @@ function baixar(rel: RelatorioSecretarias) {
     [],
     ["Equipe", ...COLUNAS_EQUIPE.map((c) => c.rotulo)],
     ...rel.equipes.map((e) => [e.nome, ...COLUNAS_EQUIPE.map((c) => c.valor(e))]),
+    [],
+    ["Contrato de apoio", ...COLUNAS_CONTRATO.map((c) => c.rotulo)],
+    ...rel.contratos.map((k) => [k.rotulo, ...COLUNAS_CONTRATO.map((c) => c.valor(k))]),
   ];
   const conteudo = "﻿" + linhas.map((l) => l.map(celula).join(";")).join("\n");
   const url = URL.createObjectURL(new Blob([conteudo], { type: "text/csv;charset=utf-8;" }));
@@ -239,6 +256,47 @@ export default function AtendimentoRelatorioPage() {
                 )}
               </CardContent>
             </Card>
+            {r.contratos.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle as="h2">Contratos de apoio</CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto pb-5">
+                  <p className="mb-2 text-sm text-muted">
+                    Tempo dos chamados em &quot;aguardando terceiro&quot;, contra o prazo do
+                    fornecedor copiado quando o contrato foi apontado.
+                  </p>
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="text-muted">
+                        <th scope="col" className="py-1 pr-3 font-medium">
+                          Contrato
+                        </th>
+                        {COLUNAS_CONTRATO.map((c) => (
+                          <th key={c.rotulo} scope="col" className="py-1 pr-3 font-medium">
+                            {c.rotulo}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {r.contratos.map((k) => (
+                        <tr key={k.contrato_id} className="border-t border-surface-border">
+                          <th scope="row" className="py-1 pr-3 font-medium">
+                            {k.rotulo}
+                          </th>
+                          {COLUNAS_CONTRATO.map((c) => (
+                            <td key={c.rotulo} className="py-1 pr-3">
+                              {c.valor(k)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </DataState>

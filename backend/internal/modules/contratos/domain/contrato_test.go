@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -40,5 +41,31 @@ func TestCadastro(t *testing.T) {
 	}
 	if _, err := NovoFornecedor(strings.Repeat("a", 161), "", "", nil); err == nil {
 		t.Fatal("nome longo")
+	}
+}
+
+func TestPrazoEVigencia(t *testing.T) {
+	zero, oito := 0, 8
+	if ValidarPrazo(nil) != nil || ValidarPrazo(&oito) != nil {
+		t.Fatal("válidos")
+	}
+	var invalida EntradaInvalida
+	if !errors.As(ValidarPrazo(&zero), &invalida) {
+		t.Fatal("prazo zero")
+	}
+	dia := time.Date(2026, 10, 10, 0, 0, 0, 0, time.UTC)
+	c := Contrato{Inicio: dia, Fim: dia.AddDate(0, 0, 2)}
+	for nome, k := range map[string]struct {
+		em     time.Time
+		espera bool
+	}{
+		"antes":           {dia.Add(-time.Hour), false},
+		"no primeiro dia": {dia.Add(9 * time.Hour), true},
+		"no último dia":   {dia.AddDate(0, 0, 2).Add(23 * time.Hour), true},
+		"depois":          {dia.AddDate(0, 0, 3), false},
+	} {
+		if c.Vigente(k.em) != k.espera {
+			t.Errorf("%s", nome)
+		}
 	}
 }

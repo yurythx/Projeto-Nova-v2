@@ -40,8 +40,25 @@ type Contrato struct {
 	Fim            time.Time  `json:"fim"`
 	ValorCentavos  int64      `json:"valor_centavos"`
 	UnidadeID      *uuid.UUID `json:"unidade_id,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	// PrazoHoras é o prazo de atendimento do fornecedor, em horas
+	// corridas: o contrato de apoio que o chamado mede (ADR 071).
+	PrazoHoras *int      `json:"prazo_horas,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// ValidarPrazo confere o prazo do fornecedor: de 1 hora a um ano.
+func ValidarPrazo(h *int) error {
+	if h != nil && (*h < 1 || *h > 8760) {
+		return EntradaInvalida{Msg: "o prazo de atendimento vai de 1 a 8760 horas"}
+	}
+	return nil
+}
+
+// Vigente diz se o contrato vale no dia.
+func (c Contrato) Vigente(dia time.Time) bool {
+	d := dia.Truncate(24 * time.Hour)
+	return !d.Before(c.Inicio.Truncate(24*time.Hour)) && !d.After(c.Fim.Truncate(24*time.Hour))
 }
 
 // Uso é a conta dos ativos em que o agente viu o programa.

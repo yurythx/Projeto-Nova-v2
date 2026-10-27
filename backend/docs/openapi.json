@@ -821,6 +821,43 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoContratoApoioRequest": {
+        "properties": {
+          "contrato_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoContratoDeApoio": {
+        "properties": {
+          "fornecedor": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "prazo_horas": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fornecedor",
+          "id",
+          "prazo_horas",
+          "rotulo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoDecisaoAprovacaoRequest": {
         "properties": {
           "aprovar": {
@@ -1402,6 +1439,58 @@
           "recusadas",
           "tipo",
           "total"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoLinhaContrato": {
+        "properties": {
+          "atrasados": {
+            "type": "integer"
+          },
+          "com_fornecedor": {
+            "type": "integer"
+          },
+          "contrato_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mediana_horas": {
+            "nullable": true,
+            "type": "number"
+          },
+          "medidos": {
+            "type": "integer"
+          },
+          "no_prazo": {
+            "type": "integer"
+          },
+          "no_prazo_percentual": {
+            "nullable": true,
+            "type": "number"
+          },
+          "pedidos": {
+            "type": "integer"
+          },
+          "prazo_horas": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "atrasados",
+          "com_fornecedor",
+          "contrato_id",
+          "mediana_horas",
+          "medidos",
+          "no_prazo",
+          "no_prazo_percentual",
+          "pedidos",
+          "prazo_horas",
+          "rotulo"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -2126,6 +2215,12 @@
       },
       "AtendimentoRelatorio": {
         "properties": {
+          "contratos": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoLinhaContrato"
+            },
+            "type": "array"
+          },
           "desde": {
             "format": "date-time",
             "type": "string"
@@ -2153,6 +2248,7 @@
           }
         },
         "required": [
+          "contratos",
           "desde",
           "dias",
           "equipes",
@@ -2340,6 +2436,16 @@
           "cofre_segredo_id": {
             "format": "uuid",
             "type": "string"
+          },
+          "contrato_apoio": {
+            "type": "string"
+          },
+          "contrato_apoio_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "contrato_prazo_horas": {
+            "type": "integer"
           },
           "created_at": {
             "format": "date-time",
@@ -4916,6 +5022,9 @@
           "numero": {
             "type": "string"
           },
+          "prazo_horas": {
+            "type": "integer"
+          },
           "titulo": {
             "type": "string"
           },
@@ -5140,6 +5249,18 @@
           "nome",
           "quantidade"
         ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ContratosPrazoRequest": {
+        "properties": {
+          "prazo_horas": {
+            "maximum": 8760,
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -11212,6 +11333,64 @@
         ]
       }
     },
+    "/api/v1/atendimento/contratos-de-apoio": {
+      "get": {
+        "description": "Contratos vigentes do plug-in Contratos que servem às unidades que quem consulta atende, e os institucionais, com o prazo de atendimento do fornecedor (ADR 071). 503 com o plug-in Contratos desligado.",
+        "operationId": "getAtendimentoContratosDeApoio",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoContratoDeApoio"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — contratos de apoio que o chamado pode apontar",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/deflexao": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -14409,6 +14588,85 @@
           }
         ],
         "summary": "Atendimento — Executar ação /atendimento/solicitacoes/{id}/comentarios",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/solicitacoes/{id}/contrato": {
+      "put": {
+        "description": "Quem atende aponta o contrato do fornecedor que o chamado espera, ou limpa com contrato_id nulo. O rótulo e o prazo são copiados agora: a medição usa o combinado quando o chamado foi ao fornecedor. O tempo em aguardando terceiro se mede contra esse prazo no relatório. Quem pediu não vê o contrato. 422 para contrato fora de vigência ou do alcance; 409 com o chamado encerrado.",
+        "operationId": "putAtendimentoSolicitacoesIdContrato",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoContratoApoioRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoDetalhe"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — apontar o contrato de apoio do chamado",
         "tags": [
           "atendimento"
         ]
@@ -20550,6 +20808,66 @@
           }
         ],
         "summary": "Contratos — Excluir /contratos/contratos/{id}",
+        "tags": [
+          "contratos"
+        ]
+      }
+    },
+    "/api/v1/contratos/contratos/{id}/prazo": {
+      "put": {
+        "description": "Prazo, em horas corridas (1 a 8760), que o fornecedor assume para atender: é o contrato de apoio que o atendimento mede (ADR 071). Nulo tira o prazo. Vale para os chamados vinculados depois.",
+        "operationId": "putContratosContratosIdPrazo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContratosPrazoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Contratos — prazo de atendimento do fornecedor",
         "tags": [
           "contratos"
         ]

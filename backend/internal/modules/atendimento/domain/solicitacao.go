@@ -60,9 +60,14 @@ type Solicitacao struct {
 	CofreSegredoID *uuid.UUID `json:"cofre_segredo_id,omitempty"`
 	// EtapaAtual é a etapa de aprovação em curso; só existe aguardando
 	// aprovação (ADR 068).
-	EtapaAtual *int      `json:"etapa_atual,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	EtapaAtual *int `json:"etapa_atual,omitempty"`
+	// ContratoApoioID é o contrato do fornecedor que o chamado espera
+	// (ADR 071), com o rótulo e o prazo copiados quando foi vinculado.
+	ContratoApoioID    *uuid.UUID `json:"contrato_apoio_id,omitempty"`
+	ContratoApoio      string     `json:"contrato_apoio,omitempty"`
+	ContratoPrazoHoras *int       `json:"contrato_prazo_horas,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 
 	OfertaNome      string `json:"oferta_nome"`
 	SolicitanteNome string `json:"solicitante_nome"`

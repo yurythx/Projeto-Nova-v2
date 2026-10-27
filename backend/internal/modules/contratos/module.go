@@ -40,6 +40,10 @@ func (m *Module) Manifest() kernel.Manifest {
 	}
 }
 
+// Servico expõe o serviço às portas de outros plug-ins (o contrato de
+// apoio do atendimento, ADR 071).
+func (m *Module) Servico() *application.Service { return m.svc }
+
 // RegisterRoutes implementa kernel.RouteProvider.
 func (m *Module) RegisterRoutes(r kernel.Routes) { m.handlers.RegisterRoutes(r.Authed) }
 

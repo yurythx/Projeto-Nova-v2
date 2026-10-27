@@ -25,6 +25,8 @@ type Relatorio struct {
 	Total       domain.LinhaSecretaria   `json:"total"`
 	Secretarias []domain.LinhaSecretaria `json:"secretarias"`
 	Equipes     []domain.LinhaEquipe     `json:"equipes"`
+	// Contratos é o cumprimento dos contratos de apoio (ADR 071).
+	Contratos []domain.LinhaContrato `json:"contratos"`
 }
 
 // RelatorioPorSecretaria mede o escopo de quem atende nos últimos dias:
@@ -85,5 +87,21 @@ func (s *Service) RelatorioPorSecretaria(ctx context.Context, identity auth.Iden
 		return Relatorio{}, MapError(err)
 	}
 	out.Equipes = domain.ResumirEquipes(tarefas, agora)
+	comContrato, err := s.repo.ComContratoNoPeriodo(ctx, s.pool, restrito, cob.Unidades, desde)
+	if err != nil {
+		return Relatorio{}, MapError(err)
+	}
+	out.Contratos = []domain.LinhaContrato{}
+	if len(comContrato) > 0 {
+		ids := make([]uuid.UUID, 0, len(comContrato))
+		for _, sol := range comContrato {
+			ids = append(ids, sol.ID)
+		}
+		ps, err := s.repo.PassagensDe(ctx, s.pool, ids)
+		if err != nil {
+			return Relatorio{}, MapError(err)
+		}
+		out.Contratos = domain.ResumirContratos(comContrato, ps, agora)
+	}
 	return out, nil
 }

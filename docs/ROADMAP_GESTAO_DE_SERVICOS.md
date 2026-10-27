@@ -78,7 +78,7 @@ experiência medida e nível de serviço por secretaria.
 | Tarefas por equipe: admissão e desligamento de servidores ([ADR 068](adr/068-aprovacao-em-etapas-e-tarefas.md)) | Implementada |
 | Experiência medida além do CSAT (XLA) ([ADR 069](adr/069-experiencia-de-quem-pede-xla.md)) | Implementada |
 | Relatório por secretaria e OLA das equipes ([ADR 070](adr/070-relatorio-por-secretaria-e-ola.md)) | Implementada |
-| Contrato de apoio (prazo do fornecedor no "aguardando terceiro") | A seguir |
+| Contrato de apoio: prazo do fornecedor no "aguardando terceiro" ([ADR 071](adr/071-contrato-de-apoio.md)) | Implementada |
 | Importador do GLPI | A seguir |
 
 A IA continua sem conversar com quem abre o chamado: o atendente virtual

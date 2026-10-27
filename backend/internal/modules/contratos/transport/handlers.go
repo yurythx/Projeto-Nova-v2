@@ -64,6 +64,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/contratos/contratos", h.listarContratos)
 		r.Post("/contratos/contratos", h.criarContrato)
 		r.Delete("/contratos/contratos/{id}", h.excluirContrato)
+		r.Put("/contratos/contratos/{id}/prazo", h.definirPrazo)
 		r.Get("/contratos/licencas", h.listarLicencas)
 		r.Post("/contratos/licencas", h.criarLicenca)
 		r.Delete("/contratos/licencas/{id}", h.excluirLicenca)
@@ -140,6 +141,30 @@ func (h *Handlers) criarContrato(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) excluirContrato(w http.ResponseWriter, r *http.Request) {
 	h.excluir(w, r, h.svc.ExcluirContrato)
+}
+
+// PrazoRequest é o prazo de atendimento do fornecedor (nulo tira).
+type PrazoRequest struct {
+	PrazoHoras *int `json:"prazo_horas" validate:"omitempty,min=1,max=8760"`
+}
+
+func (h *Handlers) definirPrazo(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req PrazoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	if err := h.svc.DefinirPrazo(r.Context(), identity, id, req.PrazoHoras); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteNoContent(w)
 }
 
 func (h *Handlers) listarLicencas(w http.ResponseWriter, r *http.Request) {

@@ -65,6 +65,24 @@ func TestRelatorioReal(t *testing.T) {
 	if err != nil || len(secs) != 2 || secs[depto].ID != sec || secs[sec].ID != sec || secs[depto].Nome == "" {
 		t.Fatalf("secretarias: %+v %v", secs, err)
 	}
+	oito := 8
+	contrato := domain.ContratoDeApoio{ID: uuid.New(), Rotulo: "Link (Provedor)", PrazoHoras: &oito}
+	if err := r.SetContratoApoio(ctx, pool, sol.ID, &contrato, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	com, err := r.ComContratoNoPeriodo(ctx, pool, true, []uuid.UUID{depto}, desde)
+	if err != nil || len(com) != 1 || *com[0].ContratoApoioID != contrato.ID || com[0].ContratoApoio != contrato.Rotulo || *com[0].ContratoPrazoHoras != 8 {
+		t.Fatalf("com contrato: %+v %v", com, err)
+	}
+	if err := r.SetContratoApoio(ctx, pool, sol.ID, nil, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	if com, _ := r.ComContratoNoPeriodo(ctx, pool, true, []uuid.UUID{depto}, desde); len(com) != 0 {
+		t.Fatal("sem contrato não entra")
+	}
+	if err := r.SetContratoApoio(ctx, pool, uuid.New(), nil, time.Now().UTC()); !errors.Is(err, domain.ErrNaoEncontrado) {
+		t.Fatalf("chamado inexistente: %v", err)
+	}
 	cinco := 5
 	if _, err := r.InsertAvaliacao(ctx, pool, domain.Avaliacao{ID: uuid.New(), SolicitacaoID: sol.ID, AutorID: quem, Nota: 4, Facilidade: &cinco, CreatedAt: time.Now().UTC()}); err != nil {
 		t.Fatal(err)
@@ -95,6 +113,11 @@ func TestRelatorioPropagaFalhas(t *testing.T) {
 		},
 		"SecretariasDe": func(db database.DBTX) error { _, err := r.SecretariasDe(ctx, db, []uuid.UUID{id}); return err },
 		"AvaliacoesDe":  func(db database.DBTX) error { _, err := r.AvaliacoesDe(ctx, db, []uuid.UUID{id}); return err },
+		"ComContratoNoPeriodo": func(db database.DBTX) error {
+			_, err := r.ComContratoNoPeriodo(ctx, db, false, nil, agora)
+			return err
+		},
+		"SetContratoApoio": func(db database.DBTX) error { return r.SetContratoApoio(ctx, db, id, nil, agora) },
 		"TarefasDoPeriodo": func(db database.DBTX) error {
 			_, err := r.TarefasDoPeriodo(ctx, db, false, nil, agora)
 			return err

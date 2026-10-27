@@ -11,6 +11,7 @@ import { AssistenteIA } from "@/components/atendimento/AssistenteIA";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
 import { TarefasCard } from "@/components/atendimento/TarefasCard";
 import { SegredoVinculadoCard } from "@/components/atendimento/SegredoVinculadoCard";
+import { ContratoDeApoioCard } from "@/components/atendimento/ContratoDeApoioCard";
 import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAtendimentoCard";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
 import { RespostasProntas } from "@/components/atendimento/RespostasProntas";
@@ -305,6 +306,9 @@ export function SolicitacaoDetalhe() {
               finalizada={finalizada}
               onMudou={recarregar}
             />
+            {tecnico && (
+              <ContratoDeApoioCard solicitacao={s} finalizada={finalizada} onMudou={recarregar} />
+            )}
 
             <VisitasCard
               solicitacaoId={s.id}

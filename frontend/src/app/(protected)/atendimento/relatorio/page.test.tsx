@@ -97,6 +97,32 @@ const relatorio = {
       atrasadas: 0,
     },
   ],
+  contratos: [
+    {
+      contrato_id: "k1",
+      rotulo: "12/2026 — Link (Provedor)",
+      prazo_horas: 8,
+      pedidos: 3,
+      medidos: 2,
+      no_prazo: 1,
+      no_prazo_percentual: 50,
+      mediana_horas: 9.5,
+      com_fornecedor: 1,
+      atrasados: 1,
+    },
+    {
+      contrato_id: "k2",
+      rotulo: "Energia (Concessionária)",
+      prazo_horas: null,
+      pedidos: 1,
+      medidos: 0,
+      no_prazo: 0,
+      no_prazo_percentual: null,
+      mediana_horas: null,
+      com_fornecedor: 1,
+      atrasados: 0,
+    },
+  ],
 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -120,6 +146,10 @@ describe("Relatório por secretaria", () => {
     expect(within(rede).getByText("24 h")).toBeInTheDocument();
     expect(within(rede).getByText("75%")).toBeInTheDocument();
     expect(screen.getByRole("row", { name: /^Patrimônio/ })).toHaveTextContent("sem OLA");
+    const link = screen.getByRole("row", { name: /Link \(Provedor\)/ });
+    expect(within(link).getByText("9,5 h")).toBeInTheDocument();
+    expect(within(link).getByText("8 h")).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /Energia/ })).toHaveTextContent("sem prazo");
 
     await user.selectOptions(screen.getByLabelText("Período"), "30");
     await waitFor(() =>
@@ -151,6 +181,7 @@ describe("Relatório por secretaria", () => {
     const texto = await blob.text();
     expect(texto).toContain('"Saúde (SMS)"');
     expect(texto).toContain('"Rede";"24 h"');
+    expect(texto).toContain('"12/2026 — Link (Provedor)";"8 h"');
     await user.click(screen.getByRole("button", { name: /Imprimir/ }));
     expect(imprimir).toHaveBeenCalled();
   });
@@ -182,9 +213,12 @@ describe("Relatório por secretaria", () => {
   it("equipe sem tarefa no período", async () => {
     mockBackend({
       ...identityRoutes(atende),
-      "GET v1/atendimento/relatorio/secretarias*": { data: { ...relatorio, equipes: [] } },
+      "GET v1/atendimento/relatorio/secretarias*": {
+        data: { ...relatorio, equipes: [], contratos: [] },
+      },
     });
     renderApp(<RelatorioPage />);
     expect(await screen.findByText(/Nenhuma tarefa de equipe no período/)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Contratos de apoio" })).not.toBeInTheDocument();
   });
 });

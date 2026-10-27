@@ -23,6 +23,8 @@ type Repository interface {
 	ListContratos(ctx context.Context, db database.DBTX, f Filtro) ([]Contrato, error)
 	InsertContrato(ctx context.Context, db database.DBTX, item Contrato) (Contrato, error)
 	DeleteContrato(ctx context.Context, db database.DBTX, id uuid.UUID, f Filtro) error
+	// UpdatePrazo grava o prazo do fornecedor (nil tira) no contrato do escopo.
+	UpdatePrazo(ctx context.Context, db database.DBTX, id uuid.UUID, prazo *int, f Filtro) error
 
 	ListLicencas(ctx context.Context, db database.DBTX, f Filtro) ([]Licenca, error)
 	InsertLicenca(ctx context.Context, db database.DBTX, item Licenca) (Licenca, error)

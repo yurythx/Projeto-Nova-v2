@@ -6,10 +6,10 @@
 # 0,2 ponto de margem para testes que variam com o tempo.
 
 app                      94.8
-atendimento              89.4
+atendimento              89.9
 ativos                   72.2
 cofre                    64.1
-contratos                60.1
+contratos                70.3
 mudancas                 90.7
 platform/auth            99.1
 platform/config          97.3

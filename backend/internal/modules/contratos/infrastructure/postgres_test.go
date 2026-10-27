@@ -30,6 +30,7 @@ func TestRepositorioPropagaFalhas(t *testing.T) {
 		"ListContratos":    func(db database.DBTX) error { _, err := r.ListContratos(ctx, db, domain.Filtro{}); return err },
 		"InsertContrato":   func(db database.DBTX) error { _, err := r.InsertContrato(ctx, db, contrato); return err },
 		"DeleteContrato":   func(db database.DBTX) error { return r.DeleteContrato(ctx, db, id, domain.Filtro{}) },
+		"UpdatePrazo":      func(db database.DBTX) error { return r.UpdatePrazo(ctx, db, id, nil, domain.Filtro{}) },
 		"ListLicencas":     func(db database.DBTX) error { _, err := r.ListLicencas(ctx, db, domain.Filtro{}); return err },
 		"InsertLicenca":    func(db database.DBTX) error { _, err := r.InsertLicenca(ctx, db, licenca); return err },
 		"DeleteLicenca":    func(db database.DBTX) error { return r.DeleteLicenca(ctx, db, id, domain.Filtro{}) },

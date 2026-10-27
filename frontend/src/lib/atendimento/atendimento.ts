@@ -66,6 +66,31 @@ export interface Solicitacao {
   cofre_segredo_id?: string;
   /** Medido na leitura, só para a equipe. */
   prazo?: Prazo;
+  /** Contrato do fornecedor que o chamado espera (ADR 071), só para a equipe. */
+  contrato_apoio_id?: string;
+  contrato_apoio?: string;
+  contrato_prazo_horas?: number;
+}
+
+export interface ContratoDeApoio {
+  id: string;
+  rotulo: string;
+  fornecedor: string;
+  prazo_horas: number | null;
+}
+
+/** Cumprimento de um contrato de apoio no período. */
+export interface LinhaContrato {
+  contrato_id: string;
+  rotulo: string;
+  prazo_horas: number | null;
+  pedidos: number;
+  medidos: number;
+  no_prazo: number;
+  no_prazo_percentual: number | null;
+  mediana_horas: number | null;
+  com_fornecedor: number;
+  atrasados: number;
 }
 
 export type Prioridade = "critica" | "alta" | "media" | "baixa";
@@ -228,6 +253,7 @@ export interface RelatorioSecretarias {
   total: LinhaSecretaria;
   secretarias: LinhaSecretaria[];
   equipes: LinhaEquipe[];
+  contratos: LinhaContrato[];
 }
 
 export interface Experiencia {

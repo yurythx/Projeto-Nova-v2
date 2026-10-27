@@ -67,6 +67,7 @@ type Service struct {
 	arquivos  *Armazenamento   // fotos e assinaturas (WithArmazenamento)
 	caixa     mail.Caixa       // entrada de e-mail (WithCaixa); nil = desligada
 	segredos  Segredos         // nome do segredo no cofre; nil recusa o vínculo
+	contratos ContratosDeApoio // contratos de apoio (ADR 071); nil recusa o vínculo
 	passagens Passagens        // caminhos acrescentados na fila; nil = só o fluxo de fábrica
 	// assistente é a IA de quem atende (WithAssistente, ADR 065); nil = sem IA.
 	assistente Assistente
@@ -88,6 +89,16 @@ func NewService(pool *pgxpool.Pool, repo domain.Repository, eventos Eventos, pro
 type Segredos interface {
 	Nome(ctx context.Context, identity auth.Identity, id uuid.UUID) (string, error)
 }
+
+// ContratosDeApoio lista e confirma os contratos vigentes que o chamado
+// pode esperar (ADR 071). Vem do plug-in Contratos.
+type ContratosDeApoio interface {
+	Listar(ctx context.Context, identity auth.Identity) ([]domain.ContratoDeApoio, error)
+	Obter(ctx context.Context, identity auth.Identity, id uuid.UUID) (domain.ContratoDeApoio, error)
+}
+
+// WithContratos liga a porta dos contratos de apoio.
+func (s *Service) WithContratos(c ContratosDeApoio) *Service { s.contratos = c; return s }
 
 // WithSegredo liga a porta do cofre.
 func (s *Service) WithSegredo(segredos Segredos) *Service { s.segredos = segredos; return s }
@@ -139,6 +150,10 @@ func MapError(err error) error {
 		return causa(err, apperrors.Forbidden("você não aprova a etapa atual deste pedido"))
 	case errors.Is(err, domain.ErrAutoaprovacao):
 		return causa(err, apperrors.Forbidden("quem pediu não aprova o próprio pedido"))
+	case errors.Is(err, domain.ErrContratosDesligado):
+		return causa(err, apperrors.DependencyUnavailable("o plug-in Contratos está desligado"))
+	case errors.Is(err, domain.ErrContratoAusente):
+		return causa(err, apperrors.Validation("contrato inexistente, fora de vigência ou fora do seu alcance"))
 	case errors.Is(err, domain.ErrOLAInvalido):
 		return causa(err, apperrors.Validation("o prazo da equipe vai de 1 a 8760 horas"))
 	case errors.Is(err, domain.ErrFacilidadeInvalida):

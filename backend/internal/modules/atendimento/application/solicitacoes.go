@@ -382,6 +382,8 @@ func extrasDaFila(sol domain.Solicitacao, mapa map[string][]string) []string {
 func ocultarSegredo(sol *domain.Solicitacao, ps []string) {
 	if !slices.Contains(ps, domain.PapelTecnico) {
 		sol.CofreSegredoID = nil
+		// O contrato com o fornecedor é assunto da equipe.
+		sol.ContratoApoioID, sol.ContratoApoio, sol.ContratoPrazoHoras = nil, "", nil
 	}
 }
 

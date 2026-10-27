@@ -22,6 +22,17 @@ func (r *Repository) ListarDoPeriodo(ctx context.Context, db database.DBTX, rest
 	return coletar(rows, scanSolicitacao)
 }
 
+// ComContratoNoPeriodo lê os chamados do escopo com contrato de apoio.
+func (r *Repository) ComContratoNoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]domain.Solicitacao, error) {
+	rows, err := db.Query(ctx, solicitacaoSelect+`
+		WHERE s.contrato_apoio_id IS NOT NULL AND ($1 = false OR s.unidade_id = ANY($2::uuid[])) AND s.created_at >= $3
+		ORDER BY s.created_at`, restrito, idsOrEmpty(unidades), desde)
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	return coletar(rows, scanSolicitacao)
+}
+
 // SecretariasDe sobe a árvore de cada unidade até o topo.
 func (r *Repository) SecretariasDe(ctx context.Context, db database.DBTX, unidades []uuid.UUID) (map[uuid.UUID]domain.Secretaria, error) {
 	rows, err := db.Query(ctx, `WITH RECURSIVE sobe AS (

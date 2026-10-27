@@ -78,7 +78,7 @@ func (r *Repository) DeleteFornecedor(ctx context.Context, db database.DBTX, id 
 }
 
 func (r *Repository) ListContratos(ctx context.Context, db database.DBTX, f domain.Filtro) ([]domain.Contrato, error) {
-	rows, err := db.Query(ctx, `SELECT c.id, c.numero, c.titulo, c.fornecedor_id, f.nome, c.inicio, c.fim, c.valor_centavos, c.unidade_id, c.created_at, c.updated_at
+	rows, err := db.Query(ctx, `SELECT c.id, c.numero, c.titulo, c.fornecedor_id, f.nome, c.inicio, c.fim, c.valor_centavos, c.unidade_id, c.prazo_horas, c.created_at, c.updated_at
 		FROM contratos_contratos c JOIN contratos_fornecedores f ON f.id = c.fornecedor_id
 		WHERE ($1 = false OR c.unidade_id = ANY($2::uuid[])) ORDER BY c.fim, c.id`, f.Restrito, idsOrEmpty(f.Unidades))
 	if err != nil {
@@ -88,7 +88,7 @@ func (r *Repository) ListContratos(ctx context.Context, db database.DBTX, f doma
 	out := []domain.Contrato{}
 	for rows.Next() {
 		var item domain.Contrato
-		if err := rows.Scan(&item.ID, &item.Numero, &item.Titulo, &item.FornecedorID, &item.FornecedorNome, &item.Inicio, &item.Fim, &item.ValorCentavos, &item.UnidadeID, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Numero, &item.Titulo, &item.FornecedorID, &item.FornecedorNome, &item.Inicio, &item.Fim, &item.ValorCentavos, &item.UnidadeID, &item.PrazoHoras, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, mapDB(err)
 		}
 		out = append(out, item)
@@ -114,6 +114,18 @@ func (r *Repository) InsertContrato(ctx context.Context, db database.DBTX, item 
 		}
 	}
 	return item, nil
+}
+
+func (r *Repository) UpdatePrazo(ctx context.Context, db database.DBTX, id uuid.UUID, prazo *int, f domain.Filtro) error {
+	tag, err := db.Exec(ctx, `UPDATE contratos_contratos SET prazo_horas = $2, updated_at = now()
+		WHERE id = $1 AND ($3 = false OR unidade_id = ANY($4::uuid[]))`, id, prazo, f.Restrito, idsOrEmpty(f.Unidades))
+	if err != nil {
+		return mapDB(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
+	}
+	return nil
 }
 
 func (r *Repository) DeleteContrato(ctx context.Context, db database.DBTX, id uuid.UUID, f domain.Filtro) error {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -182,6 +183,42 @@ func (s *Service) CriarContrato(ctx context.Context, identity auth.Identity, num
 		return s.emitir(ctx, tx, EventoContrato, "contratos_contrato", item.ID, map[string]any{"id": item.ID.String()})
 	})
 	return item, MapError(err)
+}
+
+// DefinirPrazo grava o prazo de atendimento do fornecedor no contrato
+// (nil tira). Vale para os chamados que forem vinculados depois.
+func (s *Service) DefinirPrazo(ctx context.Context, identity auth.Identity, id uuid.UUID, prazo *int) error {
+	if err := domain.ValidarPrazo(prazo); err != nil {
+		return MapError(err)
+	}
+	f, err := s.filtro(identity)
+	if err != nil {
+		return MapError(err)
+	}
+	return MapError(database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.UpdatePrazo(ctx, tx, id, prazo, f); err != nil {
+			return err
+		}
+		return s.emitir(ctx, tx, "contratos.contrato.prazo", "contratos_contrato", id, map[string]any{"id": id.String(), "prazo_horas": prazo})
+	}))
+}
+
+// Vigentes devolve os contratos que valem hoje e que servem às unidades
+// (todas = sem recorte). O institucional (sem unidade) serve a todas. É o
+// que o atendimento lista como contrato de apoio (ADR 071).
+func (s *Service) Vigentes(ctx context.Context, unidades []uuid.UUID, todas bool) ([]domain.Contrato, error) {
+	lista, err := s.repo.ListContratos(ctx, s.pool, domain.Filtro{})
+	if err != nil {
+		return nil, err
+	}
+	hoje := s.agora().UTC()
+	out := []domain.Contrato{}
+	for _, c := range lista {
+		if c.Vigente(hoje) && (todas || c.UnidadeID == nil || slices.Contains(unidades, *c.UnidadeID)) {
+			out = append(out, c)
+		}
+	}
+	return out, nil
 }
 
 // ExcluirContrato remove o contrato.
