@@ -322,8 +322,17 @@ ssh -L 3005:127.0.0.1:3005 -L 9090:127.0.0.1:9090 -L 9093:127.0.0.1:9093 root@19
 # Grafana http://localhost:3005 (admin; senha em deploy/observability/.env na VM)
 ```
 
-O token de `/metrics` e a senha do Grafana são gerados na VM e não entram
-no repositório.
+O token de `/metrics`, o token dos alertas e a senha do Grafana são gerados
+na VM e não entram no repositório.
+
+**Os alertas viram chamado** ([ADR 067](adr/067-eventos-do-monitoramento.md)).
+O Alertmanager manda cada alerta para a entrada de eventos do atendimento,
+autenticado pelo `ATENDIMENTO_EVENTOS_TOKEN` que o `deploy.sh` gera. Em
+Atendimento > Cadastro, quem gere o atendimento da instituição escolhe a
+oferta de incidente em que eles abrem. Sem oferta escolhida, a entrada
+responde 409 e o Alertmanager tenta de novo; nada se perde em silêncio. O
+mesmo alerta de novo vira nota no mesmo chamado, e a volta ao normal também,
+sem concluir o chamado.
 
 | Alerta | Quando |
 |---|---|

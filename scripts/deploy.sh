@@ -93,6 +93,11 @@ fi
 # O valor do .env.example é público e a API recusa subir com ele. Só troca
 # o que nunca serviu em produção: uma chave real já embrulha as senhas do
 # cofre e não pode mudar.
+# Token do Alertmanager na entrada de eventos do atendimento (ADR 067).
+if ! grep -q '^ATENDIMENTO_EVENTOS_TOKEN=.' .env; then
+  log "Gerando ATENDIMENTO_EVENTOS_TOKEN (alertas do monitoramento)"
+  set_kv ATENDIMENTO_EVENTOS_TOKEN "$(openssl rand -hex 32)"
+fi
 if ! grep -q '^COFRE_MASTER_KEY=.' .env || grep -q '^COFRE_MASTER_KEY=MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=$' .env; then
   log "Gerando COFRE_MASTER_KEY (cofre de senhas, ADR 053)"
   set_kv COFRE_MASTER_KEY "$(openssl rand -base64 32)"

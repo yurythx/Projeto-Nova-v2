@@ -115,6 +115,18 @@ type SolicitacaoRepository interface {
 
 	PrazoRepository
 	IARepository
+	EventosRepository
+}
+
+// EventosRepository liga os alertas do monitoramento aos chamados (ADR 067).
+type EventosRepository interface {
+	// OfertaDosEventos devolve a oferta escolhida (nil = nenhuma).
+	OfertaDosEventos(ctx context.Context, db database.DBTX) (*uuid.UUID, error)
+	SalvarOfertaDosEventos(ctx context.Context, db database.DBTX, oferta *uuid.UUID, por uuid.UUID, agora time.Time) error
+	// TravarEvento serializa a mesma fingerprint até o fim da transação e
+	// devolve o vínculo (ErrNaoEncontrado quando o alerta é novo).
+	TravarEvento(ctx context.Context, db database.DBTX, fingerprint string) (EventoVinculado, error)
+	SalvarEvento(ctx context.Context, db database.DBTX, e EventoVinculado) error
 }
 
 // IARepository guarda as sugestões da IA e o que quem atende decidiu

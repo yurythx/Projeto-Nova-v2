@@ -1,19 +1,27 @@
 global:
   resolve_timeout: 5m
 
-# Os alertas viram incidente no atendimento pela entrada de eventos (Fase 2
-# do roteiro, ADR 065). Até ela existir, ficam só na tela do Alertmanager
-# (túnel SSH na porta 9093): antes, apontavam para uma rota da API que não
-# existe, e todo alerta se perdia sem aviso.
+# Os alertas viram incidente no atendimento (ADR 067): um chamado por
+# alerta, na oferta escolhida em Atendimento > Cadastro. O token é o
+# ATENDIMENTO_EVENTOS_TOKEN da stack, gravado em eventos_token pelo
+# Ansible. A porta 8010 é o HTTP_PORT de scripts/deploy.sh.
 route:
   group_by: ['alertname', 'service', 'severity']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
-  receiver: 'nulo'
+  receiver: 'atendimento'
 
 receivers:
-  - name: 'nulo'
+  - name: 'atendimento'
+    webhook_configs:
+      - url: 'http://backend-api:8010/api/v1/atendimento/eventos/alertmanager'
+        send_resolved: true
+        max_alerts: 200
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /etc/alertmanager/eventos_token
 
 inhibit_rules:
   - source_matchers: ['severity="critical"']

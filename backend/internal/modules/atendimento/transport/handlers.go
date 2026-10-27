@@ -37,6 +37,8 @@ type EquipeRequest struct {
 type Handlers struct {
 	svc    *application.Service
 	logger *slog.Logger
+	// tokenEventos autentica o Alertmanager (ADR 067); vazio = desligada.
+	tokenEventos string
 }
 
 // NewHandlers cria os handlers.
@@ -93,6 +95,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtendimentoManage))
 		r.Get("/atendimento/ofertas", h.ListarOfertas)
+		r.Get("/atendimento/eventos/configuracao", h.ConfiguracaoDosEventos)
+		r.Put("/atendimento/eventos/configuracao", h.ConfigurarEventos)
 		r.Post("/atendimento/ofertas", h.CriarOferta)
 		r.Get("/atendimento/ofertas/{id}", h.ObterOferta)
 		r.Put("/atendimento/ofertas/{id}", h.AtualizarOferta)
@@ -265,4 +269,10 @@ func (h *Handlers) Candidatos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteOK(w, lista)
+}
+
+// RegisterPublicRoutes monta a entrada de eventos (ADR 067): sem sessão
+// de pessoa, autenticada pelo token da máquina.
+func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
+	r.Post("/atendimento/eventos/alertmanager", h.ReceberAlertas)
 }

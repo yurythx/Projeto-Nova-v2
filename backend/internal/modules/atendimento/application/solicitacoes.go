@@ -112,41 +112,7 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in Abertura
 	}
 	var enviadas []notificacoes.Enviada
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
-		// O prazo começa na abertura. Sem regra, impacto e urgência ficam
-		// médios. A primeira regra que casa ajusta os dois pela matriz.
-		p, err := s.politicaDe(ctx, tx, sol.UnidadeID)
-		if err != nil {
-			return err
-		}
-		regra, err := s.regraDaAbertura(ctx, tx, sol, identity)
-		if err != nil {
-			return err
-		}
-		if regra != nil && regra.Prioridade != "" && p != nil {
-			if impacto, urgencia, ok := p.Niveis(regra.Prioridade); ok {
-				sol.Impacto, sol.Urgencia = impacto, urgencia
-			}
-		}
-		sol = sol.AplicarPolitica(p)
-		if sol, err = s.repo.InsertSolicitacao(ctx, tx, sol); err != nil {
-			return err
-		}
-		if _, err = s.passar(ctx, tx, sol, nil, identity.UserID); err != nil {
-			return err
-		}
-		corpo := payloadDe(sol)
-		if regra != nil {
-			corpo["regra_id"] = regra.ID.String()
-		}
-		if err = s.registrar(ctx, tx, EventoSolicitacaoAberta, "solicitacao", sol.ID, corpo, sol, nil); err != nil {
-			return err
-		}
-		ids, err := s.destinosDaAbertura(ctx, tx, sol, regra)
-		if err != nil {
-			return err
-		}
-		enviadas, err = s.avisar(ctx, tx, sol, ids, identity.UserID, "aberta",
-			fmt.Sprintf("Nova solicitação #%d", sol.Numero), sol.OfertaNome+": "+sol.Titulo)
+		sol, enviadas, err = s.abrirNa(ctx, tx, sol, identity, nil)
 		return err
 	})
 	if err != nil {
@@ -154,6 +120,52 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in Abertura
 	}
 	s.entregar(ctx, enviadas)
 	return sol, nil
+}
+
+// abrirNa grava a abertura na transação de quem chama: política de prazo,
+// regra da triagem, primeira passagem, evento, auditoria e aviso à
+// equipe. ajustar (opcional) mexe na solicitação depois da regra e antes
+// da política: a entrada de eventos usa para a severidade do alerta.
+func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, identity auth.Identity, ajustar func(*domain.Solicitacao)) (domain.Solicitacao, []notificacoes.Enviada, error) {
+	// O prazo começa na abertura. Sem regra, impacto e urgência ficam
+	// médios. A primeira regra que casa ajusta os dois pela matriz.
+	p, err := s.politicaDe(ctx, tx, sol.UnidadeID)
+	if err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	regra, err := s.regraDaAbertura(ctx, tx, sol, identity)
+	if err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	if regra != nil && regra.Prioridade != "" && p != nil {
+		if impacto, urgencia, ok := p.Niveis(regra.Prioridade); ok {
+			sol.Impacto, sol.Urgencia = impacto, urgencia
+		}
+	}
+	if ajustar != nil {
+		ajustar(&sol)
+	}
+	sol = sol.AplicarPolitica(p)
+	if sol, err = s.repo.InsertSolicitacao(ctx, tx, sol); err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	if _, err = s.passar(ctx, tx, sol, nil, identity.UserID); err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	corpo := payloadDe(sol)
+	if regra != nil {
+		corpo["regra_id"] = regra.ID.String()
+	}
+	if err = s.registrar(ctx, tx, EventoSolicitacaoAberta, "solicitacao", sol.ID, corpo, sol, nil); err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	ids, err := s.destinosDaAbertura(ctx, tx, sol, regra)
+	if err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	enviadas, err := s.avisar(ctx, tx, sol, ids, identity.UserID, "aberta",
+		fmt.Sprintf("Nova solicitação #%d", sol.Numero), sol.OfertaNome+": "+sol.Titulo)
+	return sol, enviadas, err
 }
 
 // ListarMinhas devolve as solicitações que identity abriu.

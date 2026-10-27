@@ -78,7 +78,11 @@ func New(deps modkit.Deps, produtos domain.Produtos) *Module {
 			Usuario: deps.Config.Mail.IMAPUser, Senha: deps.Config.Mail.IMAPPassword,
 		})
 	}
-	return &Module{repo: repo, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger), correio: correio}
+	handlers := transport.NewHandlers(svc, deps.Logger)
+	if deps.Config != nil {
+		handlers.ComTokenDeEventos(deps.Config.Security.EventosToken)
+	}
+	return &Module{repo: repo, svc: svc, handlers: handlers, correio: correio}
 }
 
 // Repositorio é a porta usada por problemas e mudanças para conferir o
@@ -116,6 +120,9 @@ func (m *Module) Manifest() kernel.Manifest {
 // RegisterRoutes implementa kernel.RouteProvider.
 func (m *Module) RegisterRoutes(r kernel.Routes) {
 	m.handlers.RegisterRoutes(r.Authed)
+	// Sem limite por IP: o Alertmanager mora na rede interna e manda
+	// rajadas; o token é a proteção.
+	m.handlers.RegisterPublicRoutes(r.Public)
 }
 
 // SearchProviders implementa kernel.SearchProvider. Não é search.Indexer:

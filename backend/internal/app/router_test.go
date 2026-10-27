@@ -65,7 +65,7 @@ func testDeps(t *testing.T) *Dependencies {
 		Upload:      config.UploadConfig{MaxFileBytes: 10 << 20, URLExpiry: time.Minute},
 		Signum:      config.SignumConfig{ChallengeTTL: time.Minute},
 		Egress:      config.EgressConfig{Timeout: time.Second, MaxAttempts: 3, BatchSize: 10, PollInterval: time.Second},
-		Security:    config.SecurityConfig{ConfigEncryptionKey: "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="},
+		Security:    config.SecurityConfig{ConfigEncryptionKey: "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=", EventosToken: tokenEventosTeste},
 		FrontendURL: "http://localhost:3000",
 		MaxPageSize: 100,
 	}

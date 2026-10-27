@@ -23,6 +23,15 @@
     mode: "0400"
   no_log: true
 
+# O token da entrada de eventos do atendimento (ADR 067).
+- name: Token do Alertmanager para abrir incidente
+  ansible.builtin.copy:
+    dest: "{{ app_dir }}/deploy/observability/eventos_token"
+    content: "{{ stack_env.content | b64decode | regex_search('(?m)^ATENDIMENTO_EVENTOS_TOKEN=(.+)$', '\\1') | first }}"
+    owner: "65534" # nobody: o usuário do container do Alertmanager
+    mode: "0400"
+  no_log: true
+
 - name: Senha do Grafana (gerada uma vez)
   ansible.builtin.shell:
     cmd: umask 077 && printf 'GRAFANA_ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 24)" > .env

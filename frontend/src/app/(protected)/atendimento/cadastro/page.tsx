@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 
+import { AlertasDoMonitoramentoCard } from "@/components/atendimento/AlertasDoMonitoramentoCard";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -450,6 +451,8 @@ export default function AtendimentoCadastroPage() {
           ))}
         </ul>
       </DataState>
+
+      {gerencia && <AlertasDoMonitoramentoCard ofertas={ofertas.data ?? []} />}
     </div>
   );
 }

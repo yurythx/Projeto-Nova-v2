@@ -86,4 +86,5 @@ backend/coverage
 
 # Segredos do monitoramento, gerados na VM pela role nova_monitoring
 deploy/observability/metrics_token
+deploy/observability/eventos_token
 deploy/observability/.env

@@ -147,6 +147,30 @@ components:
                 - titulo
             type: object
             x-projeto-nova-generated: true
+        AtendimentoAlerta:
+            properties:
+                annotations:
+                    additionalProperties:
+                        type: string
+                    type: object
+                endsAt:
+                    format: date-time
+                    type: string
+                fingerprint:
+                    type: string
+                generatorURL:
+                    type: string
+                labels:
+                    additionalProperties:
+                        type: string
+                    type: object
+                startsAt:
+                    format: date-time
+                    type: string
+                status:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoAmostra:
             properties:
                 com_prazo_concluido:
@@ -497,6 +521,24 @@ components:
                     type: string
             required:
                 - texto
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoConfiguracaoEventos:
+            properties:
+                oferta_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+            required:
+                - oferta_id
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoConfiguracaoEventosRequest:
+            properties:
+                oferta_id:
+                    format: uuid
+                    nullable: true
+                    type: string
             type: object
             x-projeto-nova-generated: true
         AtendimentoDecisaoRequest:
@@ -1213,6 +1255,20 @@ components:
                     type: string
             type: object
             x-projeto-nova-generated: true
+        AtendimentoResultadoEventos:
+            properties:
+                abertos:
+                    type: integer
+                anotados:
+                    type: integer
+                ignorados:
+                    type: integer
+            required:
+                - abertos
+                - anotados
+                - ignorados
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoResumoApontamentos:
             properties:
                 apontamentos:
@@ -1573,6 +1629,42 @@ components:
                 - tecnico_nome
                 - titulo
                 - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoWebhookAlertmanager:
+            properties:
+                alerts:
+                    items:
+                        $ref: '#/components/schemas/AtendimentoAlerta'
+                    maxItems: 200
+                    minItems: 1
+                    type: array
+                commonAnnotations:
+                    additionalProperties:
+                        type: string
+                    type: object
+                commonLabels:
+                    additionalProperties:
+                        type: string
+                    type: object
+                externalURL:
+                    type: string
+                groupKey:
+                    type: string
+                groupLabels:
+                    additionalProperties:
+                        type: string
+                    type: object
+                receiver:
+                    type: string
+                status:
+                    type: string
+                truncatedAlerts:
+                    type: integer
+                version:
+                    type: string
+            required:
+                - alerts
             type: object
             x-projeto-nova-generated: true
         AtivosAtivo:
@@ -7827,6 +7919,123 @@ paths:
             security:
                 - bearerAuth: []
             summary: Atendimento — Salvar /atendimento/equipes/{id}
+            tags:
+                - atendimento
+    /api/v1/atendimento/eventos/alertmanager:
+        post:
+            description: 'Sem sessão de pessoa: Authorization: Bearer com o token de ATENDIMENTO_EVENTOS_TOKEN (404 sem token configurado, 401 com token errado). Cada alerta (fingerprint) abre um incidente na oferta escolhida; o reenvio e a volta ao normal viram nota interna, e o chamado não é concluído sozinho. 409 sem oferta escolhida: o Alertmanager tenta de novo (ADR 067).'
+            operationId: postAtendimentoEventosAlertmanager
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoWebhookAlertmanager'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoResultadoEventos'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: Nenhuma oferta escolhida para os alertas.
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — webhook do Alertmanager
+            tags:
+                - atendimento
+    /api/v1/atendimento/eventos/configuracao:
+        get:
+            description: A oferta de incidente em que os alertas do monitoramento abrem chamado (null = nenhuma). Só quem gere o atendimento em toda a instituição.
+            operationId: getAtendimentoEventosConfiguracao
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoConfiguracaoEventos'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — oferta dos alertas
+            tags:
+                - atendimento
+        put:
+            description: Precisa ser oferta de incidente e ativa; null desliga a abertura. Só quem gere o atendimento em toda a instituição; auditado.
+            operationId: putAtendimentoEventosConfiguracao
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoConfiguracaoEventosRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoConfiguracaoEventos'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — escolher a oferta dos alertas
             tags:
                 - atendimento
     /api/v1/atendimento/feriados:

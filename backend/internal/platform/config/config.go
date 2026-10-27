@@ -110,6 +110,11 @@ type SecurityConfig struct {
 	// scrape. Suporta o padrão "<KEY>_FILE" via loader.secret.
 	MetricsToken string
 
+	// EventosToken autentica o Alertmanager na entrada de eventos do
+	// atendimento (ADR 067): "Authorization: Bearer <token>". Vazio = a
+	// entrada fica desligada (404). Suporta "<KEY>_FILE".
+	EventosToken string
+
 	// TrustedProxies é a lista de CIDRs de proxies reversos confiáveis
 	// (gap G-04). Só quando o RemoteAddr da conexão TCP cai numa dessas
 	// faixas é que o cabeçalho X-Forwarded-For é lido para descobrir o IP
@@ -477,6 +482,7 @@ func Load() (*Config, error) {
 			ConfigEncryptionKey: l.secret("CONFIG_ENCRYPTION_KEY", false, insecureConfigEncryptionKey),
 			CofreMasterKey:      l.secret("COFRE_MASTER_KEY", false, insecureCofreMasterKey),
 			MetricsToken:        l.secret("METRICS_SCRAPE_TOKEN", false, ""),
+			EventosToken:        l.secret("ATENDIMENTO_EVENTOS_TOKEN", false, ""),
 			TrustedProxies:      splitCSV(l.str("TRUSTED_PROXIES", false, "")),
 		},
 		LocalAuth: LocalAuthConfig{

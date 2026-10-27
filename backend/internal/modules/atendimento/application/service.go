@@ -125,6 +125,10 @@ func MapError(err error) error {
 		return causa(err, apperrors.DependencyUnavailable("a IA não respondeu agora; tente de novo ou siga sem ela"))
 	case errors.Is(err, domain.ErrSugestaoDecidida):
 		return causa(err, apperrors.Conflict("esta sugestão já foi decidida"))
+	case errors.Is(err, domain.ErrEventosSemOferta):
+		return causa(err, apperrors.Conflict("escolha, em Atendimento > Configuração, a oferta em que os alertas abrem incidente"))
+	case errors.Is(err, domain.ErrAlertaInvalido):
+		return causa(err, apperrors.Validation("alerta fora do formato do Alertmanager (status e fingerprint)"))
 	case errors.Is(err, domain.ErrEntradaInvalida):
 		return causa(err, apperrors.Validation("informe o nome (até 160 caracteres); a descrição cabe em 4000 e a equipe em 100 pessoas"))
 	case errors.Is(err, domain.ErrForaDoEscopo):

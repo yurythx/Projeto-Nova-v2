@@ -25,6 +25,7 @@ services:
       - "--storage.path=/alertmanager"
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./eventos_token:/etc/alertmanager/eventos_token:ro
       - alertmanager_data:/alertmanager
     networks:
       - nova_internal

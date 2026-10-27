@@ -216,3 +216,6 @@ func (h *apiHarness) deliver(eventType, aggregateID string) int {
 	}
 	return n
 }
+
+// tokenEventosTeste liga a entrada de eventos do atendimento nos testes.
+const tokenEventosTeste = "token-de-eventos-do-teste"
