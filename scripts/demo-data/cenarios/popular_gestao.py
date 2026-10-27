@@ -40,6 +40,15 @@ def ok(label, code, d, want=(200, 201, 204)):
     return d.get("data", d) if isinstance(d, dict) else (d or {})
 
 
+def obter_ou_criar(label, user, rota, corpo, campo="nome", lista=None):
+    """Reaproveita pelo nome o que uma execução anterior já criou: rodar
+    de novo não duplica o cadastro, só os registros do dia a dia."""
+    code, d = call(user, "GET", f"{lista or rota}?page_size=200")
+    itens = d.get("data") if code == 200 and isinstance(d, dict) else None
+    achado = next((i for i in itens or [] if i.get(campo) == corpo[campo]), None)
+    return achado or ok(label, *call(user, "POST", rota, corpo))
+
+
 def uid(u):
     if u not in _ids:
         _ids[u] = call(u, "GET", "me")[1]["data"]["id"]
@@ -50,14 +59,14 @@ unidades = {u["nome"]: u["id"] for u in call(ADMIN, "GET", "iam/unidades")[1]["d
 SEDE = unidades["Sede Administrativa da Prefeitura"]
 
 print("== Perfil dos técnicos de TI (Central de Serviços)")
-perfil = ok("perfil técnico", *call(ADMIN, "POST", "iam/perfis", {
+perfil = obter_ou_criar("perfil técnico", ADMIN, "iam/perfis", campo="slug", corpo={
     "slug": "tecnico-ti-demo", "nome": "Técnico de TI (teste)",
     "descricao": "Atende a Central de Serviços e cuida de ativos, problemas, mudanças, projetos e contratos.",
     "permissoes": ["atendimento:atender", "atendimento:abrir", "ativos:manage", "problemas:read", "problemas:manage",
-                   "mudancas:manage", "projetos:read", "projetos:manage", "contratos:manage", "cofre:read", "cofre:reveal"]}))
+                   "mudancas:manage", "projetos:read", "projetos:manage", "contratos:manage", "cofre:read", "cofre:reveal"]})
 if perfil:
     ok("mapeamento PREF-SEDE-TI", *call(ADMIN, "POST", "iam/ad-mappings", {
-        "ad_group": "PREF-SEDE-TI", "perfil_id": perfil["id"], "descricao": "Técnicos de TI (teste)"}))
+        "ad_group": "PREF-SEDE-TI", "perfil_id": perfil["id"], "descricao": "Técnicos de TI (teste)"}), want=(200, 201, 409))
 
 print("== Produtos digitais")
 PRODUTOS = {}
@@ -73,8 +82,8 @@ for nome, estagio, util in [
     ("Backup corporativo", "operacao", "Cópias dos servidores e bancos"),
     ("Assinatura digital", "desenho", "Documentos com validade jurídica"),
 ]:
-    d = ok(f"produto {nome}", *call(ADMIN, "POST", "produtos", {"nome": nome, "estagio": estagio, "utilidade": util,
-                                                              "garantia": "Disponível 99% no horário de expediente", "unidade_id": SEDE}))
+    d = obter_ou_criar(f"produto {nome}", ADMIN, "produtos", {"nome": nome, "estagio": estagio, "utilidade": util,
+                                                             "garantia": "Disponível 99% no horário de expediente", "unidade_id": SEDE})
     if d:
         PRODUTOS[nome] = d["id"]
 
@@ -91,8 +100,8 @@ divisao = {"N1 - Service Desk": (TECS[1:6], 8), "Redes e Telefonia": (TECS[3:5] 
            "Sistemas": (TECS[1:2] + TECS[4:5] + TECS[7:8], 48), "Infraestrutura": (TECS[3:4] + TECS[6:9], 24),
            "Suporte de Campo": (TECS[2:3] + TECS[5:6] + TECS[8:9], 16)}
 for nome, (membros, ola) in divisao.items():
-    d = ok(f"equipe {nome}", *call(ADMIN, "POST", "atendimento/equipes", {"nome": nome, "unidade_id": SEDE, "ola_horas": ola,
-                                                                         "membros": [uid(m) for m in membros]}))
+    d = obter_ou_criar(f"equipe {nome}", ADMIN, "atendimento/equipes", {"nome": nome, "unidade_id": SEDE, "ola_horas": ola,
+                                                                        "membros": [uid(m) for m in membros]})
     if d:
         EQUIPES[nome] = (d["id"], membros)
 
@@ -118,10 +127,10 @@ CATALOGO = [
     ("Empréstimo de projetor", "requisicao", "Rede corporativa", ["Projetor para reunião", "Projetor para capacitação", "Notebook e projetor para evento"]),
 ]
 for nome, tipo, produto, _ in CATALOGO:
-    d = ok(f"oferta {nome}", *call(ADMIN, "POST", "atendimento/ofertas", {
+    d = obter_ou_criar(f"oferta {nome}", ADMIN, "atendimento/ofertas", {
         "nome": nome, "tipo": tipo, "unidade_id": SEDE, "produto_id": PRODUTOS.get(produto), "ativa": True,
         "descricao": f"Central de Serviços de TI: {nome.lower()}.",
-        "campos": [{"chave": "patrimonio", "rotulo": "Patrimônio do equipamento", "tipo": "texto", "obrigatorio": False}] if tipo == "incidente" else []}))
+        "campos": [{"chave": "patrimonio", "rotulo": "Patrimônio do equipamento", "tipo": "texto", "obrigatorio": False}] if tipo == "incidente" else []})
     if d:
         OFERTAS.append((d["id"], tipo, nome))
 
@@ -131,8 +140,8 @@ for nome, tarefas in [("Admissão de servidor", [("Criar conta de rede e e-mail"
                                                  ("Liberar acesso aos sistemas", "Sistemas"), ("Configurar ramal", "Redes e Telefonia")]),
                       ("Desligamento de servidor", [("Bloquear contas", "Sistemas"), ("Recolher equipamento", "Suporte de Campo"),
                                                     ("Arquivar caixa de e-mail", "Infraestrutura")])]:
-    d = ok(f"oferta {nome}", *call(ADMIN, "POST", "atendimento/ofertas", {"nome": nome, "tipo": "requisicao", "unidade_id": SEDE, "ativa": True,
-                                                                         "descricao": f"{nome}: aprovação da TI e tarefas por equipe."}))
+    d = obter_ou_criar(f"oferta {nome}", ADMIN, "atendimento/ofertas", {"nome": nome, "tipo": "requisicao", "unidade_id": SEDE, "ativa": True,
+                                                                        "descricao": f"{nome}: aprovação da TI e tarefas por equipe."})
     if not d:
         continue
     ok(f"etapas {nome}", *call(ADMIN, "PUT", f"atendimento/ofertas/{d['id']}/etapas", {"etapas": [{"nome": "Diretoria de TI", "aprovadores": [uid(DIRETOR_TI)]}]}))
@@ -144,8 +153,8 @@ print("== Contratos, fornecedores e licenças")
 FORNECEDORES = {}
 for nome in ["Conecta Telecom Ltda", "InfoServ Manutenção", "Sistemas Públicos S/A", "Papel & Toner Distribuidora",
              "DataCenter Cuiabá", "Segurança Digital ME", "Rede Norte Cabeamento", "SoftGov Licenças"]:
-    d = ok(f"fornecedor {nome}", *call(ADMIN, "POST", "contratos/fornecedores", {"nome": nome, "email": "contato@" + nome.split()[0].lower() + ".test",
-                                                                                 "telefone": "(66) 3411-%04d" % rnd.randint(0, 9999), "unidade_id": SEDE}))
+    d = obter_ou_criar(f"fornecedor {nome}", ADMIN, "contratos/fornecedores", {"nome": nome, "email": "contato@" + nome.split()[0].lower() + ".test",
+                                                                                "telefone": "(66) 3411-%04d" % rnd.randint(0, 9999), "unidade_id": SEDE})
     if d:
         FORNECEDORES[nome] = d["id"]
 CONTRATOS = []
