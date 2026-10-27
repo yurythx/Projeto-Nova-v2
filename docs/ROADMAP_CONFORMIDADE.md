@@ -14,9 +14,9 @@ Legenda: ✅ feito · 🟡 parcial / scaffold · ⬜ pendente · 🔒 depende de
 | # | Item | Estado |
 |---|---|---|
 | F0.1 | ADR obrigatório para contrato de API / RBAC / auditoria / middleware | ✅ ADRs 005–007; checklist no template de PR |
-| F0.2 | Gates de CI: `govulncheck` + `staticcheck` + `gosec` (bloqueante) + `go vet` + `go test -race -p 1` | ✅ `.github/workflows/ci.yml`, `make backend-sec` |
+| F0.2 | Gates de CI: `govulncheck` + `staticcheck` + `gosec` (bloqueante) + `go vet` + `go test -race -p 1` | ✅ `.github/workflows/ci.yml`, `make backend-sec`. O workflow ficou fora do repositório de 21/10 a 27/10/2026 (ADR 064) e voltou com os quatro serviços de teste, frontend, infra e build das imagens |
 | F0.3 | Checklist de conformidade no template de PR | ✅ `.github/pull_request_template.md` |
-| F0.4 | Convenções de teste + migration (`up→down→up` no CI) | ✅ job `migrations-reversibility`, `make migrate-redo` |
+| F0.4 | Convenções de teste + migration (`up→down→up` no CI) | ✅ passo "Migrations ida, volta e ida" do job backend, `make migrate-redo` |
 
 ## Fase 1 — Contenção dos riscos altos
 
@@ -78,7 +78,7 @@ Legenda: ✅ feito · 🟡 parcial / scaffold · ⬜ pendente · 🔒 depende de
 | F6.4 | Estrutura organizacional e perfis com `ON DELETE RESTRICT` (409 em uso) | ✅ migration 000121 |
 | F6.5 | Auditoria com IP e User-Agent em toda entrada (proveniência skill §5) | ✅ `audit.CaptureOrigin` |
 | F6.6 | LGPD — consentimento de usuários federados e versão vigente obrigatória | ✅ |
-| F6.7 | Testes de integração no CI (Postgres real), cobertura 46,5% → 70% | ✅ |
+| F6.7 | Testes de integração no CI (Postgres real), cobertura 46,5% → 70% | ✅; os 13 pacotes da gestão de serviços abaixo de 100% têm piso que só sobe (`scripts/coverage-floor.txt`, ADR 064) |
 | F6.8 | OpenAPI sincronizado com o roteador (teste de contrato) | ✅ `internal/app/openapi_test.go` |
 
 ## Fase 7 — Revisão das regras de negócio dos plug-ins (ADR 009)

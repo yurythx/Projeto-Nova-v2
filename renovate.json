@@ -1,0 +1,56 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "America/Cuiaba",
+  "schedule": ["before 7am on monday"],
+  "labels": ["dependencias"],
+  "prConcurrentLimit": 5,
+  "minimumReleaseAge": "14 days",
+  "postUpdateOptions": ["gomodTidy"],
+  "packageRules": [
+    {
+      "description": "Correções e ajustes menores juntos, um PR por ecossistema",
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchManagers": ["gomod"],
+      "groupName": "Go (menores)"
+    },
+    {
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchManagers": ["npm"],
+      "groupName": "frontend (menores)"
+    },
+    {
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchManagers": ["docker-compose", "dockerfile"],
+      "groupName": "imagens (menores)"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Versão maior de banco e fila muda o formato dos dados: só com plano de migração",
+      "matchPackageNames": ["postgres", "rabbitmq", "redis", "typesense/typesense"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": ["pgsty/minio"],
+      "versioning": "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T"
+    },
+    {
+      "description": "O Next fixa a versão do React: os dois sobem juntos",
+      "matchPackageNames": ["next", "react", "react-dom", "@types/react", "@types/react-dom", "eslint-config-next"],
+      "groupName": "Next e React"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["seguranca"],
+    "minimumReleaseAge": null,
+    "schedule": ["at any time"]
+  }
+}

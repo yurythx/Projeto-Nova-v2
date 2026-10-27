@@ -1,0 +1,20 @@
+# Piso de cobertura dos módulos que ainda não chegaram a 100% (catraca,
+# ADR 064). O piso só sobe: o gate avisa quando dá para subir e quando a
+# linha pode sair. Módulo que não está aqui precisa de 100%.
+#
+# Medido em 2026-10-27, com Postgres, RabbitMQ, MinIO e Typesense, menos
+# 0,2 ponto de margem para testes que variam com o tempo.
+
+app                      94.8
+atendimento              85.3
+ativos                   72.2
+cofre                    64.1
+contratos                60.1
+mudancas                 90.7
+platform/auth            99.1
+platform/config          97.3
+platform/mail            75.6
+platform/notificacoes    83.6
+problemas                98.7
+projetos                 69.1
+quadros                  54.8

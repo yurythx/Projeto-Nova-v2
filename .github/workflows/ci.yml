@@ -1,0 +1,211 @@
+# Integração contínua. Toda PR e todo push na main passam por aqui; a
+# branch main só aceita merge com todos os jobs verdes (proteção da branch
+# no GitHub). Os mesmos comandos rodam local: ver docs/GUIDE_DESENVOLVEDOR.md.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Versões das ferramentas de análise: o Renovate não as enxerga, então
+  # sobem à mão, junto com o Go.
+  GOVULNCHECK_VERSION: v1.9.0
+  STATICCHECK_VERSION: v0.8.2
+  GOSEC_VERSION: v2.30.0
+
+jobs:
+  backend:
+    name: Backend (testes, migrations, cobertura)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: nova
+          POSTGRES_PASSWORD: nova_ci_password
+          POSTGRES_DB: nova_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U nova -d nova_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      rabbitmq:
+        image: rabbitmq:3.13-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: nova
+          RABBITMQ_DEFAULT_PASS: nova_ci_password
+        ports: ["5672:5672"]
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_port_connectivity"
+          --health-interval 10s --health-timeout 10s --health-retries 10
+    # Sem um destes serviços o teste de integração correspondente é pulado
+    # em silêncio e a cobertura cai: todos sobem aqui.
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: nova_test
+      DB_USER: nova
+      DB_PASSWORD: nova_ci_password
+      TEST_DATABASE_URL: postgres://nova:nova_ci_password@localhost:5432/nova_test?sslmode=disable
+      TEST_RABBITMQ_URL: amqp://nova:nova_ci_password@localhost:5672/
+      TEST_MINIO_ENDPOINT: localhost:9000
+      TEST_MINIO_ACCESS_KEY: nova_minio
+      TEST_MINIO_SECRET_KEY: nova_ci_password
+      TEST_TYPESENSE_URL: http://localhost:8108
+      TEST_TYPESENSE_API_KEY: ci-typesense-key
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      # MinIO e Typesense pedem argumentos de linha de comando, que
+      # "services:" não aceita. As versões são as do docker-compose.yml.
+      - name: MinIO e Typesense
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=nova_minio -e MINIO_ROOT_PASSWORD=nova_ci_password \
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
+          docker run -d --name typesense -p 8108:8108 \
+            typesense/typesense:29.0 --data-dir=/tmp --api-key=ci-typesense-key
+          for _ in $(seq 1 30); do
+            curl -fs http://localhost:9000/minio/health/live >/dev/null &&
+              curl -fs http://localhost:8108/health | grep -q '"ok":true' && exit 0
+            sleep 2
+          done
+          docker logs minio; docker logs typesense; exit 1
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - name: Migrations ida, volta e ida (toda migration tem Down)
+        run: |
+          go run ./cmd/migrate up
+          go run ./cmd/migrate down-to 0
+          go run ./cmd/migrate up
+      - name: Testes (race, Postgres real)
+        run: go test -race -p 1 -count=1 -coverpkg=./internal/...,./pkg/... -coverprofile=coverage.out ./...
+      - name: Cobertura por módulo
+        working-directory: .
+        run: bash scripts/coverage-gate.sh backend/coverage.out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cobertura-backend
+          path: backend/coverage.out
+          retention-days: 14
+
+  backend-seguranca:
+    name: Backend (govulncheck, staticcheck, gosec)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Instalar as ferramentas
+        run: |
+          go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
+          go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
+          go install "github.com/securego/gosec/v2/cmd/gosec@${GOSEC_VERSION}"
+      - run: govulncheck ./...
+      - run: staticcheck ./...
+      # G104 (erro ignorado) fica com o errcheck do vet/staticcheck.
+      - run: gosec -quiet -exclude=G104 ./...
+
+  frontend:
+    name: Frontend (lint, tipos, testes)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # A mesma linha da imagem de produção (frontend/Dockerfile).
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint -- --max-warnings 0
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm test
+
+  infra:
+    name: Infra (Terraform, Ansible, compose)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt e validate
+        working-directory: deploy/infra/terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: Ansible (sintaxe)
+        working-directory: deploy/infra/ansible
+        run: |
+          pipx install --include-deps ansible-core
+          ansible-galaxy collection install -r requirements.yml
+          ansible-playbook -i 'ci,' --syntax-check site.yml runner.yml
+      - name: Compose (todas as camadas resolvem)
+        run: |
+          cp .env.example .env
+          echo "CLOUDFLARE_TUNNEL_TOKEN=ci" >> .env
+          echo "HTTPS_PUBLIC_HOST=ci.local" >> .env
+          docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml -f docker-compose.https.yml config -q
+      - name: Monitoramento (regras e configuração)
+        working-directory: deploy/observability
+        run: |
+          echo ci > metrics_token
+          docker run --rm --entrypoint promtool -v "$PWD:/etc/prometheus" -w /etc/prometheus \
+            prom/prometheus:v2.54.0 check config prometheus.yml
+          docker run --rm --entrypoint amtool -v "$PWD:/c" \
+            prom/alertmanager:v0.27.0 check-config /c/alertmanager.yml
+      - name: Scripts (shellcheck e o teste do gate de cobertura)
+        run: |
+          shellcheck -S warning scripts/*.sh deploy/infra/*.sh
+          bash scripts/coverage-gate.test.sh
+
+  imagens:
+    name: Imagens Docker (build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nome: api, contexto: backend, arquivo: backend/Dockerfile.api }
+          - { nome: worker, contexto: backend, arquivo: backend/Dockerfile.worker }
+          - { nome: frontend, contexto: frontend, arquivo: frontend/Dockerfile }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.contexto }}
+          file: ${{ matrix.arquivo }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.nome }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.nome }}

@@ -21,7 +21,7 @@
 #   scripts/monitor.sh --install-cron  # agenda a cada 5 minutos
 set -uo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"
 # shellcheck disable=SC1091
 [ -f /etc/default/projeto-nova-monitor ] && . /etc/default/projeto-nova-monitor

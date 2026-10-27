@@ -82,7 +82,7 @@ find "$DST" -name '*.go' -print0 | while IFS= read -r -d '' f; do rename "$f"; d
 sed -i -e "s#^// Package example é o módulo-modelo (blueprint) de um plugin do Projeto-nova-v2:#// Package ${NAME} é o plug-in ${TITLE} (gerado a partir do blueprint):#" "${DST}/module.go"
 
 # 2. Migration (goose, numeração sequencial).
-LAST=$(ls "$MIGRATIONS" | grep -E '^[0-9]{6}_.*\.sql$' | sort | tail -1 | cut -c1-6)
+LAST=$(find "$MIGRATIONS" -maxdepth 1 -name '[0-9][0-9][0-9][0-9][0-9][0-9]_*.sql' -printf '%f\n' | sort | tail -1 | cut -c1-6)
 NEXT=$(printf '%06d' $((10#$LAST + 1)))
 MIGRATION="${MIGRATIONS}/${NEXT}_${NAME}.sql"
 cat > "$MIGRATION" <<EOF

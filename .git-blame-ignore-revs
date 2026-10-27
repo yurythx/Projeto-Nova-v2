@@ -1,0 +1,5 @@
+# Commits só de formatação: git blame os pula
+# (git config blame.ignoreRevsFile .git-blame-ignore-revs; o GitHub lê sozinho).
+
+# style(frontend): aplica o Prettier em todo o frontend
+4121339df0a109396cf61ac4ffbb0e313984c9ac

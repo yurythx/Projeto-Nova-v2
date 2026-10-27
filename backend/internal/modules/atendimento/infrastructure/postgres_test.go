@@ -625,8 +625,16 @@ func TestSerieReal(t *testing.T) {
 	if err := r.GravarRetrato(ctx, pool, domain.Retrato{Dia: dia}); err != nil {
 		t.Fatal(err)
 	}
+	// O banco é o da suíte inteira: outros testes gravam a série de hoje.
+	// Vale só o dia que este teste gravou.
 	tudo, err := r.ListarRetratos(ctx, pool, dia, false, nil)
-	if err != nil || len(tudo) != 1 || tudo[0].UnidadeID != nil {
+	var doDia []domain.Retrato
+	for _, p := range tudo {
+		if p.Dia.Equal(dia) {
+			doDia = append(doDia, p)
+		}
+	}
+	if err != nil || len(doDia) != 1 || doDia[0].UnidadeID != nil {
 		t.Fatalf("linha institucional: %+v %v", tudo, err)
 	}
 }

@@ -192,6 +192,10 @@ A suíte cobre três níveis, todos rodando no CI (job de backend com Postgres 1
 
 **Meta: 100% de cobertura por pacote.** O CI roda `scripts/coverage-gate.sh` sobre o perfil do `go test`. Precisam estar em 100%: cada plug-in de `internal/modules/*`, cada pacote de `internal/platform/*` (menos os dublês `dbtest` e `storagetest`), `internal/app` e `pkg/*`. Quando algum não está, o script lista as linhas descobertas (ver ADRs 009 e 010).
 
+Enquanto a gestão de serviços não chega lá, `scripts/coverage-floor.txt` dá um piso aos 13 pacotes abaixo da meta (catraca, [ADR 064](adr/064-catraca-de-cobertura.md)). O piso só sobe, e pacote novo precisa de 100%. Ao cobrir mais de um pacote listado, suba o piso como o gate indicar; em 100%, apague a linha.
+
+Sem RabbitMQ, MinIO e Typesense, os testes de integração deles são **pulados em silêncio** e a cobertura medida cai. Compare com o CI só com os quatro serviços no ar.
+
 Os testes de mensageria, armazenamento e composição rodam contra RabbitMQ e MinIO reais quando `TEST_RABBITMQ_URL` e `TEST_MINIO_ENDPOINT`/`TEST_MINIO_ACCESS_KEY`/`TEST_MINIO_SECRET_KEY` estão definidas; sem elas, são pulados. Para subir os dois localmente:
 
 ```bash
