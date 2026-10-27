@@ -37,11 +37,19 @@
         name: qemu-guest-agent
         state: present
 
+    # O serviço depende do canal virtio, que só existe com o agente ligado
+    # na VM (agent.enabled no Terraform, hoje false). Sem ele, o start falha.
+    - name: Verificar o canal do qemu-guest-agent
+      ansible.builtin.stat:
+        path: /dev/virtio-ports/org.qemu.guest_agent.0
+      register: canal_agente
+
     - name: Habilitar e iniciar qemu-guest-agent
       ansible.builtin.systemd:
         name: qemu-guest-agent
         enabled: yes
         state: started
+      when: canal_agente.stat.exists
 
 - name: Configurar regras básicas de firewall (UFW)
   community.general.ufw:
@@ -49,3 +57,12 @@
     port: '22'
     proto: tcp
     comment: "Acesso SSH Administrativo"
+
+# Sem isto o UFW fica instalado e inativo: nenhuma regra vale, nem a do
+# after.rules que filtra as portas do Docker (nova_deploy). A regra do SSH
+# vem antes, para a conexão do Ansible não cair.
+- name: Ativar o UFW negando a entrada por padrão
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming

@@ -5,7 +5,7 @@
 	backend-shell frontend-shell rabbitmq-status clean \
 	backend-build backend-test backend-lint backend-sec backend-format test-db-reset \
 	frontend-build frontend-test frontend-lint frontend-format \
-	infra-init infra-plan infra-apply infra-destroy infra-deploy \
+	infra-init infra-plan infra-apply infra-destroy infra-deploy infra-deploy-docker \
 	infra-segredos infra-segredos-migrar
 
 ifneq (,$(wildcard .env))
@@ -219,6 +219,9 @@ infra-deploy: ## Docker + stack + backup + monitoramento na VM (Ansible; no Wind
 		ansible-playbook site.yml \
 			$$(for f in secrets.yml cloudflare.secrets.yml; do [ -f $$f ] && printf -- '-e @%s ' $$f; done) \
 			$$([ -f secrets.vault.yml ] && printf -- '-e @secrets.vault.yml $(VAULT_ARGS)') 			$(ANSIBLE_ARGS)
+
+infra-deploy-docker: ## O mesmo infra-deploy com o Ansible num container (só precisa do Docker)
+	bash scripts/infra-deploy.sh $(ANSIBLE_ARGS)
 
 infra-segredos: ## Abre (ou cria) o cofre cifrado deploy/infra/ansible/secrets.vault.yml
 	cd deploy/infra/ansible && if [ -f secrets.vault.yml ]; then \

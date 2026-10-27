@@ -154,6 +154,12 @@ make infra-apply      # 1. cria a VM 240 e gera ansible/inventory.ini
 make infra-deploy     # 3. Docker + stack com o domínio (Ansible; no Windows, pelo WSL)
 ```
 
+Sem Ansible na máquina, `bash scripts/infra-deploy.sh` (ou
+`make infra-deploy-docker`) roda o mesmo playbook num container e só precisa
+do Docker. Funciona no Git Bash do Windows. A chave das VMs vem de
+`NOVA_SSH_KEY` (padrão `~/.ssh/sismarq_deploy`), e os argumentos vão para o
+`ansible-playbook`: `bash scripts/infra-deploy.sh --limit producao`.
+
 Na zona, deixe Rocket Loader e Email Address Obfuscation desligados: os dois
 injetam scripts que a CSP do frontend bloqueia.
 

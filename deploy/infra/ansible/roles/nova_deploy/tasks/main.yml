@@ -146,7 +146,8 @@
 - name: Deixar só o conector do túnel chegar às portas da stack
   ansible.builtin.blockinfile:
     path: /etc/ufw/after.rules
-    marker: "# {mark} Projeto-nova-v2: só o conector do túnel"
+    # Só ASCII: o ufw regrava este arquivo e quebra com acento.
+    marker: "# {mark} Projeto-nova-v2: so o conector do tunel"
     block: |
       *filter
       :DOCKER-USER - [0:0]
