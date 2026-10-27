@@ -31,6 +31,8 @@ type EquipeRequest struct {
 	Nome      string      `json:"nome" validate:"required,max=160"`
 	UnidadeID *uuid.UUID  `json:"unidade_id"`
 	Membros   []uuid.UUID `json:"membros" validate:"max=100"`
+	// OLAHoras é o prazo da equipe para as suas tarefas, em horas corridas.
+	OLAHoras *int `json:"ola_horas" validate:"omitempty,min=1,max=8760"`
 }
 
 // Handlers da API de atendimento.
@@ -65,6 +67,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/atendimento/governanca", h.Governanca)
 		r.Get("/atendimento/governanca/serie", h.Serie)
 		r.Get("/atendimento/xla", h.MetasXLA)
+		r.Get("/atendimento/relatorio/secretarias", h.RelatorioPorSecretaria)
 		r.Get("/atendimento/fila/topicos", h.TopicosDaFila)
 		r.Put("/atendimento/solicitacoes/{id}/responsavel", h.Atribuir)
 		r.Get("/atendimento/solicitacoes/{id}/responsaveis", h.Responsaveis)
@@ -140,7 +143,7 @@ func (req OfertaRequest) entrada() application.OfertaEntrada {
 }
 
 func (req EquipeRequest) entrada() application.EquipeEntrada {
-	return application.EquipeEntrada{Nome: req.Nome, UnidadeID: req.UnidadeID, Membros: req.Membros}
+	return application.EquipeEntrada{Nome: req.Nome, UnidadeID: req.UnidadeID, Membros: req.Membros, OLAHoras: req.OLAHoras}
 }
 
 func (h *Handlers) ListarOfertas(w http.ResponseWriter, r *http.Request) {

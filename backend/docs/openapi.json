@@ -1013,6 +1013,9 @@
           "nome": {
             "type": "string"
           },
+          "ola_horas": {
+            "type": "integer"
+          },
           "unidade_id": {
             "format": "uuid",
             "type": "string"
@@ -1045,6 +1048,12 @@
           "nome": {
             "maxLength": 160,
             "type": "string"
+          },
+          "ola_horas": {
+            "maximum": 8760,
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer"
           },
           "unidade_id": {
             "format": "uuid",
@@ -1392,6 +1401,108 @@
           "pendentes",
           "recusadas",
           "tipo",
+          "total"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoLinhaEquipe": {
+        "properties": {
+          "atrasadas": {
+            "type": "integer"
+          },
+          "concluidas": {
+            "type": "integer"
+          },
+          "equipe_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mediana_horas": {
+            "nullable": true,
+            "type": "number"
+          },
+          "no_prazo": {
+            "type": "integer"
+          },
+          "no_prazo_percentual": {
+            "nullable": true,
+            "type": "number"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "ola_horas": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "pendentes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "atrasadas",
+          "concluidas",
+          "equipe_id",
+          "mediana_horas",
+          "no_prazo",
+          "no_prazo_percentual",
+          "nome",
+          "ola_horas",
+          "pendentes"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoLinhaSecretaria": {
+        "properties": {
+          "abertas": {
+            "type": "integer"
+          },
+          "canceladas": {
+            "type": "integer"
+          },
+          "concluidas": {
+            "type": "integer"
+          },
+          "experiencia": {
+            "$ref": "#/components/schemas/AtendimentoExperiencia"
+          },
+          "fcr_percentual": {
+            "nullable": true,
+            "type": "number"
+          },
+          "mttr_horas": {
+            "nullable": true,
+            "type": "number"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "sigla": {
+            "type": "string"
+          },
+          "sla_percentual": {
+            "nullable": true,
+            "type": "number"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "abertas",
+          "canceladas",
+          "concluidas",
+          "experiencia",
+          "fcr_percentual",
+          "mttr_horas",
+          "nome",
+          "sla_percentual",
           "total"
         ],
         "type": "object",
@@ -2009,6 +2120,45 @@
         },
         "required": [
           "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoRelatorio": {
+        "properties": {
+          "desde": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dias": {
+            "type": "integer"
+          },
+          "equipes": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoLinhaEquipe"
+            },
+            "type": "array"
+          },
+          "secretarias": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoLinhaSecretaria"
+            },
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/AtendimentoLinhaSecretaria"
+          },
+          "truncado": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "desde",
+          "dias",
+          "equipes",
+          "secretarias",
+          "total",
+          "truncado"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -13554,6 +13704,72 @@
           }
         ],
         "summary": "Atendimento — Excluir /atendimento/regras/{id}",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/relatorio/secretarias": {
+      "get": {
+        "description": "Nos últimos ?dias= (padrão 90, teto 366), no escopo de quem atende: volume (abertas, concluídas, canceladas), resolução, prazo, primeiro contato e a experiência de quem pediu (ADR 069), por secretaria (a unidade de topo da árvore; o pedido de um departamento conta para a sua secretaria) e no total. Traz também o OLA de cada equipe: tarefas concluídas no prazo da equipe, mediana e pendentes atrasadas (ADR 070). Acima do teto da amostra, ficam as mais recentes e truncado vem verdadeiro.",
+        "operationId": "getAtendimentoRelatorioSecretarias",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dias",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoRelatorio"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — relatório por secretaria e OLA das equipes",
         "tags": [
           "atendimento"
         ]

@@ -35,6 +35,7 @@ interface Equipe {
   nome: string;
   unidade_id?: string;
   membros: string[];
+  ola_horas?: number;
 }
 
 function texto(fd: FormData, nome: string) {
@@ -115,6 +116,7 @@ export default function AtendimentoCadastroPage() {
       nome: texto(fd, "nome"),
       unidade_id: idOuNulo(fd, "unidade_id"),
       membros: fd.getAll("membros").map(String),
+      ola_horas: texto(fd, "ola_horas") ? Number(texto(fd, "ola_horas")) : null,
     };
     const ok = await run(
       () =>
@@ -388,6 +390,15 @@ export default function AtendimentoCadastroPage() {
                 maxLength={160}
                 defaultValue={editEquipe?.nome}
                 autoComplete="off"
+              />
+              <Input
+                id="equipe-ola"
+                name="ola_horas"
+                type="number"
+                min={1}
+                max={8760}
+                label="Prazo da equipe para as tarefas (OLA, em horas corridas)"
+                defaultValue={editEquipe?.ola_horas}
               />
               <UnidadeDonaSelect
                 id="equipe-unidade"

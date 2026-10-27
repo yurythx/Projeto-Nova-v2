@@ -19,6 +19,7 @@ export const MODULE_CHILDREN: Record<string, GuardedTab[]> = {
     { href: "/atendimento/aprovacoes", label: "Aprovações" },
     { href: "/atendimento/fila", label: "Fila da equipe", permission: "atendimento:atender" },
     { href: "/atendimento/campo", label: "Em campo", permission: "atendimento:atender" },
+    { href: "/atendimento/relatorio", label: "Relatório", permission: "atendimento:atender" },
     { href: "/atendimento/cadastro", label: "Ofertas e equipes", permission: "atendimento:manage" },
     { href: "/atendimento/prazos", label: "Prazos", permission: "atendimento:manage" },
     { href: "/atendimento/regras", label: "Triagem", permission: "atendimento:manage" },

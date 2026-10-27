@@ -116,6 +116,7 @@ describe("Atendimento — ofertas e equipes", () => {
 
     const equipe = cartao("Nova equipe");
     await user.type(within(equipe).getByLabelText("Nome *"), "N2");
+    await user.type(within(equipe).getByLabelText(/Prazo da equipe/), "24");
     expect(
       await within(equipe).findByRole("option", { name: "TI — Tecnologia" }),
     ).toBeInTheDocument();
@@ -129,6 +130,7 @@ describe("Atendimento — ofertas e equipes", () => {
       nome: "N2",
       unidade_id: "u1",
       membros: ["c1"],
+      ola_horas: 24,
     });
 
     await user.click(screen.getByRole("button", { name: "Editar N1" }));
@@ -139,6 +141,7 @@ describe("Atendimento — ofertas e equipes", () => {
     expect(api.to("PUT v1/atendimento/equipes/eq1")[0]!.body).toMatchObject({
       membros: ["c1"],
       unidade_id: "u1",
+      ola_horas: null,
     });
 
     await user.click(screen.getByRole("button", { name: "Editar Plantão" }));
@@ -199,6 +202,7 @@ describe("Atendimento — ofertas e equipes", () => {
 
     const equipe = cartao("Nova equipe");
     await user.type(within(equipe).getByLabelText("Nome *"), "N2");
+    await user.type(within(equipe).getByLabelText(/Prazo da equipe/), "24");
     await user.click(within(equipe).getByRole("button", { name: "Cadastrar equipe" }));
     expect(await screen.findByText("equipe inválida")).toBeInTheDocument();
     expect(within(equipe).getByLabelText("Nome *")).toHaveValue("N2");

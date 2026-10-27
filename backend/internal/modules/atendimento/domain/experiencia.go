@@ -16,6 +16,7 @@ import (
 var (
 	ErrFacilidadeInvalida = errors.New("atendimento: a facilidade vai de 1 a 5")
 	ErrMetasInvalidas     = errors.New("atendimento: meta de experiência fora da faixa")
+	ErrOLAInvalido        = errors.New("atendimento: o prazo da equipe vai de 1 a 8760 horas")
 )
 
 // MetasXLA são as metas de experiência da organização. Nula = sem meta.

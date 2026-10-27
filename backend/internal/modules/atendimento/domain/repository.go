@@ -119,9 +119,26 @@ type SolicitacaoRepository interface {
 	AprovacaoRepository
 	TarefaRepository
 
+	RelatorioRepository
+
 	// MetasXLA devolve as metas de experiência (vazias quando ninguém definiu).
 	MetasXLA(ctx context.Context, db database.DBTX) (MetasXLA, error)
 	SalvarMetasXLA(ctx context.Context, db database.DBTX, m MetasXLA, por uuid.UUID, agora time.Time) error
+}
+
+// RelatorioRepository lê o que o relatório por secretaria e o OLA das
+// equipes precisam (ADR 070).
+type RelatorioRepository interface {
+	// ListarDoPeriodo lê as solicitações do escopo abertas desde a data, das
+	// mais novas para as mais antigas, até o limite.
+	ListarDoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time, limite int) ([]Solicitacao, error)
+	// SecretariasDe devolve, para cada unidade, a unidade de topo da árvore.
+	SecretariasDe(ctx context.Context, db database.DBTX, unidades []uuid.UUID) (map[uuid.UUID]Secretaria, error)
+	// AvaliacoesDe devolve a avaliação de cada solicitação que tem uma.
+	AvaliacoesDe(ctx context.Context, db database.DBTX, solicitacoes []uuid.UUID) (map[uuid.UUID]Avaliacao, error)
+	// TarefasDoPeriodo lê as tarefas dos pedidos do escopo abertos desde a
+	// data, com a equipe e o prazo dela.
+	TarefasDoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]TarefaMedida, error)
 }
 
 // TarefaRepository guarda o modelo de tarefas da oferta e as tarefas de

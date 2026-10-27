@@ -71,11 +71,13 @@ describe("submenus dos módulos", () => {
       "/atendimento/aprovacoes",
       "/atendimento/fila",
       "/atendimento/campo",
+      "/atendimento/relatorio",
     ]);
     expect(tabs(["atendimento:*"])).toEqual([
       "/atendimento/aprovacoes",
       "/atendimento/fila",
       "/atendimento/campo",
+      "/atendimento/relatorio",
       "/atendimento/cadastro",
       "/atendimento/prazos",
       "/atendimento/regras",

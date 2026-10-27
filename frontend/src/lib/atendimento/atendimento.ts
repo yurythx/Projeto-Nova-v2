@@ -193,6 +193,43 @@ export interface MedidaXLA {
   maior_melhor: boolean;
 }
 
+/** Uma secretaria (ou o total) no relatório do período (ADR 070). */
+export interface LinhaSecretaria {
+  unidade_id?: string;
+  nome: string;
+  sigla?: string;
+  total: number;
+  abertas: number;
+  concluidas: number;
+  canceladas: number;
+  mttr_horas: number | null;
+  sla_percentual: number | null;
+  fcr_percentual: number | null;
+  experiencia: Experiencia;
+}
+
+/** OLA de uma equipe: as tarefas que recebeu no período. */
+export interface LinhaEquipe {
+  equipe_id: string;
+  nome: string;
+  ola_horas: number | null;
+  concluidas: number;
+  no_prazo: number;
+  no_prazo_percentual: number | null;
+  mediana_horas: number | null;
+  pendentes: number;
+  atrasadas: number;
+}
+
+export interface RelatorioSecretarias {
+  desde: string;
+  dias: number;
+  truncado: boolean;
+  total: LinhaSecretaria;
+  secretarias: LinhaSecretaria[];
+  equipes: LinhaEquipe[];
+}
+
 export interface Experiencia {
   csat: MedidaXLA;
   facilidade: MedidaXLA;

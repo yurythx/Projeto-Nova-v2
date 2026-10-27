@@ -49,6 +49,8 @@ type EquipeEntrada struct {
 	Nome      string
 	UnidadeID *uuid.UUID
 	Membros   []uuid.UUID
+	// OLAHoras é o prazo da equipe para as suas tarefas (ADR 070).
+	OLAHoras *int
 }
 
 // Service implementa os casos de uso.
@@ -137,6 +139,8 @@ func MapError(err error) error {
 		return causa(err, apperrors.Forbidden("você não aprova a etapa atual deste pedido"))
 	case errors.Is(err, domain.ErrAutoaprovacao):
 		return causa(err, apperrors.Forbidden("quem pediu não aprova o próprio pedido"))
+	case errors.Is(err, domain.ErrOLAInvalido):
+		return causa(err, apperrors.Validation("o prazo da equipe vai de 1 a 8760 horas"))
 	case errors.Is(err, domain.ErrFacilidadeInvalida):
 		return causa(err, apperrors.Validation("a facilidade vai de 1 a 5"))
 	case errors.Is(err, domain.ErrMetasInvalidas):
@@ -392,9 +396,13 @@ func (s *Service) ObterEquipe(ctx context.Context, identity auth.Identity, id uu
 // CriarEquipe persiste a equipe, os membros, o evento e a auditoria na mesma transação.
 func (s *Service) CriarEquipe(ctx context.Context, identity auth.Identity, in EquipeEntrada) (domain.Equipe, error) {
 	e, err := domain.NovaEquipe(in.Nome, in.UnidadeID, in.Membros)
+	if err == nil {
+		err = domain.ValidarOLA(in.OLAHoras)
+	}
 	if err != nil {
 		return domain.Equipe{}, MapError(err)
 	}
+	e.OLAHoras = in.OLAHoras
 	if !ver(identity, e.UnidadeID) {
 		return domain.Equipe{}, MapError(domain.ErrForaDoEscopo)
 	}
@@ -423,9 +431,13 @@ func (s *Service) AtualizarEquipe(ctx context.Context, identity auth.Identity, i
 		return domain.Equipe{}, MapError(domain.ErrNaoEncontrado)
 	}
 	next, err := prev.Aplicar(in.Nome, in.UnidadeID, in.Membros)
+	if err == nil {
+		err = domain.ValidarOLA(in.OLAHoras)
+	}
 	if err != nil {
 		return domain.Equipe{}, MapError(err)
 	}
+	next.OLAHoras = in.OLAHoras
 	if !ver(identity, next.UnidadeID) {
 		return domain.Equipe{}, MapError(domain.ErrForaDoEscopo)
 	}

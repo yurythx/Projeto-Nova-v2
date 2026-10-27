@@ -25,7 +25,7 @@ var _ domain.Repository = (*Repository)(nil)
 
 const ofertaCols = `id, nome, descricao, tipo, produto_id, unidade_id, ativa, created_at, updated_at, campos`
 
-const equipeCols = `e.id, e.nome, e.unidade_id, e.created_at, e.updated_at,
+const equipeCols = `e.id, e.nome, e.unidade_id, e.ola_horas, e.created_at, e.updated_at,
 	COALESCE((SELECT array_agg(m.user_id ORDER BY m.user_id) FROM atendimento_equipe_membros m WHERE m.equipe_id = e.id), '{}')`
 
 func mapDB(err error) error {
@@ -99,7 +99,7 @@ func camposJSON(campos []domain.Campo) ([]byte, error) {
 
 func scanEquipe(row interface{ Scan(...any) error }) (domain.Equipe, error) {
 	var e domain.Equipe
-	err := row.Scan(&e.ID, &e.Nome, &e.UnidadeID, &e.CreatedAt, &e.UpdatedAt, &e.Membros)
+	err := row.Scan(&e.ID, &e.Nome, &e.UnidadeID, &e.OLAHoras, &e.CreatedAt, &e.UpdatedAt, &e.Membros)
 	if e.Membros == nil {
 		e.Membros = []uuid.UUID{}
 	}
@@ -209,10 +209,10 @@ func (r *Repository) GetEquipe(ctx context.Context, db database.DBTX, id uuid.UU
 
 // InsertEquipe grava a equipe. Os membros entram em SubstituirMembros.
 func (r *Repository) InsertEquipe(ctx context.Context, db database.DBTX, e domain.Equipe) (domain.Equipe, error) {
-	out, err := scanEquipe(db.QueryRow(ctx, `INSERT INTO atendimento_equipes (id, nome, unidade_id, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5)
-		RETURNING id, nome, unidade_id, created_at, updated_at, '{}'::uuid[]`,
-		e.ID, e.Nome, e.UnidadeID, e.CreatedAt, e.UpdatedAt))
+	out, err := scanEquipe(db.QueryRow(ctx, `INSERT INTO atendimento_equipes (id, nome, unidade_id, ola_horas, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6)
+		RETURNING id, nome, unidade_id, ola_horas, created_at, updated_at, '{}'::uuid[]`,
+		e.ID, e.Nome, e.UnidadeID, e.OLAHoras, e.CreatedAt, e.UpdatedAt))
 	if err != nil {
 		return domain.Equipe{}, mapDB(err)
 	}
@@ -222,8 +222,8 @@ func (r *Repository) InsertEquipe(ctx context.Context, db database.DBTX, e domai
 
 // UpdateEquipe grava nome e unidade.
 func (r *Repository) UpdateEquipe(ctx context.Context, db database.DBTX, e domain.Equipe) (domain.Equipe, error) {
-	out, err := scanEquipe(db.QueryRow(ctx, `UPDATE atendimento_equipes SET nome = $2, unidade_id = $3 WHERE id = $1
-		RETURNING id, nome, unidade_id, created_at, updated_at, '{}'::uuid[]`, e.ID, e.Nome, e.UnidadeID))
+	out, err := scanEquipe(db.QueryRow(ctx, `UPDATE atendimento_equipes SET nome = $2, unidade_id = $3, ola_horas = $4 WHERE id = $1
+		RETURNING id, nome, unidade_id, ola_horas, created_at, updated_at, '{}'::uuid[]`, e.ID, e.Nome, e.UnidadeID, e.OLAHoras))
 	if err != nil {
 		return domain.Equipe{}, mapDB(err)
 	}

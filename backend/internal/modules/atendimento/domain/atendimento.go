@@ -79,8 +79,19 @@ type Equipe struct {
 	Nome      string      `json:"nome"`
 	UnidadeID *uuid.UUID  `json:"unidade_id,omitempty"`
 	Membros   []uuid.UUID `json:"membros"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	// OLAHoras é o prazo, em horas corridas, que a equipe assume para as
+	// tarefas que recebe (ADR 070). Nulo = sem meta.
+	OLAHoras  *int      `json:"ola_horas,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ValidarOLA confere o prazo da equipe: de 1 hora a um ano.
+func ValidarOLA(h *int) error {
+	if h != nil && (*h < 1 || *h > 8760) {
+		return ErrOLAInvalido
+	}
+	return nil
 }
 
 // Candidato é um usuário ativo lotado na unidade, para compor a equipe.
@@ -191,7 +202,12 @@ func (e Equipe) Aplicar(nome string, unidade *uuid.UUID, membros []uuid.UUID) (E
 // Igual compara a equipe, inclusive o conjunto de membros, sem depender
 // da ordem em que o banco devolve o array.
 func (e Equipe) Igual(other Equipe) bool {
-	return e.ID == other.ID && e.Nome == other.Nome && MesmaUnidade(e.UnidadeID, other.UnidadeID) && mesmosMembros(e.Membros, other.Membros)
+	return e.ID == other.ID && e.Nome == other.Nome && MesmaUnidade(e.UnidadeID, other.UnidadeID) && mesmosMembros(e.Membros, other.Membros) &&
+		mesmaHora(e.OLAHoras, other.OLAHoras)
+}
+
+func mesmaHora(a, b *int) bool {
+	return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
 }
 
 func mesmosMembros(a, b []uuid.UUID) bool {
