@@ -26,6 +26,8 @@ type Governanca struct {
 	FCRPercentual *float64         `json:"fcr_percentual"`
 	Amostra       Amostra          `json:"amostra"`
 	Deflexao      *domain.Deflexao `json:"deflexao,omitempty"`
+	// Experiencia mede como foi para quem pediu, com as metas (ADR 069).
+	Experiencia *domain.Experiencia `json:"experiencia,omitempty"`
 }
 
 // CSAT é a média das notas de 1 a 5 e as avaliações mais recentes.
@@ -92,6 +94,12 @@ func (s *Service) Governanca(ctx context.Context, identity auth.Identity) (Gover
 		return Governanca{}, MapError(err)
 	}
 	out.Deflexao = domain.ResumirDeflexao(viram, sem)
+	metas, err := s.repo.MetasXLA(ctx, s.pool)
+	if err != nil {
+		return Governanca{}, MapError(err)
+	}
+	exp := domain.MedirExperiencia(lista, passagens, resumo, metas)
+	out.Experiencia = &exp
 	return out, nil
 }
 

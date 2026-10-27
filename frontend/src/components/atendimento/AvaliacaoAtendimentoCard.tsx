@@ -17,6 +17,14 @@ const ROTULOS_NOTA: Record<number, string> = {
   5: "Excelente / Muito satisfeito",
 };
 
+const ROTULOS_FACILIDADE: Record<number, string> = {
+  1: "Muito difícil",
+  2: "Difícil",
+  3: "Nem fácil nem difícil",
+  4: "Fácil",
+  5: "Muito fácil",
+};
+
 interface AvaliacaoAtendimentoCardProps {
   solicitacao: Solicitacao;
   avaliacao?: Avaliacao | null;
@@ -39,6 +47,7 @@ export function AvaliacaoAtendimentoCard({
 
   const [nota, setNota] = useState<number>(5);
   const [hoverNota, setHoverNota] = useState<number>(0);
+  const [facilidade, setFacilidade] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
@@ -53,6 +62,7 @@ export function AvaliacaoAtendimentoCard({
     try {
       await apiClient.post(`v1/atendimento/solicitacoes/${solicitacao.id}/avaliacao`, {
         nota,
+        facilidade,
         comentario: comentario.trim(),
       });
       onAvaliado?.();
@@ -98,6 +108,11 @@ export function AvaliacaoAtendimentoCard({
                 {avaliacao.nota}/5 — {ROTULOS_NOTA[avaliacao.nota]}
               </span>
             </div>
+            {avaliacao.facilidade && (
+              <p className="text-xs">
+                Facilidade: {avaliacao.facilidade}/5 — {ROTULOS_FACILIDADE[avaliacao.facilidade]}
+              </p>
+            )}
             {avaliacao.comentario && (
               <p className="mt-1 text-xs text-muted italic">&quot;{avaliacao.comentario}&quot;</p>
             )}
@@ -132,6 +147,33 @@ export function AvaliacaoAtendimentoCard({
                 {ROTULOS_NOTA[hoverNota || nota]}
               </span>
             </div>
+
+            <fieldset className="flex flex-col gap-1">
+              <legend className="text-xs text-muted">
+                Foi fácil conseguir o que você precisava? (opcional)
+              </legend>
+              <div className="flex flex-wrap gap-1" role="group" aria-label="Facilidade de 1 a 5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setFacilidade(facilidade === n ? null : n)}
+                    aria-pressed={facilidade === n}
+                    aria-label={`Facilidade ${n}: ${ROTULOS_FACILIDADE[n]}`}
+                    className={`rounded-md border px-2 py-1 text-xs ${
+                      facilidade === n
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-surface-border"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+                {facilidade && (
+                  <span className="ml-1 self-center text-xs">{ROTULOS_FACILIDADE[facilidade]}</span>
+                )}
+              </div>
+            </fieldset>
 
             <Textarea
               id="csat-comentario"

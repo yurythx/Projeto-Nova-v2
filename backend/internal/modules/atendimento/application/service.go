@@ -137,6 +137,10 @@ func MapError(err error) error {
 		return causa(err, apperrors.Forbidden("você não aprova a etapa atual deste pedido"))
 	case errors.Is(err, domain.ErrAutoaprovacao):
 		return causa(err, apperrors.Forbidden("quem pediu não aprova o próprio pedido"))
+	case errors.Is(err, domain.ErrFacilidadeInvalida):
+		return causa(err, apperrors.Validation("a facilidade vai de 1 a 5"))
+	case errors.Is(err, domain.ErrMetasInvalidas):
+		return causa(err, apperrors.Validation("metas fora da faixa: nota e facilidade de 1 a 5, reabertura de 0 a 100%, idas e voltas de 0 a 20, espera de 1 a 8760 horas"))
 	case errors.Is(err, domain.ErrTarefasSoRequisicao):
 		return causa(err, apperrors.Validation("só oferta de requisição tem tarefas"))
 	case errors.Is(err, domain.ErrModeloInvalido):

@@ -118,6 +118,10 @@ type SolicitacaoRepository interface {
 	EventosRepository
 	AprovacaoRepository
 	TarefaRepository
+
+	// MetasXLA devolve as metas de experiência (vazias quando ninguém definiu).
+	MetasXLA(ctx context.Context, db database.DBTX) (MetasXLA, error)
+	SalvarMetasXLA(ctx context.Context, db database.DBTX, m MetasXLA, por uuid.UUID, agora time.Time) error
 }
 
 // TarefaRepository guarda o modelo de tarefas da oferta e as tarefas de

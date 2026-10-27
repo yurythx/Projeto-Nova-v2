@@ -76,7 +76,7 @@ experiência medida e nível de serviço por secretaria.
 | Eventos do monitoramento viram incidente ([ADR 067](adr/067-eventos-do-monitoramento.md)) | Implementada |
 | Aprovação em etapas na requisição ([ADR 068](adr/068-aprovacao-em-etapas-e-tarefas.md)) | Implementada |
 | Tarefas por equipe: admissão e desligamento de servidores ([ADR 068](adr/068-aprovacao-em-etapas-e-tarefas.md)) | Implementada |
-| Experiência medida além do CSAT (XLA) | A seguir |
+| Experiência medida além do CSAT (XLA) ([ADR 069](adr/069-experiencia-de-quem-pede-xla.md)) | Implementada |
 | SLA, OLA e contrato de apoio; relatório por secretaria | A seguir |
 | Importador do GLPI | A seguir |
 

@@ -285,6 +285,8 @@ components:
                 created_at:
                     format: date-time
                     type: string
+                facilidade:
+                    type: integer
                 id:
                     format: uuid
                     type: string
@@ -312,6 +314,11 @@ components:
                 comentario:
                     maxLength: 4000
                     type: string
+                facilidade:
+                    maximum: 5
+                    minimum: 1
+                    nullable: true
+                    type: integer
                 nota:
                     maximum: 5
                     minimum: 1
@@ -867,6 +874,26 @@ components:
                 - nome
             type: object
             x-projeto-nova-generated: true
+        AtendimentoExperiencia:
+            properties:
+                csat:
+                    $ref: '#/components/schemas/AtendimentoMedidaXLA'
+                espera_horas:
+                    $ref: '#/components/schemas/AtendimentoMedidaXLA'
+                facilidade:
+                    $ref: '#/components/schemas/AtendimentoMedidaXLA'
+                idas_e_voltas:
+                    $ref: '#/components/schemas/AtendimentoMedidaXLA'
+                reabertura:
+                    $ref: '#/components/schemas/AtendimentoMedidaXLA'
+            required:
+                - csat
+                - espera_horas
+                - facilidade
+                - idas_e_voltas
+                - reabertura
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoFeriado:
             properties:
                 created_at:
@@ -925,6 +952,8 @@ components:
                     $ref: '#/components/schemas/AtendimentoCSAT'
                 deflexao:
                     $ref: '#/components/schemas/AtendimentoDeflexao'
+                experiencia:
+                    $ref: '#/components/schemas/AtendimentoExperiencia'
                 fcr_percentual:
                     nullable: true
                     type: number
@@ -965,6 +994,29 @@ components:
                 - total
             type: object
             x-projeto-nova-generated: true
+        AtendimentoMedidaXLA:
+            properties:
+                amostra:
+                    type: integer
+                atingida:
+                    nullable: true
+                    type: boolean
+                maior_melhor:
+                    type: boolean
+                meta:
+                    nullable: true
+                    type: number
+                valor:
+                    nullable: true
+                    type: number
+            required:
+                - amostra
+                - atingida
+                - maior_melhor
+                - meta
+                - valor
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoMeta:
             properties:
                 prioridade:
@@ -987,6 +1039,63 @@ components:
                     type: integer
                 solucao_min:
                     type: integer
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoMetasXLA:
+            properties:
+                csat_min:
+                    nullable: true
+                    type: number
+                espera_max_horas:
+                    nullable: true
+                    type: integer
+                facilidade_min:
+                    nullable: true
+                    type: number
+                idas_max:
+                    nullable: true
+                    type: number
+                reabertura_max:
+                    nullable: true
+                    type: number
+                updated_at:
+                    format: date-time
+                    type: string
+            required:
+                - csat_min
+                - espera_max_horas
+                - facilidade_min
+                - idas_max
+                - reabertura_max
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoMetasXLARequest:
+            properties:
+                csat_min:
+                    maximum: 5
+                    minimum: 1
+                    nullable: true
+                    type: number
+                espera_max_horas:
+                    maximum: 8760
+                    minimum: 1
+                    nullable: true
+                    type: integer
+                facilidade_min:
+                    maximum: 5
+                    minimum: 1
+                    nullable: true
+                    type: number
+                idas_max:
+                    maximum: 20
+                    minimum: 0
+                    nullable: true
+                    type: number
+                reabertura_max:
+                    maximum: 100
+                    minimum: 0
+                    nullable: true
+                    type: number
             type: object
             x-projeto-nova-generated: true
         AtendimentoModeloRequest:
@@ -10410,6 +10519,78 @@ paths:
             security:
                 - bearerAuth: []
             summary: Atendimento — Listar/consultar /atendimento/visitas/em-campo
+            tags:
+                - atendimento
+    /api/v1/atendimento/xla:
+        get:
+            description: 'Metas da instituição para a experiência de quem pede (ADR 069): nota mínima, facilidade mínima, reabertura máxima (%), idas e voltas máximas e espera máxima (horas corridas da abertura à conclusão). Nula = sem meta. Para quem atende.'
+            operationId: getAtendimentoXla
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoMetasXLA'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — metas de experiência (XLA)
+            tags:
+                - atendimento
+        put:
+            description: 'Só a gestão do atendimento em toda a instituição (403 para gestão de unidade). Troca a linha inteira: campo ausente fica sem meta. A troca vai para a auditoria.'
+            operationId: putAtendimentoXla
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoMetasXLARequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoMetasXLA'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — trocar as metas de experiência (XLA)
             tags:
                 - atendimento
     /api/v1/ativos:

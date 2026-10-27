@@ -9,7 +9,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
-var avaliacaoSelect = `SELECT a.id, a.solicitacao_id, a.autor_id, ` + nomeDe("u") + `, a.nota, a.comentario, a.created_at,
+var avaliacaoSelect = `SELECT a.id, a.solicitacao_id, a.autor_id, ` + nomeDe("u") + `, a.nota, a.facilidade, a.comentario, a.created_at,
 	s.numero, s.titulo
 	FROM atendimento_avaliacoes a
 	JOIN atendimento_solicitacoes s ON s.id = a.solicitacao_id
@@ -17,7 +17,7 @@ var avaliacaoSelect = `SELECT a.id, a.solicitacao_id, a.autor_id, ` + nomeDe("u"
 
 func scanAvaliacao(row interface{ Scan(...any) error }) (domain.Avaliacao, error) {
 	var a domain.Avaliacao
-	err := row.Scan(&a.ID, &a.SolicitacaoID, &a.AutorID, &a.AutorNome, &a.Nota, &a.Comentario, &a.CreatedAt, &a.Numero, &a.Titulo)
+	err := row.Scan(&a.ID, &a.SolicitacaoID, &a.AutorID, &a.AutorNome, &a.Nota, &a.Facilidade, &a.Comentario, &a.CreatedAt, &a.Numero, &a.Titulo)
 	return a, err
 }
 
@@ -33,9 +33,9 @@ func (r *Repository) GetAvaliacao(ctx context.Context, db database.DBTX, solicit
 // InsertAvaliacao grava a nota. A segunda da mesma solicitação é recusada.
 func (r *Repository) InsertAvaliacao(ctx context.Context, db database.DBTX, a domain.Avaliacao) (domain.Avaliacao, error) {
 	_, err := db.Exec(ctx, `INSERT INTO atendimento_avaliacoes
-		(id, solicitacao_id, autor_id, nota, comentario, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
-		a.ID, a.SolicitacaoID, a.AutorID, a.Nota, a.Comentario, a.CreatedAt)
+		(id, solicitacao_id, autor_id, nota, facilidade, comentario, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		a.ID, a.SolicitacaoID, a.AutorID, a.Nota, a.Facilidade, a.Comentario, a.CreatedAt)
 	if database.IsUniqueViolation(err) {
 		return domain.Avaliacao{}, domain.ErrAvaliacaoExistente
 	}
@@ -48,10 +48,10 @@ func (r *Repository) InsertAvaliacao(ctx context.Context, db database.DBTX, a do
 // ResumoAvaliacoes agrega as notas visíveis no escopo da fila.
 func (r *Repository) ResumoAvaliacoes(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, recentes int) (domain.ResumoAvaliacoes, error) {
 	var out domain.ResumoAvaliacoes
-	err := db.QueryRow(ctx, `SELECT count(*), COALESCE(sum(a.nota), 0)
+	err := db.QueryRow(ctx, `SELECT count(*), COALESCE(sum(a.nota), 0), count(a.facilidade), COALESCE(sum(a.facilidade), 0)
 		FROM atendimento_avaliacoes a
 		JOIN atendimento_solicitacoes s ON s.id = a.solicitacao_id
-		WHERE ($1 = false OR s.unidade_id = ANY($2::uuid[]))`, restrito, idsOrEmpty(unidades)).Scan(&out.Total, &out.Soma)
+		WHERE ($1 = false OR s.unidade_id = ANY($2::uuid[]))`, restrito, idsOrEmpty(unidades)).Scan(&out.Total, &out.Soma, &out.TotalFacilidade, &out.SomaFacilidade)
 	if err != nil {
 		return domain.ResumoAvaliacoes{}, mapDB(err)
 	}

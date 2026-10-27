@@ -19,6 +19,11 @@ import (
 // Avaliar grava a nota de quem abriu. A segunda avaliação da mesma
 // solicitação é recusada. O responsável, quando houver, recebe o aviso.
 func (s *Service) Avaliar(ctx context.Context, identity auth.Identity, id uuid.UUID, nota int, comentario string) (domain.Avaliacao, error) {
+	return s.AvaliarCom(ctx, identity, id, nota, nil, comentario)
+}
+
+// AvaliarCom grava a nota com a resposta opcional a "foi fácil?" (ADR 069).
+func (s *Service) AvaliarCom(ctx context.Context, identity auth.Identity, id uuid.UUID, nota int, facilidade *int, comentario string) (domain.Avaliacao, error) {
 	var salva domain.Avaliacao
 	err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, ps []string) ([]notificacoes.Enviada, error) {
 		if !slices.Contains(ps, domain.PapelSolicitante) {
@@ -26,6 +31,9 @@ func (s *Service) Avaliar(ctx context.Context, identity auth.Identity, id uuid.U
 		}
 		nova, err := domain.NovaAvaliacao(sol, identity.UserID, nota, comentario)
 		if err != nil {
+			return nil, err
+		}
+		if nova, err = nova.ComFacilidade(facilidade); err != nil {
 			return nil, err
 		}
 		if salva, err = s.repo.InsertAvaliacao(ctx, tx, nova); err != nil {

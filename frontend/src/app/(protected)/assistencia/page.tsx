@@ -220,6 +220,7 @@ export default function AssistenciaDashboardPage() {
             totalFila={totalFila}
             veFila={veFila}
             governanca={governanca.data}
+            onRecarregar={() => void governanca.mutate()}
             serie={serie.data}
             serieErro={serie.error}
             problemas={listaProblemas}

@@ -46,3 +46,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [066](066-ocorrencias-e-pagina-de-status.md) | Incidente grave: plug-in Ocorrências com coordenação, linha do tempo e revisão; página de status pública em /status, só com o que é público | Aceito e implementado |
 | [067](067-eventos-do-monitoramento.md) | Alertas do Alertmanager viram incidente: um chamado por fingerprint, reenvio e volta ao normal viram nota; token de máquina; conta de sistema monitoramento | Aceito e implementado |
 | [068](068-aprovacao-em-etapas-e-tarefas.md) | Requisição com aprovação em etapas (a chefia decide sem permissão do atendimento; recusa com motivo cancela) e tarefas por equipe | Aceito e implementado |
+| [069](069-experiencia-de-quem-pede-xla.md) | Experiência de quem pede (XLA): facilidade na avaliação, reabertura, idas e voltas e espera em horas corridas, com metas da instituição | Aceito e implementado |

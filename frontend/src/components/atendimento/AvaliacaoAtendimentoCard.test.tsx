@@ -60,9 +60,32 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
     const enviado = api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")[0]!
       .body as Record<string, unknown>;
     expect(enviado.nota).toBe(5);
+    expect(enviado.facilidade).toBeNull();
     expect(enviado.comentario).toBe("Atendimento impecável");
     expect(onAvaliado).toHaveBeenCalled();
     expect(localStorage.length).toBe(0);
+  });
+
+  it("envia a facilidade quando a pessoa responde; clicar de novo desmarca", async () => {
+    const user = userEvent.setup();
+    const api = mockBackend({
+      "POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao": { status: 201, data: { nota: 4 } },
+    });
+    render(
+      <AvaliacaoAtendimentoCard solicitacao={solicitacaoResolvida} solicitante tecnico={false} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Facilidade 2: Difícil" }));
+    await user.click(screen.getByRole("button", { name: "Facilidade 2: Difícil" }));
+    expect(screen.queryByText("Difícil")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Facilidade 4: Fácil" }));
+    expect(screen.getByText("Fácil")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Enviar avaliação/i }));
+    await waitFor(() =>
+      expect(api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")).toHaveLength(1),
+    );
+    expect(api.to("POST v1/atendimento/solicitacoes/sol-csat-1/avaliacao")[0]!.body).toMatchObject({
+      facilidade: 4,
+    });
   });
 
   it("mostra a avaliação que veio do servidor", () => {
@@ -75,6 +98,7 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
           autor_id: "user-1",
           autor_nome: "Maria Oliveira",
           nota: 5,
+          facilidade: 5,
           comentario: "Atendimento impecável",
           created_at: "2026-10-21T16:00:00Z",
         }}
@@ -84,6 +108,7 @@ describe("AvaliacaoAtendimentoCard (Pesquisa de Satisfação CSAT)", () => {
     );
     expect(screen.getByText("Obrigado por avaliar o atendimento!")).toBeInTheDocument();
     expect(screen.getByText(/5\/5 — Excelente \/ Muito satisfeito/)).toBeInTheDocument();
+    expect(screen.getByText("Facilidade: 5/5 — Muito fácil")).toBeInTheDocument();
   });
 
   it("não exibe para solicitação ainda em aberto", () => {

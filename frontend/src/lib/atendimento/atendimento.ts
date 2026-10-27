@@ -147,6 +147,8 @@ export interface Avaliacao {
   autor_id: string;
   autor_nome: string;
   nota: number;
+  /** "Foi fácil conseguir o que precisava?" (1 a 5), opcional. */
+  facilidade?: number;
   comentario: string;
   created_at: string;
   numero?: number;
@@ -178,6 +180,25 @@ export interface Governanca {
     truncado: boolean;
   };
   deflexao?: { viram: number; sem_pedido: number; taxa: number } | null;
+  /** Experiência de quem pede, com as metas (ADR 069). */
+  experiencia?: Experiencia | null;
+}
+
+export interface MedidaXLA {
+  valor: number | null;
+  meta: number | null;
+  /** Nula sem amostra ou sem meta. */
+  atingida: boolean | null;
+  amostra: number;
+  maior_melhor: boolean;
+}
+
+export interface Experiencia {
+  csat: MedidaXLA;
+  facilidade: MedidaXLA;
+  reabertura: MedidaXLA;
+  idas_e_voltas: MedidaXLA;
+  espera_horas: MedidaXLA;
 }
 
 export interface Detalhe {

@@ -16,10 +16,12 @@ type Avaliacao struct {
 	AutorID       uuid.UUID `json:"autor_id"`
 	AutorNome     string    `json:"autor_nome"`
 	Nota          int       `json:"nota"`
-	Comentario    string    `json:"comentario"`
-	CreatedAt     time.Time `json:"created_at"`
-	Numero        int64     `json:"numero,omitempty"`
-	Titulo        string    `json:"titulo,omitempty"`
+	// Facilidade é a resposta opcional a "foi fácil?" (1 a 5, ADR 069).
+	Facilidade *int      `json:"facilidade,omitempty"`
+	Comentario string    `json:"comentario"`
+	CreatedAt  time.Time `json:"created_at"`
+	Numero     int64     `json:"numero,omitempty"`
+	Titulo     string    `json:"titulo,omitempty"`
 }
 
 // ResumoAvaliacoes é a média do escopo e as avaliações mais recentes.
@@ -27,6 +29,9 @@ type ResumoAvaliacoes struct {
 	Total    int
 	Soma     int
 	Recentes []Avaliacao
+	// TotalFacilidade e SomaFacilidade contam só quem respondeu "foi fácil?".
+	TotalFacilidade int
+	SomaFacilidade  int
 }
 
 // PodeAvaliar diz se a solicitação já tem conclusão para receber nota.

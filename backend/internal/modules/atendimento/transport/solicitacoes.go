@@ -235,7 +235,9 @@ func (h *Handlers) Responsaveis(w http.ResponseWriter, r *http.Request) {
 
 // AvaliacaoRequest é a nota de quem abriu a solicitação.
 type AvaliacaoRequest struct {
-	Nota       int    `json:"nota" validate:"required,min=1,max=5"`
+	Nota int `json:"nota" validate:"required,min=1,max=5"`
+	// Facilidade responde "foi fácil conseguir o que precisava?" (opcional).
+	Facilidade *int   `json:"facilidade" validate:"omitempty,min=1,max=5"`
 	Comentario string `json:"comentario" validate:"max=4000"`
 }
 
@@ -251,7 +253,7 @@ func (h *Handlers) Avaliar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	a, err := h.svc.Avaliar(r.Context(), identity, id, req.Nota, req.Comentario)
+	a, err := h.svc.AvaliarCom(r.Context(), identity, id, req.Nota, req.Facilidade, req.Comentario)
 	if err != nil {
 		h.fail(w, r, err)
 		return

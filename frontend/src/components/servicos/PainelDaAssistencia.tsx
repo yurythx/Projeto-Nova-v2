@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ArrowRight, FolderKanban, GitCommit, Headphones } from "lucide-react";
 
+import { ExperienciaCard } from "@/components/atendimento/ExperienciaCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -237,6 +238,7 @@ export function PainelDaAssistencia({
   mudancas,
   projetos,
   modulos,
+  onRecarregar,
 }: {
   editar: boolean;
   solicitacoes: Solicitacao[];
@@ -249,6 +251,8 @@ export function PainelDaAssistencia({
   mudancas: Mudanca[];
   projetos: Projeto[];
   modulos: { atendimento: boolean; problemas: boolean; mudancas: boolean; projetos: boolean };
+  /** Lê de novo os indicadores (depois de trocar as metas). */
+  onRecarregar?: () => void;
 }) {
   const ids = [
     "fila",
@@ -257,6 +261,7 @@ export function PainelDaAssistencia({
     "projetos-ativos",
     "indicadores",
     "satisfacao",
+    "experiencia",
     "deflexao",
     "historico",
     "atendimento",
@@ -264,7 +269,17 @@ export function PainelDaAssistencia({
     "mudancas",
     "projetos",
   ].filter((id) => {
-    if (["fila", "indicadores", "satisfacao", "deflexao", "historico", "atendimento"].includes(id))
+    if (
+      [
+        "fila",
+        "indicadores",
+        "satisfacao",
+        "experiencia",
+        "deflexao",
+        "historico",
+        "atendimento",
+      ].includes(id)
+    )
       return modulos.atendimento;
     if (id === "erros" || id === "problemas") return modulos.problemas;
     if (id === "janelas" || id === "mudancas") return modulos.mudancas;
@@ -317,6 +332,7 @@ export function PainelDaAssistencia({
     "projetos-ativos": "Projetos ativos",
     indicadores: "Indicadores",
     satisfacao: "Satisfação do atendimento",
+    experiencia: "Experiência de quem pede",
     deflexao: "Artigos antes do chamado",
     historico: "Histórico dos indicadores",
     atendimento: "Atendimento",
@@ -327,6 +343,7 @@ export function PainelDaAssistencia({
   const largos = new Set([
     "indicadores",
     "satisfacao",
+    "experiencia",
     "deflexao",
     "historico",
     "atendimento",
@@ -430,6 +447,11 @@ export function PainelDaAssistencia({
           </CardContent>
         </Card>
       );
+    }
+    if (id === "experiencia") {
+      if (!governanca?.experiencia)
+        return editar ? <AmostraVazia titulo="Experiência de quem pede" /> : null;
+      return <ExperienciaCard experiencia={governanca.experiencia} onMetasSalvas={onRecarregar} />;
     }
     if (id === "deflexao") {
       if (!governanca?.deflexao)
