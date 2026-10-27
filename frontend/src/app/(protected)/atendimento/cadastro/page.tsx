@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 
 import { AlertasDoMonitoramentoCard } from "@/components/atendimento/AlertasDoMonitoramentoCard";
 import { EtapasDeAprovacao } from "@/components/atendimento/EtapasDeAprovacao";
+import { TarefasDaOferta } from "@/components/atendimento/TarefasDaOferta";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -61,6 +62,7 @@ export default function AtendimentoCadastroPage() {
   const { run, pending } = useAction();
   const [editOferta, setEditOferta] = useState<Oferta | null>(null);
   const [etapasDe, setEtapasDe] = useState<Oferta | null>(null);
+  const [tarefasDe, setTarefasDe] = useState<Oferta | null>(null);
   const [campos, setCampos] = useState<CampoOferta[]>([]);
   const [editEquipe, setEditEquipe] = useState<Equipe | null>(null);
   const [unidadeEquipe, setUnidadeEquipe] = useState("");
@@ -344,6 +346,11 @@ export default function AtendimentoCadastroPage() {
                     Aprovação de {oferta.nome}
                   </Button>
                 )}
+                {gerencia && oferta.tipo === "requisicao" && (
+                  <Button type="button" variant="secondary" onClick={() => setTarefasDe(oferta)}>
+                    Tarefas de {oferta.nome}
+                  </Button>
+                )}
               </div>
             </li>
           ))}
@@ -352,6 +359,14 @@ export default function AtendimentoCadastroPage() {
 
       {etapasDe && (
         <EtapasDeAprovacao key={etapasDe.id} oferta={etapasDe} onFechar={() => setEtapasDe(null)} />
+      )}
+      {tarefasDe && (
+        <TarefasDaOferta
+          key={tarefasDe.id}
+          oferta={tarefasDe}
+          equipes={equipes.data ?? []}
+          onFechar={() => setTarefasDe(null)}
+        />
       )}
 
       {gerencia && (

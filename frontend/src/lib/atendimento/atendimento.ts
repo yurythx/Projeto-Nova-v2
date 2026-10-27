@@ -193,6 +193,29 @@ export interface Detalhe {
   aprovacoes?: Aprovacao[];
   /** Nome da etapa que falta, quando o pedido espera aprovação. */
   etapa_atual?: string;
+  /** Trabalho de cada equipe no pedido (ADR 068), só para quem atende. */
+  tarefas?: Tarefa[];
+}
+
+export interface Tarefa {
+  id: string;
+  ordem: number;
+  titulo: string;
+  equipe_id?: string;
+  equipe_nome: string;
+  estado: "pendente" | "concluida" | "dispensada";
+  observacao?: string;
+  feita_por_nome?: string;
+  feita_em?: string;
+  /** Quem consulta é da equipe da tarefa e pode concluí-la. */
+  minha: boolean;
+}
+
+export interface ModeloTarefa {
+  ordem: number;
+  titulo: string;
+  equipe_id: string;
+  equipe_nome?: string;
 }
 
 export interface Aprovacao {

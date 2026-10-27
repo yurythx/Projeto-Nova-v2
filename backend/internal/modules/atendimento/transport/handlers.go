@@ -83,6 +83,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/atendimento/visitas/em-campo", h.VisitasEmCampo)
 		r.Post("/atendimento/solicitacoes/{id}/apontamentos", h.RegistrarApontamento)
 		r.Delete("/atendimento/solicitacoes/{id}/apontamentos/{apontamentoId}", h.ExcluirApontamento)
+		r.Post("/atendimento/solicitacoes/{id}/tarefas/{tarefaId}", h.FazerTarefa)
 	})
 	// Aprovação em etapas (ADR 068): quem aprova pode não ter permissão
 	// de atendimento; o domínio confere se a pessoa aprova a etapa.
@@ -101,6 +102,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/atendimento/ofertas", h.ListarOfertas)
 		r.Get("/atendimento/ofertas/{id}/etapas", h.EtapasDaOferta)
 		r.Put("/atendimento/ofertas/{id}/etapas", h.SalvarEtapas)
+		r.Get("/atendimento/ofertas/{id}/tarefas", h.ModeloDaOferta)
+		r.Put("/atendimento/ofertas/{id}/tarefas", h.SalvarModelo)
 		r.Get("/atendimento/eventos/configuracao", h.ConfiguracaoDosEventos)
 		r.Put("/atendimento/eventos/configuracao", h.ConfigurarEventos)
 		r.Post("/atendimento/ofertas", h.CriarOferta)

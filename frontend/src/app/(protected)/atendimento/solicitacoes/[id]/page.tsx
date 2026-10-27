@@ -9,6 +9,7 @@ import { AprovacoesCard } from "@/components/atendimento/AprovacoesCard";
 import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
 import { AssistenteIA } from "@/components/atendimento/AssistenteIA";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
+import { TarefasCard } from "@/components/atendimento/TarefasCard";
 import { SegredoVinculadoCard } from "@/components/atendimento/SegredoVinculadoCard";
 import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAtendimentoCard";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
@@ -176,6 +177,12 @@ export function SolicitacaoDetalhe() {
             )}
 
             <AprovacoesCard etapaAtual={d.etapa_atual} aprovacoes={d.aprovacoes ?? []} />
+            <TarefasCard
+              solicitacao={s.id}
+              tarefas={d.tarefas ?? []}
+              podeAgir={tecnico && !finalizada}
+              onMudou={() => void detalhe.mutate()}
+            />
 
             <Card>
               <CardHeader>

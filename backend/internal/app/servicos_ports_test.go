@@ -196,7 +196,7 @@ func TestEfeitosDaCascata(t *testing.T) {
 	if !entregou {
 		t.Fatal("entrega")
 	}
-	for _, causa := range []error{atendimento.ErrSemResponsavel, atendimento.ErrSolicitacaoFinalizada, atendimento.ErrTransicaoInvalida} {
+	for _, causa := range []error{atendimento.ErrSemResponsavel, atendimento.ErrSolicitacaoFinalizada, atendimento.ErrTarefasPendentes, atendimento.ErrTransicaoInvalida} {
 		_, err := (efeitosCascata{ligado: ligadoSe(true), atend: concluiChamado{err: &atendimento.NaoConcluivel{Numero: 3, Estado: "xyz", Causa: causa}}}).Resolver(ctx, tx, mudancas.VinculoIncidente, id, r)
 		var recusa *mudancas.VinculoRecusado
 		if !errors.As(err, &recusa) || recusa.Mensagem == "" {

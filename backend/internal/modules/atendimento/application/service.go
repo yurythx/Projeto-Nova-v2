@@ -137,6 +137,18 @@ func MapError(err error) error {
 		return causa(err, apperrors.Forbidden("você não aprova a etapa atual deste pedido"))
 	case errors.Is(err, domain.ErrAutoaprovacao):
 		return causa(err, apperrors.Forbidden("quem pediu não aprova o próprio pedido"))
+	case errors.Is(err, domain.ErrTarefasSoRequisicao):
+		return causa(err, apperrors.Validation("só oferta de requisição tem tarefas"))
+	case errors.Is(err, domain.ErrModeloInvalido):
+		return causa(err, apperrors.Validation("até 20 tarefas, cada uma com título (até 120) e uma equipe ao seu alcance"))
+	case errors.Is(err, domain.ErrTarefaFeita):
+		return causa(err, apperrors.Conflict("a tarefa já foi concluída ou dispensada"))
+	case errors.Is(err, domain.ErrNaoEhDaEquipe):
+		return causa(err, apperrors.Forbidden("só a equipe da tarefa a conclui, e só quem atende o chamado a dispensa"))
+	case errors.Is(err, domain.ErrDispensaSemMotivo):
+		return causa(err, apperrors.Validation("dispensar precisa de motivo (até 1000 caracteres)"))
+	case errors.Is(err, domain.ErrTarefasPendentes):
+		return causa(err, apperrors.Conflict("há tarefas pendentes; conclua ou dispense cada uma antes de dar o pedido por atendido"))
 	case errors.Is(err, domain.ErrMotivoObrigatorio):
 		return causa(err, apperrors.Validation("a recusa precisa de motivo (até 1000 caracteres)"))
 	case errors.Is(err, domain.ErrEventosSemOferta):

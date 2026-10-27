@@ -139,7 +139,11 @@ func (s *Service) DecidirAprovacao(ctx context.Context, identity auth.Identity, 
 			}
 			avisos, err := s.avisar(ctx, tx, next, equipe, identity.UserID, "aprovada",
 				fmt.Sprintf("Nova solicitação #%d (aprovada)", next.Numero), next.OfertaNome+": "+next.Titulo)
-			enviadas = append(enviadas, avisos...)
+			if err != nil {
+				return err
+			}
+			tarefas, err := s.criarTarefas(ctx, tx, next, identity.UserID)
+			enviadas = append(append(enviadas, avisos...), tarefas...)
 			return err
 		default:
 			if err := s.repo.UpdateSolicitacao(ctx, tx, next); err != nil {

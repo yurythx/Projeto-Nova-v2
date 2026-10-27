@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -69,6 +70,9 @@ func (s *Service) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor u
 	}
 	quem := auth.Identity{UserID: autor}
 	enviadas, err := s.gravarPassagem(ctx, tx, quem, sol, next, true)
+	if errors.Is(err, domain.ErrTarefasPendentes) {
+		return nil, &domain.NaoConcluivel{Numero: sol.Numero, Estado: sol.Estado, Causa: err}
+	}
 	if err != nil {
 		return nil, err
 	}

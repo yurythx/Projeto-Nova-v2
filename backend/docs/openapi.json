@@ -958,6 +958,12 @@
           "solicitacao": {
             "$ref": "#/components/schemas/AtendimentoSolicitacao"
           },
+          "tarefas": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoTarefa"
+            },
+            "type": "array"
+          },
           "visitas": {
             "items": {
               "$ref": "#/components/schemas/AtendimentoVisita"
@@ -972,6 +978,7 @@
           "passagens",
           "proximos",
           "solicitacao",
+          "tarefas",
           "visitas"
         ],
         "type": "object",
@@ -1382,6 +1389,61 @@
             "type": "integer"
           }
         },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoModeloRequest": {
+        "properties": {
+          "tarefas": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoModeloTarefaRequest"
+            },
+            "maxItems": 20,
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoModeloTarefa": {
+        "properties": {
+          "equipe_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "equipe_nome": {
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "equipe_id",
+          "ordem",
+          "titulo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoModeloTarefaRequest": {
+        "properties": {
+          "equipe_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titulo": {
+            "maxLength": 120,
+            "type": "string"
+          }
+        },
+        "required": [
+          "equipe_id",
+          "titulo"
+        ],
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -2150,6 +2212,84 @@
           "id",
           "solicitacao_id",
           "tipo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoTarefa": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "equipe_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "equipe_nome": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "feita_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "feita_por": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "feita_por_nome": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minha": {
+            "type": "boolean"
+          },
+          "observacao": {
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "solicitacao_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "equipe_nome",
+          "estado",
+          "id",
+          "minha",
+          "ordem",
+          "solicitacao_id",
+          "titulo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoTarefaRequest": {
+        "properties": {
+          "concluir": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "observacao": {
+            "maxLength": 1000,
+            "type": "string"
+          }
+        },
+        "required": [
+          "concluir"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -12640,6 +12780,154 @@
         ]
       }
     },
+    "/api/v1/atendimento/ofertas/{id}/tarefas": {
+      "get": {
+        "description": "Tarefas que cada requisição desta oferta recebe ao chegar à fila, cada uma com a equipe que a faz (ADR 068). Quem gere a unidade da oferta.",
+        "operationId": "getAtendimentoOfertasIdTarefas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoModeloTarefa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — modelo de tarefas da oferta",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "put": {
+        "description": "Até 20 tarefas, cada uma com título (até 120) e uma equipe ao alcance de quem gere. Lista vazia tira as tarefas. Vale para os pedidos que chegarem à fila daqui em diante; as tarefas já criadas não mudam. Só oferta de requisição (422).",
+        "operationId": "putAtendimentoOfertasIdTarefas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoModeloRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoModeloTarefa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — trocar o modelo de tarefas da oferta",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/politica": {
       "get": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -14204,6 +14492,93 @@
           }
         ],
         "summary": "Atendimento — Salvar /atendimento/solicitacoes/{id}/segredo",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/solicitacoes/{id}/tarefas/{tarefaId}": {
+      "post": {
+        "description": "Concluir é de quem é da equipe da tarefa (403 para os demais); dispensar é de quem atende o chamado e exige observação como motivo (até 1000). 409 quando a tarefa já foi feita. Enquanto houver tarefa pendente, o pedido não passa a atendido (409).",
+        "operationId": "postAtendimentoSolicitacoesIdTarefasTarefaId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoTarefaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoDetalhe"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — concluir ou dispensar uma tarefa do pedido",
         "tags": [
           "atendimento"
         ]

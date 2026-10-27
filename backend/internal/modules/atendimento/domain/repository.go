@@ -117,6 +117,23 @@ type SolicitacaoRepository interface {
 	IARepository
 	EventosRepository
 	AprovacaoRepository
+	TarefaRepository
+}
+
+// TarefaRepository guarda o modelo de tarefas da oferta e as tarefas de
+// cada pedido (ADR 068).
+type TarefaRepository interface {
+	// ModeloDaOferta devolve o modelo em ordem, com o nome da equipe.
+	ModeloDaOferta(ctx context.Context, db database.DBTX, oferta uuid.UUID) ([]ModeloTarefa, error)
+	// SalvarModelo troca o modelo inteiro (vazio tira as tarefas).
+	SalvarModelo(ctx context.Context, db database.DBTX, oferta uuid.UUID, modelo []ModeloTarefa) error
+	InsertTarefas(ctx context.Context, db database.DBTX, tarefas []Tarefa) error
+	ListTarefas(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Tarefa, error)
+	// GetTarefa busca a tarefa do pedido (ErrNaoEncontrado se for de outro).
+	GetTarefa(ctx context.Context, db database.DBTX, solicitacao, id uuid.UUID) (Tarefa, error)
+	UpdateTarefa(ctx context.Context, db database.DBTX, t Tarefa) error
+	// MembroDe diz de quais das equipes a pessoa é membro.
+	MembroDe(ctx context.Context, db database.DBTX, user uuid.UUID, equipes []uuid.UUID) ([]uuid.UUID, error)
 }
 
 // AprovacaoRepository guarda as etapas das ofertas e as decisões (ADR 068).

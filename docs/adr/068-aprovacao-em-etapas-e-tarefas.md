@@ -1,6 +1,6 @@
 # 068 — Aprovação em etapas e tarefas por equipe na requisição
 
-- **Status:** Aceito; aprovação em etapas implementada, tarefas por equipe a seguir
+- **Status:** Aceito e implementado
 - **Data:** 2026-10-27
 - **Relacionado:** [ADR 049](049-correio-contratos-e-cadastros.md) (perguntas da oferta), [ADR 058](058-fila-curta-e-pasta-do-cofre.md) (triagem), [ADR 016](016-camada-de-aplicacao-e-transacoes.md)
 
@@ -24,7 +24,7 @@ Duas peças opcionais na oferta de **requisição**. A oferta sem elas continua 
 
 1. A oferta define um modelo de tarefas: título e equipe responsável de cada uma. É a lista da admissão (criar conta, entregar notebook, liberar sistemas) ou do desligamento (revogar acessos, recolher equipamento).
 2. Quando a requisição chega à fila (aprovada, ou na abertura quando não há etapas), as tarefas são criadas a partir do modelo, uma por linha, e cada equipe é avisada da sua.
-3. Quem é da equipe da tarefa a conclui, com observação opcional. A requisição só pode ser dada como atendida quando todas as tarefas estão concluídas ou dispensadas (dispensar exige motivo).
+3. Quem é da equipe da tarefa a conclui, com observação opcional; quem atende o chamado pode dispensá-la, com motivo. A requisição só pode ser dada como atendida quando todas as tarefas estão concluídas ou dispensadas.
 4. O modelo vale para as requisições novas; mudar o modelo não mexe nas tarefas já criadas.
 
 ## Consequências
@@ -41,3 +41,12 @@ O desligamento vira um controle de segurança: a requisição não fecha com ace
 - O aviso ao aprovador abre a tela **Aprovações** (`/atendimento/aprovacoes`), e não o chamado, que a chefia não enxerga.
 - A recusa cabe em 1000 caracteres, para que a resposta a quem pediu ("Pedido recusado na etapa …: motivo") nunca passe do limite do comentário.
 - O detalhe do chamado mostra a etapa que falta e as decisões tomadas.
+
+## Implementação das tarefas
+
+- Migração `000024`: `atendimento_oferta_tarefas` (o modelo, até 20 linhas) e `atendimento_tarefas`. A tarefa guarda o nome da equipe: se a equipe for apagada, a tarefa fica sem dona e só se dispensa. O banco recusa dispensa sem motivo.
+- `GET`/`PUT /atendimento/ofertas/{id}/tarefas` (gestão da unidade da oferta; a equipe precisa estar ao alcance de quem gere).
+- `POST /atendimento/solicitacoes/{id}/tarefas/{tarefaId}` com `{concluir, observacao}`. Age só quem atende o chamado; concluir pede ser da equipe. A equipe da tarefa precisa, portanto, de `atendimento:atender` na unidade do pedido.
+- As tarefas nascem quando o pedido chega à fila: na abertura, sem etapas, ou na última aprovação. Cada equipe é avisada da sua; a última tarefa feita avisa o responsável.
+- O bloqueio fica na gravação de toda passagem de estado: vale para a fila, para o quadro e para a conclusão pela mudança, que recusa o vínculo com a mensagem de tarefas pendentes.
+- O detalhe do chamado lista as tarefas para quem atende, marcando as da equipe de quem consulta.

@@ -78,6 +78,8 @@ type Detalhe struct {
 	// da etapa que falta, quando o pedido espera aprovação.
 	Aprovacoes []domain.Aprovacao `json:"aprovacoes"`
 	EtapaAtual string             `json:"etapa_atual,omitempty"`
+	// Tarefas são o trabalho de cada equipe no pedido, só para quem atende.
+	Tarefas []domain.Tarefa `json:"tarefas"`
 }
 
 // papeis devolve como identity age sobre a solicitação. Vazio = não vê.
@@ -185,7 +187,11 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 	}
 	enviadas, err := s.avisar(ctx, tx, sol, ids, identity.UserID, "aberta",
 		fmt.Sprintf("Nova solicitação #%d", sol.Numero), sol.OfertaNome+": "+sol.Titulo)
-	return sol, enviadas, err
+	if err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
+	tarefas, err := s.criarTarefas(ctx, tx, sol, identity.UserID)
+	return sol, append(enviadas, tarefas...), err
 }
 
 // ListarMinhas devolve as solicitações que identity abriu.
@@ -293,6 +299,12 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	}
 	if detalhe.Aprovacoes, err = s.repo.ListAprovacoes(ctx, s.pool, id); err != nil {
 		return Detalhe{}, MapError(err)
+	}
+	detalhe.Tarefas = []domain.Tarefa{}
+	if slices.Contains(ps, domain.PapelTecnico) {
+		if detalhe.Tarefas, err = s.tarefasPara(ctx, identity, id); err != nil {
+			return Detalhe{}, MapError(err)
+		}
 	}
 	if sol.EtapaAtual != nil {
 		etapas, err := s.repo.EtapasDaOferta(ctx, s.pool, sol.OfertaID)
@@ -527,6 +539,9 @@ func (s *Service) alterar(ctx context.Context, identity auth.Identity, id uuid.U
 // gravarPassagem persiste a mudança de estado de prev para next, com a
 // passagem, o evento, a auditoria e, com aviso, o aviso às duas pontas.
 func (s *Service) gravarPassagem(ctx context.Context, tx pgx.Tx, identity auth.Identity, prev, next domain.Solicitacao, aviso bool) ([]notificacoes.Enviada, error) {
+	if err := s.conferirTarefas(ctx, tx, prev, next); err != nil {
+		return nil, err
+	}
 	if err := s.repo.UpdateSolicitacao(ctx, tx, next); err != nil {
 		return nil, err
 	}

@@ -225,6 +225,9 @@ func recusaSolicitacao(err error) error {
 	if errors.Is(n.Causa, atendimento.ErrSemResponsavel) {
 		return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("a solicitação #%d precisa de um responsável antes de ser concluída pela mudança", n.Numero)}
 	}
+	if errors.Is(n.Causa, atendimento.ErrTarefasPendentes) {
+		return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("a solicitação #%d tem tarefas de equipe pendentes e não é concluída pela mudança", n.Numero)}
+	}
 	if errors.Is(n.Causa, atendimento.ErrSolicitacaoFinalizada) {
 		return &mudancas.VinculoRecusado{Mensagem: fmt.Sprintf("a solicitação #%d está cancelada e não é concluída pela mudança", n.Numero)}
 	}
