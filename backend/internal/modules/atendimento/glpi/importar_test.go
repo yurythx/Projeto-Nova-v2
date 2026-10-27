@@ -58,6 +58,9 @@ func (g *glpiFalso) servidor(t *testing.T) *httptest.Server {
 			g.sessoes--
 		case caminho == "/ITILCategory":
 			responder(g.categorias)
+		case caminho == "/Ticket" && r.URL.Query().Get("sort") != "id":
+			// Como o GLPI 10: sort pelo número da opção de busca é 400.
+			w.WriteHeader(http.StatusBadRequest)
 		case caminho == "/Ticket":
 			var de, ate int
 			_, _ = fmt.Sscanf(r.URL.Query().Get("range"), "%d-%d", &de, &ate)

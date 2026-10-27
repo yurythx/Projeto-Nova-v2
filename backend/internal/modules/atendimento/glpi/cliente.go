@@ -178,7 +178,9 @@ func (c *Cliente) Categorias(ctx context.Context) ([]Categoria, error) {
 
 func (c *Cliente) Chamados(ctx context.Context, de, ate int) ([]Chamado, int, error) {
 	var out []Chamado
-	h, err := c.get(ctx, fmt.Sprintf("/Ticket?range=%d-%d&sort=1&order=ASC&expand_dropdowns=false", de, ate), &out)
+	// sort pelo nome do campo: o GLPI 10 recusa o número da opção de busca
+	// ("sort param is not a field of glpi_tickets").
+	h, err := c.get(ctx, fmt.Sprintf("/Ticket?range=%d-%d&sort=id&order=ASC&expand_dropdowns=false", de, ate), &out)
 	if err != nil {
 		return nil, 0, err
 	}
