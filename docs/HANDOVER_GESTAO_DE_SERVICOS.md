@@ -1,120 +1,66 @@
-# 📋 Documento de Handover: Gestão de Serviços TIC (Projeto Nova v2)
+# Handover: gestão de serviços (Projeto Nova v2)
 
-> **Data de Registro:** 23 de Outubro de 2026  
-> **Branch Git Ativa:** `feat/gestao-de-servicos`  
-> **Status do Repositório:** Árvore limpa (`working tree clean`), sem arquivos não versionados ou modificações pendentes  
-> **Suíte de Testes do Frontend:** **108/108 arquivos** e **591/591 testes aprovados** (100% verde)  
-> **Next.js Production Build:** Compilação bem-sucedida em todas as 59 rotas estáticas e dinâmicas  
-> **Ambiente Docker:** 8 containers operacionais e saudáveis (`backend-api:8012`, `frontend:3012`, `postgres`, `rabbitmq`, `redis`, `typesense`, `minio`)
+- **Atualizado em:** 27/10/2026
+- **Branch:** `feat/gestao-de-servicos` (commits locais; ainda não publicada nem integrada à `main`)
+- **Para quem:** quem continuar o trabalho, pessoa ou IA. O que já está decidido está nos ADRs; aqui fica o mapa e o que falta.
 
----
+## 1. O que a branch entrega
 
-## 1. Contexto e Objetivo da Demanda
+A branch leva o atendimento do Projeto Nova ao padrão do ITIL 4 e 5. As entregas e o estado de cada uma estão em [ROADMAP_GESTAO_DE_SERVICOS.md](ROADMAP_GESTAO_DE_SERVICOS.md). A última leva (Leva 4) trouxe:
 
-O usuário solicitou uma grande reformulação e expansão na área de **Gestão de Serviços TIC (ITSM / ITIL v4)** do **Projeto Nova v2**, alinhando a experiência ao padrão consolidado de ferramentas como o **GLPI**:
+| Entrega | ADR | Onde mexer |
+|---|---|---|
+| IA assistiva para quem atende (classificação e resumo) | [065](adr/065-ia-assistiva-no-atendimento.md) | `atendimento/application/ia.go`, `app/ia_porta.go` |
+| Incidente grave e página de status pública | [066](adr/066-ocorrencias-e-pagina-de-status.md) | plug-in `modules/ocorrencias`, `frontend/src/app/status` |
+| Alertas do monitoramento viram incidente | [067](adr/067-eventos-do-monitoramento.md) | `atendimento/application/eventos.go`, `deploy/observability/alertmanager.yml` |
+| Aprovação em etapas e tarefas por equipe (admissão, desligamento) | [068](adr/068-aprovacao-em-etapas-e-tarefas.md) | `atendimento/*/aprovacao.go`, `atendimento/*/tarefa.go`, tela `/atendimento/aprovacoes` |
+| Experiência de quem pede (XLA) com metas | [069](adr/069-experiencia-de-quem-pede-xla.md) | `atendimento/domain/experiencia.go`, `ExperienciaCard.tsx` |
+| Relatório por secretaria e OLA das equipes | [070](adr/070-relatorio-por-secretaria-e-ola.md) | `atendimento/*/relatorio.go`, tela `/atendimento/relatorio` |
+| Contrato de apoio (prazo do fornecedor) | [071](adr/071-contrato-de-apoio.md) | `atendimento/*/contrato_apoio.go`, `app/contrato_porta.go`, plug-in `contratos` |
+| Importador do GLPI | [072](adr/072-importador-do-glpi.md) | `atendimento/glpi`, `cmd/importarglpi`, [DEPLOY.md](DEPLOY.md#migrar-do-glpi) |
 
-1. **Reestruturação do Menu:** Agrupar **Atendimento**, **Problemas**, **Mudanças** e o novo módulo de **Projetos** sob o grupo pai **"Assistência"**.
-2. **Padronização de Visualizações:** Padronizar os módulos de **Problemas** e **Mudanças** com alternância idêntica entre **Lista** e **Quadro Kanban** (com drag-and-drop e diálogos de transição de estado).
-3. **Módulo de Projetos:** Criação do módulo fim-a-fim (banco de dados, Go backend, Next.js frontend, metas, tarefas, vínculos com Mudanças/Problemas/Ativos/Incidentes, timesheet de apontamento de horas e cronograma Gantt).
-4. **Central de Assistência Unificada (`/assistencia`):** Dashboard central com KPIs consolidados, gráficos em SVG nativo, calendário de janelas operacionais com detecção de conflitos e Relatório Executivo de Governança TIC (MTTR, MTBF, conformidade SLA).
-5. **Automações e Recursos ITIL:**
-   - Automações em cascata no encerramento de RFCs no CAB (resolvendo incidentes e problemas associados).
-   - Vínculo de ativos do CMDB no chamado (`/ativos`).
-   - Deflexão de chamados inteligente com busca prévia na Base de Conhecimento (`/wiki`).
-   - Calculadora de Matriz de Risco do CAB (Impacto x Complexidade x Rollback com mapa de calor 3x3).
-   - Pesquisa de Satisfação pós-atendimento (CSAT) de 1 a 5 estrelas com comentário.
+A infraestrutura de produção (Proxmox, Terraform, Ansible, domínio `projetonova.cloud`, backup e monitoramento) está em [DEPLOY.md](DEPLOY.md). As imagens do CI estão no [ADR 063](adr/063-imagens-do-ci-no-registro.md), e a catraca de cobertura no [ADR 064](adr/064-catraca-de-cobertura.md).
 
----
+## 2. Como o código está organizado
 
-## 2. Histórico de Commits na Branch `feat/gestao-de-servicos`
+- **Backend** (`backend/`, Go): microkernel. Cada plug-in fica em `internal/modules/<nome>` com as camadas `domain`, `application`, `infrastructure` e `transport`. Um plug-in não importa outro: as portas entre eles ficam em `internal/app` (exemplos: `cofre_porta.go`, `contrato_porta.go`). Toda gravação de negócio leva evento no outbox e auditoria na mesma transação.
+- **Migrações:** `backend/migrations/0000NN_*.sql` (goose). A última é a 000028.
+- **Contrato da API:** `backend/docs/openapi.json` é a fonte, e `docs/openapi.yaml` é gerado. Rota nova sem documentação quebra o teste `TestOpenAPIMatchesRouter`. Para regenerar, rode com `UPDATE_OPENAPI=1` e escreva à mão o `summary` e a `description` da rota nova.
+- **Frontend** (`frontend/`, Next.js 16 e React 19): as telas ficam em `src/app/(protected)`, os componentes em `src/components`, e os tipos da API em `src/lib/<plug-in>`.
 
-```text
-* 1b4e254 feat(itil): calculadora de matriz de risco do cab e pesquisa de satisfacao csat
-* 5d5578b feat(projetos): diagrama de gantt interativo com marcos, escala temporal e progresso no detalhe do projeto
-* 14945f6 feat(itil): automacoes em cascata, vinculo cmdb, campos complementares e relatorio executivo
-* 97c514e feat(assistencia): central de assistencia, projetos, kanban, timesheet e deflexao de chamados
+## 3. Como verificar
+
+Backend: a suíte completa precisa de Postgres, RabbitMQ, MinIO e Typesense. É o que o CI roda (`.github/workflows/ci.yml`).
+
+```bash
+cd backend
+gofmt -l ./internal ./pkg ./cmd     # nada a listar
+go vet ./...
+go test -race -p 1 -count=1 -coverpkg=./internal/...,./pkg/... -coverprofile=coverage.out ./...
+cd .. && bash scripts/coverage-gate.sh backend/coverage.out
 ```
 
----
+O portão de cobertura ([ADR 064](adr/064-catraca-de-cobertura.md)) exige 100% de módulo novo e não deixa os outros caírem abaixo do piso em `scripts/coverage-floor.txt`. Quando a cobertura sobe, ele sugere subir o piso.
 
-## 3. Módulos e Arquitetura de Componentes
+Frontend:
 
-### A. Menu Lateral & Navegação
-- **Arquivo:** `frontend/src/components/layout/Sidebar.tsx`
-- **Detalhes:** Submenu "Assistência" com rotas retráteis:
-  - Central de Assistência: `/assistencia`
-  - Atendimento: `/atendimento`
-  - Problemas: `/problemas`
-  - Mudanças: `/mudancas`
-  - Projetos: `/projetos`
-
-### B. Gestão de Problemas (ITIL)
-- **Arquivo:** `frontend/src/app/(protected)/problemas/page.tsx`
-- **Detalhes:** Alternância entre Lista e Kanban por estado (`registrado`, `em_analise`, `erro_conhecido`, `resolvido`, `encerrado`). Card de Solução de Contorno e Erro Conhecido destacados com links para incidentes relacionados.
-
-### C. Gestão de Mudanças & CAB (ITIL)
-- **Listagem e Kanban:** `frontend/src/app/(protected)/mudancas/page.tsx`
-- **Detalhe da Mudança:** `frontend/src/app/(protected)/mudancas/[id]/page.tsx`
-- **Calculadora de Risco:** `frontend/src/components/servicos/MatrizRiscoCalculadora.tsx`
-- **Detalhes:** Formulário de avaliação do CAB, transições com motivo/rollback, cálculo do score de risco ponderado e automação em cascata (ao concluir a RFC, permite resolver em lote os incidentes e problemas vinculados).
-
-### D. Módulo de Projetos
-- **Tipos & Schemas:** `frontend/src/lib/projetos/projetos.ts`
-- **Backend Go:**
-  - Migração SQL: `backend/internal/database/migrations/000002_projetos.sql`
-  - Domínio e Repositório: `backend/internal/domain/projetos/...`
-  - Rotas e Handlers: `backend/internal/interfaces/http/handlers/projetos_handler.go`
-- **Listagem & Kanban:** `frontend/src/app/(protected)/projetos/page.tsx`
-- **Página de Detalhes:** `frontend/src/app/(protected)/projetos/[id]/page.tsx`
-- **Gantt Chart:** `frontend/src/components/projetos/ProjetoGanttChart.tsx`
-  - Linha do tempo dinâmica, linha vertical "Hoje", marcação de marcos vinculados ao CAB, atrasos em vermelho e filtros de estado.
-- **Timesheet:** `frontend/src/components/atendimento/ApontamentosCard.tsx`
-  - Registro de horas trabalhadas por técnico/desenvolvedor e queima de orçamento.
-
-### E. Central de Assistência & Governança de TI
-- **Dashboard:** `frontend/src/app/(protected)/assistencia/page.tsx`
-- **Gráficos SVG:** `frontend/src/components/servicos/AssistenciaGraficos.tsx`
-- **Calendário Operacional:** `frontend/src/app/(protected)/assistencia/calendario/page.tsx`
-- **Relatório Executivo:** `frontend/src/components/servicos/RelatorioExecutivoModal.tsx`
-  - Métricas de MTTR, MTBF, conformidade de SLA e taxa de sucesso do CAB com exportação CSV e CSS `@media print`.
-
-### F. Atendimento & CSAT
-- **Vínculo CMDB:** `frontend/src/components/atendimento/AtivoVinculadoCard.tsx`
-- **Deflexão Wiki:** `frontend/src/components/atendimento/DeflexaoConhecimento.tsx`
-- **Pesquisa de Satisfação (CSAT):** `frontend/src/components/atendimento/AvaliacaoAtendimentoCard.tsx`
-  - Coleta estrelas (1 a 5) e comentário após chamado resolvido/encerrado.
-
----
-
-## 4. Como Executar os Testes e Comprovar a Estabilidade
-
-```powershell
-# 1. Executar todos os testes do Frontend (108 arquivos, 591 testes):
+```bash
 cd frontend
-npm test
-
-# 2. Executar testes específicos dos novos componentes:
-npm test "src/components/servicos/MatrizRiscoCalculadora.test.tsx"
-npm test "src/components/atendimento/AvaliacaoAtendimentoCard.test.tsx"
-npm test "src/components/projetos/ProjetoGanttChart.test.tsx"
-
-# 3. Validar build do Next.js (59 rotas):
-npm run build
-
-# 4. Validar os containers Docker:
-cd ..
-docker compose ps
+npx tsc --noEmit && npx eslint --max-warnings 0 . && npx prettier --check . && npx vitest run
 ```
 
----
+Na última execução, tudo passou: a suíte completa do backend com o portão, e 684 testes no frontend.
 
-## 5. Próximos Passos Sugeridos para a Próxima IA
+## 4. O que falta
 
-1. **Alertas Proativos de Risco de Estouro de SLA:**
-   - Adicionar checagem ou job que emita notificações via `RealtimeProvider` e `NotificationBell` para chamados com menos de 2 horas para vencer o SLA.
-2. **Dashboard de CSAT Agregado na Central de Assistência:**
-   - Exibir na Central de Assistência (`/assistencia`) a nota média geral de satisfação e as avaliações recentes coletadas pelo `AvaliacaoAtendimentoCard`.
-3. **Exportação Formal de RFC do CAB em PDF:**
-   - Adicionar na tela de Mudanças (`/mudancas/[id]`) um botão para emitir documento formal da RFC pronto para impressão/assinatura digital do comitê com parecer técnico, matriz de risco e plano de contingência.
-4. **Merge da branch `feat/gestao-de-servicos` na `main`:**
-   - Com todos os 591 testes passando e containers rodando saudáveis, realizar o merge quando solicitado pelo usuário.
+Depende de quem opera:
+
+1. **Produção:** token do túnel Cloudflare, segredo e endereços de retorno do SSO, destino do backup (rclone e age) e bucket R2 para o estado do Terraform. Depois, `make infra-deploy`. Ver [DEPLOY.md](DEPLOY.md).
+2. **Migração do GLPI:** rodar a simulação contra o GLPI real e revisar o relatório (a lista `sem_par`) antes de gravar. O importador só foi testado contra um GLPI simulado.
+3. **Publicar a branch:** push, PR para a `main`, proteção do branch e Renovate.
+
+Melhorias registradas nos ADRs, sem pressa:
+
+- OLA também no incidente. Hoje mede só as tarefas da requisição; falta o histórico de qual equipe estava com o chamado ([ADR 070](adr/070-relatorio-por-secretaria-e-ola.md)).
+- Prazo do fornecedor em horas úteis. Hoje é corrido ([ADR 071](adr/071-contrato-de-apoio.md)).
+- Anexos do GLPI na importação ([ADR 072](adr/072-importador-do-glpi.md)).
