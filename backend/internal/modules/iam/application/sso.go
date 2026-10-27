@@ -53,8 +53,9 @@ type ssoEmCurso struct {
 	espera sync.WaitGroup
 }
 
-// TempoSSO limita a sincronização pedida pela tela.
-var TempoSSO = 30 * time.Minute
+// TempoSSO limita a sincronização pedida pela tela. A primeira, com o cache
+// do Keycloak frio, pode levar horas num realm federado ao AD.
+var TempoSSO = 6 * time.Hour
 
 // WithDiretorio liga a sincronização com o SSO.
 func (s *Service) WithDiretorio(d DiretorioSSO, logger *slog.Logger) *Service {

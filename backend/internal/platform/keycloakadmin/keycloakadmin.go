@@ -53,7 +53,7 @@ type Cliente struct {
 	Paralelo int
 }
 
-// Padrões medidos num realm federado ao AD com 7.736 pessoas: a página
+// Padrões medidos num realm federado ao AD com 7.740 pessoas: a página
 // resumida de 50 sai em meio segundo (a completa consulta o LDAP pessoa a
 // pessoa e passa de 3 minutos), e os grupos de uma pessoa levam 0,3 s.
 const (
@@ -61,9 +61,14 @@ const (
 	paraleloPadrao = 8
 )
 
+// tempoChamada fica acima do aborto de transação do Keycloak (5 minutos):
+// fora do cache, uma página às vezes faz o provedor LDAP varrer o AD
+// inteiro e leva 4 minutos. Depois dela as seguintes saem do cache.
+const tempoChamada = 10 * time.Minute
+
 // Novo cria o cliente com um tempo limite por chamada.
 func Novo() *Cliente {
-	return &Cliente{HTTP: &http.Client{Timeout: 2 * time.Minute}, Pagina: paginaPadrao, Paralelo: paraleloPadrao}
+	return &Cliente{HTTP: &http.Client{Timeout: tempoChamada}, Pagina: paginaPadrao, Paralelo: paraleloPadrao}
 }
 
 // enderecos tira do issuer (https://sso/realms/x) o endpoint do token e a

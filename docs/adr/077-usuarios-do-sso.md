@@ -18,6 +18,7 @@ A conta de quem usa o SSO nasce no primeiro login. Até lá, a pessoa não exist
    - o pedido só começa a sincronização (202) e devolve 409 se já há uma em andamento na réplica;
    - a tela consulta `GET /iam/sso/sincronizacao`, que diz se há uma em andamento e traz a última terminada (do registro de auditoria);
    - a leitura usa a representação resumida, em páginas de 50, com os grupos lidos em paralelo e o token renovado a cada página.
+   - Fora do cache do Keycloak, algumas páginas fazem o provedor LDAP varrer o AD inteiro e levam uns 4 minutos, até o aborto de transação do próprio Keycloak. As páginas seguintes saem do cache. Por isso cada chamada tem até 10 minutos, e a sincronização tem até 6 horas. Uma tentativa interrompida não se perde, porque deixa o cache do Keycloak mais quente para a próxima.
 
 ## Consequências
 
