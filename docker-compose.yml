@@ -152,6 +152,7 @@ services:
   migrate:
     # One-shot: aplica as migrations (goose) antes da API e do worker, que
     # não sobem com schema desatualizado (o Kernel lê system_modules no boot).
+    image: ${NOVA_REGISTRY:-projeto-nova}/api:${NOVA_IMAGE_TAG:-local}
     build:
       context: ./backend
       dockerfile: Dockerfile.api
@@ -170,6 +171,7 @@ services:
       postgres:
         condition: service_healthy
   backend-api:
+    image: ${NOVA_REGISTRY:-projeto-nova}/api:${NOVA_IMAGE_TAG:-local}
     build:
       context: ./backend
       dockerfile: Dockerfile.api
@@ -227,6 +229,7 @@ services:
     extra_hosts:
     - host.docker.internal:host-gateway
   backend-worker:
+    image: ${NOVA_REGISTRY:-projeto-nova}/worker:${NOVA_IMAGE_TAG:-local}
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
@@ -278,6 +281,7 @@ services:
     extra_hosts:
     - host.docker.internal:host-gateway
   frontend:
+    image: ${NOVA_REGISTRY:-projeto-nova}/frontend:${NOVA_FRONTEND_TAG:-${NOVA_IMAGE_TAG:-local}}
     build:
       context: ./frontend
       dockerfile: Dockerfile

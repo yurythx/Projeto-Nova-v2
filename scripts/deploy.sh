@@ -8,6 +8,9 @@
 #   scripts/deploy.sh --env-only ...  # só gera .env e chaves, sem subir nada
 #                                     # (o Ansible grava o domínio antes do build)
 #
+# Com NOVA_REGISTRY e NOVA_IMAGE_TAG (e NOVA_FRONTEND_TAG) no .env, baixa as
+# imagens do CI em vez de compilar. Rollback: voltar a tag e rodar de novo.
+#
 # Na primeira execução gera .env (segredos aleatórios fortes) e a chave RSA
 # do login local em secrets/. Execuções seguintes reaproveitam os dois —
 # NUNCA regenere o .env com dados no banco: DB_PASSWORD e
@@ -132,8 +135,17 @@ if "${COMPOSE[@]}" config --services 2>/dev/null | grep -qx caddy; then
   rm -f "$tmp"
 fi
 
-log "Build e subida dos serviços"
-"${COMPOSE[@]}" up -d --build --remove-orphans
+# Com NOVA_IMAGE_TAG no .env, as imagens vêm prontas do registro (as que o
+# CI testou, ADR 063): nada compila aqui. Sem ela, compila no servidor.
+if grep -q '^NOVA_IMAGE_TAG=.' .env; then
+  log "Baixando as imagens $(grep '^NOVA_IMAGE_TAG=' .env | cut -d= -f2-) do registro"
+  "${COMPOSE[@]}" pull --quiet migrate backend-api backend-worker frontend
+  log "Subida dos serviços"
+  "${COMPOSE[@]}" up -d --no-build --remove-orphans
+else
+  log "Build e subida dos serviços"
+  "${COMPOSE[@]}" up -d --build --remove-orphans
+fi
 
 if [ "$ca_changed" = 1 ]; then
   log "Reiniciando API, worker e frontend com a CA nova"
