@@ -467,6 +467,12 @@ O comando `importarglpi` traz o histórico do GLPI para o atendimento ([ADR 072]
    GLPI_URL=https://glpi.prefeitura/apirest.php GLPI_APP_TOKEN=... GLPI_USER_TOKEN=...    DB_HOST=... DB_PORT=5432 DB_NAME=nova DB_USER=nova DB_PASSWORD=...      go run ./cmd/importarglpi --unidade <uuid da unidade dona>
    ```
 
+   Se a VM não enxerga o GLPI (na produção, o GLPI só existe no DNS interno
+   da prefeitura e a VM fica na rede do Proxmox), rode de uma máquina da
+   rede da prefeitura: `bash scripts/importar-glpi.sh [--unidade <uuid>] [--gravar]`.
+   Ele lê os tokens de `~/.config/projeto-nova/glpi.env`, a senha do banco
+   no `.env` da VM, e grava por um túnel SSH que só vive durante o comando.
+
 3. Corrija no AD/SSO o e-mail de quem ficou sem par, se for o caso, e rode de novo com `--gravar`.
 4. Rodar de novo só traz o que é novo. Faça uma carga grande antes da virada e uma final no dia em que o GLPI deixar de receber chamados.
 
