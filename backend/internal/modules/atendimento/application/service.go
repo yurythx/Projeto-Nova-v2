@@ -125,6 +125,20 @@ func MapError(err error) error {
 		return causa(err, apperrors.DependencyUnavailable("a IA não respondeu agora; tente de novo ou siga sem ela"))
 	case errors.Is(err, domain.ErrSugestaoDecidida):
 		return causa(err, apperrors.Conflict("esta sugestão já foi decidida"))
+	case errors.Is(err, domain.ErrAguardandoAprovacao):
+		return causa(err, apperrors.Conflict("o pedido ainda espera aprovação; ninguém o assume antes"))
+	case errors.Is(err, domain.ErrEtapasSoRequisicao):
+		return causa(err, apperrors.Validation("só oferta de requisição tem etapas de aprovação"))
+	case errors.Is(err, domain.ErrEtapaInvalida):
+		return causa(err, apperrors.Validation("até 5 etapas, cada uma com nome (até 80) e de 1 a 20 aprovadores ativos, sem repetir"))
+	case errors.Is(err, domain.ErrSemAprovacaoPendente):
+		return causa(err, apperrors.Conflict("este pedido não espera aprovação"))
+	case errors.Is(err, domain.ErrNaoAprovador):
+		return causa(err, apperrors.Forbidden("você não aprova a etapa atual deste pedido"))
+	case errors.Is(err, domain.ErrAutoaprovacao):
+		return causa(err, apperrors.Forbidden("quem pediu não aprova o próprio pedido"))
+	case errors.Is(err, domain.ErrMotivoObrigatorio):
+		return causa(err, apperrors.Validation("a recusa precisa de motivo (até 1000 caracteres)"))
 	case errors.Is(err, domain.ErrEventosSemOferta):
 		return causa(err, apperrors.Conflict("escolha, em Atendimento > Configuração, a oferta em que os alertas abrem incidente"))
 	case errors.Is(err, domain.ErrAlertaInvalido):

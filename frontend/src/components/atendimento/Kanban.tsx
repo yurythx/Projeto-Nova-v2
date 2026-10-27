@@ -22,11 +22,17 @@ import {
 } from "@/lib/atendimento/atendimento";
 
 type Coluna =
-  "aberto" | "em_atendimento" | "aguardando_servidor" | "aguardando_terceiro" | "concluida";
+  | "aguardando_aprovacao"
+  | "aberto"
+  | "em_atendimento"
+  | "aguardando_servidor"
+  | "aguardando_terceiro"
+  | "concluida";
 
 /** A mesma numeração no quadro e na lista, a partir de zero. O quadro fica
- * no fluxo em andamento; a lista segue com encerradas (5) e canceladas (6). */
+ * no fluxo em andamento; a lista segue com encerradas (6) e canceladas (7). */
 export const FAIXAS_FILA: ColunaFaixa[] = colunasEmOrdem([
+  { id: "aguardando_aprovacao", titulo: "Aguardando aprovação", tom: "warning" },
   { id: "aberto", titulo: "Abertas", tom: "info" },
   { id: "em_atendimento", titulo: "Em atendimento", tom: "info" },
   { id: "aguardando_servidor", titulo: "Aguardando o servidor", tom: "warning" },

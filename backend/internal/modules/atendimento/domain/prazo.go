@@ -454,14 +454,18 @@ func MedirPrazo(s Solicitacao, passagens []Passagem, cal Calendario, agora time.
 		}
 	}
 	estadoResposta := RelogioParado
-	if !respondida && s.Estado == EstadoAberto {
+	switch {
+	case !respondida && s.Estado == EstadoAberto:
 		estadoResposta = RelogioCorrendo
+	case s.Estado == EstadoAguardandoAprovacao:
+		// O prazo começa quando a central pode agir (ADR 068).
+		estadoResposta = RelogioPausado
 	}
 	estadoSolucao := RelogioParado
 	switch s.Estado {
 	case EstadoAberto, EstadoEmAtendimento:
 		estadoSolucao = RelogioCorrendo
-	case EstadoAguardandoServidor, EstadoAguardandoTerceiro:
+	case EstadoAguardandoServidor, EstadoAguardandoTerceiro, EstadoAguardandoAprovacao:
 		estadoSolucao = RelogioPausado
 	}
 	return &Prazo{

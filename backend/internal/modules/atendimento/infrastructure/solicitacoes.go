@@ -19,7 +19,7 @@ func nomeDe(alias string) string {
 
 var solicitacaoSelect = `SELECT s.id, s.numero, s.tipo, s.estado, s.titulo, s.descricao, s.oferta_id, s.produto_id,
 	s.unidade_id, s.solicitante_id, s.responsavel_id, s.resolvida_em, s.encerrada_em, s.created_at, s.updated_at,
-	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id,
+	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id, s.etapa_atual,
 	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, '')
 	FROM atendimento_solicitacoes s
 	JOIN atendimento_ofertas o ON o.id = s.oferta_id
@@ -57,7 +57,7 @@ func scanSolicitacao(row interface{ Scan(...any) error }) (domain.Solicitacao, e
 	var raw []byte
 	err := row.Scan(&s.ID, &s.Numero, &s.Tipo, &s.Estado, &s.Titulo, &s.Descricao, &s.OfertaID, &s.ProdutoID,
 		&s.UnidadeID, &s.SolicitanteID, &s.ResponsavelID, &s.ResolvidaEm, &s.EncerradaEm, &s.CreatedAt, &s.UpdatedAt,
-		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID,
+		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID, &s.EtapaAtual,
 		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome)
 	if err != nil {
 		return domain.Solicitacao{}, err
@@ -153,10 +153,11 @@ func (r *Repository) TravarSolicitacao(ctx context.Context, db database.DBTX, id
 func (r *Repository) InsertSolicitacao(ctx context.Context, db database.DBTX, s domain.Solicitacao) (domain.Solicitacao, error) {
 	_, err := db.Exec(ctx, `INSERT INTO atendimento_solicitacoes
 		(id, tipo, estado, titulo, descricao, oferta_id, produto_id, unidade_id, solicitante_id, responsavel_id,
-		 impacto, urgencia, prioridade, meta_resposta_min, meta_solucao_min, respostas, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+		 impacto, urgencia, prioridade, meta_resposta_min, meta_solucao_min, respostas, created_at, updated_at, etapa_atual)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
 		s.ID, s.Tipo, s.Estado, s.Titulo, s.Descricao, s.OfertaID, s.ProdutoID, s.UnidadeID, s.SolicitanteID,
-		s.ResponsavelID, s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin, respostasJSON(s.Respostas), s.CreatedAt, s.UpdatedAt)
+		s.ResponsavelID, s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin, respostasJSON(s.Respostas), s.CreatedAt, s.UpdatedAt,
+		s.EtapaAtual)
 	if err != nil {
 		return domain.Solicitacao{}, mapDB(err)
 	}
@@ -168,9 +169,9 @@ func (r *Repository) InsertSolicitacao(ctx context.Context, db database.DBTX, s 
 func (r *Repository) UpdateSolicitacao(ctx context.Context, db database.DBTX, s domain.Solicitacao) error {
 	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes
 		SET estado = $2, responsavel_id = $3, resolvida_em = $4, encerrada_em = $5,
-			impacto = $6, urgencia = $7, prioridade = $8, meta_resposta_min = $9, meta_solucao_min = $10
+			impacto = $6, urgencia = $7, prioridade = $8, meta_resposta_min = $9, meta_solucao_min = $10, etapa_atual = $11
 		WHERE id = $1`, s.ID, s.Estado, s.ResponsavelID, s.ResolvidaEm, s.EncerradaEm,
-		s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin)
+		s.Impacto, s.Urgencia, s.Prioridade, s.MetaRespostaMin, s.MetaSolucaoMin, s.EtapaAtual)
 	if err != nil {
 		return mapDB(err)
 	}

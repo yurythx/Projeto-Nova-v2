@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePainelEmbutido, useIdDaRota } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, type ReactNode, useCallback, useRef, useState } from "react";
 
+import { AprovacoesCard } from "@/components/atendimento/AprovacoesCard";
 import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
 import { AssistenteIA } from "@/components/atendimento/AssistenteIA";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
@@ -173,6 +174,8 @@ export function SolicitacaoDetalhe() {
                 solicitação.
               </p>
             )}
+
+            <AprovacoesCard etapaAtual={d.etapa_atual} aprovacoes={d.aprovacoes ?? []} />
 
             <Card>
               <CardHeader>

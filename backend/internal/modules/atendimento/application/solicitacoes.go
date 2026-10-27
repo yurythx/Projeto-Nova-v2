@@ -36,14 +36,15 @@ const (
 
 // rotulos é o nome do estado nos avisos.
 var rotulos = map[string]string{
-	domain.EstadoAberto:             "aberta",
-	domain.EstadoEmAtendimento:      "em atendimento",
-	domain.EstadoAguardandoServidor: "aguardando a sua resposta",
-	domain.EstadoAguardandoTerceiro: "aguardando terceiro",
-	domain.EstadoResolvido:          "resolvida",
-	domain.EstadoAtendido:           "atendida",
-	domain.EstadoEncerrado:          "encerrada",
-	domain.EstadoCancelado:          "cancelada",
+	domain.EstadoAguardandoAprovacao: "aguardando aprovação",
+	domain.EstadoAberto:              "aberta",
+	domain.EstadoEmAtendimento:       "em atendimento",
+	domain.EstadoAguardandoServidor:  "aguardando a sua resposta",
+	domain.EstadoAguardandoTerceiro:  "aguardando terceiro",
+	domain.EstadoResolvido:           "resolvida",
+	domain.EstadoAtendido:            "atendida",
+	domain.EstadoEncerrado:           "encerrada",
+	domain.EstadoCancelado:           "cancelada",
 }
 
 // AberturaEntrada é o pedido do servidor.
@@ -73,6 +74,10 @@ type Detalhe struct {
 	Visitas []domain.Visita `json:"visitas"`
 	// Avaliacao é a nota de quem abriu, quando já existe.
 	Avaliacao *domain.Avaliacao `json:"avaliacao,omitempty"`
+	// Aprovacoes são as decisões já tomadas (ADR 068); EtapaAtual, o nome
+	// da etapa que falta, quando o pedido espera aprovação.
+	Aprovacoes []domain.Aprovacao `json:"aprovacoes"`
+	EtapaAtual string             `json:"etapa_atual,omitempty"`
 }
 
 // papeis devolve como identity age sobre a solicitação. Vazio = não vê.
@@ -145,6 +150,17 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 	if ajustar != nil {
 		ajustar(&sol)
 	}
+	// Requisição de oferta com etapas espera aprovação antes da fila
+	// (ADR 068); a política vale desde já, mas o relógio só corre na fila.
+	var etapas []domain.EtapaAprovacao
+	if sol.Tipo == domain.TipoRequisicao {
+		if etapas, err = s.repo.EtapasDaOferta(ctx, tx, sol.OfertaID); err != nil {
+			return domain.Solicitacao{}, nil, err
+		}
+		if len(etapas) > 0 {
+			sol = sol.AguardarAprovacao()
+		}
+	}
 	sol = sol.AplicarPolitica(p)
 	if sol, err = s.repo.InsertSolicitacao(ctx, tx, sol); err != nil {
 		return domain.Solicitacao{}, nil, err
@@ -158,6 +174,10 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 	}
 	if err = s.registrar(ctx, tx, EventoSolicitacaoAberta, "solicitacao", sol.ID, corpo, sol, nil); err != nil {
 		return domain.Solicitacao{}, nil, err
+	}
+	if len(etapas) > 0 {
+		enviadas, err := s.avisarAprovadores(ctx, tx, sol, etapas[0], identity.UserID)
+		return sol, enviadas, err
 	}
 	ids, err := s.destinosDaAbertura(ctx, tx, sol, regra)
 	if err != nil {
@@ -270,6 +290,18 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	}
 	if err == nil {
 		detalhe.Avaliacao = &avaliacao
+	}
+	if detalhe.Aprovacoes, err = s.repo.ListAprovacoes(ctx, s.pool, id); err != nil {
+		return Detalhe{}, MapError(err)
+	}
+	if sol.EtapaAtual != nil {
+		etapas, err := s.repo.EtapasDaOferta(ctx, s.pool, sol.OfertaID)
+		if err != nil {
+			return Detalhe{}, MapError(err)
+		}
+		if *sol.EtapaAtual < len(etapas) {
+			detalhe.EtapaAtual = etapas[*sol.EtapaAtual].Nome
+		}
 	}
 	return detalhe, nil
 }
@@ -539,6 +571,12 @@ func (s *Service) passar(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao,
 // A chave inclui a solicitação e o fato: a mesma mudança não avisa duas
 // vezes.
 func (s *Service) avisar(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, destinos []uuid.UUID, autor uuid.UUID, fato, titulo, mensagem string) ([]notificacoes.Enviada, error) {
+	return s.avisarEm(ctx, tx, sol, destinos, autor, fato, titulo, mensagem, "/atendimento/solicitacoes/"+sol.ID.String())
+}
+
+// avisarEm avisa com outro destino do clique: quem aprova não abre o
+// chamado, abre a tela de aprovações (ADR 068).
+func (s *Service) avisarEm(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, destinos []uuid.UUID, autor uuid.UUID, fato, titulo, mensagem, link string) ([]notificacoes.Enviada, error) {
 	if s.avisos == nil {
 		return nil, nil
 	}
@@ -552,7 +590,7 @@ func (s *Service) avisar(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao,
 	// oferta mais o título da solicitação (2 × 160 caracteres).
 	return notificacoes.Registrar(ctx, tx, alvo, notificacoes.Nova{
 		Modulo: "atendimento", Titulo: titulo, Mensagem: mensagem,
-		Link: "/atendimento/solicitacoes/" + sol.ID.String(), Chave: "atendimento:" + sol.ID.String() + ":" + fato,
+		Link: link, Chave: "atendimento:" + sol.ID.String() + ":" + fato,
 	})
 }
 

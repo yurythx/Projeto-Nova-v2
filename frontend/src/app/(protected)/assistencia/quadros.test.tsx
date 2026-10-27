@@ -908,8 +908,10 @@ describe("Fila — regras do quadro", () => {
     semDizeres(quadro);
     expect(within(quadro).getByRole("heading", { name: /^Abertas/ })).toBeInTheDocument();
     expect(within(quadro).getByRole("heading", { name: /^Concluídas/ })).toBeInTheDocument();
-    expect(faixa("Abertas")).toHaveAttribute("data-ordem", "0");
-    expect(faixa("Concluídas")).toHaveAttribute("data-ordem", "4");
+    // O pedido que espera aprovação vem antes de tudo (ADR 068).
+    expect(faixa("Aguardando aprovação")).toHaveAttribute("data-ordem", "0");
+    expect(faixa("Abertas")).toHaveAttribute("data-ordem", "1");
+    expect(faixa("Concluídas")).toHaveAttribute("data-ordem", "5");
     expect(within(faixa("Em atendimento")).getByText("Nenhum item")).toBeInTheDocument();
     expect(within(quadro).queryByRole("button", { name: "Criar card" })).not.toBeInTheDocument();
     expect(

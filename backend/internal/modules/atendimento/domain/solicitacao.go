@@ -18,14 +18,17 @@ const (
 	PapelTecnico     = "tecnico"
 	PapelSolicitante = "solicitante"
 
-	EstadoAberto             = "aberto"
-	EstadoEmAtendimento      = "em_atendimento"
-	EstadoAguardandoServidor = "aguardando_servidor"
-	EstadoAguardandoTerceiro = "aguardando_terceiro"
-	EstadoResolvido          = "resolvido" // incidente: o serviço voltou
-	EstadoAtendido           = "atendido"  // requisição: o pedido foi cumprido
-	EstadoEncerrado          = "encerrado"
-	EstadoCancelado          = "cancelado"
+	// EstadoAguardandoAprovacao: requisição de oferta com etapas, antes de
+	// chegar à fila (ADR 068). A equipe vê, mas não atende.
+	EstadoAguardandoAprovacao = "aguardando_aprovacao"
+	EstadoAberto              = "aberto"
+	EstadoEmAtendimento       = "em_atendimento"
+	EstadoAguardandoServidor  = "aguardando_servidor"
+	EstadoAguardandoTerceiro  = "aguardando_terceiro"
+	EstadoResolvido           = "resolvido" // incidente: o serviço voltou
+	EstadoAtendido            = "atendido"  // requisição: o pedido foi cumprido
+	EstadoEncerrado           = "encerrado"
+	EstadoCancelado           = "cancelado"
 )
 
 // Solicitação é o pedido do servidor. Incidente e requisição não
@@ -55,8 +58,11 @@ type Solicitacao struct {
 	Respostas       map[string]string `json:"respostas,omitempty"`
 	// CofreSegredoID aponta para um segredo. A senha não fica nesta linha.
 	CofreSegredoID *uuid.UUID `json:"cofre_segredo_id,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	// EtapaAtual é a etapa de aprovação em curso; só existe aguardando
+	// aprovação (ADR 068).
+	EtapaAtual *int      `json:"etapa_atual,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 
 	OfertaNome      string `json:"oferta_nome"`
 	SolicitanteNome string `json:"solicitante_nome"`
@@ -112,16 +118,18 @@ func transicoes(tipo, papel string) map[string][]string {
 	switch papel {
 	case PapelTecnico:
 		return map[string][]string{
-			EstadoAberto:             {EstadoEmAtendimento, EstadoCancelado},
-			EstadoEmAtendimento:      {EstadoAguardandoServidor, EstadoAguardandoTerceiro, fim, EstadoCancelado},
-			EstadoAguardandoServidor: {EstadoEmAtendimento, EstadoCancelado},
-			EstadoAguardandoTerceiro: {EstadoEmAtendimento, EstadoCancelado},
-			fim:                      {EstadoEncerrado, EstadoEmAtendimento},
+			EstadoAguardandoAprovacao: {EstadoCancelado},
+			EstadoAberto:              {EstadoEmAtendimento, EstadoCancelado},
+			EstadoEmAtendimento:       {EstadoAguardandoServidor, EstadoAguardandoTerceiro, fim, EstadoCancelado},
+			EstadoAguardandoServidor:  {EstadoEmAtendimento, EstadoCancelado},
+			EstadoAguardandoTerceiro:  {EstadoEmAtendimento, EstadoCancelado},
+			fim:                       {EstadoEncerrado, EstadoEmAtendimento},
 		}
 	case PapelSolicitante:
 		return map[string][]string{
-			EstadoAberto: {EstadoCancelado},
-			fim:          {EstadoEncerrado, EstadoEmAtendimento},
+			EstadoAguardandoAprovacao: {EstadoCancelado},
+			EstadoAberto:              {EstadoCancelado},
+			fim:                       {EstadoEncerrado, EstadoEmAtendimento},
 		}
 	default:
 		return nil
@@ -183,6 +191,9 @@ func (s Solicitacao) Transicionar(para string, papeis ...string) (Solicitacao, b
 	case EstadoEncerrado, EstadoCancelado:
 		s.EncerradaEm = &now
 	}
+	if para != EstadoAguardandoAprovacao {
+		s.EtapaAtual = nil
+	}
 	s.Estado = para
 	s.UpdatedAt = now
 	return s, true, nil
@@ -197,6 +208,9 @@ func (s Solicitacao) Atribuir(responsavel uuid.UUID) (Solicitacao, bool, error) 
 	}
 	if responsavel == uuid.Nil {
 		return Solicitacao{}, false, ErrResponsavelInvalido
+	}
+	if s.Estado == EstadoAguardandoAprovacao {
+		return Solicitacao{}, false, ErrAguardandoAprovacao
 	}
 	if s.ResponsavelID != nil && *s.ResponsavelID == responsavel {
 		return s, false, nil
@@ -231,7 +245,9 @@ func (s Solicitacao) Proximos(papeis ...string) []string {
 			}
 		}
 	}
-	if slices.Contains(papeis, PapelTecnico) && !s.Finalizada() {
+	// Esperando aprovação, só o cancelamento: as colunas acrescentadas no
+	// quadro não tiram o pedido da aprovação.
+	if slices.Contains(papeis, PapelTecnico) && !s.Finalizada() && s.Estado != EstadoAguardandoAprovacao {
 		for _, destino := range s.passagens {
 			if destino != "" && destino != s.Estado && !slices.Contains(out, destino) {
 				out = append(out, destino)

@@ -116,6 +116,20 @@ type SolicitacaoRepository interface {
 	PrazoRepository
 	IARepository
 	EventosRepository
+	AprovacaoRepository
+}
+
+// AprovacaoRepository guarda as etapas das ofertas e as decisões (ADR 068).
+type AprovacaoRepository interface {
+	// EtapasDaOferta devolve as etapas em ordem (vazio = sem aprovação).
+	EtapasDaOferta(ctx context.Context, db database.DBTX, oferta uuid.UUID) ([]EtapaAprovacao, error)
+	// SalvarEtapas troca as etapas da oferta (vazio tira a aprovação).
+	SalvarEtapas(ctx context.Context, db database.DBTX, oferta uuid.UUID, etapas []EtapaAprovacao) error
+	InsertAprovacao(ctx context.Context, db database.DBTX, a Aprovacao) error
+	ListAprovacoes(ctx context.Context, db database.DBTX, solicitacao uuid.UUID) ([]Aprovacao, error)
+	// AguardandoAprovacaoDe lista os pedidos cuja etapa atual a pessoa
+	// aprova, dos mais antigos para os mais novos.
+	AguardandoAprovacaoDe(ctx context.Context, db database.DBTX, aprovador uuid.UUID, limite int) ([]Solicitacao, error)
 }
 
 // EventosRepository liga os alertas do monitoramento aos chamados (ADR 067).

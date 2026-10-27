@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 
 import { AlertasDoMonitoramentoCard } from "@/components/atendimento/AlertasDoMonitoramentoCard";
+import { EtapasDeAprovacao } from "@/components/atendimento/EtapasDeAprovacao";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -59,6 +60,7 @@ export default function AtendimentoCadastroPage() {
   const produtos = useApiQuery<Produto[]>(can("produtos:manage") ? "v1/produtos" : null);
   const { run, pending } = useAction();
   const [editOferta, setEditOferta] = useState<Oferta | null>(null);
+  const [etapasDe, setEtapasDe] = useState<Oferta | null>(null);
   const [campos, setCampos] = useState<CampoOferta[]>([]);
   const [editEquipe, setEditEquipe] = useState<Equipe | null>(null);
   const [unidadeEquipe, setUnidadeEquipe] = useState("");
@@ -337,11 +339,20 @@ export default function AtendimentoCadastroPage() {
                     Editar {oferta.nome}
                   </Button>
                 )}
+                {gerencia && oferta.tipo === "requisicao" && (
+                  <Button type="button" variant="secondary" onClick={() => setEtapasDe(oferta)}>
+                    Aprovação de {oferta.nome}
+                  </Button>
+                )}
               </div>
             </li>
           ))}
         </ul>
       </DataState>
+
+      {etapasDe && (
+        <EtapasDeAprovacao key={etapasDe.id} oferta={etapasDe} onFechar={() => setEtapasDe(null)} />
+      )}
 
       {gerencia && (
         <Card>

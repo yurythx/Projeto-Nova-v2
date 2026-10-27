@@ -15,6 +15,8 @@ export interface GuardedTab extends SectionTab {
  * módulo fica no item pai; aqui só entram as demais. */
 export const MODULE_CHILDREN: Record<string, GuardedTab[]> = {
   atendimento: [
+    // Sem permissão: a chefia aprova sem atender (ADR 068).
+    { href: "/atendimento/aprovacoes", label: "Aprovações" },
     { href: "/atendimento/fila", label: "Fila da equipe", permission: "atendimento:atender" },
     { href: "/atendimento/campo", label: "Em campo", permission: "atendimento:atender" },
     { href: "/atendimento/cadastro", label: "Ofertas e equipes", permission: "atendimento:manage" },

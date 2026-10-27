@@ -66,9 +66,14 @@ describe("submenus dos módulos", () => {
         (p) => hasPermission(perms, p),
         () => true,
       ).map((t) => t.href);
-    expect(tabs(["atendimento:abrir"])).toEqual([]);
-    expect(tabs(["atendimento:atender"])).toEqual(["/atendimento/fila", "/atendimento/campo"]);
+    expect(tabs(["atendimento:abrir"])).toEqual(["/atendimento/aprovacoes"]);
+    expect(tabs(["atendimento:atender"])).toEqual([
+      "/atendimento/aprovacoes",
+      "/atendimento/fila",
+      "/atendimento/campo",
+    ]);
     expect(tabs(["atendimento:*"])).toEqual([
+      "/atendimento/aprovacoes",
       "/atendimento/fila",
       "/atendimento/campo",
       "/atendimento/cadastro",

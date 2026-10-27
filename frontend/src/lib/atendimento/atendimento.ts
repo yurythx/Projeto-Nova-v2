@@ -5,6 +5,7 @@
 export type TipoSolicitacao = "incidente" | "requisicao";
 
 export type Estado =
+  | "aguardando_aprovacao"
   | "aberto"
   | "em_atendimento"
   | "aguardando_servidor"
@@ -188,6 +189,26 @@ export interface Detalhe {
   /** Sem coordenadas: a posição só aparece na supervisão. */
   visitas: Visita[];
   avaliacao?: Avaliacao | null;
+  /** Decisões já tomadas (ADR 068). */
+  aprovacoes?: Aprovacao[];
+  /** Nome da etapa que falta, quando o pedido espera aprovação. */
+  etapa_atual?: string;
+}
+
+export interface Aprovacao {
+  id: string;
+  etapa: number;
+  etapa_nome: string;
+  aprovador_nome?: string;
+  decisao: "aprovada" | "recusada";
+  motivo?: string;
+  created_at: string;
+}
+
+export interface EtapaAprovacao {
+  ordem: number;
+  nome: string;
+  aprovadores: string[];
 }
 
 export interface Ponto {
@@ -271,6 +292,7 @@ export const TIPO: Record<TipoSolicitacao, string> = {
 type Tone = "neutral" | "success" | "danger" | "warning" | "info";
 
 export const ESTADO: Record<Estado, { label: string; tone: Tone }> = {
+  aguardando_aprovacao: { label: "Aguardando aprovação", tone: "warning" },
   aberto: { label: "Aberta", tone: "info" },
   em_atendimento: { label: "Em atendimento", tone: "info" },
   aguardando_servidor: { label: "Aguardando resposta do servidor", tone: "warning" },
@@ -372,6 +394,7 @@ export function duracao(min: number): string {
 
 /** Estados da fila, na ordem do fluxo, para o filtro. */
 export const ESTADOS_FILA: Estado[] = [
+  "aguardando_aprovacao",
   "aberto",
   "em_atendimento",
   "aguardando_servidor",

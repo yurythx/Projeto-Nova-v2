@@ -345,6 +345,51 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoAprovacao": {
+        "properties": {
+          "aprovador_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "aprovador_nome": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decisao": {
+            "type": "string"
+          },
+          "etapa": {
+            "type": "integer"
+          },
+          "etapa_nome": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "solicitacao_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "decisao",
+          "etapa",
+          "etapa_nome",
+          "id",
+          "solicitacao_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoAvaliacao": {
         "properties": {
           "autor_id": {
@@ -767,6 +812,23 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoDecisaoAprovacaoRequest": {
+        "properties": {
+          "aprovar": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "motivo": {
+            "maxLength": 1000,
+            "type": "string"
+          }
+        },
+        "required": [
+          "aprovar"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoDecisaoRequest": {
         "properties": {
           "aceita": {
@@ -857,6 +919,12 @@
       },
       "AtendimentoDetalhe": {
         "properties": {
+          "aprovacoes": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoAprovacao"
+            },
+            "type": "array"
+          },
           "avaliacao": {
             "$ref": "#/components/schemas/AtendimentoAvaliacao"
           },
@@ -865,6 +933,9 @@
               "$ref": "#/components/schemas/AtendimentoComentario"
             },
             "type": "array"
+          },
+          "etapa_atual": {
+            "type": "string"
           },
           "papeis": {
             "items": {
@@ -895,6 +966,7 @@
           }
         },
         "required": [
+          "aprovacoes",
           "comentarios",
           "papeis",
           "passagens",
@@ -992,6 +1064,66 @@
         "required": [
           "estado"
         ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoEtapaAprovacao": {
+        "properties": {
+          "aprovadores": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "aprovadores",
+          "nome",
+          "ordem"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoEtapaRequest": {
+        "properties": {
+          "aprovadores": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "type": "array"
+          },
+          "nome": {
+            "maxLength": 80,
+            "type": "string"
+          }
+        },
+        "required": [
+          "aprovadores",
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoEtapasRequest": {
+        "properties": {
+          "etapas": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoEtapaRequest"
+            },
+            "maxItems": 5,
+            "type": "array"
+          }
+        },
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -1866,6 +1998,9 @@
           },
           "estado": {
             "type": "string"
+          },
+          "etapa_atual": {
+            "type": "integer"
           },
           "id": {
             "format": "uuid",
@@ -10460,6 +10595,61 @@
         ]
       }
     },
+    "/api/v1/atendimento/aprovacoes": {
+      "get": {
+        "description": "Os pedidos cuja etapa atual a pessoa aprova, dos mais antigos. Não exige permissão de atendimento: quem aprova pode ser a chefia, que não atende a fila.",
+        "operationId": "getAtendimentoAprovacoes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoSolicitacao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — pedidos aguardando a minha aprovação",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/candidatos": {
       "get": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -12164,6 +12354,154 @@
         ]
       }
     },
+    "/api/v1/atendimento/ofertas/{id}/etapas": {
+      "get": {
+        "description": "Etapas em ordem, cada uma com nome e aprovadores; vazio = a oferta não pede aprovação (ADR 068).",
+        "operationId": "getAtendimentoOfertasIdEtapas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoEtapaAprovacao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — etapas de aprovação da oferta",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "put": {
+        "description": "Só requisição; até 5 etapas, cada uma com 1 a 20 aprovadores ativos. Vale para os pedidos novos; lista vazia tira a aprovação. Auditado.",
+        "operationId": "putAtendimentoOfertasIdEtapas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoEtapasRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoEtapaAprovacao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — trocar as etapas de aprovação",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/ofertas/{id}/respostas": {
       "get": {
         "operationId": "getAtendimentoOfertasIdRespostas",
@@ -13108,6 +13446,92 @@
           }
         ],
         "summary": "Atendimento — Excluir /atendimento/solicitacoes/{id}/apontamentos/{apontamentoId}",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/solicitacoes/{id}/aprovacao": {
+      "post": {
+        "description": "Basta um aprovador por etapa; quem pediu não aprova o próprio pedido (403). A última aprovação entrega o pedido à fila e avisa a equipe; recusar exige motivo (até 1000) e cancela, com o motivo como resposta a quem pediu. 409 quando o pedido não espera aprovação.",
+        "operationId": "postAtendimentoSolicitacoesIdAprovacao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoDecisaoAprovacaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoSolicitacao"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            },
+            "description": "O pedido não espera aprovação."
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — aprovar ou recusar a etapa atual",
         "tags": [
           "atendimento"
         ]
