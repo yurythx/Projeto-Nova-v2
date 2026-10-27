@@ -473,6 +473,14 @@ O comando `importarglpi` traz o histórico do GLPI para o atendimento ([ADR 072]
    Ele lê os tokens de `~/.config/projeto-nova/glpi.env`, a senha do banco
    no `.env` da VM, e grava por um túnel SSH que só vive durante o comando.
 
+   Quando as categorias do GLPI definem o SLA ou se repetem por entidade,
+   use a **tabela de-para** ([ADR 075](adr/075-de-para-do-glpi.md)):
+   `--mapa tabela.csv` (no script, `GLPI_MAPA=tabela.csv`). Cada linha leva
+   uma secretaria e uma categoria do GLPI (ou `*`) a uma unidade, oferta,
+   tipo e prioridade daqui. A simulação mostra as unidades que faltam criar
+   e o que a tabela não cobre. A tabela tem dados da organização: guarde-a
+   fora do repositório.
+
 3. Corrija no AD/SSO o e-mail de quem ficou sem par, se for o caso, e rode de novo com `--gravar`.
 4. Rodar de novo só traz o que é novo. Faça uma carga grande antes da virada e uma final no dia em que o GLPI deixar de receber chamados.
 

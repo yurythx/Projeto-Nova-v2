@@ -32,6 +32,23 @@ type Chamado struct {
 	Urgencia    int    `json:"urgency"`
 	Impacto     int    `json:"impact"`
 	CategoriaID int    `json:"itilcategories_id"`
+	EntidadeID  int    `json:"entities_id"`
+	// SLAs que o GLPI aplicou (0 = nenhum): tempo de solução e de resposta.
+	SLASolucao  int `json:"slas_id_ttr"`
+	SLAResposta int `json:"slas_id_tto"`
+}
+
+// Entidade é um nó da árvore de entidades do GLPI.
+type Entidade struct {
+	ID   int    `json:"id"`
+	Nome string `json:"completename"`
+}
+
+// SLA é um tempo do GLPI: Tempo em Unidade (minute, hour, day).
+type SLA struct {
+	ID      int    `json:"id"`
+	Tempo   int    `json:"number_time"`
+	Unidade string `json:"definition_time"`
 }
 
 // Participante liga uma pessoa ao chamado: 1 requerente, 2 técnico.
@@ -83,6 +100,13 @@ type Fonte interface {
 	Acompanhamentos(ctx context.Context, chamado int) ([]Acompanhamento, error)
 	Satisfacao(ctx context.Context, chamado int) (*Satisfacao, error)
 	Pessoa(ctx context.Context, id int) (Pessoa, error)
+}
+
+// Estrutura é o que a Fonte dá a mais quando há mapa: a árvore de
+// entidades (para achar a secretaria) e os SLAs (para as metas).
+type Estrutura interface {
+	Entidades(ctx context.Context) ([]Entidade, error)
+	SLAs(ctx context.Context) ([]SLA, error)
 }
 
 // ErrGLPI é a resposta inesperada da API.
@@ -173,6 +197,18 @@ func (c *Cliente) Fechar(ctx context.Context) error {
 func (c *Cliente) Categorias(ctx context.Context) ([]Categoria, error) {
 	var out []Categoria
 	_, err := c.get(ctx, "/ITILCategory?range=0-9999", &out)
+	return out, err
+}
+
+func (c *Cliente) Entidades(ctx context.Context) ([]Entidade, error) {
+	var out []Entidade
+	_, err := c.get(ctx, "/Entity?range=0-9999", &out)
+	return out, err
+}
+
+func (c *Cliente) SLAs(ctx context.Context) ([]SLA, error) {
+	var out []SLA
+	_, err := c.get(ctx, "/SLA?range=0-999", &out)
 	return out, err
 }
 

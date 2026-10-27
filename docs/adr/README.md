@@ -52,3 +52,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [072](072-importador-do-glpi.md) | Importador do GLPI: comando que lê a API REST, simula por padrão, casa pessoas por e-mail e login, e pode rodar de novo sem duplicar | Aceito e implementado |
 | [073](073-ola-no-chamado.md) | OLA no chamado: histórico de atribuição por equipe, tempo sem as esperas pelo servidor e pelo fornecedor, reconstruído para o passado | Aceito e implementado |
 | [074](074-perfis-pelos-grupos-do-sso.md) | Perfis pelos grupos do SSO: o grupo `*` vale para todo mundo autenticado (perfil básico), e os grupos de administração e TI do AD viram administradores pelo Ansible | Aceito e implementado |
+| [075](075-de-para-do-glpi.md) | Tabela de-para do GLPI: secretaria e categoria → unidade, oferta e prioridade; regra da fila para os pedidos novos; metas só para quem teve SLA no GLPI | Aceito e implementado |

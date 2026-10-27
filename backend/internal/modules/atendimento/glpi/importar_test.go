@@ -28,6 +28,8 @@ type glpiFalso struct {
 	satisf     map[int][]Satisfacao
 	pessoas    map[int]Pessoa
 	emails     map[int]string
+	entidades  []Entidade
+	slas       []SLA
 	quebrado   string // caminho que responde 500
 	sessoes    int
 }
@@ -58,6 +60,10 @@ func (g *glpiFalso) servidor(t *testing.T) *httptest.Server {
 			g.sessoes--
 		case caminho == "/ITILCategory":
 			responder(g.categorias)
+		case caminho == "/Entity":
+			responder(g.entidades)
+		case caminho == "/SLA":
+			responder(g.slas)
 		case caminho == "/Ticket" && r.URL.Query().Get("sort") != "id":
 			// Como o GLPI 10: sort pelo número da opção de busca é 400.
 			w.WriteHeader(http.StatusBadRequest)

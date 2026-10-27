@@ -38,6 +38,7 @@ import (
 type opcoes struct {
 	url, appToken, userToken string
 	login, senha, perfil     string
+	mapa                     string
 	unidade                  *uuid.UUID
 	gravar                   bool
 	fuso                     *time.Location
@@ -62,11 +63,12 @@ func ler(args []string, env func(string) string) (opcoes, error) {
 	gravar := fs.Bool("gravar", false, "grava; sem ele, só simula")
 	fuso := fs.String("fuso", "America/Sao_Paulo", "fuso das datas do GLPI")
 	pagina := fs.Int("pagina", glpi.PaginaPadrao, "chamados por página da API")
+	mapa := fs.String("mapa", "", "tabela de-para revisada (CSV com ;): categoria -> oferta, unidade e prioridade (ADR 075)")
 	if err := fs.Parse(args); err != nil {
 		return opcoes{}, err
 	}
 	op := opcoes{url: env("GLPI_URL"), appToken: env("GLPI_APP_TOKEN"), userToken: env("GLPI_USER_TOKEN"),
-		login: env("GLPI_LOGIN"), senha: env("GLPI_PASSWORD"), perfil: env("GLPI_PERFIL"), gravar: *gravar, pagina: *pagina}
+		login: env("GLPI_LOGIN"), senha: env("GLPI_PASSWORD"), perfil: env("GLPI_PERFIL"), mapa: *mapa, gravar: *gravar, pagina: *pagina}
 	if op.url == "" || (op.userToken == "" && (op.login == "" || op.senha == "")) {
 		return opcoes{}, errors.New("defina GLPI_URL e GLPI_USER_TOKEN, ou GLPI_LOGIN e GLPI_PASSWORD (e GLPI_APP_TOKEN, se o GLPI pedir)")
 	}
@@ -98,7 +100,34 @@ func rodar(ctx context.Context, op opcoes, saida io.Writer) error {
 	return importar(ctx, op, pool, saida)
 }
 
-func importar(ctx context.Context, op opcoes, pool *pgxpool.Pool, saida io.Writer) error {
+// lerMapa lê a tabela, casando o nome de cada unidade com as daqui.
+func lerMapa(ctx context.Context, pool *pgxpool.Pool, caminho string) (*glpi.Mapa, error) {
+	f, err := os.Open(caminho)
+	if err != nil {
+		return nil, fmt.Errorf("--mapa: %w", err)
+	}
+	defer f.Close()
+	rows, err := pool.Query(ctx, `SELECT id, nome FROM unidades WHERE ativo`)
+	if err != nil {
+		return nil, fmt.Errorf("unidades: %w", err)
+	}
+	defer rows.Close()
+	unidades := map[string]uuid.UUID{}
+	for rows.Next() {
+		var id uuid.UUID
+		var nome string
+		if err := rows.Scan(&id, &nome); err != nil {
+			return nil, err
+		}
+		unidades[nome] = id
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return glpi.LerMapa(f, unidades)
+}
+
+func importar(ctx context.Context, op opcoes, pool *pgxpool.Pool, saida io.Writer) (err error) {
 	cliente := glpi.NovoCliente(op.url, op.appToken, op.userToken)
 	cliente.Login, cliente.Senha, cliente.Perfil = op.login, op.senha, op.perfil
 	if err := cliente.Abrir(ctx); err != nil {
@@ -109,6 +138,11 @@ func importar(ctx context.Context, op opcoes, pool *pgxpool.Pool, saida io.Write
 	defer func() { _ = cliente.Fechar(context.WithoutCancel(ctx)) }()
 	im := &glpi.Importador{Fonte: cliente, Pool: pool, Repo: infrastructure.NewRepository(), Unidade: op.unidade,
 		Gravar: op.gravar, Fuso: op.fuso, Pagina: op.pagina}
+	if op.mapa != "" {
+		if im.Mapa, err = lerMapa(ctx, pool, op.mapa); err != nil {
+			return err
+		}
+	}
 	rel, err := im.Executar(ctx)
 	enc := json.NewEncoder(saida)
 	enc.SetIndent("", "  ")

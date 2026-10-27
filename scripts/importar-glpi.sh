@@ -11,6 +11,7 @@
 #   GLPI_ENV      arquivo com GLPI_URL, GLPI_APP_TOKEN e GLPI_USER_TOKEN (ou,
 #                 sem token, GLPI_LOGIN e GLPI_PASSWORD de uma conta do GLPI)
 #                 (padrão ~/.config/projeto-nova/glpi.env, fora do repositório)
+#   GLPI_MAPA     tabela de-para revisada (ADR 075), passada como --mapa
 #   NOVA_SSH      root@<vm> (padrão root@192.168.1.70)
 #   NOVA_SSH_KEY  chave que entra na VM (padrão ~/.ssh/sismarq_deploy)
 #
@@ -31,10 +32,17 @@ grep -q -E '^(GLPI_USER_TOKEN|GLPI_PASSWORD)=.' "$glpi_env" ||
 
 caminho() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else printf '%s' "$1"; fi; }
 export MSYS_NO_PATHCONV=1
+extra=()
+args=("$@")
+if [ -n "${GLPI_MAPA:-}" ]; then
+  [ -f "$GLPI_MAPA" ] || { echo "GLPI_MAPA não encontrado: $GLPI_MAPA" >&2; exit 1; }
+  extra=(-v "$(caminho "$GLPI_MAPA"):/mapa.csv:ro")
+  args+=(--mapa /mapa.csv)
+fi
 tty=(-i)
 [ -t 0 ] && tty=(-it)
 
-docker run --rm "${tty[@]}" \
+docker run --rm "${tty[@]}" "${extra[@]}" \
   -v "$(caminho "$raiz"):/src" -v "$(caminho "$glpi_env"):/glpi.env:ro" -v "$(caminho "$chave"):/chave:ro" \
   -v nova-gomod:/go/pkg/mod -v nova-gobuild:/root/.cache/go-build \
   -e VM="$vm" -w /src/backend golang:1.26 bash -ec '
@@ -48,4 +56,4 @@ docker run --rm "${tty[@]}" \
     set +a
     export DB_HOST=127.0.0.1 DB_PORT=15432 DB_SSLMODE=disable
     go run ./cmd/importarglpi "$@"
-  ' importar-glpi "$@"
+  ' importar-glpi "${args[@]}"
