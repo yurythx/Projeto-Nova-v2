@@ -53,6 +53,16 @@ func keycloak(t *testing.T, quebrar string) *httptest.Server {
 			_, _ = fmt.Sscan(r.URL.Query().Get("first"), &primeiro)
 			_, _ = fmt.Sscan(r.URL.Query().Get("max"), &max)
 			fim := min(len(pessoas), primeiro+max)
+			// Como o Keycloak federado: a página inteira vem com o JSON
+			// emendado, e uma pessoa por vez vem certa.
+			if quebrar == "emendada-e-negada" && max == 1 && primeiro == 1 {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			if strings.HasPrefix(quebrar, "emendada") && max > 1 {
+				_, _ = w.Write([]byte(`[{"id":"a","username":"ana"{"id":"b"}]`))
+				return
+			}
 			if quebrar == "curta" && primeiro == 0 {
 				fim = 1 // como o Keycloak federado: página curta no meio
 			}
@@ -109,6 +119,15 @@ func TestUsuarios(t *testing.T) {
 	// Página curta no meio não é o fim: segue até o total contado.
 	if us, paginas, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 2}, Config{IssuerURL: keycloak(t, "curta").URL + "/sso/realms/x", ClientID: "p", ClientSecret: "s"}); err != nil || paginas != 2 || len(us) != 2 || us[1].ID != "c" {
 		t.Fatalf("página curta: %+v %d %v", us, paginas, err)
+	}
+	// A página emendada é lida pessoa por pessoa, até o fim da lista.
+	if us, _, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 5}, Config{IssuerURL: keycloak(t, "emendada").URL + "/sso/realms/x",
+		ClientID: "p", ClientSecret: "s"}); err != nil || len(us) != 3 || us[2].ID != "c" {
+		t.Fatalf("página emendada: %+v %v", us, err)
+	}
+	if _, _, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 5}, Config{IssuerURL: keycloak(t, "emendada-e-negada").URL + "/sso/realms/x",
+		ClientID: "p", ClientSecret: "s"}); !errors.Is(err, ErrResposta) {
+		t.Fatalf("pessoa negada na leitura uma a uma: %v", err)
 	}
 	// O erro de quem recebe a página para a leitura.
 	parar := errors.New("parar")

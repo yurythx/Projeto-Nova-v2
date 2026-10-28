@@ -117,20 +117,53 @@ func TestSincronizarSSO(t *testing.T) {
 		t.Fatalf("sem e-mail: %s", email)
 	}
 
-	// Desativada no SSO: desativa aqui. Reativada lá: não volta sozinha.
+	// Desativada no SSO: desativa aqui. Reativada lá: volta, porque foi o
+	// SSO quem desativou (o Keycloak federado às vezes informa estado velho).
 	ana.Ativo, ana.Nome = false, ""
 	d.trocar([]domain.UsuarioSSO{ana}, nil)
 	if rel := sincronizar(t, s, ctx); rel.Atualizados != 1 || rel.Desativados != 1 {
 		t.Fatalf("desativar: %+v", rel)
 	}
+	if rel := sincronizar(t, s, ctx); rel.Desativados != 0 || rel.Reativados != 0 {
+		t.Fatalf("desativada de novo não conta: %+v", rel)
+	}
 	ana.Ativo = true
 	d.trocar([]domain.UsuarioSSO{ana}, nil)
-	if rel := sincronizar(t, s, ctx); rel.Desativados != 0 {
+	if rel := sincronizar(t, s, ctx); rel.Desativados != 0 || rel.Reativados != 1 {
 		t.Fatalf("reativar: %+v", rel)
 	}
 	e.must(e.pool.QueryRow(ctx, `SELECT display_name, active FROM users WHERE keycloak_subject = $1`, ana.Subject).Scan(&nome, &ativo))
-	if ativo || nome != "Ana Souza" {
-		t.Fatalf("continua desativada e com o nome: %s %v", nome, ativo)
+	if !ativo || nome != "Ana Souza" {
+		t.Fatalf("reativada e com o nome: %s %v", nome, ativo)
+	}
+
+	// Desativada por um administrador: a sincronização não a reativa, mesmo
+	// que o SSO a desative e reative.
+	var anaID uuid.UUID
+	e.must(e.pool.QueryRow(ctx, `SELECT id FROM users WHERE keycloak_subject = $1`, ana.Subject).Scan(&anaID))
+	e.must(infrastructure.NewRepository().UpdateUser(ctx, e.pool, anaID, "Ana Souza", false, []string{}))
+	for _, ativa := range []bool{false, true} {
+		ana.Ativo = ativa
+		d.trocar([]domain.UsuarioSSO{ana}, nil)
+		if rel := sincronizar(t, s, ctx); rel.Reativados != 0 || rel.Desativados != 0 {
+			t.Fatalf("a decisão do administrador vale (%v): %+v", ativa, rel)
+		}
+	}
+	e.must(e.pool.QueryRow(ctx, `SELECT active FROM users WHERE keycloak_subject = $1`, ana.Subject).Scan(&ativo))
+	if ativo {
+		t.Fatal("o administrador a desativou")
+	}
+
+	// Quem nasce desativado pelo SSO volta quando ele o ativa.
+	novo := domain.UsuarioSSO{Subject: "kc-novo-" + sfx, Username: "novo." + sfx, Ativo: false}
+	d.trocar([]domain.UsuarioSSO{novo}, nil)
+	if rel := sincronizar(t, s, ctx); rel.Criados != 1 {
+		t.Fatalf("criado desativado: %+v", rel)
+	}
+	novo.Ativo = true
+	d.trocar([]domain.UsuarioSSO{novo}, nil)
+	if rel := sincronizar(t, s, ctx); rel.Reativados != 1 {
+		t.Fatalf("nasceu desativado e voltou: %+v", rel)
 	}
 
 	// Uma de cada vez: a segunda espera a primeira terminar.

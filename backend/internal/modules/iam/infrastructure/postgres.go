@@ -534,7 +534,10 @@ func (r *Repository) UserPermissions(ctx context.Context, db database.DBTX, id u
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, db database.DBTX, id uuid.UUID, displayName string, active bool, roles []string) error {
-	tag, err := db.Exec(ctx, `UPDATE users SET display_name = $2, active = $3, roles = $4 WHERE id = $1`, id, displayName, active, roles)
+	// A decisão de um administrador vale sobre a do SSO: a sincronização não
+	// reativa quem ele desativou.
+	tag, err := db.Exec(ctx, `UPDATE users SET display_name = $2, active = $3, roles = $4, desativada_pelo_sso = false WHERE id = $1`,
+		id, displayName, active, roles)
 	if err == nil && tag.RowsAffected() == 0 {
 		return domain.ErrNotFound
 	}
@@ -582,16 +585,21 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	var res domain.ResultadoSSO
 	var antes *bool
 	var depois bool
+	// Desativada no SSO: desativa e marca que foi ele. Ativa no SSO: só
+	// volta a conta que ele mesmo desativou; a que um administrador
+	// desativou continua desativada.
 	err := db.QueryRow(ctx, `
 		WITH antes AS (SELECT active FROM users WHERE keycloak_subject = $2)
-		INSERT INTO users (id, keycloak_subject, username, email, display_name, groups, active, created_at, updated_at, ad_synced_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now(), now())
+		INSERT INTO users (id, keycloak_subject, username, email, display_name, groups, active, desativada_pelo_sso,
+			created_at, updated_at, ad_synced_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOT $7, now(), now(), now())
 		ON CONFLICT (keycloak_subject) DO UPDATE
 		SET username = EXCLUDED.username,
 		    email = EXCLUDED.email,
 		    display_name = CASE WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name ELSE users.display_name END,
 		    groups = EXCLUDED.groups,
-		    active = users.active AND EXCLUDED.active,
+		    active = CASE WHEN NOT EXCLUDED.active THEN false ELSE users.active OR users.desativada_pelo_sso END,
+		    desativada_pelo_sso = CASE WHEN NOT EXCLUDED.active THEN users.active OR users.desativada_pelo_sso ELSE false END,
 		    ad_synced_at = now()
 		RETURNING (SELECT active FROM antes), active`,
 		uuid.New(), u.Subject, username, email, u.Nome, grupos, u.Ativo).Scan(&antes, &depois)
@@ -600,6 +608,7 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	}
 	res.Criado = antes == nil
 	res.Desativado = antes != nil && *antes && !depois
+	res.Reativado = antes != nil && !*antes && depois
 	return res, nil
 }
 

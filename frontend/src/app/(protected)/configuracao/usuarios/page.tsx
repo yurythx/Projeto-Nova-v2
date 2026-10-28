@@ -341,6 +341,8 @@ interface RelatorioSSO {
   criados: number;
   atualizados: number;
   desativados: number;
+  /** Os que o próprio SSO tinha desativado e voltaram. */
+  reativados?: number;
   conflitos: string[];
 }
 
@@ -359,7 +361,8 @@ function resumoSSO(r: Partial<RelatorioSSO>): string {
   const conflitos = r.conflitos ?? [];
   return (
     `${r.lidos ?? 0} pessoas lidas, ${r.criados ?? 0} novas, ${r.atualizados ?? 0} atualizadas, ` +
-    `${r.desativados ?? 0} desativadas.` +
+    `${r.desativados ?? 0} desativadas` +
+    (r.reativados ? `, ${r.reativados} reativadas.` : ".") +
     (conflitos.length > 0
       ? ` Com conta local de mesmo usuário ou e-mail (vincule à mão): ${conflitos.join(", ")}.`
       : "")

@@ -197,6 +197,8 @@ const SemBatidaSSO = 20 * time.Minute
 type ResultadoSSO struct {
 	Criado     bool
 	Desativado bool
+	// Reativado: a conta que o próprio SSO tinha desativado voltou.
+	Reativado bool
 }
 
 type Repository interface {

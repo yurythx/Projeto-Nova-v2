@@ -37,6 +37,8 @@ type RelatorioSSO struct {
 	Criados     int `json:"criados"`
 	Atualizados int `json:"atualizados"`
 	Desativados int `json:"desativados"`
+	// Reativados são os que o SSO tinha desativado e deu de novo como ativos.
+	Reativados int `json:"reativados"`
 	// Conflitos são as pessoas cujo usuário ou e-mail já é de uma conta
 	// local: um administrador decide, como no primeiro login.
 	Conflitos []string `json:"conflitos"`
@@ -174,8 +176,11 @@ func (s *Service) gravarPessoa(ctx context.Context, p domain.UsuarioSSO, rel *Re
 	default:
 		rel.Atualizados++
 	}
-	if res.Desativado {
+	switch {
+	case res.Desativado:
 		rel.Desativados++
+	case res.Reativado:
+		rel.Reativados++
 	}
 	return nil
 }
@@ -196,7 +201,7 @@ func (s *Service) registrarSSO(rel RelatorioSSO, err error) {
 	switch {
 	case err == nil:
 		s.logger.Info("iam: usuários do SSO sincronizados", slog.Int("lidos", rel.Lidos), slog.Int("criados", rel.Criados),
-			slog.Int("desativados", rel.Desativados), slog.Int("conflitos", len(rel.Conflitos)))
+			slog.Int("desativados", rel.Desativados), slog.Int("reativados", rel.Reativados), slog.Int("conflitos", len(rel.Conflitos)))
 	case !errors.Is(err, ErrSemSSO) && !errors.Is(err, context.Canceled):
 		s.logger.Warn("iam: sincronização com o SSO", slog.Any("error", err))
 	}

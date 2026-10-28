@@ -116,7 +116,7 @@ describe("Configurações > Usuários", () => {
           ? {
               data: {
                 andamento: true,
-                ultima: { ...ultima, relatorio: { lidos: 50, criados: 50 } },
+                ultima: { ...ultima, relatorio: { lidos: 50, criados: 50, reativados: 2 } },
               },
             }
           : {
@@ -129,7 +129,9 @@ describe("Configurações > Usuários", () => {
     });
     renderApp(<UsuariosPage />);
     await userEvent.click(await screen.findByRole("button", { name: /Sincronizar com o SSO/ }));
-    expect(await screen.findByText(/até agora 50 pessoas lidas, 50 novas/)).toBeInTheDocument();
+    expect(await screen.findByText(/até agora 50 pessoas lidas, 50 novas/)).toHaveTextContent(
+      "0 desativadas, 2 reativadas.",
+    );
     expect(
       await screen.findByText(/Última sincronização/, undefined, { timeout: 5000 }),
     ).toHaveTextContent(

@@ -121,7 +121,14 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config, lote func([]Usuario)
 			}
 		}
 		var pessoas []Usuario
-		if err := c.get(ctx, token, fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=true", admin, primeiro, pagina), &pessoas); err != nil {
+		err = c.get(ctx, token, pagina0(admin, primeiro, pagina), &pessoas)
+		if errors.Is(err, errDecodificar) {
+			// Federado ao AD, o Keycloak às vezes emenda o JSON de uma página
+			// inteira, sempre no mesmo ponto; lida uma a uma, cada pessoa vem
+			// certa.
+			pessoas, err = c.umaAUma(ctx, token, admin, primeiro, pagina)
+		}
+		if err != nil {
 			return err
 		}
 		if err := c.grupos(ctx, token, admin, pessoas, paralelo); err != nil {
@@ -132,6 +139,27 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config, lote func([]Usuario)
 		}
 	}
 	return nil
+}
+
+// pagina0 é o endereço de uma página da lista resumida.
+func pagina0(admin string, primeiro, max int) string {
+	return fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=true", admin, primeiro, max)
+}
+
+// umaAUma lê a página pessoa por pessoa; o fim da lista encerra antes.
+func (c *Cliente) umaAUma(ctx context.Context, token, admin string, primeiro, pagina int) ([]Usuario, error) {
+	out := []Usuario{}
+	for i := range pagina {
+		var uma []Usuario
+		if err := c.get(ctx, token, pagina0(admin, primeiro+i, 1), &uma); err != nil {
+			return nil, err
+		}
+		if len(uma) == 0 {
+			break
+		}
+		out = append(out, uma...)
+	}
+	return out, nil
 }
 
 // grupos preenche os grupos de cada pessoa do lote, paralelo de cada vez.
@@ -194,8 +222,12 @@ var (
 	Espera     = 2 * time.Second
 )
 
-// errDefinitivo marca a falha que repetir não resolve.
-var errDefinitivo = errors.New("keycloakadmin: falha definitiva")
+// errDefinitivo marca a falha que repetir não resolve; errDecodificar, a
+// resposta que chegou mas não é o JSON esperado.
+var (
+	errDefinitivo  = errors.New("keycloakadmin: falha definitiva")
+	errDecodificar = errors.New("keycloakadmin: resposta ilegível")
+)
 
 func (c *Cliente) get(ctx context.Context, token, endereco string, out any) error {
 	var err error
@@ -241,7 +273,7 @@ func (c *Cliente) fazer(req *http.Request, out any) error {
 		return fmt.Errorf("%w: %s %d", ErrResposta, req.URL.Path, resp.StatusCode)
 	}
 	if err := json.Unmarshal(corpo, out); err != nil {
-		return fmt.Errorf("%w: %s: %v", ErrResposta, req.URL.Path, err)
+		return fmt.Errorf("%w: %w: %s: %v", ErrResposta, errDecodificar, req.URL.Path, err)
 	}
 	return nil
 }
