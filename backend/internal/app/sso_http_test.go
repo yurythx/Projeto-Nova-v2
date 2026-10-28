@@ -24,6 +24,8 @@ func keycloakDeTeste(t *testing.T, sub string) *httptest.Server {
 		switch r.URL.Path {
 		case "/realms/x/protocol/openid-connect/token":
 			_, _ = w.Write([]byte(`{"access_token":"tk"}`))
+		case "/admin/realms/x/users/count":
+			_, _ = w.Write([]byte(`1`))
 		case "/admin/realms/x/users":
 			_, _ = w.Write([]byte(`[{"id":"` + sub + `","username":"` + sub + `","firstName":"Ana","enabled":true}]`))
 		default:
@@ -57,6 +59,9 @@ func TestSincronizacaoSSOHTTP(t *testing.T) {
 	}}
 	mod.Servico().WithDiretorio(porta, slog.New(slog.DiscardHandler))
 
+	if _, err := h.d.DB.Exec(context.Background(), `DELETE FROM iam_sso_sincronizacoes`); err != nil {
+		t.Fatal(err)
+	}
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/iam/sso/sincronizar", comum, "")
 	h.expect(http.StatusForbidden, http.MethodGet, "/api/v1/iam/sso/sincronizacao", comum, "")
 	h.expect(http.StatusAccepted, http.MethodPost, "/api/v1/iam/sso/sincronizar", admin, "")
@@ -73,12 +78,12 @@ func TestSincronizacaoSSOHTTP(t *testing.T) {
 		slog.New(slog.DiscardHandler))
 	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/iam/sso/sincronizar", admin, "")
 	semConfig := portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) { return "", "", "" }}
-	if _, err := semConfig.Usuarios(context.Background()); !errors.Is(err, iamapp.ErrSemSSO) {
+	if err := semConfig.Usuarios(context.Background(), nil); !errors.Is(err, iamapp.ErrSemSSO) {
 		t.Fatalf("sem configuração: %v", err)
 	}
-	if _, err := (portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) {
+	if err := (portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) {
 		return "http://127.0.0.1:1/realms/x", "p", "s"
-	}}).Usuarios(context.Background()); err == nil || errors.Is(err, iamapp.ErrSemSSO) {
+	}}).Usuarios(context.Background(), nil); err == nil || errors.Is(err, iamapp.ErrSemSSO) {
 		t.Fatalf("Keycloak fora do ar: %v", err)
 	}
 }

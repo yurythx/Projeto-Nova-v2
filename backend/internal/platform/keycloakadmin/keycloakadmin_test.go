@@ -38,11 +38,22 @@ func keycloak(t *testing.T, quebrar string) *httptest.Server {
 			_, _ = w.Write([]byte(`{"access_token":"tk"}`))
 		case r.Header.Get("Authorization") != "Bearer tk":
 			w.WriteHeader(http.StatusUnauthorized)
+		case r.URL.Path == "/sso/admin/realms/x/users/count":
+			if quebrar == "count" {
+				_, _ = w.Write([]byte(`"três"`))
+				return
+			}
+			_, _ = fmt.Fprint(w, len(pessoas))
+		case r.URL.Path == "/sso/admin/realms/x/users" && quebrar == "lista":
+			w.WriteHeader(http.StatusForbidden)
 		case r.URL.Path == "/sso/admin/realms/x/users":
 			var primeiro, max int
 			_, _ = fmt.Sscan(r.URL.Query().Get("first"), &primeiro)
 			_, _ = fmt.Sscan(r.URL.Query().Get("max"), &max)
 			fim := min(len(pessoas), primeiro+max)
+			if quebrar == "curta" && primeiro == 0 {
+				fim = 1 // como o Keycloak federado: página curta no meio
+			}
 			_ = json.NewEncoder(w).Encode(pessoas[min(primeiro, fim):fim])
 		case strings.HasSuffix(r.URL.Path, "/groups"):
 			if quebrar == "json" {
@@ -58,19 +69,40 @@ func keycloak(t *testing.T, quebrar string) *httptest.Server {
 	return srv
 }
 
+// todos junta as páginas e conta quantas vieram.
+func todos(ctx context.Context, c *Cliente, cfg Config) ([]Usuario, int, error) {
+	var us []Usuario
+	paginas := 0
+	err := c.Usuarios(ctx, cfg, func(lote []Usuario) error {
+		paginas++
+		us = append(us, lote...)
+		return nil
+	})
+	return us, paginas, err
+}
+
 func TestUsuarios(t *testing.T) {
 	ctx := context.Background()
 	srv := keycloak(t, "")
 	cfg := Config{IssuerURL: srv.URL + "/sso/realms/x/", ClientID: "projeto-nova", ClientSecret: "s"}
 	c := Novo()
 	c.Pagina = 2
-	us, err := c.Usuarios(ctx, cfg)
-	if err != nil || len(us) != 3 || us[0].Nome() != "Ana Souza" || us[1].Enabled || len(us[2].Grupos) != 2 || us[2].Grupos[0] != "Administrators" {
-		t.Fatalf("usuários: %+v %v", us, err)
+	us, paginas, err := todos(ctx, c, cfg)
+	if err != nil || paginas != 2 || len(us) != 3 || us[0].Nome() != "Ana Souza" || us[1].Enabled || len(us[2].Grupos) != 2 || us[2].Grupos[0] != "Administrators" {
+		t.Fatalf("usuários: %+v %d %v", us, paginas, err)
 	}
 	c.Pagina, c.Paralelo = 0, 0
-	if us, err := c.Usuarios(ctx, cfg); err != nil || len(us) != 3 {
-		t.Fatalf("página padrão: %d %v", len(us), err)
+	if us, paginas, err := todos(ctx, c, cfg); err != nil || paginas != 1 || len(us) != 3 {
+		t.Fatalf("página padrão: %d %d %v", len(us), paginas, err)
+	}
+	// Página curta no meio não é o fim: segue até o total contado.
+	if us, paginas, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 2}, Config{IssuerURL: keycloak(t, "curta").URL + "/sso/realms/x", ClientID: "p", ClientSecret: "s"}); err != nil || paginas != 2 || len(us) != 2 || us[1].ID != "c" {
+		t.Fatalf("página curta: %+v %d %v", us, paginas, err)
+	}
+	// O erro de quem recebe a página para a leitura.
+	parar := errors.New("parar")
+	if err := c.Usuarios(ctx, cfg, func([]Usuario) error { return parar }); !errors.Is(err, parar) {
+		t.Fatalf("lote com erro: %v", err)
 	}
 
 	for nome, cfgRuim := range map[string]Config{
@@ -79,25 +111,25 @@ func TestUsuarios(t *testing.T) {
 		"sem realm":   {IssuerURL: srv.URL + "/sso", ClientID: "p", ClientSecret: "s"},
 		"realm vazio": {IssuerURL: srv.URL + "/sso/realms/", ClientID: "p", ClientSecret: "s"},
 	} {
-		if _, err := c.Usuarios(ctx, cfgRuim); !errors.Is(err, ErrNaoConfigurado) {
+		if _, _, err := todos(ctx, c, cfgRuim); !errors.Is(err, ErrNaoConfigurado) {
 			t.Errorf("%s: %v", nome, err)
 		}
 	}
-	if _, err := c.Usuarios(ctx, Config{IssuerURL: cfg.IssuerURL, ClientID: "p", ClientSecret: "errado"}); !errors.Is(err, ErrResposta) {
+	if _, _, err := todos(ctx, c, Config{IssuerURL: cfg.IssuerURL, ClientID: "p", ClientSecret: "errado"}); !errors.Is(err, ErrResposta) {
 		t.Fatalf("segredo errado: %v", err)
 	}
-	for _, quebrar := range []string{"vazio", "/users", "groups", "json"} {
-		if _, err := Novo().Usuarios(ctx, Config{IssuerURL: keycloak(t, quebrar).URL + "/sso/realms/x", ClientID: "p", ClientSecret: "s"}); !errors.Is(err, ErrResposta) {
+	for _, quebrar := range []string{"vazio", "/users", "count", "lista", "groups", "json"} {
+		if _, _, err := todos(ctx, Novo(), Config{IssuerURL: keycloak(t, quebrar).URL + "/sso/realms/x", ClientID: "p", ClientSecret: "s"}); !errors.Is(err, ErrResposta) {
 			t.Errorf("%s: %v", quebrar, err)
 		}
 	}
 	// Sem rede, e com o contexto cancelado.
-	if _, err := Novo().Usuarios(ctx, Config{IssuerURL: "http://127.0.0.1:1/realms/x", ClientID: "p", ClientSecret: "s"}); err == nil {
+	if _, _, err := todos(ctx, Novo(), Config{IssuerURL: "http://127.0.0.1:1/realms/x", ClientID: "p", ClientSecret: "s"}); err == nil {
 		t.Fatal("sem rede")
 	}
 	cancelado, cancelar := context.WithCancel(ctx)
 	cancelar()
-	if _, err := Novo().Usuarios(cancelado, cfg); err == nil {
+	if _, _, err := todos(cancelado, Novo(), cfg); err == nil {
 		t.Fatal("contexto cancelado")
 	}
 }
@@ -117,7 +149,7 @@ func TestFalhasDeTransporte(t *testing.T) {
 	c := &Cliente{HTTP: &http.Client{Transport: transporte(func(*http.Request) (*http.Response, error) {
 		return &http.Response{StatusCode: http.StatusOK, Body: corpoQuebrado{}}, nil
 	})}}
-	if _, err := c.Usuarios(ctx, Config{IssuerURL: "http://sso/realms/x", ClientID: "p", ClientSecret: "s"}); err == nil {
+	if _, _, err := todos(ctx, c, Config{IssuerURL: "http://sso/realms/x", ClientID: "p", ClientSecret: "s"}); err == nil {
 		t.Fatal("corpo que falha")
 	}
 	// O endereço que nem vira requisição.

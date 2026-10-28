@@ -607,11 +607,32 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 func (r *Repository) UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (domain.SincronizacaoSSO, bool, error) {
 	var s domain.SincronizacaoSSO
 	var rel []byte
-	err := db.QueryRow(ctx, `SELECT created_at, coalesce(diff_after, '{}') FROM audit_logs
-		WHERE action = 'iam.sso.sincronizado' ORDER BY created_at DESC LIMIT 1`).Scan(&s.Em, &rel)
+	err := db.QueryRow(ctx, `SELECT id, iniciada_em, batida_em, terminada_em, relatorio, erro FROM iam_sso_sincronizacoes
+		ORDER BY iniciada_em DESC LIMIT 1`).Scan(&s.ID, &s.Em, &s.BatidaEm, &s.TerminadaEm, &rel, &s.Erro)
 	if database.IsNoRows(err) {
 		return s, false, nil
 	}
 	s.Relatorio = rel
 	return s, err == nil, wrap("ultima sincronizacao sso", err)
+}
+
+// IniciarSincronizacaoSSO abre a linha só se nenhuma outra está viva. O
+// advisory lock da transação serializa dois pedidos ao mesmo tempo.
+func (r *Repository) IniciarSincronizacaoSSO(ctx context.Context, db database.DBTX) (uuid.UUID, error) {
+	var id uuid.UUID
+	err := db.QueryRow(ctx, `WITH trava AS (SELECT pg_advisory_xact_lock(hashtext('iam.sso.sincronizacao')))
+		INSERT INTO iam_sso_sincronizacoes (id) SELECT gen_random_uuid() FROM trava
+		WHERE NOT EXISTS (SELECT 1 FROM iam_sso_sincronizacoes
+			WHERE terminada_em IS NULL AND batida_em > now() - make_interval(secs => $1))
+		RETURNING id`, domain.SemBatidaSSO.Seconds()).Scan(&id)
+	if database.IsNoRows(err) {
+		return id, domain.ErrConflict
+	}
+	return id, wrap("iniciar sincronizacao sso", err)
+}
+
+func (r *Repository) AtualizarSincronizacaoSSO(ctx context.Context, db database.DBTX, id uuid.UUID, relatorio []byte, terminada bool, erro string) error {
+	_, err := db.Exec(ctx, `UPDATE iam_sso_sincronizacoes SET relatorio = $2, batida_em = now(),
+		terminada_em = CASE WHEN $3 THEN now() END, erro = $4 WHERE id = $1`, id, relatorio, terminada, erro)
+	return wrap("atualizar sincronizacao sso", err)
 }

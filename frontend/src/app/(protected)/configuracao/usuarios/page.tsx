@@ -1,7 +1,7 @@
 "use client";
 
 import { KeyRound, Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserCog } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { ScopePicker } from "@/components/iam/ScopePicker";
 import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
@@ -346,31 +346,55 @@ interface RelatorioSSO {
 
 interface EstadoSSO {
   andamento: boolean;
-  ultima?: { em: string; relatorio: RelatorioSSO };
+  ultima?: {
+    em: string;
+    batida_em: string;
+    terminada_em?: string;
+    relatorio: Partial<RelatorioSSO>;
+    erro?: string;
+  };
+}
+
+function resumoSSO(r: Partial<RelatorioSSO>): string {
+  const conflitos = r.conflitos ?? [];
+  return (
+    `${r.lidos ?? 0} pessoas lidas, ${r.criados ?? 0} novas, ${r.atualizados ?? 0} atualizadas, ` +
+    `${r.desativados ?? 0} desativadas.` +
+    (conflitos.length > 0
+      ? ` Com conta local de mesmo usuário ou e-mail (vincule à mão): ${conflitos.join(", ")}.`
+      : "")
+  );
 }
 
 /**
- * Traz as pessoas do SSO (ADR 077); o worker repete todo dia. Com milhares
- * de pessoas leva minutos: o pedido só começa, e a tela acompanha o estado.
+ * Traz as pessoas do SSO (ADR 077); o worker repete todo dia. Num realm
+ * federado ao AD leva de minutos a horas: o pedido só começa, cada página
+ * lida já fica gravada, e a tela acompanha a sincronização mais recente,
+ * seja ela da tela ou do worker.
  */
 function SincronizarSSO({ onFeito }: { onFeito: () => void }) {
   const { run, pending } = useAction();
-  const [acompanhando, setAcompanhando] = useState(false);
+  const [pedida, setPedida] = useState(false);
+  const rodando = useRef(false);
   const estado = useApiQuery<EstadoSSO>("v1/iam/sso/sincronizacao", {
-    refreshInterval: (e) => (e?.andamento || acompanhando ? 3000 : 0),
+    refreshInterval: (e) => (e?.andamento || pedida ? 3000 : 0),
     onSuccess: (e) => {
-      if (acompanhando && !e.andamento) {
-        setAcompanhando(false);
+      if (e.andamento) {
+        rodando.current = true;
+      } else if (rodando.current) {
+        rodando.current = false;
+        setPedida(false);
         onFeito();
       }
     },
   });
-  const andamento = acompanhando || !!estado.data?.andamento;
+  const andamento = pedida || !!estado.data?.andamento;
   const ultima = estado.data?.ultima;
 
   async function sincronizar() {
     if (await run(() => apiClient.post("v1/iam/sso/sincronizar"))) {
-      setAcompanhando(true);
+      setPedida(true);
+      rodando.current = true;
       void estado.mutate();
     }
   }
@@ -382,16 +406,19 @@ function SincronizarSSO({ onFeito }: { onFeito: () => void }) {
       </Button>
       {andamento ? (
         <p role="status" className="text-xs text-muted">
-          Sincronizando com o SSO; pode levar alguns minutos.
+          Sincronizando com o SSO
+          {ultima && !ultima.terminada_em
+            ? ` desde ${fmtDateTime(ultima.em)}: até agora ${resumoSSO(ultima.relatorio)}`
+            : "."}{" "}
+          Pode levar algumas horas; quem já foi lido já está gravado.
         </p>
       ) : (
         ultima && (
-          <p role="status" className="text-xs text-muted">
-            Última sincronização em {fmtDateTime(ultima.em)}: {ultima.relatorio.lidos} pessoas
-            lidas, {ultima.relatorio.criados} novas, {ultima.relatorio.atualizados} atualizadas,{" "}
-            {ultima.relatorio.desativados} desativadas.
-            {ultima.relatorio.conflitos.length > 0 &&
-              ` Com conta local de mesmo usuário ou e-mail (vincule à mão): ${ultima.relatorio.conflitos.join(", ")}.`}
+          <p role="status" className={`text-xs ${ultima.erro ? "text-danger" : "text-muted"}`}>
+            {ultima.erro
+              ? `A última sincronização (${fmtDateTime(ultima.em)}) parou com erro: ${ultima.erro}. Antes disso: `
+              : `Última sincronização em ${fmtDateTime(ultima.em)}: `}
+            {resumoSSO(ultima.relatorio)}
           </p>
         )
       )}

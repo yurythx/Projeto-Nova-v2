@@ -87,15 +87,17 @@ func enderecos(issuer string) (token, admin string, err error) {
 }
 
 // Usuarios lê todas as pessoas do realm, página a página (representação
-// resumida), com os grupos lidos em paralelo. O token é renovado a cada
-// página: o da conta de serviço dura minutos, e a leitura toda, mais.
-func (c *Cliente) Usuarios(ctx context.Context, cfg Config) ([]Usuario, error) {
+// resumida), com os grupos lidos em paralelo, e entrega cada página a lote
+// assim que chega: a leitura toda pode levar horas, e quem chama grava e
+// mostra o andamento no caminho. Um erro de lote para a leitura. O token é
+// renovado a cada página: o da conta de serviço dura minutos.
+func (c *Cliente) Usuarios(ctx context.Context, cfg Config, lote func([]Usuario) error) error {
 	if cfg.IssuerURL == "" || cfg.ClientID == "" || cfg.ClientSecret == "" {
-		return nil, ErrNaoConfigurado
+		return ErrNaoConfigurado
 	}
 	tokenURL, admin, err := enderecos(cfg.IssuerURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	pagina, paralelo := c.Pagina, c.Paralelo
 	if pagina <= 0 {
@@ -104,24 +106,32 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config) ([]Usuario, error) {
 	if paralelo <= 0 {
 		paralelo = paraleloPadrao
 	}
-	out := []Usuario{}
-	for primeiro := 0; ; primeiro += pagina {
+	// Federado ao AD, o Keycloak devolve páginas curtas no meio da lista:
+	// o fim é o total que ele conta (na primeira volta), não a primeira
+	// página incompleta.
+	total := 1
+	for primeiro := 0; primeiro < total; primeiro += pagina {
 		token, err := c.token(ctx, tokenURL, cfg)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		var lote []Usuario
-		if err := c.get(ctx, token, fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=true", admin, primeiro, pagina), &lote); err != nil {
-			return nil, err
+		if primeiro == 0 {
+			if err := c.get(ctx, token, admin+"/users/count", &total); err != nil {
+				return err
+			}
 		}
-		if err := c.grupos(ctx, token, admin, lote, paralelo); err != nil {
-			return nil, err
+		var pessoas []Usuario
+		if err := c.get(ctx, token, fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=true", admin, primeiro, pagina), &pessoas); err != nil {
+			return err
 		}
-		out = append(out, lote...)
-		if len(lote) < pagina {
-			return out, nil
+		if err := c.grupos(ctx, token, admin, pessoas, paralelo); err != nil {
+			return err
+		}
+		if err := lote(pessoas); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 // grupos preenche os grupos de cada pessoa do lote, paralelo de cada vez.

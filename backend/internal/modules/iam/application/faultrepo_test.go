@@ -366,6 +366,23 @@ func (fr *faultRepo) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	return fr.inner.UpsertSSO(ctx, db, u)
 }
 
+func (fr *faultRepo) IniciarSincronizacaoSSO(ctx context.Context, db database.DBTX) (uuid.UUID, error) {
+	if err := fr.hook("IniciarSincronizacaoSSO"); err != nil {
+		var z0 uuid.UUID
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.IniciarSincronizacaoSSO(ctx, db)
+}
+
+func (fr *faultRepo) AtualizarSincronizacaoSSO(ctx context.Context, db database.DBTX, id uuid.UUID, relatorio []byte, terminada bool, erro string) error {
+	if err := fr.hook("AtualizarSincronizacaoSSO"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.AtualizarSincronizacaoSSO(ctx, db, id, relatorio, terminada, erro)
+}
+
 func (fr *faultRepo) UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (domain.SincronizacaoSSO, bool, error) {
 	if err := fr.hook("UltimaSincronizacaoSSO"); err != nil {
 		var z0 domain.SincronizacaoSSO

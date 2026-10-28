@@ -5176,12 +5176,25 @@ components:
             x-projeto-nova-generated: true
         IamSincronizacaoSSO:
             properties:
+                batida_em:
+                    format: date-time
+                    type: string
                 em:
                     format: date-time
                     type: string
+                erro:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
                 relatorio: {}
+                terminada_em:
+                    format: date-time
+                    type: string
             required:
+                - batida_em
                 - em
+                - id
                 - relatorio
             type: object
             x-projeto-nova-generated: true

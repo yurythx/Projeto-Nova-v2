@@ -340,7 +340,7 @@ func TestHandlersReportServiceFailures(t *testing.T) {
 	h.RegisterRoutes(r)
 	id := e.admin.UserID.String()
 	for _, path := range []string{"/iam/org-tree", "/iam/entidades", "/iam/unidades", "/iam/departamentos", "/iam/perfis",
-		"/iam/ad-mappings", "/users", "/users/" + id, "/users/" + id + "/lotacoes"} {
+		"/iam/ad-mappings", "/users", "/users/" + id, "/users/" + id + "/lotacoes", "/iam/sso/sincronizacao"} {
 		down.calls = 0
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))

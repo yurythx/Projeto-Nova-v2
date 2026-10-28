@@ -25,18 +25,17 @@ func (p portaSSO) Configurado(ctx context.Context) bool {
 	return issuer != "" && client != "" && secret != ""
 }
 
-func (p portaSSO) Usuarios(ctx context.Context) ([]iamdomain.UsuarioSSO, error) {
+func (p portaSSO) Usuarios(ctx context.Context, lote func([]iamdomain.UsuarioSSO) error) error {
 	issuer, client, secret := p.credenciais(ctx)
-	pessoas, err := p.cli.Usuarios(ctx, keycloakadmin.Config{IssuerURL: issuer, ClientID: client, ClientSecret: secret})
+	err := p.cli.Usuarios(ctx, keycloakadmin.Config{IssuerURL: issuer, ClientID: client, ClientSecret: secret}, func(pessoas []keycloakadmin.Usuario) error {
+		out := make([]iamdomain.UsuarioSSO, len(pessoas))
+		for i, u := range pessoas {
+			out[i] = iamdomain.UsuarioSSO{Subject: u.ID, Username: u.Username, Email: u.Email, Nome: u.Nome(), Ativo: u.Enabled, Grupos: u.Grupos}
+		}
+		return lote(out)
+	})
 	if errors.Is(err, keycloakadmin.ErrNaoConfigurado) {
-		return nil, iamapp.ErrSemSSO
+		return iamapp.ErrSemSSO
 	}
-	if err != nil {
-		return nil, err
-	}
-	out := make([]iamdomain.UsuarioSSO, len(pessoas))
-	for i, u := range pessoas {
-		out[i] = iamdomain.UsuarioSSO{Subject: u.ID, Username: u.Username, Email: u.Email, Nome: u.Nome(), Ativo: u.Enabled, Grupos: u.Grupos}
-	}
-	return out, nil
+	return err
 }

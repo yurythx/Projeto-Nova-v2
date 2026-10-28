@@ -15,8 +15,10 @@ A conta de quem usa o SSO nasce no primeiro login. Até lá, a pessoa não exist
 3. **O que grava:** a mesma linha que o primeiro login gravaria, com o mesmo `keycloak_subject`, usuário, e-mail, nome e grupos. Quem entra depois cai na conta que já existe. Quem foi desativado no SSO é desativado aqui. Ninguém é apagado: a autoria dos registros continua.
 4. **Conta local com o mesmo usuário ou e-mail não é vinculada**, como no primeiro login. Ela aparece no relatório para um administrador resolver.
 5. **Em segundo plano.** Um realm federado ao AD, com milhares de pessoas, leva minutos para ler, e a Cloudflare corta a requisição em 100 s. Por isso:
-   - o pedido só começa a sincronização (202) e devolve 409 se já há uma em andamento na réplica;
-   - a tela consulta `GET /iam/sso/sincronizacao`, que diz se há uma em andamento e traz a última terminada (do registro de auditoria);
+   - o pedido só começa a sincronização (202) e devolve 409 se já há uma em andamento, de qualquer processo;
+   - cada página lida é gravada na hora e atualiza a linha da sincronização em `iam_sso_sincronizacoes` (relatório parcial e batida). Uma interrupção não perde o que já foi lido;
+   - a tela consulta `GET /iam/sso/sincronizacao`, que traz a sincronização mais recente, da tela ou do worker, com o andamento, o fim e o erro. Sem batida há 20 minutos, ela é dada como abandonada (o processo caiu) e não segura a próxima;
+   - o fim da leitura é o total de `/users/count`, porque o Keycloak federado devolve páginas curtas no meio da lista. A primeira sincronização na produção parou em 1.299 de 7.740 por isso;
    - a leitura usa a representação resumida, em páginas de 50, com os grupos lidos em paralelo e o token renovado a cada página.
    - Fora do cache do Keycloak, algumas páginas fazem o provedor LDAP varrer o AD inteiro e levam uns 4 minutos, até o aborto de transação do próprio Keycloak. As páginas seguintes saem do cache. Por isso cada chamada tem até 10 minutos, e a sincronização tem até 6 horas. Uma tentativa interrompida não se perde, porque deixa o cache do Keycloak mais quente para a próxima.
 

@@ -177,12 +177,21 @@ type UsuarioSSO struct {
 	Grupos   []string
 }
 
-// SincronizacaoSSO é a última sincronização terminada, como a auditoria
-// guardou: quando e o relatório.
+// SincronizacaoSSO é uma sincronização com o SSO: o relatório parcial é
+// regravado a cada página, e o final, ao terminar (com o erro, se houve).
 type SincronizacaoSSO struct {
-	Em        time.Time       `json:"em"`
-	Relatorio json.RawMessage `json:"relatorio"`
+	ID          uuid.UUID       `json:"id"`
+	Em          time.Time       `json:"em"`
+	BatidaEm    time.Time       `json:"batida_em"`
+	TerminadaEm *time.Time      `json:"terminada_em,omitempty"`
+	Relatorio   json.RawMessage `json:"relatorio"`
+	Erro        string          `json:"erro,omitempty"`
 }
+
+// SemBatidaSSO é quanto uma sincronização fica sem gravar página antes de
+// ser dada como abandonada (o processo caiu). Fica acima do tempo de uma
+// chamada ao Keycloak, que pode levar 10 minutos.
+const SemBatidaSSO = 20 * time.Minute
 
 // ResultadoSSO diz o que a gravação de uma pessoa fez.
 type ResultadoSSO struct {
@@ -240,7 +249,13 @@ type Repository interface {
 	// UpsertSSO grava a pessoa do SSO pelo keycloak_subject, como o
 	// primeiro login. Desativada no SSO, desativa aqui; nunca reativa.
 	UpsertSSO(ctx context.Context, db database.DBTX, u UsuarioSSO) (ResultadoSSO, error)
-	// UltimaSincronizacaoSSO lê da auditoria a última sincronização (ok
-	// false: nunca houve).
+	// IniciarSincronizacaoSSO abre uma sincronização; ErrConflict se outra
+	// está em andamento (com batida há menos de SemBatidaSSO).
+	IniciarSincronizacaoSSO(ctx context.Context, db database.DBTX) (uuid.UUID, error)
+	// AtualizarSincronizacaoSSO grava o relatório e a batida; terminada,
+	// também o fim e o erro.
+	AtualizarSincronizacaoSSO(ctx context.Context, db database.DBTX, id uuid.UUID, relatorio []byte, terminada bool, erro string) error
+	// UltimaSincronizacaoSSO lê a sincronização mais recente, em andamento
+	// ou não (ok false: nunca houve).
 	UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (SincronizacaoSSO, bool, error)
 }

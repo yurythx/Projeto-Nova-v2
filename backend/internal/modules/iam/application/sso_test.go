@@ -31,13 +31,23 @@ type diretorio struct {
 
 func (d *diretorio) Configurado(context.Context) bool { return !d.semSSO }
 
-func (d *diretorio) Usuarios(context.Context) ([]domain.UsuarioSSO, error) {
+// Usuarios entrega uma pessoa por página.
+func (d *diretorio) Usuarios(_ context.Context, lote func([]domain.UsuarioSSO) error) error {
 	if d.segurar != nil {
 		<-d.segurar
 	}
 	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.pessoas, d.err
+	pessoas, err := d.pessoas, d.err
+	d.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	for _, p := range pessoas {
+		if err := lote([]domain.UsuarioSSO{p}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *diretorio) trocar(p []domain.UsuarioSSO, err error) {
@@ -54,7 +64,7 @@ func sincronizar(t *testing.T, s *application.Service, ctx context.Context) appl
 	}
 	s.AguardarSSO()
 	e, err := s.EstadoDoSSO(ctx)
-	if err != nil || e.Andamento || e.Ultima == nil {
+	if err != nil || e.Andamento || e.Ultima == nil || e.Ultima.TerminadaEm == nil || e.Ultima.Erro != "" {
 		t.Fatalf("estado: %+v %v", e, err)
 	}
 	var rel application.RelatorioSSO
@@ -64,9 +74,17 @@ func sincronizar(t *testing.T, s *application.Service, ctx context.Context) appl
 	return rel
 }
 
+// limparSSO apaga as sincronizações: cada teste começa sem nenhuma.
+func limparSSO(t *testing.T, e *env) {
+	t.Helper()
+	_, err := e.pool.Exec(context.Background(), `DELETE FROM iam_sso_sincronizacoes`)
+	e.must(err)
+}
+
 func TestSincronizarSSO(t *testing.T) {
 	e := newEnv(t)
 	ctx := e.ctx
+	limparSSO(t, e)
 	sfx := uuid.NewString()[:8]
 	ana := domain.UsuarioSSO{Subject: "kc-ana-" + sfx, Username: "ana." + sfx, Email: "ana." + sfx + "@sso.test", Nome: "Ana Souza", Ativo: true,
 		Grupos: []string{"Administrators"}}
@@ -80,6 +98,9 @@ func TestSincronizarSSO(t *testing.T) {
 	s := application.NewService(e.pool, infrastructure.NewRepository(), func(context.Context) { invalidou++ }).
 		WithDiretorio(d, slog.New(slog.DiscardHandler))
 
+	if est, err := s.EstadoDoSSO(ctx); err != nil || est.Andamento || est.Ultima != nil {
+		t.Fatalf("nunca sincronizou: %+v %v", est, err)
+	}
 	rel := sincronizar(t, s, ctx)
 	if rel.Lidos != 3 || rel.Criados != 2 || len(rel.Conflitos) != 1 || rel.Conflitos[0] != conta.Username || invalidou != 1 {
 		t.Fatalf("primeira: %+v", rel)
@@ -144,10 +165,15 @@ func TestSincronizarSSO(t *testing.T) {
 	if _, err := falha.EstadoDoSSO(ctx); err == nil {
 		t.Fatal("estado com o banco fora")
 	}
+	if err := application.NewService(e.pool, &faultRepo{inner: infrastructure.NewRepository(), failAt: 1}, nil).
+		WithDiretorio(d, slog.New(slog.DiscardHandler)).SincronizarSSO(ctx); err == nil || status(err) == http.StatusConflict {
+		t.Fatalf("abrir com o banco fora: %v", err)
+	}
 }
 
 func TestSincronizacaoComFalhas(t *testing.T) {
 	e := newEnv(t)
+	limparSSO(t, e)
 	var registro bytes.Buffer
 	log := slog.New(slog.NewTextHandler(&registro, nil))
 	d := &diretorio{err: errors.New("keycloak fora")}
@@ -157,13 +183,20 @@ func TestSincronizacaoComFalhas(t *testing.T) {
 	if !strings.Contains(registro.String(), "keycloak fora") {
 		t.Fatalf("a falha vai ao registro: %s", registro.String())
 	}
-	registro.Reset()
+	if est, err := s.EstadoDoSSO(e.ctx); err != nil || est.Andamento || est.Ultima.Erro != "keycloak fora" || est.Ultima.TerminadaEm == nil {
+		t.Fatalf("a falha fica na sincronização: %+v %v", est, err)
+	}
+	// Falha ao gravar a pessoa (2ª chamada), o andamento (3ª) e o fim (4ª).
 	d.trocar([]domain.UsuarioSSO{{Subject: "kc-" + uuid.NewString(), Ativo: true}}, nil)
-	falha := application.NewService(e.pool, &faultRepo{inner: infrastructure.NewRepository(), failAt: 1}, nil).WithDiretorio(d, log)
-	e.must(falha.SincronizarSSO(e.ctx))
-	falha.AguardarSSO()
-	if !strings.Contains(registro.String(), "sincronização com o SSO") {
-		t.Fatalf("falha ao gravar: %s", registro.String())
+	for _, em := range []int{2, 3, 4} {
+		registro.Reset()
+		falha := application.NewService(e.pool, &faultRepo{inner: infrastructure.NewRepository(), failAt: em}, nil).WithDiretorio(d, log)
+		e.must(falha.SincronizarSSO(e.ctx))
+		falha.AguardarSSO()
+		if !strings.Contains(registro.String(), "sincronização com o SSO") {
+			t.Fatalf("falha na chamada %d: %s", em, registro.String())
+		}
+		limparSSO(t, e)
 	}
 	registro.Reset()
 	d.trocar(nil, application.ErrSemSSO)
@@ -183,15 +216,35 @@ func TestWorkerSSO(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(&registro, nil))
 	rodar := func(s *application.Service) {
 		t.Helper()
-		ctx, parar := context.WithTimeout(context.Background(), 40*time.Millisecond)
+		ctx, parar := context.WithTimeout(context.Background(), 300*time.Millisecond)
 		defer parar()
 		if err := s.RunSincronizacaoSSO(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}
+	limparSSO(t, e)
 	rodar(e.real())
+	rodar(e.real().WithDiretorio(&diretorio{semSSO: true}, log))
+	if registro.Len() != 0 {
+		t.Fatalf("sem configuração, nada: %s", registro.String())
+	}
+	// Com outra viva (a da tela), espera a próxima rodada.
+	_, err := e.pool.Exec(context.Background(), `INSERT INTO iam_sso_sincronizacoes DEFAULT VALUES`)
+	e.must(err)
 	rodar(e.real().WithDiretorio(&diretorio{}, log))
-	if !strings.Contains(registro.String(), "usuários do SSO sincronizados") {
-		t.Fatalf("sucesso no registro: %s", registro.String())
+	if registro.Len() != 0 {
+		t.Fatalf("com outra viva, nada: %s", registro.String())
+	}
+	limparSSO(t, e)
+	rodar(application.NewService(e.pool, &faultRepo{inner: infrastructure.NewRepository(), failAt: 1}, nil).WithDiretorio(&diretorio{}, log))
+	if !strings.Contains(registro.String(), "sincronização com o SSO") {
+		t.Fatalf("abrir falhou: %s", registro.String())
+	}
+	// Uma rodada cortada no meio da abertura deixa a linha viva: limpa.
+	limparSSO(t, e)
+	registro.Reset()
+	rodar(e.real().WithDiretorio(&diretorio{pessoas: []domain.UsuarioSSO{{Subject: "kc-" + uuid.NewString(), Ativo: true}}}, log))
+	if !strings.Contains(registro.String(), "usuários do SSO sincronizados") || !strings.Contains(registro.String(), "sincronizando com o SSO") {
+		t.Fatalf("andamento e sucesso no registro: %s", registro.String())
 	}
 }
