@@ -26,6 +26,9 @@ type DiretorioSSO interface {
 	// Usuarios entrega as pessoas página a página, a lote; sem
 	// configuração, ErrSemSSO. Um erro de lote para a leitura.
 	Usuarios(ctx context.Context, lote func([]domain.UsuarioSSO) error) error
+	// Ativo lê a pessoa completa, validada no AD: a lista às vezes informa
+	// estado desatualizado, e a mudança de estado se confirma aqui.
+	Ativo(ctx context.Context, subject string) (bool, error)
 }
 
 // ErrSemSSO: o SSO não tem client e segredo para a sincronização.
@@ -159,8 +162,12 @@ func (s *Service) gravarPessoa(ctx context.Context, p domain.UsuarioSSO, rel *Re
 		return nil
 	}
 	rel.Lidos++
+	p, err := s.confirmar(ctx, p)
+	if err != nil {
+		return err
+	}
 	var res domain.ResultadoSSO
-	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		var err error
 		res, err = s.repo.UpsertSSO(ctx, tx, p)
 		return err
@@ -183,6 +190,34 @@ func (s *Service) gravarPessoa(ctx context.Context, p domain.UsuarioSSO, rel *Re
 		rel.Reativados++
 	}
 	return nil
+}
+
+// confirmar lê da fonte a pessoa cuja situação mudaria: a lista resumida
+// do Keycloak federado oscila (cada réplica com o seu cache), e desativar
+// alguém por engano tira o acesso dela. Só a mudança custa a leitura;
+// sem conseguir confirmar, o estado fica como está.
+func (s *Service) confirmar(ctx context.Context, p domain.UsuarioSSO) (domain.UsuarioSSO, error) {
+	atual, err := s.repo.SituacaoSSO(ctx, s.pool, p.Subject)
+	if err != nil {
+		return p, MapError(err)
+	}
+	desativaria := !p.Ativo && (!atual.Existe || atual.Ativa)
+	reativaria := p.Ativo && atual.Existe && !atual.Ativa && atual.PeloSSO
+	if !desativaria && !reativaria {
+		return p, nil
+	}
+	ativo, err := s.diretorio.Ativo(ctx, p.Subject)
+	switch {
+	case err == nil:
+		p.Ativo = ativo
+	case atual.Existe:
+		p.Ativo = atual.Ativa
+	default:
+		// Conta nova sem confirmação: entra ativa, como no primeiro login;
+		// a próxima rodada confirma.
+		p.Ativo = true
+	}
+	return p, nil
 }
 
 // marcarSSO regrava o andamento; terminada, com o erro (se houve).

@@ -236,3 +236,87 @@ func TestTentativas(t *testing.T) {
 		t.Fatalf("cancelado: %v", err)
 	}
 }
+
+// O fim que a contagem nova confirma é normal; se ela ainda diz que há
+// mais, o erro volta.
+func TestFimDaListaQueOscila(t *testing.T) {
+	rapido(t)
+	ctx := context.Background()
+	var contagens atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/token"):
+			_, _ = w.Write([]byte(`{"access_token":"tk"}`))
+		case strings.HasSuffix(r.URL.Path, "/users/count"):
+			// 4 na primeira contagem; depois, 2 ou 9 conforme o teste.
+			if contagens.Add(1) == 1 {
+				_, _ = w.Write([]byte(`4`))
+				return
+			}
+			_, _ = w.Write([]byte(r.Header.Get("X-Depois")))
+		case r.URL.Query().Get("first") == "0":
+			_, _ = w.Write([]byte(`[{"id":"a"},{"id":"b"}]`))
+		case strings.HasSuffix(r.URL.Path, "/groups"):
+			_, _ = w.Write([]byte(`[]`))
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	cfg := Config{IssuerURL: srv.URL + "/realms/x", ClientID: "p", ClientSecret: "s"}
+	for depois, querErro := range map[string]bool{"2": false, "9": true, "x": true} {
+		contagens.Store(0)
+		c := &Cliente{HTTP: &http.Client{Transport: comCabecalho{"X-Depois", depois}}, Pagina: 2}
+		us, _, err := todos(ctx, c, cfg)
+		if (err != nil) != querErro || len(us) != 2 {
+			t.Errorf("contagem depois %s: %d %v", depois, len(us), err)
+		}
+	}
+}
+
+// comCabecalho põe um cabeçalho em todo pedido (o servidor de teste o lê).
+type comCabecalho struct{ nome, valor string }
+
+func (c comCabecalho) RoundTrip(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	r.Header.Set(c.nome, c.valor)
+	return http.DefaultTransport.RoundTrip(r)
+}
+
+func TestAtivoConfirmaNaFonte(t *testing.T) {
+	rapido(t)
+	ctx := context.Background()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/token"):
+			_, _ = w.Write([]byte(`{"access_token":"tk"}`))
+		case r.URL.Path == "/admin/realms/x/users/ana":
+			_, _ = w.Write([]byte(`{"id":"ana","enabled":true}`))
+		case r.URL.Path == "/admin/realms/x/users/beto":
+			_, _ = w.Write([]byte(`{"id":"beto","enabled":false}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	cfg := Config{IssuerURL: srv.URL + "/realms/x", ClientID: "p", ClientSecret: "s"}
+	c := Novo()
+	if ok, err := c.Ativo(ctx, cfg, "ana"); err != nil || !ok {
+		t.Fatalf("ana: %v %v", ok, err)
+	}
+	if ok, err := c.Ativo(ctx, cfg, "beto"); err != nil || ok {
+		t.Fatalf("beto: %v %v", ok, err)
+	}
+	if _, err := c.Ativo(ctx, cfg, "sumiu"); !errors.Is(err, ErrResposta) {
+		t.Fatalf("inexistente: %v", err)
+	}
+	if _, err := c.Ativo(ctx, Config{}, "ana"); !errors.Is(err, ErrNaoConfigurado) {
+		t.Fatalf("sem configuração: %v", err)
+	}
+	if _, err := c.Ativo(ctx, Config{IssuerURL: srv.URL + "/sem-realm", ClientID: "p", ClientSecret: "s"}, "ana"); !errors.Is(err, ErrNaoConfigurado) {
+		t.Fatalf("issuer sem realm: %v", err)
+	}
+	if _, err := c.Ativo(ctx, Config{IssuerURL: "http://127.0.0.1:1/realms/x", ClientID: "p", ClientSecret: "s"}, "ana"); err == nil {
+		t.Fatal("sem rede")
+	}
+}

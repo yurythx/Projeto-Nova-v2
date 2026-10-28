@@ -193,6 +193,11 @@ type SincronizacaoSSO struct {
 // chamada ao Keycloak, que pode levar 10 minutos.
 const SemBatidaSSO = 20 * time.Minute
 
+// SituacaoSSO é o estado da conta antes de gravar a pessoa do SSO.
+type SituacaoSSO struct {
+	Existe, Ativa, PeloSSO bool
+}
+
 // ResultadoSSO diz o que a gravação de uma pessoa fez.
 type ResultadoSSO struct {
 	Criado     bool
@@ -260,4 +265,7 @@ type Repository interface {
 	// UltimaSincronizacaoSSO lê a sincronização mais recente, em andamento
 	// ou não (ok false: nunca houve).
 	UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (SincronizacaoSSO, bool, error)
+	// SituacaoSSO diz se a conta do SSO existe, se está ativa e se quem a
+	// desativou foi a sincronização.
+	SituacaoSSO(ctx context.Context, db database.DBTX, subject string) (SituacaoSSO, error)
 }

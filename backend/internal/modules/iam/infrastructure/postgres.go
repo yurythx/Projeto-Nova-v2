@@ -612,6 +612,16 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	return res, nil
 }
 
+// SituacaoSSO lê o estado da conta do SSO (sem ela, Existe false).
+func (r *Repository) SituacaoSSO(ctx context.Context, db database.DBTX, subject string) (domain.SituacaoSSO, error) {
+	s := domain.SituacaoSSO{Existe: true}
+	err := db.QueryRow(ctx, `SELECT active, desativada_pelo_sso FROM users WHERE keycloak_subject = $1`, subject).Scan(&s.Ativa, &s.PeloSSO)
+	if database.IsNoRows(err) {
+		return domain.SituacaoSSO{}, nil
+	}
+	return s, wrap("situacao sso", err)
+}
+
 // UltimaSincronizacaoSSO lê da auditoria a última sincronização com o SSO.
 func (r *Repository) UltimaSincronizacaoSSO(ctx context.Context, db database.DBTX) (domain.SincronizacaoSSO, bool, error) {
 	var s domain.SincronizacaoSSO

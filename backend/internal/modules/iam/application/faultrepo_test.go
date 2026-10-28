@@ -392,3 +392,12 @@ func (fr *faultRepo) UltimaSincronizacaoSSO(ctx context.Context, db database.DBT
 	defer fr.post(ctx, db)
 	return fr.inner.UltimaSincronizacaoSSO(ctx, db)
 }
+
+func (fr *faultRepo) SituacaoSSO(ctx context.Context, db database.DBTX, subject string) (domain.SituacaoSSO, error) {
+	if err := fr.hook("SituacaoSSO"); err != nil {
+		var z0 domain.SituacaoSSO
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.SituacaoSSO(ctx, db, subject)
+}

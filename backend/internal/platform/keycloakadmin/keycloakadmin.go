@@ -129,6 +129,12 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config, lote func([]Usuario)
 			pessoas, err = c.umaAUma(ctx, token, admin, primeiro, pagina)
 		}
 		if err != nil {
+			// O total também oscila, e a página além do fim real volta 400:
+			// contado de novo, se a lista acabou antes, o fim é normal.
+			var agora int
+			if primeiro > 0 && c.get(ctx, token, admin+"/users/count", &agora) == nil && agora <= primeiro {
+				return nil
+			}
 			return err
 		}
 		if err := c.grupos(ctx, token, admin, pessoas, paralelo); err != nil {
@@ -139,6 +145,30 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config, lote func([]Usuario)
 		}
 	}
 	return nil
+}
+
+// Ativo lê a pessoa completa, que o Keycloak valida no AD, e diz se ela está
+// ativa. A lista resumida às vezes informa estado desatualizado (cada
+// réplica do Keycloak com o seu cache): a mudança de estado se confirma aqui.
+func (c *Cliente) Ativo(ctx context.Context, cfg Config, id string) (bool, error) {
+	if cfg.IssuerURL == "" || cfg.ClientID == "" || cfg.ClientSecret == "" {
+		return false, ErrNaoConfigurado
+	}
+	tokenURL, admin, err := enderecos(cfg.IssuerURL)
+	if err != nil {
+		return false, err
+	}
+	token, err := c.token(ctx, tokenURL, cfg)
+	if err != nil {
+		return false, err
+	}
+	var u struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.get(ctx, token, admin+"/users/"+url.PathEscape(id), &u); err != nil {
+		return false, err
+	}
+	return u.Enabled, nil
 }
 
 // pagina0 é o endereço de uma página da lista resumida.

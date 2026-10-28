@@ -21,12 +21,39 @@ import (
 )
 
 // diretorio é o SSO do teste. segurar faz a leitura esperar a liberação.
+// A fonte confirma o que a lista diz, a menos que fonte diga outra coisa
+// (ou falhe, com errFonte).
 type diretorio struct {
-	mu      sync.Mutex
-	pessoas []domain.UsuarioSSO
-	err     error
-	semSSO  bool
-	segurar chan struct{}
+	mu       sync.Mutex
+	pessoas  []domain.UsuarioSSO
+	err      error
+	semSSO   bool
+	segurar  chan struct{}
+	fonte    map[string]bool
+	errFonte error
+}
+
+func (d *diretorio) Ativo(_ context.Context, subject string) (bool, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.errFonte != nil {
+		return false, d.errFonte
+	}
+	if v, ok := d.fonte[subject]; ok {
+		return v, nil
+	}
+	for _, p := range d.pessoas {
+		if p.Subject == subject {
+			return p.Ativo, nil
+		}
+	}
+	return false, nil
+}
+
+func (d *diretorio) contradizer(fonte map[string]bool, err error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.fonte, d.errFonte = fonte, err
 }
 
 func (d *diretorio) Configurado(context.Context) bool { return !d.semSSO }
@@ -154,6 +181,51 @@ func TestSincronizarSSO(t *testing.T) {
 		t.Fatal("o administrador a desativou")
 	}
 
+	// A lista que oscila: diz desativada, a fonte diz ativa. Não desativa.
+	firme := domain.UsuarioSSO{Subject: "kc-firme-" + sfx, Username: "firme." + sfx, Ativo: true}
+	d.trocar([]domain.UsuarioSSO{firme}, nil)
+	sincronizar(t, s, ctx)
+	firme.Ativo = false
+	d.trocar([]domain.UsuarioSSO{firme}, nil)
+	d.contradizer(map[string]bool{firme.Subject: true}, nil)
+	if rel := sincronizar(t, s, ctx); rel.Desativados != 0 {
+		t.Fatalf("a fonte manda: %+v", rel)
+	}
+	// Sem conseguir confirmar, o estado fica como está.
+	d.contradizer(nil, errors.New("keycloak fora"))
+	if rel := sincronizar(t, s, ctx); rel.Desativados != 0 {
+		t.Fatalf("sem confirmação, não muda: %+v", rel)
+	}
+	// Confirmada na fonte, desativa; e a reativação também se confirma.
+	d.contradizer(nil, nil)
+	if rel := sincronizar(t, s, ctx); rel.Desativados != 1 {
+		t.Fatalf("confirmada, desativa: %+v", rel)
+	}
+	firme.Ativo = true
+	d.trocar([]domain.UsuarioSSO{firme}, nil)
+	d.contradizer(map[string]bool{firme.Subject: false}, nil)
+	if rel := sincronizar(t, s, ctx); rel.Reativados != 0 {
+		t.Fatalf("reativação que a fonte nega: %+v", rel)
+	}
+	d.contradizer(nil, nil)
+	// Conta nova que a lista diz desativada: a fonte decide; sem ela, entra
+	// ativa, como no primeiro login.
+	nova := domain.UsuarioSSO{Subject: "kc-nova-" + sfx, Username: "nova." + sfx, Ativo: false}
+	semFonte := domain.UsuarioSSO{Subject: "kc-semfonte-" + sfx, Username: "semfonte." + sfx, Ativo: false}
+	d.trocar([]domain.UsuarioSSO{nova}, nil)
+	d.contradizer(map[string]bool{nova.Subject: true}, nil)
+	sincronizar(t, s, ctx)
+	d.trocar([]domain.UsuarioSSO{semFonte}, nil)
+	d.contradizer(nil, errors.New("keycloak fora"))
+	sincronizar(t, s, ctx)
+	d.contradizer(nil, nil)
+	for _, sub := range []string{nova.Subject, semFonte.Subject} {
+		e.must(e.pool.QueryRow(ctx, `SELECT active FROM users WHERE keycloak_subject = $1`, sub).Scan(&ativo))
+		if !ativo {
+			t.Fatalf("%s entra ativa", sub)
+		}
+	}
+
 	// Quem nasce desativado pelo SSO volta quando ele o ativa.
 	novo := domain.UsuarioSSO{Subject: "kc-novo-" + sfx, Username: "novo." + sfx, Ativo: false}
 	d.trocar([]domain.UsuarioSSO{novo}, nil)
@@ -219,9 +291,10 @@ func TestSincronizacaoComFalhas(t *testing.T) {
 	if est, err := s.EstadoDoSSO(e.ctx); err != nil || est.Andamento || est.Ultima.Erro != "keycloak fora" || est.Ultima.TerminadaEm == nil {
 		t.Fatalf("a falha fica na sincronização: %+v %v", est, err)
 	}
-	// Falha ao gravar a pessoa (2ª chamada), o andamento (3ª) e o fim (4ª).
+	// Falha ao ler a situação (2ª chamada), gravar a pessoa (3ª), o
+	// andamento (4ª) e o fim (5ª).
 	d.trocar([]domain.UsuarioSSO{{Subject: "kc-" + uuid.NewString(), Ativo: true}}, nil)
-	for _, em := range []int{2, 3, 4} {
+	for _, em := range []int{2, 3, 4, 5} {
 		registro.Reset()
 		falha := application.NewService(e.pool, &faultRepo{inner: infrastructure.NewRepository(), failAt: em}, nil).WithDiretorio(d, log)
 		e.must(falha.SincronizarSSO(e.ctx))

@@ -26,6 +26,8 @@ func keycloakDeTeste(t *testing.T, sub string) *httptest.Server {
 			_, _ = w.Write([]byte(`{"access_token":"tk"}`))
 		case "/admin/realms/x/users/count":
 			_, _ = w.Write([]byte(`1`))
+		case "/admin/realms/x/users/" + sub:
+			_, _ = w.Write([]byte(`{"id":"` + sub + `","enabled":true}`))
 		case "/admin/realms/x/users":
 			_, _ = w.Write([]byte(`[{"id":"` + sub + `","username":"` + sub + `","firstName":"Ana","enabled":true}]`))
 		default:
@@ -78,6 +80,9 @@ func TestSincronizacaoSSOHTTP(t *testing.T) {
 		slog.New(slog.DiscardHandler))
 	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/iam/sso/sincronizar", admin, "")
 	semConfig := portaSSO{cli: keycloakadmin.Novo(), credenciais: func(context.Context) (string, string, string) { return "", "", "" }}
+	if ok, err := porta.Ativo(context.Background(), sub); err != nil || !ok {
+		t.Fatalf("confirmar na fonte: %v %v", ok, err)
+	}
 	if err := semConfig.Usuarios(context.Background(), nil); !errors.Is(err, iamapp.ErrSemSSO) {
 		t.Fatalf("sem configuração: %v", err)
 	}

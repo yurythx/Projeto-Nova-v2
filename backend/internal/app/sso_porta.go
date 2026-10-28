@@ -25,6 +25,12 @@ func (p portaSSO) Configurado(ctx context.Context) bool {
 	return issuer != "" && client != "" && secret != ""
 }
 
+// Ativo confirma na fonte se a pessoa está ativa.
+func (p portaSSO) Ativo(ctx context.Context, subject string) (bool, error) {
+	issuer, client, secret := p.credenciais(ctx)
+	return p.cli.Ativo(ctx, keycloakadmin.Config{IssuerURL: issuer, ClientID: client, ClientSecret: secret}, subject)
+}
+
 func (p portaSSO) Usuarios(ctx context.Context, lote func([]iamdomain.UsuarioSSO) error) error {
 	issuer, client, secret := p.credenciais(ctx)
 	err := p.cli.Usuarios(ctx, keycloakadmin.Config{IssuerURL: issuer, ClientID: client, ClientSecret: secret}, func(pessoas []keycloakadmin.Usuario) error {
