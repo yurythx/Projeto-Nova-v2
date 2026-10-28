@@ -109,8 +109,8 @@ func TestAtendimentoSolicitacao(t *testing.T) {
 	if outboxCount(t, h, "atendimento.solicitacao.aberta", sol.ID) != 1 {
 		t.Fatal("evento de abertura")
 	}
-	if avisosDe(t, h, tecID, sol.ID) != 1 || avisosDe(t, h, servID, sol.ID) != 0 {
-		t.Fatal("a equipe é avisada da abertura; quem abriu, não")
+	if avisosDe(t, h, tecID, sol.ID) != 1 || avisosDe(t, h, servID, sol.ID) != 1 {
+		t.Fatal("a equipe é avisada da abertura, e quem abriu recebe a confirmação (ADR 078)")
 	}
 
 	minhas := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atendimento/minhas?situacao=abertas", servidor, "").Body.String()
@@ -183,7 +183,8 @@ func TestAtendimentoSolicitacao(t *testing.T) {
 	comentar(http.StatusCreated, tecnico, "Conta bloqueada no AD", true)
 	comentar(http.StatusForbidden, servidor, "nota", true)
 	comentar(http.StatusUnprocessableEntity, servidor, " ", false)
-	if avisosDe(t, h, servID, sol.ID) != 0 {
+	// Confirmação da abertura e o aviso de que alguém assumiu; a nota, não.
+	if avisosDe(t, h, servID, sol.ID) != 2 {
 		t.Fatal("nota interna não avisa quem abriu")
 	}
 	doServidor := data[detalheResp](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atendimento/solicitacoes/"+sol.ID, servidor, ""))

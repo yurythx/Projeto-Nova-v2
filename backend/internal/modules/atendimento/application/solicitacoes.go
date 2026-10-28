@@ -177,9 +177,17 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 	if err = s.registrar(ctx, tx, EventoSolicitacaoAberta, "solicitacao", sol.ID, corpo, sol, nil); err != nil {
 		return domain.Solicitacao{}, nil, err
 	}
+	// Quem pediu recebe a confirmação com o link de acompanhamento (ADR
+	// 078), mesmo sendo quem agiu.
+	recebida, err := s.avisar(ctx, tx, sol, []uuid.UUID{sol.SolicitanteID}, uuid.Nil, "recebida",
+		fmt.Sprintf("Recebemos o seu chamado #%d", sol.Numero),
+		sol.OfertaNome+": "+sol.Titulo+". Acompanhe e responda pelo link.")
+	if err != nil {
+		return domain.Solicitacao{}, nil, err
+	}
 	if len(etapas) > 0 {
 		enviadas, err := s.avisarAprovadores(ctx, tx, sol, etapas[0], identity.UserID)
-		return sol, enviadas, err
+		return sol, append(recebida, enviadas...), err
 	}
 	ids, err := s.destinosDaAbertura(ctx, tx, sol, regra)
 	if err != nil {
@@ -191,7 +199,7 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 		return domain.Solicitacao{}, nil, err
 	}
 	tarefas, err := s.criarTarefas(ctx, tx, sol, identity.UserID)
-	return sol, append(enviadas, tarefas...), err
+	return sol, append(append(recebida, enviadas...), tarefas...), err
 }
 
 // ListarMinhas devolve as solicitações que identity abriu.
@@ -447,8 +455,17 @@ func (s *Service) Atribuir(ctx context.Context, identity auth.Identity, id, resp
 		if err := s.registrar(ctx, tx, EventoSolicitacaoAtribuida, "solicitacao", next.ID, payloadDe(next), next, sol); err != nil {
 			return nil, err
 		}
-		return s.avisar(ctx, tx, next, []uuid.UUID{responsavel}, identity.UserID, "atribuida:"+uuid.NewString(),
+		chave := uuid.NewString()
+		avisos, err := s.avisar(ctx, tx, next, []uuid.UUID{responsavel}, identity.UserID, "atribuida:"+chave,
 			fmt.Sprintf("Solicitação #%d atribuída a você", next.Numero), next.OfertaNome+": "+next.Titulo)
+		if err != nil {
+			return nil, err
+		}
+		// Quem pediu sabe que alguém está cuidando (ADR 078).
+		cuidando, err := s.avisar(ctx, tx, next, []uuid.UUID{next.SolicitanteID}, identity.UserID, "responsavel:"+chave,
+			fmt.Sprintf("Seu chamado #%d tem um responsável", next.Numero),
+			"A equipe já está cuidando de "+next.Titulo+". Acompanhe pelo link.")
+		return append(avisos, cuidando...), err
 	})
 	if err != nil {
 		return Detalhe{}, err

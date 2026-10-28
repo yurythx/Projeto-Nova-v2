@@ -74,6 +74,8 @@ const (
 	PermExampleManage Permission = "example:manage"
 	// PermIAManage: conexões de inteligência artificial (Configurações).
 	PermIAManage Permission = "ia:manage"
+	// PermCanaisManage: e-mail e WhatsApp dos avisos (ADR 078).
+	PermCanaisManage Permission = "canais:manage"
 	// Integrações (ADR 076): migrar de outra ferramenta. A do conector é
 	// só do token de máquina, nunca de um perfil.
 	PermIntegracoesManage   Permission = "integracoes:manage"

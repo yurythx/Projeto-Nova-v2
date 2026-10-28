@@ -45,6 +45,7 @@ func (m *Module) Manifest() kernel.Manifest {
 			{Key: "modules:manage", Description: "Ativar e desativar módulos"},
 			{Key: "keycloak:manage", Description: "Configurar o provedor de identidade (Keycloak)"},
 			{Key: "ia:manage", Description: "Configurar as conexões de inteligência artificial (fornecedor, modelo, chave)"},
+			{Key: "canais:manage", Description: "Configurar os canais dos avisos (servidor de e-mail e WhatsApp), ligar e desligar cada um"},
 			{Key: "branding:manage", Description: "Editar identidade visual (white-label)"},
 			{Key: "monitoring:read", Description: "Painel de monitoramento da plataforma"},
 			{Key: "monitoring:manage", Description: "Reprocessar eventos do outbox que falharam"},

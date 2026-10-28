@@ -199,7 +199,11 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 	if len(ids) == 0 {
 		return
 	}
-	rows, err := s.db.Query(ctx, `SELECT id, email FROM users WHERE id = ANY($1::uuid[]) AND btrim(email) <> ''`, ids)
+	// O contato que a pessoa deixou vale primeiro; sem ele, o e-mail do
+	// login, menos o marcador de quem veio do SSO sem e-mail (ADR 078).
+	rows, err := s.db.Query(ctx, `SELECT id, e FROM (
+			SELECT id, COALESCE(NULLIF(btrim(contato_email), ''), btrim(email)) AS e FROM users WHERE id = ANY($1::uuid[])
+		) x WHERE e <> '' AND e NOT LIKE '%.invalid'`, ids)
 	if err != nil {
 		if s.logger != nil {
 			s.logger.WarnContext(ctx, "notificacoes: não leu o e-mail do destinatário", "error", err)
@@ -222,7 +226,11 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 		}
 		corpo := e.Item.Mensagem
 		if e.Item.Link != "" && s.baseURL != "" {
-			corpo += "\n\n" + s.baseURL + e.Item.Link
+			corpo += "\n\nAcompanhe e responda por aqui:\n" + s.baseURL + e.Item.Link
+		}
+		if s.baseURL != "" {
+			corpo += "\n\n--\nAviso automático da Central de Atendimento. Para deixar de receber estes e-mails, " +
+				"desligue o atendimento em " + s.baseURL + "/notificacoes"
 		}
 		if err := s.correio.Send(ctx, Mensagem{Para: endereco[e.Usuario], Assunto: e.Item.Titulo, Corpo: corpo}); err != nil && s.logger != nil {
 			s.logger.WarnContext(ctx, "notificacoes: e-mail do aviso falhou (o sino permanece)", "error", err)

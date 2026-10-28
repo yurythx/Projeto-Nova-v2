@@ -10,6 +10,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/branding"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/canais"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/httpserver"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/iaconfig"
@@ -98,6 +99,7 @@ func NewRouter(d *Dependencies) chi.Router {
 			brandingHandlers.RegisterAdminRoutes(authed)
 			keycloakconfig.RegisterRoutes(authed, keycloakHandlers, d.Logger)
 			iaconfig.RegisterRoutes(authed, iaHandlers, d.Logger)
+			canais.RegisterRoutes(authed, canais.NewHandlers(d.Canais, audit.NewWriter(d.DB), d.Logger), d.Logger)
 			notificacoes.RegisterRoutes(authed, notificacoes.NewHandlers(d.Notificacoes, d.Logger))
 			outbox.RegisterStatsRoutes(authed, outboxStats, d.Logger)
 			d.LGPD.RegisterRoutes(authed)

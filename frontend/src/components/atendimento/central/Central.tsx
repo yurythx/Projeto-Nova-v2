@@ -6,6 +6,7 @@ import { BookOpen, ChevronRight, ClipboardList, SlidersHorizontal } from "lucide
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
+import { PedidoDeContato } from "@/components/canais/ContatoParaAvisos";
 import { IconeDoCatalogo } from "@/components/atendimento/IconeDoCatalogo";
 import { DataState } from "@/components/plataforma/DataState";
 import { Pagination } from "@/components/plataforma/Pagination";
@@ -165,6 +166,7 @@ export function CentralInicio() {
   const abertas = minhas.data?.meta?.total_items ?? minhas.data?.items.length ?? 0;
   return (
     <div className="flex flex-col gap-8">
+      <PedidoDeContato />
       <Blocos rotulo="O que você precisa">
         {(Object.keys(PORTAS) as Porta[]).map((p) => (
           <Bloco

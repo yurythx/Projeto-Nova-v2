@@ -25,12 +25,23 @@ O e-mail já existe ([ADR 049](049-correio-contratos-e-cadastros.md)), mas só s
    - **WhatsApp:** dois provedores, a API oficial da Meta (Cloud API) e a Evolution API. O administrador escolhe qual fica ativo. A Evolution usa um número comum e fere os termos da Meta, e a tela avisa disso.
 3. **O que quem pediu recebe**, por cada canal ligado e pelo sino: a confirmação de abertura com o link de acompanhamento, os comentários públicos, as mudanças de estado, a solução e o pedido de avaliação.
 4. **A avaliação pede login**, como no GLPI. O link leva à página do chamado, e a pessoa entra pelo SSO. Não há link de nota sem login.
-5. **Contato, no IAM.** O perfil ganha e-mail de contato e WhatsApp, com o consentimento para receber avisos (LGPD). A central pede esses dados no primeiro acesso de quem não os tem, e a pessoa pode recusar.
+5. **Contato, na conta da pessoa** (colunas em `users`, rotas `/me/contato` em `platform/canais`). O perfil ganha e-mail de contato e WhatsApp, com o consentimento para receber avisos (LGPD). A central pede esses dados no primeiro acesso de quem não os tem, e a pessoa pode recusar.
 6. **Fases:**
    - (1) a central do solicitante;
    - (2) os canais com o e-mail e o contato;
    - (3) o WhatsApp de saída;
    - (4) a entrada pelo WhatsApp, como já é com o IMAP: responder vira comentário.
+
+## Implementação
+
+- **Fase 1:** `atendimento_categorias`, mais `categoria_id`, `icone` e `ordem` na oferta (migração 33); a central em `/atendimento`, com as visões na URL; a casca enxuta para quem só tem `atendimento:abrir`.
+- **Fase 2:**
+  - `platform/canais` (migração 34) guarda o SMTP numa linha só (`canais_email`), com a senha cifrada, e implementa o correio do sino;
+  - a configuração vigente fica 30 s em memória, então a troca vale nas outras réplicas em até esse tempo;
+  - rotas `GET/PUT /canais/email` e `POST /canais/email/testar` (`canais:manage`, com auditoria sem a senha) e `GET/PUT /me/contato` (a própria pessoa);
+  - o e-mail vai para o contato que a pessoa deixou ou, sem ele, para o e-mail do login, nunca para o marcador `.invalid` de quem veio do SSO sem e-mail;
+  - o corpo leva o link do chamado e o caminho para desligar os avisos;
+  - quem pediu recebe também a confirmação de abertura e o aviso de que o chamado tem um responsável.
 
 ## Consequências
 

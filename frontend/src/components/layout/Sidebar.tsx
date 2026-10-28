@@ -50,6 +50,7 @@ const ADMIN_PERMISSIONS = [
   "branding:manage",
   "keycloak:manage",
   "ia:manage",
+  "canais:manage",
   "egress:manage",
   "catalog:manage",
   "contact:read",

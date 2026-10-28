@@ -3081,6 +3081,99 @@ components:
                 - name
             type: object
             x-projeto-nova-generated: true
+        CanaisContato:
+            properties:
+                email:
+                    type: string
+                email_do_sso:
+                    type: string
+                respondido:
+                    type: boolean
+                respondido_em:
+                    format: date-time
+                    type: string
+                whatsapp:
+                    type: string
+            required:
+                - email
+                - respondido
+                - whatsapp
+            type: object
+            x-projeto-nova-generated: true
+        CanaisContatoRequest:
+            properties:
+                email:
+                    maxLength: 254
+                    type: string
+                whatsapp:
+                    maxLength: 32
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        CanaisEmail:
+            properties:
+                ativo:
+                    type: boolean
+                host:
+                    type: string
+                origem:
+                    type: string
+                porta:
+                    type: integer
+                remetente:
+                    type: string
+                tem_senha:
+                    type: boolean
+                updated_at:
+                    format: date-time
+                    type: string
+                updated_by:
+                    type: string
+                usuario:
+                    type: string
+            required:
+                - ativo
+                - host
+                - origem
+                - porta
+                - remetente
+                - tem_senha
+                - usuario
+            type: object
+            x-projeto-nova-generated: true
+        CanaisEmailRequest:
+            properties:
+                ativo:
+                    type: boolean
+                host:
+                    maxLength: 255
+                    type: string
+                porta:
+                    maximum: 65535
+                    minimum: 0
+                    type: integer
+                remetente:
+                    maxLength: 255
+                    type: string
+                remover_senha:
+                    type: boolean
+                senha:
+                    maxLength: 500
+                    type: string
+                usuario:
+                    maxLength: 255
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
+        CanaisTesteRequest:
+            properties:
+                para:
+                    maxLength: 254
+                    type: string
+            required:
+                - para
+            type: object
+            x-projeto-nova-generated: true
         CatalogCategory:
             properties:
                 count:
@@ -13187,6 +13280,114 @@ paths:
             summary: Agenda — Listar/consultar /calendar/rooms/{id}/busy
             tags:
                 - calendar
+    /api/v1/canais/email:
+        get:
+            description: 'O SMTP dos avisos (ADR 078): servidor, porta, usuário, remetente, se está ligado e de onde vem (tela, ambiente ou nenhuma). A senha nunca sai: tem_senha diz se há. Exige canais:manage.'
+            operationId: getCanaisEmail
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CanaisEmail'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Canais — configuração do e-mail
+            tags:
+                - canais
+        put:
+            description: Grava a configuração do SMTP. Senha vazia mantém a gravada; remover_senha a apaga. Ligado, exige servidor e remetente. A senha fica cifrada, e a troca vai para a auditoria (sem a senha). Exige canais:manage.
+            operationId: putCanaisEmail
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CanaisEmailRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CanaisEmail'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Canais — salvar o e-mail
+            tags:
+                - canais
+    /api/v1/canais/email/testar:
+        post:
+            description: Manda uma mensagem de teste para o endereço informado com a configuração gravada, ligada ou não. A falha do servidor volta em 200 com ok false e a mensagem dele. Exige canais:manage.
+            operationId: postCanaisEmailTestar
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CanaisTesteRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            additionalProperties: {}
+                                            type: object
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Canais — testar o e-mail
+            tags:
+                - canais
     /api/v1/catalog/admin/services:
         get:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -17848,6 +18049,70 @@ paths:
             summary: Obtém o usuário autenticado atual
             tags:
                 - users
+    /api/v1/me/contato:
+        get:
+            description: O e-mail e o WhatsApp em que a própria pessoa recebe os avisos, se já respondeu e o e-mail que veio do login (quando é real).
+            operationId: getMeContato
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CanaisContato'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Canais — meu contato para avisos
+            tags:
+                - me
+        put:
+            description: 'Grava o e-mail e o WhatsApp (formato internacional; sem DDI, vale o do Brasil) da própria pessoa. Vazio também é resposta: ela preferiu não deixar e não é perguntada de novo. Deixar o contato é o consentimento para receber os avisos (LGPD).'
+            operationId: putMeContato
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CanaisContatoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/CanaisContato'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Canais — salvar meu contato
+            tags:
+                - me
     /api/v1/mercurio/direct:
         post:
             operationId: postMercurioDirect
@@ -22552,6 +22817,7 @@ tags:
     - name: branding
     - description: Agenda. Plug-in — Eventos e reserva de salas sem conflito de horário; agenda pública em /eventos.
       name: calendar
+    - name: canais
     - description: Catálogo de Serviços. Plug-in — Carta de serviços no site institucional (/servicos).
       name: catalog
     - description: Cofre. Plug-in — Senhas da unidade. A lista não mostra o segredo; revelar fica na auditoria.
@@ -22577,6 +22843,7 @@ tags:
     - description: |
         Consentimento (Lei 13.709/2018) e direitos do titular (art. 18): cada usuário só consulta, aceita, exporta ou solicita a exclusão do PRÓPRIO dado — não há leitura de terceiros. Inclui a rota pública de consentimento anônimo para visitantes não autenticados.
       name: lgpd
+    - name: me
     - description: 'Mercúrio. Plug-in — Chat em tempo real: canais, salas por unidade e mensagens diretas.'
       name: mercurio
     - description: |

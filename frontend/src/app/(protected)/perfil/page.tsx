@@ -3,7 +3,9 @@
 import { Download, ShieldCheck, UserX } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import { FormularioDeContato } from "@/components/canais/ContatoParaAvisos";
 import { ScopePicker } from "@/components/iam/ScopePicker";
+import { DataState } from "@/components/plataforma/DataState";
 import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
@@ -14,6 +16,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
+import type { Contato } from "@/lib/plataforma/canais";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { Person, ScopeRef } from "@/lib/plataforma/types";
 
@@ -114,6 +117,28 @@ function DirectoryProfile() {
   );
 }
 
+/** O contato em que a pessoa recebe os avisos dos chamados (ADR 078). */
+function ContatoDoPerfil() {
+  const contato = useApiQuery<Contato>("v1/me/contato");
+  return (
+    <DataState
+      loading={contato.isLoading}
+      error={contato.error}
+      onRetry={() => void contato.mutate()}
+      empty={false}
+      rows={2}
+    >
+      {contato.data && (
+        <FormularioDeContato
+          key={contato.data.respondido_em ?? "sem"}
+          contato={contato.data}
+          onSalvo={(c) => void contato.mutate(c, false)}
+        />
+      )}
+    </DataState>
+  );
+}
+
 export default function PerfilPage() {
   const { me, enabled } = usePlataforma();
   const requests = useApiQuery<DSR[]>("v1/lgpd/minhas-solicitacoes");
@@ -165,6 +190,15 @@ export default function PerfilPage() {
               {(me?.permissions ?? []).join(" · ")}
             </p>
           </details>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2">Contato para avisos</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-5 pt-3">
+          <ContatoDoPerfil />
         </CardContent>
       </Card>
 

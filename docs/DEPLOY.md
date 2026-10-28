@@ -250,6 +250,13 @@ account roles*, a função `view-users` do client `realm-management`. Quem é
 desativado no SSO é desativado aqui; quem tem o usuário ou o e-mail de uma
 conta local aparece em conflitos, para vincular à mão.
 
+Os avisos por e-mail ([ADR 078](adr/078-central-do-solicitante-e-canais.md)) se configuram em
+Configurações > Canais de aviso (permissão `canais:manage`): servidor SMTP,
+porta, usuário, senha (fica cifrada) e remetente. Teste o envio antes de ligar.
+As variáveis `SMTP_*` valem só enquanto ninguém configurou pela tela. Cada
+pessoa deixa o e-mail e o WhatsApp de contato na central (no primeiro acesso)
+ou no perfil.
+
 No plano gratuito, a Cloudflare limita o corpo de cada requisição a 100 MB.
 Um envio de arquivo maior que isso falha em `arquivos.projetonova.cloud`.
 

@@ -49,6 +49,7 @@ export const CONFIG_TABS: GuardedTab[] = [
   { href: "/configuracao/usuarios", label: "Usuários", permission: "users:read" },
   { href: "/configuracao/keycloak", label: "Keycloak (IAM)", permission: "keycloak:manage" },
   { href: "/configuracao/ia", label: "Inteligência artificial", permission: "ia:manage" },
+  { href: "/configuracao/canais", label: "Canais de aviso", permission: "canais:manage" },
   {
     href: "/configuracao/egress",
     label: "Egress & Webhooks",
