@@ -283,7 +283,38 @@ func (c *Cliente) get(ctx context.Context, caminho string, out any) (http.Header
 	return c.chamar(ctx, http.MethodGet, caminho, nil, out)
 }
 
+// Tentativas e Espera: a leitura que falha pela rede ou com erro do
+// servidor (5xx) se repete, com espera crescente. Numa extração de horas,
+// um soluço da rede não pode derrubar tudo. Só a leitura (GET) se repete;
+// recusa (4xx) não.
+var (
+	Tentativas = 3
+	Espera     = 2 * time.Second
+)
+
+// errPassageiro marca a falha que vale repetir.
+var errPassageiro = errors.New("glpi: falha passageira")
+
 func (c *Cliente) chamar(ctx context.Context, metodo, caminho string, envio, out any) (http.Header, error) {
+	var h http.Header
+	var err error
+	for i := range Tentativas {
+		if i > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(Espera * time.Duration(i)):
+			}
+		}
+		h, err = c.chamarUmaVez(ctx, metodo, caminho, envio, out)
+		if err == nil || metodo != http.MethodGet || !errors.Is(err, errPassageiro) || ctx.Err() != nil {
+			return h, err
+		}
+	}
+	return h, err
+}
+
+func (c *Cliente) chamarUmaVez(ctx context.Context, metodo, caminho string, envio, out any) (http.Header, error) {
 	var corpoEnvio io.Reader
 	if envio != nil {
 		b, err := json.Marshal(envio)
@@ -310,17 +341,19 @@ func (c *Cliente) chamar(ctx context.Context, metodo, caminho string, envio, out
 	}
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", errPassageiro, err)
 	}
 	defer resp.Body.Close()
 	corpo, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", errPassageiro, err)
 	}
 	switch {
 	case resp.StatusCode == http.StatusNotFound,
 		resp.StatusCode == http.StatusBadRequest && strings.Contains(string(corpo), "ERROR_RANGE_EXCEED_TOTAL"):
 		return resp.Header, nil
+	case resp.StatusCode >= 500:
+		return nil, fmt.Errorf("%w: %w: %s %d", ErrGLPI, errPassageiro, caminho, resp.StatusCode)
 	case resp.StatusCode >= 300:
 		return nil, fmt.Errorf("%w: %s %d", ErrGLPI, caminho, resp.StatusCode)
 	}
