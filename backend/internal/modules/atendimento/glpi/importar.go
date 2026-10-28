@@ -38,7 +38,8 @@ type Importador struct {
 
 	categorias  map[int]string
 	secretarias map[int]string // entidade do GLPI -> secretaria
-	metas       map[int]int    // SLA do GLPI -> minutos
+	slas        []SLA
+	metas       map[int]int // SLA do GLPI -> minutos
 	ofertas     map[string]uuid.UUID
 	catalogo    map[string]uuid.UUID // categorias do catálogo, pelo nome
 	novas       map[string]bool
@@ -64,6 +65,9 @@ type Relatorio struct {
 	ComPrazo         int            `json:"com_prazo,omitempty"`
 	UnidadesFaltando []string       `json:"unidades_faltando,omitempty"`
 	SemDestino       map[string]int `json:"sem_destino,omitempty"`
+	// Expediente é a política de prazos, os feriados e as equipes que vêm
+	// do calendário e dos grupos do GLPI (ADR 078).
+	Expediente *RelatorioExpediente `json:"expediente,omitempty"`
 }
 
 // errSemDestino é o chamado que a tabela não cobre: conta em SemDestino,
@@ -101,6 +105,11 @@ func (im *Importador) Executar(ctx context.Context) (Relatorio, error) {
 		return rel, err
 	}
 	im.novas, im.pessoas = map[string]bool{}, map[int]*pessoaCasada{}
+	if im.Mapa != nil {
+		if err := im.aplicarExpediente(ctx, im.slas, &rel); err != nil {
+			return rel, err
+		}
+	}
 	for de := 0; ; de += im.Pagina {
 		pagina, total, err := im.Fonte.Chamados(ctx, de, de+im.Pagina-1)
 		if err != nil {
@@ -172,6 +181,7 @@ func (im *Importador) lerEstrutura(ctx context.Context, rel *Relatorio) error {
 	if err != nil {
 		return fmt.Errorf("SLAs: %w", err)
 	}
+	im.slas = slas
 	im.metas = map[int]int{}
 	for _, s := range slas {
 		if min, ok := MetaMin(s.Tempo, s.Unidade); ok {

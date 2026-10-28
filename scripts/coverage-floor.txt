@@ -6,7 +6,7 @@
 # 0,2 ponto de margem para testes que variam com o tempo.
 
 app                      96.2
-atendimento              91.2
+atendimento              91.7
 ativos                   72.9
 cofre                    64.1
 contratos                70.3

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 
+import { ResumoExpediente, type Expediente } from "@/components/integracoes/ResumoExpediente";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
@@ -345,6 +346,12 @@ conector --vigiar`}</pre>
                           />
                         )}
                         {t.erro && <p className="text-sm text-danger">{t.erro}</p>}
+                        {t.relatorio?.expediente ? (
+                          <ResumoExpediente
+                            expediente={t.relatorio.expediente as Expediente}
+                            gravou={t.relatorio.gravou === true}
+                          />
+                        ) : null}
                         {t.relatorio && (
                           <details>
                             <summary className="cursor-pointer text-sm">Relatório</summary>

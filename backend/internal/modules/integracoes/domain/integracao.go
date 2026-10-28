@@ -42,6 +42,9 @@ const (
 	ItemCategoria = "categoria"
 	ItemEntidade  = "entidade"
 	ItemSLA       = "sla"
+	// Calendário de expediente e grupo técnico (ADR 078).
+	ItemCalendario = "calendario"
+	ItemGrupo      = "grupo"
 
 	NomeMax   = 160
 	URLMax    = 500
@@ -182,7 +185,7 @@ func ValidarItens(itens []Item) error {
 	}
 	for _, it := range itens {
 		switch {
-		case !slices.Contains([]string{ItemChamado, ItemPessoa, ItemCategoria, ItemEntidade, ItemSLA}, it.Tipo):
+		case !slices.Contains([]string{ItemChamado, ItemPessoa, ItemCategoria, ItemEntidade, ItemSLA, ItemCalendario, ItemGrupo}, it.Tipo):
 			return Recusa{"tipo de item desconhecido: " + it.Tipo}
 		case it.ID < 0:
 			return Recusa{"o id do item não é negativo"}

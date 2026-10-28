@@ -101,6 +101,8 @@ func origemDeTeste(t *testing.T) *memoria {
 	o.guardar(ItemPreparo{Tipo: ItemEntidade, ID: 1, Dados: dados(t, Entidade{ID: 1, Nome: "RAIZ > SMS"})})
 	o.guardar(ItemPreparo{Tipo: ItemSLA, ID: 2, Dados: dados(t, SLA{ID: 2, Nome: "Solução", Tempo: 4, Unidade: "hour"})})
 	o.guardar(ItemPreparo{Tipo: ItemSLA, ID: 3, Dados: dados(t, SLA{ID: 3, Nome: "Sem tempo", Unidade: "semana"})})
+	o.guardar(ItemPreparo{Tipo: ItemCalendario, ID: 3, Dados: dados(t, Calendario{ID: 3, Nome: "Horário Comercial"})})
+	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 7, Dados: dados(t, Grupo{ID: 7, Nome: "Grupo Técnico"})})
 	cinco := 5
 	longo := strings.Repeat("palavra ", 600)
 	acomps := []Acompanhamento{}
@@ -125,7 +127,8 @@ func TestExtrairParaAreaDePreparo(t *testing.T) {
 	destino := novaMemoria()
 	vistos := []int{}
 	r, err := Extrair(ctx, origem, destino, 0, func(feitos, total int) { vistos = append(vistos, feitos, total) })
-	if err != nil || r.Chamados != 2 || r.Novos != 2 || r.Pessoas != 2 || r.Categorias != 1 || r.Entidades != 1 || r.SLAs != 2 {
+	if err != nil || r.Chamados != 2 || r.Novos != 2 || r.Pessoas != 2 || r.Categorias != 1 || r.Entidades != 1 || r.SLAs != 2 ||
+		r.Calendarios != 1 || r.Grupos != 1 {
 		t.Fatalf("resumo: %+v %v", r, err)
 	}
 	if len(vistos) != 2 || vistos[1] != 2 {
@@ -210,7 +213,7 @@ func (o origemFalha) Pessoa(ctx context.Context, id int) (Pessoa, error) {
 
 func TestExtrairFalhas(t *testing.T) {
 	ctx := context.Background()
-	for _, passo := range []string{"itens:categoria", "itens:entidade", "itens:sla", "itens:chamado"} {
+	for _, passo := range []string{"itens:categoria", "itens:entidade", "itens:sla", "itens:calendario", "itens:grupo", "itens:chamado"} {
 		o := origemDeTeste(t)
 		o.falha = passo
 		if _, err := Extrair(ctx, &FontePreparo{Leitor: o}, novaMemoria(), 0, nil); !errors.Is(err, errFonte) {

@@ -52,6 +52,11 @@ type SLA struct {
 	Nome    string `json:"name"`
 	Tempo   int    `json:"number_time"`
 	Unidade string `json:"definition_time"`
+	// Calendário em que conta, o par (SLM) a que pertence e o tipo: 0 é a
+	// solução (TTR), 1 é a primeira resposta (TTO).
+	Calendario int `json:"calendars_id"`
+	SLM        int `json:"slms_id"`
+	Tipo       int `json:"type"`
 }
 
 // Participante liga uma pessoa ao chamado: 1 requerente, 2 técnico.

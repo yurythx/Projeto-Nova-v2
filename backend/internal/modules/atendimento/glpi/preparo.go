@@ -20,6 +20,10 @@ const (
 	ItemCategoria = "categoria"
 	ItemEntidade  = "entidade"
 	ItemSLA       = "sla"
+	// Calendário (com turnos e feriados) e grupo técnico (com os membros):
+	// a política de prazos e as equipes (ADR 078).
+	ItemCalendario = "calendario"
+	ItemGrupo      = "grupo"
 )
 
 // ItemPreparo é um registro da área de preparo. Os campos fora de Dados
@@ -67,17 +71,20 @@ type Preparo interface {
 type Extraivel interface {
 	Fonte
 	Estrutura
+	Expediente
 }
 
 // ResumoExtracao é o que a extração fez.
 type ResumoExtracao struct {
-	Chamados   int `json:"chamados"`
-	Novos      int `json:"novos_ou_alterados"`
-	Iguais     int `json:"iguais"`
-	Pessoas    int `json:"pessoas"`
-	Categorias int `json:"categorias"`
-	Entidades  int `json:"entidades"`
-	SLAs       int `json:"slas"`
+	Chamados    int `json:"chamados"`
+	Novos       int `json:"novos_ou_alterados"`
+	Iguais      int `json:"iguais"`
+	Pessoas     int `json:"pessoas"`
+	Categorias  int `json:"categorias"`
+	Entidades   int `json:"entidades"`
+	SLAs        int `json:"slas"`
+	Calendarios int `json:"calendarios"`
+	Grupos      int `json:"grupos"`
 }
 
 // LoteExtracao é quantos itens vão por gravação.
@@ -141,7 +148,26 @@ func Extrair(ctx context.Context, o Extraivel, destino Preparo, pagina int, prog
 			return r, err
 		}
 	}
+	cals, err := o.Calendarios(ctx)
+	if err != nil {
+		return r, fmt.Errorf("calendários: %w", err)
+	}
+	for _, c := range cals {
+		if err := incluir(ItemPreparo{Tipo: ItemCalendario, ID: c.ID, Nome: c.Nome}, c); err != nil {
+			return r, err
+		}
+	}
+	grupos, err := o.Grupos(ctx)
+	if err != nil {
+		return r, fmt.Errorf("grupos: %w", err)
+	}
+	for _, g := range grupos {
+		if err := incluir(ItemPreparo{Tipo: ItemGrupo, ID: g.ID, Nome: g.Nome}, g); err != nil {
+			return r, err
+		}
+	}
 	r.Categorias, r.Entidades, r.SLAs = len(cats), len(ents), len(slas)
+	r.Calendarios, r.Grupos = len(cals), len(grupos)
 
 	versoes, err := destino.Versoes(ctx)
 	if err != nil {
@@ -285,6 +311,24 @@ func (f *FontePreparo) Entidades(ctx context.Context) ([]Entidade, error) {
 		return nil, err
 	}
 	return decodificar[Entidade](itens)
+}
+
+// Calendarios devolve os calendários extraídos (ADR 078).
+func (f *FontePreparo) Calendarios(ctx context.Context) ([]Calendario, error) {
+	itens, err := f.tudo(ctx, ItemCalendario)
+	if err != nil {
+		return nil, err
+	}
+	return decodificar[Calendario](itens)
+}
+
+// Grupos devolve os grupos técnicos extraídos.
+func (f *FontePreparo) Grupos(ctx context.Context) ([]Grupo, error) {
+	itens, err := f.tudo(ctx, ItemGrupo)
+	if err != nil {
+		return nil, err
+	}
+	return decodificar[Grupo](itens)
 }
 
 func (f *FontePreparo) SLAs(ctx context.Context) ([]SLA, error) {

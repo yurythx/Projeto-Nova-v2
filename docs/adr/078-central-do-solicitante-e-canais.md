@@ -58,6 +58,11 @@ O e-mail já existe ([ADR 049](049-correio-contratos-e-cadastros.md)), mas só s
   - **Na tabela de-para:** a nova coluna `catalogo` é sugerida com a raiz da árvore (`Hardware > Impressora` fica em "Hardware"), e quem revisa pode mudar. Categoria sem pai fica em "Outros". No CSV do `importarglpi`, a coluna é opcional.
   - **Na carga:** a categoria do catálogo é achada pelo nome ou criada, e a oferta criada entra nela, já com a regra e a prioridade da tabela. A oferta que já existia só ganha categoria se não tinha nenhuma: a escolha de alguém não é desfeita.
 
+- **Prazos e equipes vindos do GLPI.** O conector extrai também os calendários (turnos e feriados) e os grupos técnicos com os membros. A carga, na simulação só contando, faz três coisas:
+  - **Política institucional de prazos:** os turnos vêm do calendário que os SLAs usam (no da prefeitura, o "Horário Comercial"). A matriz é a usual da tela. As metas vêm dos pares do GLPI (SLM), da solução mais curta para a mais longa: alta, média e baixa. Na prefeitura, N1 = 30 min/4 h, N2 = 2 h/24 h, N3 = 2 h/36 h. A crítica, que o GLPI não tem, fica com metade da alta. A política já configurada não é sobrescrita.
+  - **Feriados:** os do calendário, deste ano em diante. O perpétuo vale neste ano e no próximo. O tipo sai do nome: nacionais conhecidos, pontos facultativos (carnaval, cinzas, Corpus Christi) e o resto municipal.
+  - **Equipes:** cada grupo vira uma equipe na unidade da sua secretaria (a linha "*" da tabela), com as pessoas que casam com contas ativas daqui. A equipe que já existe com o mesmo nome só ganha quem falta.
+
 ## Consequências
 
 Quem pede tem uma porta só e não se perde no sistema. Os avisos passam a chegar fora do sistema, para quem deixou contato. Ligar o e-mail exige um servidor SMTP da prefeitura ou um serviço transacional. A API oficial do WhatsApp exige verificar a empresa na Meta e aprovar os modelos de mensagem, e cobra por conversa.
