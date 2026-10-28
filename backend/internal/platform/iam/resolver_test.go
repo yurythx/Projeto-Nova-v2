@@ -116,7 +116,20 @@ func TestResolverProvisionsFederatedUsersAndMapsADGroups(t *testing.T) {
 	}
 	fed.Name = "Outra"
 	if _, err := r.Enrich(ctx, fed); status(err) != http.StatusForbidden {
-		t.Fatalf("federado desativado: %v", err)
+		t.Fatalf("federado desativado por um administrador: %v", err)
+	}
+	// Desativado pela sincronização com o SSO: quem entra pelo SSO está
+	// ativo nele, e a conta volta (ADR 077).
+	if _, err := pool.Exec(ctx, `UPDATE users SET active = false, desativada_pelo_sso = true WHERE id = $1`, id.UserID); err != nil {
+		t.Fatal(err)
+	}
+	fed.Name = "De volta"
+	if _, err := r.Enrich(ctx, fed); err != nil {
+		t.Fatalf("o login pelo SSO reativa: %v", err)
+	}
+	var ativo, pelo bool
+	if err := pool.QueryRow(ctx, `SELECT active, desativada_pelo_sso FROM users WHERE id = $1`, id.UserID).Scan(&ativo, &pelo); err != nil || !ativo || pelo {
+		t.Fatalf("reativada: %v %v %v", ativo, pelo, err)
 	}
 }
 

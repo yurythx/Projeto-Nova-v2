@@ -16,6 +16,7 @@ import (
 // keycloak responde como a API de administração: 3 pessoas em páginas de 2.
 func keycloak(t *testing.T, quebrar string) *httptest.Server {
 	t.Helper()
+	var contou atomic.Int32
 	pessoas := []map[string]any{
 		{"id": "a", "username": "ana", "email": "ana@x.test", "firstName": "Ana", "lastName": "Souza", "enabled": true},
 		{"id": "b", "username": "beto", "enabled": false},
@@ -45,6 +46,10 @@ func keycloak(t *testing.T, quebrar string) *httptest.Server {
 				_, _ = w.Write([]byte(`"três"`))
 				return
 			}
+			if quebrar == "emendada-e-curta" && contou.Add(1) > 1 {
+				_, _ = w.Write([]byte(`2`))
+				return
+			}
 			_, _ = fmt.Fprint(w, len(pessoas))
 		case r.URL.Path == "/sso/admin/realms/x/users" && quebrar == "lista":
 			w.WriteHeader(http.StatusForbidden)
@@ -55,6 +60,12 @@ func keycloak(t *testing.T, quebrar string) *httptest.Server {
 			fim := min(len(pessoas), primeiro+max)
 			// Como o Keycloak federado: a página inteira vem com o JSON
 			// emendado, e uma pessoa por vez vem certa.
+			// A lista emendada que, uma a uma, passa do fim real: 400 depois
+			// da última, e a contagem nova é 2.
+			if quebrar == "emendada-e-curta" && max == 1 && primeiro >= 2 {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			if quebrar == "emendada-e-negada" && max == 1 && primeiro == 1 {
 				w.WriteHeader(http.StatusForbidden)
 				return
@@ -124,6 +135,10 @@ func TestUsuarios(t *testing.T) {
 	if us, _, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 5}, Config{IssuerURL: keycloak(t, "emendada").URL + "/sso/realms/x",
 		ClientID: "p", ClientSecret: "s"}); err != nil || len(us) != 3 || us[2].ID != "c" {
 		t.Fatalf("página emendada: %+v %v", us, err)
+	}
+	if us, _, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 5}, Config{IssuerURL: keycloak(t, "emendada-e-curta").URL + "/sso/realms/x",
+		ClientID: "p", ClientSecret: "s"}); err != nil || len(us) != 2 {
+		t.Fatalf("uma a uma até o fim real: %+v %v", us, err)
 	}
 	if _, _, err := todos(ctx, &Cliente{HTTP: http.DefaultClient, Pagina: 5}, Config{IssuerURL: keycloak(t, "emendada-e-negada").URL + "/sso/realms/x",
 		ClientID: "p", ClientSecret: "s"}); !errors.Is(err, ErrResposta) {

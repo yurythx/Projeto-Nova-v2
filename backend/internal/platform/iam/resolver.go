@@ -186,6 +186,11 @@ func (r *Resolver) provision(ctx context.Context, identity auth.Identity) (uuid.
 		    email = EXCLUDED.email,
 		    display_name = CASE WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name ELSE users.display_name END,
 		    groups = EXCLUDED.groups,
+		    -- Quem entrou pelo SSO está ativo nele: a conta que a sincronização
+		    -- desativou (às vezes por estado velho do Keycloak federado) volta.
+		    -- A que um administrador desativou continua desativada (ADR 077).
+		    active = users.active OR users.desativada_pelo_sso,
+		    desativada_pelo_sso = false,
 		    last_seen_at = now(),
 		    ad_synced_at = now()
 		RETURNING id, active`

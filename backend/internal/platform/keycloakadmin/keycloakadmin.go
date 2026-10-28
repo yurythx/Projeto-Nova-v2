@@ -131,8 +131,7 @@ func (c *Cliente) Usuarios(ctx context.Context, cfg Config, lote func([]Usuario)
 		if err != nil {
 			// O total também oscila, e a página além do fim real volta 400:
 			// contado de novo, se a lista acabou antes, o fim é normal.
-			var agora int
-			if primeiro > 0 && c.get(ctx, token, admin+"/users/count", &agora) == nil && agora <= primeiro {
+			if primeiro > 0 && c.acabou(ctx, token, admin, primeiro) {
 				return nil
 			}
 			return err
@@ -171,6 +170,13 @@ func (c *Cliente) Ativo(ctx context.Context, cfg Config, id string) (bool, error
 	return u.Enabled, nil
 }
 
+// acabou conta de novo: a posição já está além do fim real da lista. O
+// total do Keycloak federado oscila, e pedir além do fim volta 400.
+func (c *Cliente) acabou(ctx context.Context, token, admin string, posicao int) bool {
+	var agora int
+	return c.get(ctx, token, admin+"/users/count", &agora) == nil && agora <= posicao
+}
+
 // pagina0 é o endereço de uma página da lista resumida.
 func pagina0(admin string, primeiro, max int) string {
 	return fmt.Sprintf("%s/users?first=%d&max=%d&briefRepresentation=true", admin, primeiro, max)
@@ -182,6 +188,9 @@ func (c *Cliente) umaAUma(ctx context.Context, token, admin string, primeiro, pa
 	for i := range pagina {
 		var uma []Usuario
 		if err := c.get(ctx, token, pagina0(admin, primeiro+i, 1), &uma); err != nil {
+			if c.acabou(ctx, token, admin, primeiro+i) {
+				break
+			}
 			return nil, err
 		}
 		if len(uma) == 0 {
