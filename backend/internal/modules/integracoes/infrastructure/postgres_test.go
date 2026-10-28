@@ -123,6 +123,16 @@ func TestAreaDePreparoETabela(t *testing.T) {
 	if v, err := r.Versoes(ctx, pool, c.ID); err != nil || len(v) != 3 || v[101] != "v2" {
 		t.Fatalf("versões: %v %v", v, err)
 	}
+	// O calendário e os grupos do GLPI também cabem na área de preparo
+	// (ADR 078): a restrição do banco conhece cada tipo que o domínio aceita.
+	outra := novaConexao(t, pool, domain.ModoConector)
+	t.Cleanup(func() { _ = r.DeleteConexao(context.Background(), pool, outra.ID) })
+	if err := r.GravarItens(ctx, pool, outra.ID, []domain.Item{
+		{Tipo: domain.ItemCalendario, ID: 3, Nome: "Horário Comercial", Dados: dados},
+		{Tipo: domain.ItemGrupo, ID: 7, Nome: "Grupo Técnico - SMS", Dados: dados},
+	}); err != nil {
+		t.Fatalf("calendário e grupo: %v", err)
+	}
 	if ids, err := r.IDs(ctx, pool, c.ID, domain.ItemPessoa); err != nil || !ids[9] || len(ids) != 1 {
 		t.Fatalf("pessoas: %v %v", ids, err)
 	}
