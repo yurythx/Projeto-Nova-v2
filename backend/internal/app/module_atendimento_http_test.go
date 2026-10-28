@@ -121,6 +121,13 @@ func TestAtendimentoSolicitacao(t *testing.T) {
 	if !strings.Contains(fila, sol.ID) || !strings.Contains(fila, `"proximos":["em_atendimento","cancelado"]`) {
 		t.Fatalf("fila de A, com as passagens do Kanban: %s", fila)
 	}
+	// A lista como a do GLPI (ADR 080): busca, recortes e ordem pela URL.
+	lista := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atendimento/fila?q="+fmt.Sprint(sol.Numero)+
+		"&unidade="+o.a+"&prioridade=&aberta_de=2020-01-01T00:00:00Z&ordem=atualizada&sentido=desc", tecnico, "").Body.String()
+	if !strings.Contains(lista, sol.ID) || !strings.Contains(lista, `"unidade_nome":`) {
+		t.Fatalf("lista filtrada: %s", lista)
+	}
+	h.expect(http.StatusUnprocessableEntity, http.MethodGet, "/api/v1/atendimento/fila?ordem=cor", tecnico, "")
 	topicos := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atendimento/fila/topicos", tecnico, "").Body.String()
 	if !strings.Contains(topicos, "atendimento:unidade:"+o.a) || strings.Contains(topicos, o.b) {
 		t.Fatalf("tópicos da fila de A: %s", topicos)

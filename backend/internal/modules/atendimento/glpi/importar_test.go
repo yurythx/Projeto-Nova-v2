@@ -121,7 +121,8 @@ func TestImportacaoDoGLPI(t *testing.T) {
 		chamados: []Chamado{
 			{ID: 101, Titulo: "E-mail fora", Conteudo: "&lt;p&gt;Não envia&lt;/p&gt;", Abertura: "2025-03-10 09:00:00",
 				Solucao: "2025-03-10 11:30:00", Fechamento: "2025-03-11 08:00:00", Status: 6, Tipo: 1, Urgencia: 4, Impacto: 3, CategoriaID: 7},
-			{ID: 102, Titulo: "", Conteudo: "Pedido de acesso", Abertura: "2025-04-01 14:00:00", Status: 2, Tipo: 2, Urgencia: 1, Impacto: 1},
+			{ID: 102, Titulo: "", Conteudo: "Pedido de acesso", Abertura: "2025-04-01 14:00:00", Status: 2, Tipo: 2, Urgencia: 1, Impacto: 1,
+				Modificado: "2025-04-02 10:00:00"},
 			{ID: 103, Titulo: "Impressora", Abertura: "ilegível", Status: 1, Tipo: 1, CategoriaID: 7},
 		},
 		partes: map[int][]Participante{
@@ -184,6 +185,10 @@ func TestImportacaoDoGLPI(t *testing.T) {
 		sol.Urgencia != 3 || sol.Impacto != 2 || sol.Titulo != "E-mail fora" || !strings.HasPrefix(sol.Descricao, "Pedido por Ana Souza no GLPI.") {
 		t.Fatalf("chamado 101: %+v", sol)
 	}
+	// Sem a data de mudança do GLPI, a última atualização é o fim.
+	if !sol.UpdatedAt.Equal(*sol.EncerradaEm) {
+		t.Fatalf("última atualização do 101: %v", sol.UpdatedAt)
+	}
 	ps, _ := repo.ListPassagens(ctx, pool, id)
 	if len(ps) != 3 || ps[2].Para != domain.EstadoEncerrado {
 		t.Fatalf("passagens: %+v", ps)
@@ -202,6 +207,8 @@ func TestImportacaoDoGLPI(t *testing.T) {
 	_ = pool.QueryRow(ctx, `SELECT destino FROM atendimento_importacao WHERE origem = 'glpi' AND tipo = 'solicitacao' AND id_origem = '102'`).Scan(&id)
 	if s2, _ := repo.GetSolicitacao(ctx, pool, id); s2.Titulo != "Chamado 102 do GLPI" || s2.Estado != domain.EstadoEmAtendimento || s2.Tipo != domain.TipoRequisicao {
 		t.Fatalf("chamado 102: %+v", s2)
+	} else if !s2.UpdatedAt.Equal(time.Date(2025, 4, 2, 13, 0, 0, 0, time.UTC)) {
+		t.Fatalf("última atualização do 102 é a do GLPI: %v", s2.UpdatedAt)
 	}
 
 	// De novo: nada se repete.

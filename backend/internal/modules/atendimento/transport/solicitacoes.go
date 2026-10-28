@@ -62,6 +62,14 @@ func filtroFila(r *http.Request, finalizadas bool) application.FiltroFila {
 		Estado:      httputil.Query(r, "estado", 40),
 		Responsavel: httputil.Query(r, "responsavel", 36),
 		Finalizadas: finalizadas,
+		Texto:       httputil.Query(r, "q", 120),
+		Prioridade:  httputil.Query(r, "prioridade", 20),
+		Unidade:     httputil.Query(r, "unidade", 36),
+		Categoria:   httputil.Query(r, "categoria", 36),
+		De:          httputil.Query(r, "aberta_de", 40),
+		Ate:         httputil.Query(r, "aberta_ate", 40),
+		Ordem:       httputil.Query(r, "ordem", 20),
+		Desc:        httputil.Query(r, "sentido", 4) == "desc",
 	}
 }
 

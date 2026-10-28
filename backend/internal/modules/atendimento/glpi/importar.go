@@ -492,6 +492,11 @@ func (im *Importador) gravarChamado(ctx context.Context, tx pgx.Tx, ch Chamado, 
 	if err := im.Repo.UpdateSolicitacao(ctx, tx, salva); err != nil {
 		return domain.Solicitacao{}, err
 	}
+	// A última atualização é a do GLPI, não a hora da carga (ADR 080).
+	salva.UpdatedAt = im.data(ch.Modificado, sol.UpdatedAt)
+	if _, err := tx.Exec(ctx, `UPDATE atendimento_solicitacoes SET updated_at = $2 WHERE id = $1`, salva.ID, salva.UpdatedAt); err != nil {
+		return domain.Solicitacao{}, err
+	}
 	// O histórico mínimo: aberto, em atendimento quando houve, e o fim.
 	autor := ContaImportacao
 	if salva.ResponsavelID != nil {

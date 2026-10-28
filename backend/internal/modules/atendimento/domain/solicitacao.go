@@ -72,6 +72,8 @@ type Solicitacao struct {
 	OfertaNome      string `json:"oferta_nome"`
 	SolicitanteNome string `json:"solicitante_nome"`
 	ResponsavelNome string `json:"responsavel_nome,omitempty"`
+	UnidadeNome     string `json:"unidade_nome,omitempty"`
+	CategoriaNome   string `json:"categoria_nome,omitempty"`
 
 	// PodeIrPara são as passagens de quem consulta a fila; vazio fora dela.
 	PodeIrPara []string `json:"proximos,omitempty"`

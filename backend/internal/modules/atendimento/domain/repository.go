@@ -307,7 +307,20 @@ type FiltroSolicitacao struct {
 	SemDono     bool
 	// Texto, quando preenchido, casa com título, descrição ou número.
 	// Vazio não filtra.
-	Texto  string
+	Texto string
+	// Recortes da lista como a do GLPI (ADR 080): prioridade, unidade,
+	// categoria do catálogo e período de abertura [De, Ate).
+	Prioridade         string
+	Unidade, Categoria *uuid.UUID
+	De, Ate            *time.Time
+	// Ordem é uma de OrdensDaLista; vazia mantém a ordem da fila (mais
+	// antigas primeiro) ou a de quem abriu (mais novas primeiro).
+	Ordem  string
+	Desc   bool
 	Limit  int
 	Offset int
 }
+
+// OrdensDaLista são as colunas pelas quais a lista ordena.
+var OrdensDaLista = []string{"numero", "titulo", "unidade", "estado", "prioridade", "atualizada", "aberta",
+	"solicitante", "responsavel", "categoria"}

@@ -2,49 +2,38 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 
 import { FAIXAS_FILA, Kanban, faixaDaFila } from "@/components/atendimento/Kanban";
-import { PrazoBadge } from "@/components/atendimento/PrazoBadge";
 import {
-  BarraFaixa,
-  ordenarColunas,
-  pontoFaixa,
-  useAparencia,
-  useFaixasRecolhidas,
-} from "@/components/plataforma/Faixas";
+  consultaDaLista,
+  FiltrosDaLista,
+  type FiltrosLista,
+  lerFiltros,
+  TabelaDeChamados,
+} from "@/components/atendimento/ListaDeChamados";
 import { colunasVisiveis, useQuadro } from "@/components/plataforma/useQuadro";
 import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
 import { SolicitacaoDetalhe } from "@/app/(protected)/atendimento/solicitacoes/[id]/page";
 import { useRealtimeState, useTopics } from "@/components/realtime/RealtimeProvider";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
-import { Pagination } from "@/components/plataforma/Pagination";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
-import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
-import { Badge } from "@/components/ui/Badge";
-import { Button, buttonClass } from "@/components/ui/Button";
+import { useAction } from "@/components/plataforma/useAction";
+import { buttonClass } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import {
-  ESTADOS_FILA,
+  type Categoria,
+  type Estado,
   rotuloEstado,
   rotuloTipo,
-  tomEstado,
-  type Estado,
   type Solicitacao,
 } from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { OrgTree } from "@/lib/plataforma/types";
 
 type Vista = "lista" | "kanban";
 
@@ -66,32 +55,36 @@ function FilaDaEquipe() {
   const atende = can("atendimento:atender");
   const abre = can("atendimento:abrir");
   const gereColunas = can("atendimento:manage");
-  const { recolhidas, alternar } = useFaixasRecolhidas("nova-faixas:fila-lista");
-  const look = useAparencia("nova-faixas:fila");
   const catalogo = useQuadro("fila", FAIXAS_FILA);
   const controles = { oficial: catalogo.oficial };
   const params = useSearchParams();
   const router = useRouter();
   const painel = usePainelNaUrl();
   const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
-  const [responsavel, setResponsavel] = useState("");
-  const [tipo, setTipo] = useState("");
-  const [estado, setEstado] = useState("");
-  const [todas, setTodas] = useState(false);
-  const [pagina, setPagina] = useState(1);
+  const filtros = lerFiltros(params);
   const kanban = vista === "kanban";
   const fila = useApiPage<Solicitacao>(
     atende
-      ? withQuery("v1/atendimento/fila", {
-          responsavel,
-          tipo,
-          // O quadro mostra o fluxo em andamento, uma coluna por estado.
-          estado: kanban ? undefined : estado,
-          situacao: !kanban && todas ? "todas" : undefined,
-          page: kanban ? 1 : pagina,
-          page_size: kanban ? 100 : 50,
-        })
+      ? withQuery(
+          "v1/atendimento/fila",
+          kanban
+            ? // O quadro mostra o fluxo em andamento, uma coluna por estado.
+              {
+                responsavel: filtros.responsavel || undefined,
+                tipo: filtros.tipo || undefined,
+                page: 1,
+                page_size: 100,
+              }
+            : consultaDaLista(filtros),
+        )
       : null,
+  );
+  const arvore = useApiQuery<OrgTree[]>(atende && !kanban ? "v1/iam/org-tree" : null);
+  const categorias = useApiQuery<Categoria[]>(
+    atende && !kanban ? "v1/atendimento/catalogo/categorias" : null,
+  );
+  const unidades = (arvore.data ?? []).flatMap((e) =>
+    e.unidades.map((u) => ({ value: u.id, label: `${e.nome} — ${u.nome}` })),
   );
   const topicos = useApiQuery<{ topicos: string[] }>(atende ? "v1/atendimento/fila/topicos" : null);
   const conexao = useRealtimeState();
@@ -110,11 +103,11 @@ function FilaDaEquipe() {
     );
   }
 
-  function filtro<T>(set: (v: T) => void) {
-    return (v: T) => {
-      set(v);
-      setPagina(1);
-    };
+  /** Troca os filtros na URL; mudar qualquer um que não a página volta à primeira. */
+  function mudar(novos: Partial<FiltrosLista>) {
+    const extra: Record<string, string | null> = { pagina: null };
+    for (const [chave, valor] of Object.entries(novos)) extra[chave] = valor ? valor : null;
+    router.replace(painel.href(extra), { scroll: false });
   }
 
   function trocarVista(v: Vista) {
@@ -149,7 +142,6 @@ function FilaDaEquipe() {
       return faixa === "encerrado" || faixa === "cancelado" ? null : faixa;
     },
   );
-  const colunasLista = colunasVisiveis(catalogo.colunas, itens, (s) => faixaDaFila(s.estado));
 
   return (
     <div className="flex flex-col gap-6">
@@ -188,54 +180,39 @@ function FilaDaEquipe() {
         ]}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Select
-          id="fila-responsavel"
-          label="Responsável"
-          value={responsavel}
-          onChange={(e) => filtro(setResponsavel)(e.target.value)}
-          options={[
-            { value: "", label: "Todos" },
-            { value: "eu", label: "Comigo" },
-            { value: "nenhum", label: "Sem responsável" },
-          ]}
+      {kanban ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Select
+            id="fila-responsavel"
+            label="Responsável"
+            value={filtros.responsavel}
+            onChange={(e) => mudar({ responsavel: e.target.value })}
+            options={[
+              { value: "", label: "Todos" },
+              { value: "eu", label: "Comigo" },
+              { value: "nenhum", label: "Sem responsável" },
+            ]}
+          />
+          <Select
+            id="fila-tipo"
+            label="Tipo"
+            value={filtros.tipo}
+            onChange={(e) => mudar({ tipo: e.target.value })}
+            options={[
+              { value: "", label: "Todos" },
+              { value: "incidente", label: rotuloTipo("incidente") },
+              { value: "requisicao", label: rotuloTipo("requisicao") },
+            ]}
+          />
+        </div>
+      ) : (
+        <FiltrosDaLista
+          filtros={filtros}
+          unidades={unidades}
+          categorias={(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nome }))}
+          mudar={mudar}
         />
-        <Select
-          id="fila-tipo"
-          label="Tipo"
-          value={tipo}
-          onChange={(e) => filtro(setTipo)(e.target.value)}
-          options={[
-            { value: "", label: "Todos" },
-            { value: "incidente", label: rotuloTipo("incidente") },
-            { value: "requisicao", label: rotuloTipo("requisicao") },
-          ]}
-        />
-        {!kanban && (
-          <>
-            <Select
-              id="fila-estado"
-              label="Estado"
-              value={estado}
-              onChange={(e) => filtro(setEstado)(e.target.value)}
-              options={[
-                { value: "", label: "Todos" },
-                ...ESTADOS_FILA.map((v) => ({ value: v, label: rotuloEstado(v) })),
-              ]}
-            />
-            <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input
-                id="fila-todas"
-                type="checkbox"
-                checked={todas}
-                onChange={(e) => filtro(setTodas)(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              Incluir encerradas e canceladas
-            </label>
-          </>
-        )}
-      </div>
+      )}
 
       <DataState
         loading={fila.isLoading}
@@ -261,144 +238,15 @@ function FilaDaEquipe() {
             )}
           </>
         ) : (
-          <>
-            <div className="flex flex-col gap-2">
-              {ordenarColunas(colunasLista).map((coluna) => {
-                const titulo = catalogo.oficial
-                  ? coluna.titulo
-                  : look.gravado.colunas[coluna.id]?.titulo || coluna.titulo;
-                const cor = catalogo.oficial ? coluna.cor : look.gravado.colunas[coluna.id]?.cor;
-                const total = itens.filter((s) => faixaDaFila(s.estado) === coluna.id).length;
-                return (
-                  <BarraFaixa
-                    key={coluna.id}
-                    titulo={titulo}
-                    tituloId={`faixa-fila-${coluna.id}`}
-                    total={total}
-                    tom={coluna.tom}
-                    cor={cor}
-                    recolhida={recolhidas.includes(coluna.id)}
-                    ordem={coluna.ordem}
-                    corImediata={!catalogo.oficial}
-                    onAlternar={() => alternar(coluna.id)}
-                    onRenomear={
-                      catalogo.oficial
-                        ? undefined
-                        : (nome) => look.salvarColuna(coluna.id, { titulo: nome })
-                    }
-                    onCor={
-                      catalogo.oficial
-                        ? undefined
-                        : (valor) => look.salvarColuna(coluna.id, { cor: valor })
-                    }
-                  />
-                );
-              })}
-            </div>
-            {itens.length === 0 ? (
-              <p className="text-sm text-muted">Fila vazia</p>
-            ) : (
-              <Table caption="Solicitações da fila" className="min-w-[980px]">
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Nº</TableHeaderCell>
-                    <TableHeaderCell>Solicitação</TableHeaderCell>
-                    <TableHeaderCell>Tipo</TableHeaderCell>
-                    <TableHeaderCell>Estado</TableHeaderCell>
-                    <TableHeaderCell>Responsável</TableHeaderCell>
-                    <TableHeaderCell>Aberta por</TableHeaderCell>
-                    <TableHeaderCell>Aberta em</TableHeaderCell>
-                    <TableHeaderCell>Prazo</TableHeaderCell>
-                    <TableHeaderCell>
-                      <span className="sr-only">Ações</span>
-                    </TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {itens
-                    .filter((s) => !recolhidas.includes(faixaDaFila(s.estado)))
-                    .map((s, indice) => ({ s, indice }))
-                    .sort((a, b) => {
-                      const ordemDe = (estado: string) =>
-                        catalogo.colunas.find(
-                          (coluna) => coluna.id === faixaDaFila(estado as Estado),
-                        )?.ordem ?? 999;
-                      return ordemDe(a.s.estado) - ordemDe(b.s.estado) || a.indice - b.indice;
-                    })
-                    .map(({ s }) => {
-                      const faixa = faixaDaFila(s.estado);
-                      const cor =
-                        look.gravado.cartoes[s.id]?.cor ||
-                        (catalogo.oficial
-                          ? catalogo.colunas.find((coluna) => coluna.id === faixa)?.cor
-                          : look.gravado.colunas[faixa]?.cor);
-                      return (
-                        <TableRow key={s.id}>
-                          <TableCell className="tabular-nums text-muted">
-                            <span
-                              className={`mr-2 inline-block size-2.5 rounded-full align-middle ${cor ? "" : pontoFaixa(tomEstado(s.estado))}`}
-                              style={cor ? { backgroundColor: cor } : undefined}
-                              aria-hidden
-                            />
-                            #{s.numero}
-                          </TableCell>
-                          <TableCell>
-                            <button
-                              type="button"
-                              className="font-medium text-primary hover:underline"
-                              onClick={() => painel.abrir(s.id)}
-                            >
-                              {look.gravado.cartoes[s.id]?.titulo || s.titulo}
-                            </button>
-                            <p className="text-xs text-muted">{s.oferta_nome}</p>
-                          </TableCell>
-                          <TableCell>{rotuloTipo(s.tipo)}</TableCell>
-                          <TableCell>
-                            <Badge tone={tomEstado(s.estado)}>{rotuloEstado(s.estado)}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {s.responsavel_nome || <span className="text-muted">—</span>}
-                          </TableCell>
-                          <TableCell>{s.solicitante_nome}</TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {fmtDateTime(s.created_at)}
-                          </TableCell>
-                          <TableCell>
-                            <PrazoBadge prazo={s.prazo} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                className="text-sm font-medium text-primary hover:underline"
-                                onClick={() => painel.abrir(s.id)}
-                              >
-                                Editar
-                              </button>
-                              {!s.responsavel_id &&
-                                s.estado !== "encerrado" &&
-                                s.estado !== "cancelado" && (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={pending}
-                                    onClick={() => void assumir(s)}
-                                    aria-label={`Assumir a solicitação #${s.numero}`}
-                                  >
-                                    Assumir
-                                  </Button>
-                                )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
-            )}
-            <Pagination meta={fila.data?.meta} onPage={setPagina} />
-          </>
+          <TabelaDeChamados
+            itens={itens}
+            meta={fila.data?.meta}
+            filtros={filtros}
+            mudar={mudar}
+            aoAbrir={(s) => painel.abrir(s.id)}
+            onAssumir={(s) => void assumir(s)}
+            pending={pending}
+          />
         )}
       </DataState>
       <PainelDoQuadro

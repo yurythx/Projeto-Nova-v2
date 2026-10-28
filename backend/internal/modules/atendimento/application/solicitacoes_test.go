@@ -464,3 +464,58 @@ func (f falhaRepo) DadosDoTitular(ctx context.Context, db database.DBTX, user uu
 	}
 	return f.Repository.DadosDoTitular(ctx, db, user)
 }
+
+// A lista como a do GLPI (ADR 080): busca, recortes, período e ordem por
+// coluna; o que não se lê é recusado.
+func TestListaComoOGLPI(t *testing.T) {
+	ctx := context.Background()
+	c := novoCenario(t)
+	pg := pagination.New(1, 20, 100)
+	primeira, segunda := c.abrir(t), c.abrir(t)
+	fila := func(f application.FiltroFila) []domain.Solicitacao {
+		t.Helper()
+		lista, _, err := c.base.ListarFila(ctx, c.tecnico, f, pg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return lista
+	}
+	agora := time.Now().UTC()
+	ontem, amanha := agora.Add(-24*time.Hour).Format(time.RFC3339), agora.Add(24*time.Hour).Format(time.RFC3339)
+	unidade := c.unidade.String()
+	for nome, caso := range map[string]struct {
+		f application.FiltroFila
+		n int
+	}{
+		"número":          {application.FiltroFila{Texto: strconv.FormatInt(segunda.Numero, 10)}, 1},
+		"unidade":         {application.FiltroFila{Unidade: unidade}, 2},
+		"outra unidade":   {application.FiltroFila{Unidade: uuid.NewString()}, 0},
+		"outra categoria": {application.FiltroFila{Unidade: unidade, Categoria: uuid.NewString()}, 0},
+		"período":         {application.FiltroFila{Unidade: unidade, De: ontem, Ate: amanha}, 2},
+		"depois":          {application.FiltroFila{Unidade: unidade, De: amanha}, 0},
+		"prioridade":      {application.FiltroFila{Unidade: unidade, Prioridade: domain.PrioridadeCritica}, 0},
+	} {
+		if lista := fila(caso.f); len(lista) != caso.n {
+			t.Errorf("%s: %d, esperado %d", nome, len(lista), caso.n)
+		}
+	}
+	for _, ordem := range domain.OrdensDaLista {
+		for _, desc := range []bool{false, true} {
+			if lista := fila(application.FiltroFila{Unidade: unidade, Ordem: ordem, Desc: desc}); len(lista) != 2 {
+				t.Fatalf("ordem %s: %d", ordem, len(lista))
+			}
+		}
+	}
+	if lista := fila(application.FiltroFila{Unidade: unidade, Ordem: "numero", Desc: true}); lista[0].ID != segunda.ID || lista[1].ID != primeira.ID ||
+		lista[0].UnidadeNome == "" {
+		t.Fatalf("mais nova primeiro, com a unidade: %+v", lista)
+	}
+	for _, f := range []application.FiltroFila{{Prioridade: "urgente"}, {Ordem: "cor"}, {Unidade: "x"}, {Categoria: "x"}, {De: "ontem"}, {Ate: "2026-01-01"}} {
+		if _, _, err := c.base.ListarFila(ctx, c.tecnico, f, pg); !errors.Is(err, domain.ErrEntradaInvalida) {
+			t.Errorf("%+v: %v", f, err)
+		}
+		if _, _, err := c.base.ListarMinhas(ctx, c.servidor, f, pg); !errors.Is(err, domain.ErrEntradaInvalida) {
+			t.Errorf("minhas %+v: %v", f, err)
+		}
+	}
+}

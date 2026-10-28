@@ -270,12 +270,20 @@ describe("Atendimento — fila da equipe", () => {
         sol,
         { ...sol, id: "s2", numero: 43, responsavel_id: "x", responsavel_nome: "Ana" },
       ]),
+      "GET v1/iam/org-tree": {
+        data: [
+          { id: "e1", nome: "PREFEITURA", unidades: [{ id: "u1", nome: "TI", departamentos: [] }] },
+        ],
+      },
+      "GET v1/atendimento/catalogo/categorias": {
+        data: [{ id: "cat1", nome: "Rede", descricao: "", icone: "", ordem: 0, ativa: true }],
+      },
       "PUT v1/atendimento/solicitacoes/s1/responsavel": { data: {} },
     });
     renderApp(<AtendimentoFilaPage />);
 
     const tabela = await screen.findByRole("table", { name: "Solicitações da fila" });
-    expect(within(tabela).getAllByText("Incidente")).toHaveLength(2);
+    expect(within(tabela).getAllByText(/^Incidente ·/)).toHaveLength(2);
     expect(within(tabela).getByText("Ana")).toBeInTheDocument();
     expect(within(tabela).getAllByRole("button", { name: /Assumir/ })).toHaveLength(1);
 
@@ -287,17 +295,78 @@ describe("Atendimento — fila da equipe", () => {
       responsavel_id: ME.id,
     });
 
-    await user.selectOptions(screen.getByLabelText("Responsável"), "nenhum");
-    await user.selectOptions(screen.getByLabelText("Tipo"), "requisicao");
-    await user.selectOptions(screen.getByLabelText("Estado"), "aberto");
-    await user.click(screen.getByLabelText("Incluir encerradas e canceladas"));
-    await waitFor(() => {
-      const q = api.to("GET v1/atendimento/fila").at(-1)!.query;
-      expect(q.get("responsavel")).toBe("nenhum");
-      expect(q.get("tipo")).toBe("requisicao");
-      expect(q.get("estado")).toBe("aberto");
-      expect(q.get("situacao")).toBe("todas");
+    // Como no GLPI: a mais recém-atualizada primeiro, filtros recolhidos.
+    const ultima = () => api.to("GET v1/atendimento/fila").at(-1)!.query;
+    expect(ultima().get("ordem")).toBe("atualizada");
+    expect(ultima().get("sentido")).toBe("desc");
+    expect(screen.getByText("Mostrando 1–2 de 2")).toBeInTheDocument();
+    const filtros = screen.getByRole("button", { name: /^Filtros/ });
+    expect(filtros).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByLabelText("Técnico")).not.toBeVisible();
+
+    // Cada mudança vai para a URL e volta à primeira página.
+    const urls = () => router.replace.mock.calls.map((c) => String(c[0]));
+    await user.type(screen.getByRole("searchbox", { name: "Buscar chamados" }), "senha");
+    await user.click(screen.getByRole("button", { name: "Buscar" }));
+    expect(urls().at(-1)).toBe("/atendimento/fila?vista=lista&q=senha");
+
+    await user.click(filtros);
+    expect(filtros).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Técnico")).toBeVisible();
+    await user.selectOptions(screen.getByLabelText("Técnico"), "nenhum");
+    expect(urls().at(-1)).toBe("/atendimento/fila?vista=lista&responsavel=nenhum");
+    await user.selectOptions(screen.getByLabelText("Unidade"), "u1");
+    expect(urls().at(-1)).toBe("/atendimento/fila?vista=lista&unidade=u1");
+    await user.click(screen.getByRole("button", { name: /^ID/ }));
+    expect(urls().at(-1)).toBe("/atendimento/fila?vista=lista&ordem=numero&sentido=asc");
+    await user.selectOptions(screen.getByLabelText("Por página"), "100");
+    expect(urls().at(-1)).toBe("/atendimento/fila?vista=lista&por=100");
+  });
+
+  it("os filtros da URL viram a consulta, e limpar tira os do painel", async () => {
+    resetNavigation(
+      { id: "s1" },
+      "/atendimento/fila",
+      "vista=lista&q=senha&situacao=todas&estado=aberto&tipo=requisicao&responsavel=eu&unidade=u1" +
+        "&categoria=cat1&prioridade=alta&de=2026-10-01&ate=2026-10-31&ordem=numero&sentido=desc" +
+        "&pagina=2&por=20",
+    );
+    const user = userEvent.setup();
+    const api = mockBackend({
+      ...identityRoutes(perms("atendimento:atender")),
+      "GET v1/atendimento/fila": page([sol]),
+      "GET v1/iam/org-tree": { data: [] },
+      "GET v1/atendimento/catalogo/categorias": { data: [] },
     });
+    renderApp(<AtendimentoFilaPage />);
+    await screen.findByRole("table", { name: "Solicitações da fila" });
+    const q = api.to("GET v1/atendimento/fila").at(-1)!.query;
+    expect(Object.fromEntries(q.entries())).toEqual({
+      q: "senha",
+      situacao: "todas",
+      estado: "aberto",
+      tipo: "requisicao",
+      responsavel: "eu",
+      unidade: "u1",
+      categoria: "cat1",
+      prioridade: "alta",
+      aberta_de: new Date(2026, 9, 1).toISOString(),
+      aberta_ate: new Date(2026, 10, 1).toISOString(),
+      ordem: "numero",
+      sentido: "desc",
+      page: "2",
+      page_size: "20",
+    });
+    expect(screen.getByRole("searchbox", { name: "Buscar chamados" })).toHaveValue("senha");
+    expect(screen.getByRole("columnheader", { name: /^ID/ })).toHaveAttribute(
+      "aria-sort",
+      "descending",
+    );
+    expect(screen.getByRole("button", { name: /^Filtros \(9\)/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    expect(String(router.replace.mock.calls.at(-1)![0])).toBe(
+      "/atendimento/fila?vista=lista&q=senha&ordem=numero&sentido=desc&por=20",
+    );
   });
 
   it("fila vazia e perfil sem atendimento", async () => {

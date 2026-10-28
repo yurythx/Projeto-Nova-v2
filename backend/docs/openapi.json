@@ -2560,6 +2560,9 @@
       },
       "AtendimentoSolicitacao": {
         "properties": {
+          "categoria_nome": {
+            "type": "string"
+          },
           "cofre_segredo_id": {
             "format": "uuid",
             "type": "string"
@@ -2662,6 +2665,9 @@
           },
           "unidade_id": {
             "format": "uuid",
+            "type": "string"
+          },
+          "unidade_nome": {
             "type": "string"
           },
           "updated_at": {
@@ -13236,6 +13242,86 @@
               "type": "string"
             },
             "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "prioridade",
+            "required": false,
+            "schema": {
+              "maxLength": 20,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "unidade",
+            "required": false,
+            "schema": {
+              "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": false,
+            "schema": {
+              "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "aberta_de",
+            "required": false,
+            "schema": {
+              "maxLength": 40,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "aberta_ate",
+            "required": false,
+            "schema": {
+              "maxLength": 40,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "ordem",
+            "required": false,
+            "schema": {
+              "maxLength": 20,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "sentido",
+            "required": false,
+            "schema": {
+              "maxLength": 4,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
           }
         ],
         "responses": {
@@ -13723,6 +13809,86 @@
             "required": false,
             "schema": {
               "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "prioridade",
+            "required": false,
+            "schema": {
+              "maxLength": 20,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "unidade",
+            "required": false,
+            "schema": {
+              "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": false,
+            "schema": {
+              "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "aberta_de",
+            "required": false,
+            "schema": {
+              "maxLength": 40,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "aberta_ate",
+            "required": false,
+            "schema": {
+              "maxLength": 40,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "ordem",
+            "required": false,
+            "schema": {
+              "maxLength": 20,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "sentido",
+            "required": false,
+            "schema": {
+              "maxLength": 4,
               "type": "string"
             },
             "x-projeto-nova-generated": true

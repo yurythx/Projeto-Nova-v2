@@ -21,11 +21,13 @@ var solicitacaoSelect = `SELECT s.id, s.numero, s.tipo, s.estado, s.titulo, s.de
 	s.unidade_id, s.solicitante_id, s.responsavel_id, s.resolvida_em, s.encerrada_em, s.created_at, s.updated_at,
 	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id, s.etapa_atual,
 	s.contrato_apoio_id, s.contrato_apoio, s.contrato_prazo_horas,
-	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, '')
+	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, ''), COALESCE(un.nome, ''), COALESCE(ca.nome, '')
 	FROM atendimento_solicitacoes s
 	JOIN atendimento_ofertas o ON o.id = s.oferta_id
 	JOIN users us ON us.id = s.solicitante_id
-	LEFT JOIN users ur ON ur.id = s.responsavel_id`
+	LEFT JOIN users ur ON ur.id = s.responsavel_id
+	LEFT JOIN unidades un ON un.id = s.unidade_id
+	LEFT JOIN atendimento_categorias ca ON ca.id = o.categoria_id`
 
 // Sem solicitante ($1), é a fila: recorte de unidade, mais antigas
 // primeiro. Com solicitante, é a lista de quem abriu, mais novas primeiro.
@@ -40,7 +42,39 @@ const solicitacaoWhere = `
 		AND ($8 = false OR s.responsavel_id IS NULL)
 		AND ($9 = '' OR s.titulo ILIKE $9 ESCAPE E'\\'
 			OR s.descricao ILIKE $9 ESCAPE E'\\'
-			OR s.numero::text ILIKE $9 ESCAPE E'\\')`
+			OR s.numero::text ILIKE $9 ESCAPE E'\\')
+		AND ($10 = '' OR s.prioridade = $10)
+		AND ($11::uuid IS NULL OR s.unidade_id = $11)
+		AND ($12::uuid IS NULL OR s.oferta_id IN (SELECT id FROM atendimento_ofertas WHERE categoria_id = $12))
+		AND ($13::timestamptz IS NULL OR s.created_at >= $13)
+		AND ($14::timestamptz IS NULL OR s.created_at < $14)`
+
+// ordemDaLista leva a coluna pedida à expressão; o domínio já validou.
+var ordemDaLista = map[string]string{
+	"numero":      "s.numero",
+	"titulo":      "lower(s.titulo)",
+	"unidade":     "lower(un.nome)",
+	"estado":      "s.estado",
+	"prioridade":  "CASE s.prioridade WHEN 'critica' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 WHEN 'baixa' THEN 4 END",
+	"atualizada":  "s.updated_at",
+	"aberta":      "s.created_at",
+	"solicitante": "lower(" + nomeDe("us") + ")",
+	"responsavel": "lower(" + nomeDe("ur") + ")",
+	"categoria":   "lower(ca.nome)",
+}
+
+// ordenar devolve o ORDER BY: a coluna pedida ou o padrão da lista.
+func ordenar(f domain.FiltroSolicitacao) string {
+	expr, ok := ordemDaLista[f.Ordem]
+	if !ok {
+		return `CASE WHEN $1::uuid IS NULL THEN s.created_at END ASC, s.created_at DESC, s.id`
+	}
+	sentido := "ASC"
+	if f.Desc {
+		sentido = "DESC"
+	}
+	return expr + " " + sentido + " NULLS LAST, s.id"
+}
 
 // padraoLike vazio não filtra. Com texto, casa o trecho e trata % e _ como
 // letra, não como curinga.
@@ -60,7 +94,7 @@ func scanSolicitacao(row interface{ Scan(...any) error }) (domain.Solicitacao, e
 		&s.UnidadeID, &s.SolicitanteID, &s.ResponsavelID, &s.ResolvidaEm, &s.EncerradaEm, &s.CreatedAt, &s.UpdatedAt,
 		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID, &s.EtapaAtual,
 		&s.ContratoApoioID, &s.ContratoApoio, &s.ContratoPrazoHoras,
-		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome)
+		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome, &s.UnidadeNome, &s.CategoriaNome)
 	if err != nil {
 		return domain.Solicitacao{}, err
 	}
@@ -120,14 +154,15 @@ func (r *Repository) ListOfertasAtivas(ctx context.Context, db database.DBTX) ([
 
 // ListSolicitacoes devolve a página do filtro e o total.
 func (r *Repository) ListSolicitacoes(ctx context.Context, db database.DBTX, f domain.FiltroSolicitacao) ([]domain.Solicitacao, int64, error) {
-	args := []any{f.Solicitante, f.Restrito, idsOrEmpty(f.Unidades), f.Tipo, f.Estado, f.Finalizadas, f.Responsavel, f.SemDono, padraoLike(f.Texto)}
+	args := []any{f.Solicitante, f.Restrito, idsOrEmpty(f.Unidades), f.Tipo, f.Estado, f.Finalizadas, f.Responsavel, f.SemDono, padraoLike(f.Texto),
+		f.Prioridade, f.Unidade, f.Categoria, f.De, f.Ate}
 	var total int64
 	if err := db.QueryRow(ctx, `SELECT count(*) FROM atendimento_solicitacoes s`+solicitacaoWhere, args...).Scan(&total); err != nil {
 		return nil, 0, mapDB(err)
 	}
 	rows, err := db.Query(ctx, solicitacaoSelect+solicitacaoWhere+`
-		ORDER BY CASE WHEN $1::uuid IS NULL THEN s.created_at END ASC, s.created_at DESC, s.id
-		LIMIT $10 OFFSET $11`, append(args, f.Limit, f.Offset)...)
+		ORDER BY `+ordenar(f)+`
+		LIMIT $15 OFFSET $16`, append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, mapDB(err)
 	}

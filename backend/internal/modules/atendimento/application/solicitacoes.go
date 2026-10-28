@@ -55,10 +55,58 @@ type AberturaEntrada struct {
 }
 
 // FiltroFila são os recortes da lista. Responsavel aceita "eu", "nenhum"
-// ou o id de alguém.
+// ou o id de alguém. Os demais vêm da lista como a do GLPI (ADR 080):
+// Unidade e Categoria são ids, De e Ate são instantes RFC 3339 (o período
+// [De, Ate) de abertura) e Ordem é uma de domain.OrdensDaLista.
 type FiltroFila struct {
 	Tipo, Estado, Responsavel string
 	Finalizadas               bool
+	Texto, Prioridade         string
+	Unidade, Categoria        string
+	De, Ate                   string
+	Ordem                     string
+	Desc                      bool
+}
+
+// recortes passa ao filtro do banco os recortes da lista, recusando o que
+// não se lê.
+func (f FiltroFila) recortes(filtro *domain.FiltroSolicitacao) error {
+	filtro.Texto, filtro.Desc = f.Texto, f.Desc
+	if f.Prioridade != "" && !slices.Contains(domain.Prioridades, f.Prioridade) {
+		return domain.ErrEntradaInvalida
+	}
+	filtro.Prioridade = f.Prioridade
+	if f.Ordem != "" && !slices.Contains(domain.OrdensDaLista, f.Ordem) {
+		return domain.ErrEntradaInvalida
+	}
+	filtro.Ordem = f.Ordem
+	for _, c := range []struct {
+		texto string
+		alvo  **uuid.UUID
+	}{{f.Unidade, &filtro.Unidade}, {f.Categoria, &filtro.Categoria}} {
+		if c.texto == "" {
+			continue
+		}
+		id, err := uuid.Parse(c.texto)
+		if err != nil {
+			return domain.ErrEntradaInvalida
+		}
+		*c.alvo = &id
+	}
+	for _, c := range []struct {
+		texto string
+		alvo  **time.Time
+	}{{f.De, &filtro.De}, {f.Ate, &filtro.Ate}} {
+		if c.texto == "" {
+			continue
+		}
+		t, err := time.Parse(time.RFC3339, c.texto)
+		if err != nil {
+			return domain.ErrEntradaInvalida
+		}
+		*c.alvo = &t
+	}
+	return nil
 }
 
 // Detalhe é a solicitação vista por quem pergunta: o que ela pode fazer
@@ -205,10 +253,14 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 // ListarMinhas devolve as solicitações que identity abriu.
 func (s *Service) ListarMinhas(ctx context.Context, identity auth.Identity, f FiltroFila, p pagination.Params) ([]domain.Solicitacao, int64, error) {
 	quem := identity.UserID
-	return s.repo.ListSolicitacoes(ctx, s.pool, domain.FiltroSolicitacao{
+	filtro := domain.FiltroSolicitacao{
 		Solicitante: &quem, Tipo: f.Tipo, Estado: f.Estado, Finalizadas: f.Finalizadas,
 		Limit: p.Limit(), Offset: p.Offset(),
-	})
+	}
+	if err := f.recortes(&filtro); err != nil {
+		return nil, 0, MapError(err)
+	}
+	return s.repo.ListSolicitacoes(ctx, s.pool, filtro)
 }
 
 // ListarFila devolve as solicitações das unidades que identity atende.
@@ -220,6 +272,9 @@ func (s *Service) ListarFila(ctx context.Context, identity auth.Identity, f Filt
 	filtro := domain.FiltroSolicitacao{
 		Restrito: !cob.All, Unidades: cob.Unidades, Tipo: f.Tipo, Estado: f.Estado, Finalizadas: f.Finalizadas,
 		Limit: p.Limit(), Offset: p.Offset(),
+	}
+	if err := f.recortes(&filtro); err != nil {
+		return nil, 0, MapError(err)
 	}
 	switch f.Responsavel {
 	case "":

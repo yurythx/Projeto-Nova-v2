@@ -64,6 +64,9 @@ export interface Solicitacao {
   solicitante_nome: string;
   responsavel_id?: string;
   responsavel_nome?: string;
+  unidade_nome?: string;
+  /** Categoria do catálogo da oferta (ADR 078). */
+  categoria_nome?: string;
   resolvida_em?: string;
   encerrada_em?: string;
   created_at: string;
