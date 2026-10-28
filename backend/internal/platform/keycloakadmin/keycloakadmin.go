@@ -185,10 +185,39 @@ func (c *Cliente) token(ctx context.Context, endpoint string, cfg Config) (strin
 	return out.Token, nil
 }
 
+// Tentativas e Espera: uma leitura que falha por resposta inválida ou rede
+// é repetida, com espera crescente. Federado ao AD, o Keycloak às vezes
+// devolve uma página corrompida; uma só não pode derrubar a sincronização
+// inteira. Recusa (401, 403, 404) não se repete.
+var (
+	Tentativas = 3
+	Espera     = 2 * time.Second
+)
+
+// errDefinitivo marca a falha que repetir não resolve.
+var errDefinitivo = errors.New("keycloakadmin: falha definitiva")
+
 func (c *Cliente) get(ctx context.Context, token, endereco string, out any) error {
+	var err error
+	for i := range Tentativas {
+		if i > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(Espera * time.Duration(i)):
+			}
+		}
+		if err = c.getUmaVez(ctx, token, endereco, out); err == nil || errors.Is(err, errDefinitivo) || ctx.Err() != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (c *Cliente) getUmaVez(ctx context.Context, token, endereco string, out any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endereco, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %w", errDefinitivo, err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	return c.fazer(req, out)
@@ -204,7 +233,11 @@ func (c *Cliente) fazer(req *http.Request, out any) error {
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound:
+		return fmt.Errorf("%w: %w: %s %d", ErrResposta, errDefinitivo, req.URL.Path, resp.StatusCode)
+	default:
 		return fmt.Errorf("%w: %s %d", ErrResposta, req.URL.Path, resp.StatusCode)
 	}
 	if err := json.Unmarshal(corpo, out); err != nil {

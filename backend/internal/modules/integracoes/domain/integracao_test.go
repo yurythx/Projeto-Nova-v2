@@ -92,6 +92,7 @@ func TestValidarTabela(t *testing.T) {
 		"secretaria": ruim(func(l *Linha) { l.Secretaria = "" }),
 		"categoria":  ruim(func(l *Linha) { l.Categoria = -2 }),
 		"oferta":     ruim(func(l *Linha) { l.Oferta = strings.Repeat("o", 161) }),
+		"catálogo":   ruim(func(l *Linha) { l.Catalogo = strings.Repeat("c", 81) }),
 		"tipo":       ruim(func(l *Linha) { l.Tipo = "problema" }),
 		"prioridade": ruim(func(l *Linha) { l.Prioridade = "urgente" }),
 		"repetida":   {linha("sms", 1), linha("SMS", 1)},

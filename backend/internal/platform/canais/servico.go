@@ -20,10 +20,17 @@ type Servico struct {
 	store    Store
 	ambiente Email
 	enviar   func(context.Context, mail.SMTP, mail.Mensagem) error
+	enviarWA func(context.Context, WhatsApp, Aviso) error
+	// responderWA manda a confirmação da mensagem recebida (texto livre).
+	responderWA func(context.Context, WhatsApp, string, string) error
+	recebedor   Recebedor
+	apiPublica  string
 
-	mu    sync.Mutex
-	cache *Email
-	lido  time.Time
+	mu      sync.Mutex
+	cache   *Email
+	lido    time.Time
+	cacheWA *WhatsApp
+	lidoWA  time.Time
 }
 
 // NovoServico cria o serviço. ambiente é o SMTP das variáveis de ambiente,
@@ -36,7 +43,7 @@ func NovoServico(store Store, ambiente Email) *Servico {
 	if !ambiente.Ativo {
 		ambiente = Email{Porta: 587, Origem: OrigemNenhuma}
 	}
-	return &Servico{store: store, ambiente: ambiente, enviar: func(ctx context.Context, s mail.SMTP, m mail.Mensagem) error {
+	return &Servico{store: store, ambiente: ambiente, enviarWA: enviarWhatsApp, responderWA: responderTexto, enviar: func(ctx context.Context, s mail.SMTP, m mail.Mensagem) error {
 		return s.Send(ctx, m)
 	}}
 }

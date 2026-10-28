@@ -104,14 +104,27 @@ type Mensagem struct {
 	Para, Assunto, Corpo string
 }
 
+// WhatsApp envia o mesmo aviso pelo WhatsApp (ADR 078). Falha aqui não
+// desfaz o sino.
+type WhatsApp interface {
+	SendWhatsApp(ctx context.Context, m MensagemWhatsApp) error
+}
+
+// MensagemWhatsApp são as partes do aviso: o provedor monta o texto (ou
+// preenche o modelo aprovado, na API oficial).
+type MensagemWhatsApp struct {
+	Para, Titulo, Mensagem, Link string
+}
+
 // Service grava e entrega notificações.
 type Service struct {
-	pool    *pgxpool.Pool
-	db      database.DBTX // leituras e atualizações (o pool; substituível em teste)
-	hub     Publisher     // nil: só grava (sem tempo real)
-	logger  *slog.Logger
-	correio Correio
-	baseURL string
+	pool     *pgxpool.Pool
+	db       database.DBTX // leituras e atualizações (o pool; substituível em teste)
+	hub      Publisher     // nil: só grava (sem tempo real)
+	logger   *slog.Logger
+	correio  Correio
+	whatsapp WhatsApp
+	baseURL  string
 }
 
 // NewService cria o serviço.
@@ -124,6 +137,13 @@ func NewService(pool *pgxpool.Pool, hub Publisher, logger *slog.Logger) *Service
 func (s *Service) WithCorreio(c Correio, baseURL string) *Service {
 	s.correio = c
 	s.baseURL = strings.TrimRight(baseURL, "/")
+	return s
+}
+
+// WithWhatsApp manda pelo WhatsApp os avisos do atendimento, para quem
+// deixou o número.
+func (s *Service) WithWhatsApp(w WhatsApp) *Service {
+	s.whatsapp = w
 	return s
 }
 
@@ -184,18 +204,14 @@ func (s *Service) Entregar(ctx context.Context, enviadas []Enviada) {
 		}
 	}
 	s.enviarCorreio(ctx, enviadas)
+	s.enviarWhatsApp(ctx, enviadas)
 }
 
 func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
-	if s.correio == nil || s.db == nil || len(enviadas) == 0 {
+	if s.correio == nil || s.db == nil {
 		return
 	}
-	ids := make([]uuid.UUID, 0, len(enviadas))
-	for _, e := range enviadas {
-		if e.Item.Modulo == "atendimento" {
-			ids = append(ids, e.Usuario)
-		}
-	}
+	ids := doAtendimento(enviadas)
 	if len(ids) == 0 {
 		return
 	}
@@ -234,6 +250,58 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 		}
 		if err := s.correio.Send(ctx, Mensagem{Para: endereco[e.Usuario], Assunto: e.Item.Titulo, Corpo: corpo}); err != nil && s.logger != nil {
 			s.logger.WarnContext(ctx, "notificacoes: e-mail do aviso falhou (o sino permanece)", "error", err)
+		}
+	}
+}
+
+// doAtendimento são os destinatários dos avisos do atendimento, os únicos
+// que saem do sino (ADR 049).
+func doAtendimento(enviadas []Enviada) []uuid.UUID {
+	ids := make([]uuid.UUID, 0, len(enviadas))
+	for _, e := range enviadas {
+		if e.Item.Modulo == "atendimento" {
+			ids = append(ids, e.Usuario)
+		}
+	}
+	return ids
+}
+
+func (s *Service) enviarWhatsApp(ctx context.Context, enviadas []Enviada) {
+	if s.whatsapp == nil || s.db == nil {
+		return
+	}
+	ids := doAtendimento(enviadas)
+	if len(ids) == 0 {
+		return
+	}
+	rows, err := s.db.Query(ctx, `SELECT id, contato_whatsapp FROM users WHERE id = ANY($1::uuid[]) AND contato_whatsapp <> ''`, ids)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.WarnContext(ctx, "notificacoes: não leu o WhatsApp do destinatário", "error", err)
+		}
+		return
+	}
+	defer rows.Close()
+	numero := map[uuid.UUID]string{}
+	for rows.Next() {
+		var id uuid.UUID
+		var n string
+		if err := rows.Scan(&id, &n); err != nil {
+			return
+		}
+		numero[id] = n
+	}
+	for _, e := range enviadas {
+		if e.Item.Modulo != "atendimento" || numero[e.Usuario] == "" {
+			continue
+		}
+		link := ""
+		if e.Item.Link != "" && s.baseURL != "" {
+			link = s.baseURL + e.Item.Link
+		}
+		m := MensagemWhatsApp{Para: numero[e.Usuario], Titulo: e.Item.Titulo, Mensagem: e.Item.Mensagem, Link: link}
+		if err := s.whatsapp.SendWhatsApp(ctx, m); err != nil && s.logger != nil {
+			s.logger.WarnContext(ctx, "notificacoes: WhatsApp do aviso falhou (o sino permanece)", "error", err)
 		}
 	}
 }

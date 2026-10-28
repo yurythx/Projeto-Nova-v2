@@ -34,8 +34,11 @@ type Destino struct {
 	Unidade     *uuid.UUID // nil enquanto a unidade não existe
 	UnidadeNome string
 	Oferta      string
-	Tipo        string
-	Prioridade  string
+	// Catalogo é a categoria do catálogo da oferta criada (ADR 078); vazio
+	// a deixa em "Outros".
+	Catalogo   string
+	Tipo       string
+	Prioridade string
 }
 
 // colunas que a tabela precisa ter; as outras (volume, observação) são
@@ -73,8 +76,10 @@ func LerMapa(r io.Reader, unidades map[string]uuid.UUID) (*Mapa, error) {
 	}
 	m := &Mapa{linhas: map[chaveMapa]Destino{}}
 	for n, linha := range todas[1:] {
+		// Coluna opcional ausente (catalogo, nas tabelas antigas) é vazia,
+		// não a primeira coluna.
 		campo := func(c string) string {
-			if i := col[c]; i < len(linha) {
+			if i, ok := col[c]; ok && i < len(linha) {
 				return strings.TrimSpace(linha[i])
 			}
 			return ""
@@ -85,7 +90,8 @@ func LerMapa(r io.Reader, unidades map[string]uuid.UUID) (*Mapa, error) {
 				return nil, fmt.Errorf("mapa, linha %d: categoria %q não é um número nem *", n+2, c)
 			}
 		}
-		d := Destino{UnidadeNome: campo("unidade"), Oferta: campo("oferta"), Tipo: campo("tipo"), Prioridade: campo("prioridade")}
+		d := Destino{UnidadeNome: campo("unidade"), Oferta: campo("oferta"), Catalogo: campo("catalogo"), Tipo: campo("tipo"),
+			Prioridade: campo("prioridade")}
 		switch {
 		case k.secretaria == "" || d.UnidadeNome == "" || d.Oferta == "":
 			return nil, fmt.Errorf("mapa, linha %d: secretaria, unidade e oferta são obrigatórias", n+2)

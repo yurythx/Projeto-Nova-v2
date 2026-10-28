@@ -110,7 +110,8 @@ func (c carregadorGLPI) Carregar(ctx context.Context, conexao intdomain.Conexao,
 			nome = "(sem unidade) " + l.Secretaria
 		}
 		linhas[i] = glpi.LinhaMapa{Secretaria: l.Secretaria, Categoria: l.Categoria,
-			Destino: glpi.Destino{Unidade: l.UnidadeID, UnidadeNome: nome, Oferta: l.Oferta, Tipo: l.Tipo, Prioridade: l.Prioridade}}
+			Destino: glpi.Destino{Unidade: l.UnidadeID, UnidadeNome: nome, Oferta: l.Oferta, Catalogo: l.Catalogo, Tipo: l.Tipo,
+				Prioridade: l.Prioridade}}
 	}
 	im := &glpi.Importador{Fonte: &glpi.FontePreparo{Leitor: leitorGLPI{leitor}}, Pool: c.pool, Repo: atendinfra.NewRepository(),
 		Gravar: gravar, Fuso: fuso, Mapa: glpi.NovoMapa(linhas), Progresso: progresso}

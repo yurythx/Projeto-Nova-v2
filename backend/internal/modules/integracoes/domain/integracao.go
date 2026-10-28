@@ -208,9 +208,15 @@ type Linha struct {
 	UnidadeID     *uuid.UUID `json:"unidade_id"`
 	UnidadeNome   string     `json:"unidade_nome,omitempty"`
 	Oferta        string     `json:"oferta"`
-	Tipo          string     `json:"tipo"`
-	Prioridade    string     `json:"prioridade"`
+	// Catalogo é a categoria do catálogo em blocos em que a oferta entra
+	// (ADR 078). Vazio: "Outros".
+	Catalogo   string `json:"catalogo"`
+	Tipo       string `json:"tipo"`
+	Prioridade string `json:"prioridade"`
 }
+
+// CatalogoMax é o tamanho do nome da categoria do catálogo.
+const CatalogoMax = 80
 
 // ValidarTabela confere a tabela inteira: uma linha por secretaria e
 // categoria.
@@ -218,7 +224,7 @@ func ValidarTabela(linhas []Linha) error {
 	vistas := map[string]bool{}
 	for i := range linhas {
 		l := &linhas[i]
-		l.Secretaria, l.Oferta = strings.TrimSpace(l.Secretaria), strings.TrimSpace(l.Oferta)
+		l.Secretaria, l.Oferta, l.Catalogo = strings.TrimSpace(l.Secretaria), strings.TrimSpace(l.Oferta), strings.TrimSpace(l.Catalogo)
 		switch {
 		case l.Secretaria == "" || utf8.RuneCountInString(l.Secretaria) > NomeMax:
 			return Recusa{"cada linha tem a secretaria, com até 160 caracteres"}
@@ -226,6 +232,8 @@ func ValidarTabela(linhas []Linha) error {
 			return Recusa{"a categoria é o id da origem, ou -1 para todas"}
 		case l.Oferta == "" || utf8.RuneCountInString(l.Oferta) > NomeMax:
 			return Recusa{"cada linha tem a oferta, com até 160 caracteres"}
+		case utf8.RuneCountInString(l.Catalogo) > CatalogoMax:
+			return Recusa{"a categoria do catálogo cabe em 80 caracteres"}
 		case !slices.Contains(Tipos, l.Tipo):
 			return Recusa{"o tipo é incidente ou requisicao"}
 		case !slices.Contains(Prioridades, l.Prioridade):

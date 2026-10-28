@@ -40,6 +40,7 @@ type Importador struct {
 	secretarias map[int]string // entidade do GLPI -> secretaria
 	metas       map[int]int    // SLA do GLPI -> minutos
 	ofertas     map[string]uuid.UUID
+	catalogo    map[string]uuid.UUID // categorias do catálogo, pelo nome
 	novas       map[string]bool
 	pessoas     map[int]*pessoaCasada
 }
@@ -330,12 +331,17 @@ func (im *Importador) ofertaDoMapa(ctx context.Context, tx pgx.Tx, chave string,
 	var id uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT id FROM atendimento_ofertas WHERE unidade_id = $1 AND lower(nome) = lower($2)
 		ORDER BY ativa DESC, created_at LIMIT 1`, *d.Unidade, d.Oferta).Scan(&id)
+	categoria, errCat := im.categoria(ctx, tx, d.Catalogo)
+	if errCat != nil {
+		return uuid.Nil, errCat
+	}
 	switch {
 	case database.IsNoRows(err):
 		o, err := domain.NovaOferta(Cortar(d.Oferta, domain.NomeMax), "Importada do GLPI.", d.Tipo, nil, d.Unidade, true)
 		if err != nil {
 			return uuid.Nil, err
 		}
+		o.CategoriaID = categoria
 		if o, err = im.Repo.InsertOferta(ctx, tx, o); err != nil {
 			return uuid.Nil, err
 		}
@@ -345,12 +351,48 @@ func (im *Importador) ofertaDoMapa(ctx context.Context, tx pgx.Tx, chave string,
 		}
 	case err != nil:
 		return uuid.Nil, err
+	case categoria != nil:
+		if _, err := tx.Exec(ctx, `UPDATE atendimento_ofertas SET categoria_id = $2 WHERE id = $1 AND categoria_id IS NULL`, id, *categoria); err != nil {
+			return uuid.Nil, err
+		}
 	}
 	if err := marcar(ctx, tx, "oferta", chave, id); err != nil {
 		return uuid.Nil, err
 	}
 	im.ofertas[chave] = id
 	return id, nil
+}
+
+// categoria acha pelo nome, ou cria, a categoria do catálogo (ADR 078).
+// Vazio: sem categoria ("Outros").
+func (im *Importador) categoria(ctx context.Context, tx pgx.Tx, nome string) (*uuid.UUID, error) {
+	nome = strings.TrimSpace(nome)
+	if nome == "" {
+		return nil, nil
+	}
+	chave := strings.ToLower(nome)
+	if id, ok := im.catalogo[chave]; ok {
+		return &id, nil
+	}
+	var id uuid.UUID
+	err := tx.QueryRow(ctx, `SELECT id FROM atendimento_categorias WHERE lower(btrim(nome)) = $1`, chave).Scan(&id)
+	if database.IsNoRows(err) {
+		c, err := domain.NovaCategoria(Cortar(nome, domain.CategoriaNomeMax), "Importada do GLPI.", "", 0, true)
+		if err != nil {
+			return nil, err
+		}
+		if c, err = im.Repo.InsertCategoria(ctx, tx, c); err != nil {
+			return nil, err
+		}
+		id, err = c.ID, nil
+	} else if err != nil {
+		return nil, err
+	}
+	if im.catalogo == nil {
+		im.catalogo = map[string]uuid.UUID{}
+	}
+	im.catalogo[chave] = id
+	return &id, nil
 }
 
 // TetoRegras é o limite de regras da fila por unidade (o mesmo da tela).

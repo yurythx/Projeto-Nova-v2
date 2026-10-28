@@ -49,6 +49,7 @@ const linha = {
   nivel: "Solução N1",
   unidade_id: null,
   oferta: "Computadores",
+  catalogo: "Serviços",
   tipo: "requisicao",
   prioridade: "alta",
 };
@@ -185,6 +186,11 @@ describe("Conexão de integração", () => {
     await user.selectOptions(within(linhaDaTabela).getByLabelText(/Unidade de PREFEITURA/), "u1");
     await user.clear(within(linhaDaTabela).getByLabelText(/Oferta de/));
     await user.type(within(linhaDaTabela).getByLabelText(/Oferta de/), "Equipamentos");
+    expect(within(linhaDaTabela).getByLabelText(/Categoria no catálogo de/)).toHaveValue(
+      "Serviços",
+    );
+    await user.clear(within(linhaDaTabela).getByLabelText(/Categoria no catálogo de/));
+    await user.type(within(linhaDaTabela).getByLabelText(/Categoria no catálogo de/), "Hardware");
     await user.selectOptions(within(linhaDaTabela).getByLabelText(/Tipo de/), "incidente");
     await user.selectOptions(within(linhaDaTabela).getByLabelText(/Prioridade de/), "media");
     await user.click(screen.getByRole("button", { name: "Salvar tabela" }));
@@ -194,6 +200,7 @@ describe("Conexão de integração", () => {
           ...linha,
           unidade_id: "u1",
           oferta: "Equipamentos",
+          catalogo: "Hardware",
           tipo: "incidente",
           prioridade: "media",
         },

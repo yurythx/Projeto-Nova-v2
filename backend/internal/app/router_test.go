@@ -24,6 +24,7 @@ import (
 
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/branding"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/canais"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/config"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/iam"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/idempotency"
@@ -93,6 +94,7 @@ func testDeps(t *testing.T) *Dependencies {
 		},
 	}
 	d.Notificacoes = notificacoes.NewService(pool, d.Hub, logger)
+	d.Canais = canais.NovoServico(canais.NewPostgresStore(pool, cipher), canais.Email{}).WithAPIPublica("http://api.test")
 	d.Kernel = kernel.New(kernel.NewPostgresStore(pool, logger), logger)
 	registerPlugins(d)
 	if err := d.Kernel.Start(context.Background()); err != nil {

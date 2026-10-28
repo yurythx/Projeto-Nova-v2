@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // keycloak responde como a API de administração: 3 pessoas em páginas de 2.
@@ -81,7 +83,16 @@ func todos(ctx context.Context, c *Cliente, cfg Config) ([]Usuario, int, error) 
 	return us, paginas, err
 }
 
+// rapido encurta a espera entre as tentativas.
+func rapido(t *testing.T) {
+	t.Helper()
+	antes := Espera
+	Espera = time.Millisecond
+	t.Cleanup(func() { Espera = antes })
+}
+
 func TestUsuarios(t *testing.T) {
+	rapido(t)
 	ctx := context.Background()
 	srv := keycloak(t, "")
 	cfg := Config{IssuerURL: srv.URL + "/sso/realms/x/", ClientID: "projeto-nova", ClientSecret: "s"}
@@ -158,5 +169,51 @@ func TestFalhasDeTransporte(t *testing.T) {
 	}
 	if _, err := c.token(ctx, "http://[::1", Config{}); err == nil {
 		t.Fatal("token com endereço inválido")
+	}
+}
+
+// Uma página corrompida ou um 500 passageiro se repetem; recusa, não.
+func TestTentativas(t *testing.T) {
+	rapido(t)
+	ctx := context.Background()
+	var chamadas, falhas atomic.Int32
+	falhas.Store(2)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		chamadas.Add(1)
+		switch {
+		case r.URL.Path == "/negado":
+			w.WriteHeader(http.StatusForbidden)
+		case falhas.Add(-1) >= 0:
+			if falhas.Load()%2 == 0 {
+				_, _ = w.Write([]byte(`{"a":1{`))
+				return
+			}
+			w.WriteHeader(http.StatusBadGateway)
+		default:
+			_, _ = w.Write([]byte(`[]`))
+		}
+	}))
+	t.Cleanup(srv.Close)
+	c := Novo()
+	var out []Usuario
+	if err := c.get(ctx, "tk", srv.URL+"/users", &out); err != nil || chamadas.Load() != 3 {
+		t.Fatalf("duas falhas e o acerto: %v %d", err, chamadas.Load())
+	}
+	chamadas.Store(0)
+	falhas.Store(5)
+	if err := c.get(ctx, "tk", srv.URL+"/users", &out); !errors.Is(err, ErrResposta) || chamadas.Load() != 3 {
+		t.Fatalf("desiste na terceira: %v %d", err, chamadas.Load())
+	}
+	chamadas.Store(0)
+	if err := c.get(ctx, "tk", srv.URL+"/negado", &out); !errors.Is(err, ErrResposta) || chamadas.Load() != 1 {
+		t.Fatalf("recusa não se repete: %v %d", err, chamadas.Load())
+	}
+	// Cancelado na espera, para na hora.
+	Espera = time.Hour
+	falhas.Store(5)
+	cancelado, cancelar := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer cancelar()
+	if err := c.get(cancelado, "tk", srv.URL+"/users", &out); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("cancelado: %v", err)
 	}
 }

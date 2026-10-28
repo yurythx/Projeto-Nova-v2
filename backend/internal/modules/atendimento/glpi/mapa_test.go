@@ -28,8 +28,14 @@ func TestLerMapa(t *testing.T) {
 	if d, ok := m.Destino("Prefeitura", 99); !ok || d.Unidade == nil || *d.Unidade != u || d.Prioridade != "alta" {
 		t.Fatalf("linha exata, sem caixa: %+v %v", d, ok)
 	}
-	if d, ok := m.Destino("SMS", 7); !ok || d.Oferta != "Atendimento geral" || d.Unidade != nil {
-		t.Fatalf("o * da secretaria: %+v %v", d, ok)
+	if d, ok := m.Destino("SMS", 7); !ok || d.Oferta != "Atendimento geral" || d.Unidade != nil || d.Catalogo != "" {
+		t.Fatalf("o * da secretaria, sem a coluna catalogo: %+v %v", d, ok)
+	}
+	// A coluna catalogo é opcional; quando vem, leva a categoria do catálogo.
+	com, err := LerMapa(strings.NewReader("glpi_secretaria;glpi_categoria_id;unidade;oferta;catalogo;tipo;prioridade\n"+
+		"P;5;TI da Prefeitura;Impressora;Hardware;incidente;alta\n"), unidades)
+	if d, ok := com.Destino("P", 5); err != nil || !ok || d.Catalogo != "Hardware" {
+		t.Fatalf("catálogo: %+v %v %v", d, ok, err)
 	}
 	if _, ok := m.Destino("SEMECEL", 1); ok {
 		t.Fatal("secretaria fora da tabela")

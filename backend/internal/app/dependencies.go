@@ -179,7 +179,8 @@ func build(ctx context.Context, cfg *config.Config, component string) (*Dependen
 	d.Canais = canais.NovoServico(canais.NewPostgresStore(d.DB, d.Cipher), canais.Email{
 		Host: cfg.Mail.Host, Porta: cfg.Mail.Port, Usuario: cfg.Mail.User, Senha: cfg.Mail.Password, Remetente: cfg.Mail.From,
 	})
-	d.Notificacoes.WithCorreio(d.Canais, cfg.FrontendURL)
+	d.Canais.WithAPIPublica(cfg.APIPublicURL)
+	d.Notificacoes.WithCorreio(d.Canais, cfg.FrontendURL).WithWhatsApp(d.Canais)
 	d.Tickets = ws.NewTicketStore(d.Redis, ws.TicketTTL)
 	d.IAM = iam.NewResolver(d.DB, d.Redis, logger)
 	d.Idempotency = idempotency.NewPostgresStore(d.DB)

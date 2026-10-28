@@ -99,6 +99,11 @@ func (m *Module) ComContratos(c application.ContratosDeApoio) { m.svc.WithContra
 // ComAssistente liga a IA de quem atende (ADR 065). Sem ela, não há IA.
 func (m *Module) ComAssistente(a application.Assistente) { m.svc.WithAssistente(a) }
 
+// ReceberWhatsApp grava a resposta que chegou pelo WhatsApp (ADR 078).
+func (m *Module) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (string, error) {
+	return m.svc.ReceberWhatsApp(ctx, usuario, texto, mensagemID)
+}
+
 // ConcluirPorMudanca conclui o incidente na transação de quem chama.
 func (m *Module) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor uuid.UUID, numero int64, titulo, texto string) (func(context.Context), error) {
 	return m.svc.ConcluirPorMudanca(ctx, tx, id, autor, numero, titulo, texto)

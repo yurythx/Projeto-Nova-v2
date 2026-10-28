@@ -99,6 +99,8 @@ func registerPlugins(d *Dependencies) {
 	contratosModule := contratos.New(deps, programasDoAtivo{mod: ativosModule, ativo: func() bool { return d.Kernel.Enabled(ativos.Key) }})
 	atendimentoModule.ComContratos(portaContratos{svc: contratosModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(contratos.Key) }})
 	ia := d.Config.IA
+	// A resposta pelo WhatsApp vira comentário no atendimento (ADR 078).
+	d.Canais.WithRecebedor(portaWhatsApp{mod: atendimentoModule, ativo: func() bool { return d.Kernel.Enabled(atendimento.Key) }})
 	atendimentoModule.ComAssistente(portaIA{roteador: iaconfig.NovoRoteador(iaconfig.NewPostgresStore(d.DB, d.Cipher),
 		iaconfig.NovoCliente(), iaconfig.ConexaoDoAmbiente(ia.Endpoint, ia.APIKey, ia.Modelo, int(ia.Timeout.Seconds())), d.Logger)})
 

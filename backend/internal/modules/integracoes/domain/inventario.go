@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -143,6 +144,21 @@ func nomeCategoria(id int, categorias map[int]string) string {
 
 // curto é o último nível do nome ("Serviços > Computadores" é
 // Computadores). Nome entre parênteses é o que a origem não tem.
+// raiz é o primeiro nível da árvore de categorias do GLPI
+// ("Hardware > Impressora" -> "Hardware"): a categoria do catálogo em que
+// a oferta entra. Categoria sem pai fica em "Outros" (vazio).
+func raiz(nome string) string {
+	partes := strings.Split(nome, ">")
+	if strings.HasPrefix(nome, "(") || len(partes) < 2 {
+		return ""
+	}
+	r := strings.TrimSpace(partes[0])
+	if utf8.RuneCountInString(r) > CatalogoMax {
+		r = string([]rune(r)[:CatalogoMax])
+	}
+	return r
+}
+
 func curto(nome string) string {
 	if strings.HasPrefix(nome, "(") {
 		return ""
@@ -181,7 +197,7 @@ func Sugerir(inv Inventario, unidades map[string]uuid.UUID) []Linha {
 	for _, g := range inv.Grupos {
 		c := curto(g.CategoriaNome)
 		l := Linha{Secretaria: g.Secretaria, Categoria: g.Categoria, CategoriaNome: g.CategoriaNome, Chamados: g.Chamados,
-			ComPrazo: g.ComPrazo, Nivel: g.Nivel, UnidadeID: unidade(g.Secretaria), Oferta: c, Tipo: g.Classe}
+			ComPrazo: g.ComPrazo, Nivel: g.Nivel, UnidadeID: unidade(g.Secretaria), Oferta: c, Catalogo: raiz(g.CategoriaNome), Tipo: g.Classe}
 		if l.Oferta == "" {
 			l.Oferta = OfertaGeral
 		}

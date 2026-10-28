@@ -25,3 +25,22 @@ export function formatarWhatsApp(numero: string): string {
   const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(numero);
   return m ? `+55 (${m[1]}) ${m[2]}-${m[3]}` : numero;
 }
+
+/** Configuração do WhatsApp dos avisos (ADR 078). As credenciais nunca vêm. */
+export interface WhatsAppCanal {
+  ativo: boolean;
+  provedor: "meta" | "evolution";
+  meta_numero_id: string;
+  tem_token: boolean;
+  meta_modelo: string;
+  meta_idioma: string;
+  evolution_url: string;
+  evolution_instancia: string;
+  tem_chave: boolean;
+  /** Entrada (fase 4): a resposta pelo WhatsApp vira comentário. */
+  receber: boolean;
+  webhook_url?: string;
+  tem_app_secret: boolean;
+  updated_at?: string;
+  updated_by?: string;
+}

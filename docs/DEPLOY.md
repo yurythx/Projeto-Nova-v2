@@ -257,6 +257,20 @@ As variáveis `SMTP_*` valem só enquanto ninguém configurou pela tela. Cada
 pessoa deixa o e-mail e o WhatsApp de contato na central (no primeiro acesso)
 ou no perfil.
 
+O WhatsApp fica na mesma tela, com um provedor ativo de cada vez:
+
+- **API oficial da Meta (recomendada):**
+  - informe o identificador do número (Phone number ID), o token de acesso permanente e o nome de um modelo de utilidade aprovado no WhatsApp Manager;
+  - o modelo leva três variáveis no corpo, nesta ordem: título, mensagem e link. Por exemplo: `{{1}} — {{2}}. Acompanhe: {{3}}`.
+- **Evolution API:** informe o endereço, a instância e a chave. Ela usa um WhatsApp comum, o que fere os termos da Meta, e o número pode ser bloqueado.
+
+Para receber as respostas, ligue "Receber respostas" (na Meta, com o App
+Secret) e salve. A tela mostra o endereço do webhook, que é público e secreto,
+em `api.projetonova.cloud`:
+
+- **Meta:** cadastre o endereço como URL de callback, use o token do fim do endereço como token de verificação e assine o campo `messages`.
+- **Evolution:** cadastre o endereço como webhook com o evento `MESSAGES_UPSERT`.
+
 No plano gratuito, a Cloudflare limita o corpo de cada requisição a 100 MB.
 Um envio de arquivo maior que isso falha em `arquivos.projetonova.cloud`.
 
@@ -487,7 +501,7 @@ O caminho recomendado é a tela **Integrações** ([ADR 076](adr/076-modulo-de-i
    ```
 
    Com `--vigiar`, ele atende cada extração pedida na tela. Sem a opção, atende a extração pendente e sai.
-3. Na tela: **Extrair**, conferir o **inventário**, **sugerir a tabela de-para** com a unidade de cada secretaria, revisar, **simular** e **carregar**. Repita a extração e a carga até a virada: só entra o que mudou.
+3. Na tela: **Extrair**, conferir o **inventário**, **sugerir a tabela de-para** com a unidade de cada secretaria, revisar, **simular** e **carregar**. Repita a extração e a carga até a virada: só entra o que mudou. A coluna "Categoria no catálogo" traz a raiz da árvore de categorias do GLPI: é o bloco em que cada oferta aparece na central ([ADR 078](adr/078-central-do-solicitante-e-canais.md)).
 
 O comando `importarglpi`, abaixo, continua para quem implanta sem a tela.
 

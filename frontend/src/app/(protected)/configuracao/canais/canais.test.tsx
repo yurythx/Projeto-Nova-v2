@@ -25,6 +25,21 @@ const rotas = (extra: Record<string, unknown> = {}) => ({
   ...identityRoutes({ permissions: ["canais:manage"] }),
   "GET v1/canais/email": { data: gravado },
   "PUT v1/canais/email": { data: { ...gravado, ativo: true } },
+  "GET v1/canais/whatsapp": {
+    data: {
+      ativo: false,
+      provedor: "meta",
+      meta_numero_id: "",
+      tem_token: false,
+      meta_modelo: "",
+      meta_idioma: "pt_BR",
+      evolution_url: "",
+      evolution_instancia: "",
+      tem_chave: false,
+      receber: false,
+      tem_app_secret: false,
+    },
+  },
   ...extra,
 });
 
@@ -45,7 +60,8 @@ describe("Configurações — canais de aviso", () => {
     renderApp(<CanaisPage />);
 
     const form = await screen.findByRole("form", { name: "Servidor de e-mail" });
-    expect(screen.getByText("Desligado")).toBeInTheDocument();
+    expect(await screen.findByRole("form", { name: "Provedor do WhatsApp" })).toBeInTheDocument();
+    expect(screen.getAllByText("Desligado")).toHaveLength(2);
     expect(screen.getByText("Configurado aqui")).toBeInTheDocument();
     expect(screen.getByText(/por admin/)).toBeInTheDocument();
     expect(within(form).getByLabelText("Senha")).toHaveAttribute(
@@ -65,9 +81,10 @@ describe("Configurações — canais de aviso", () => {
       remetente: "Central <at@x.gov.br>",
     });
 
-    const envio = screen.getByRole("button", { name: /Enviar teste/ });
+    // O primeiro teste é o do e-mail; o segundo, o do WhatsApp.
+    const envio = screen.getAllByRole("button", { name: /Enviar teste/ })[0]!;
     expect(envio).toBeDisabled();
-    await user.type(screen.getByLabelText("Mandar o teste para"), "eu@x.gov.br");
+    await user.type(screen.getAllByLabelText("Mandar o teste para")[0]!, "eu@x.gov.br");
     await user.click(envio);
     expect(await screen.findByText(/Mensagem enviada/)).toBeInTheDocument();
     expect(api.to("POST v1/canais/email/testar")[0]!.body).toEqual({ para: "eu@x.gov.br" });
@@ -112,16 +129,28 @@ describe("Configurações — canais de aviso", () => {
     );
     renderApp(<CanaisPage />);
     expect(await screen.findByText("Vindo das variáveis de ambiente")).toBeInTheDocument();
-    expect(screen.getByText("Ligado")).toBeInTheDocument();
+    expect(screen.getAllByText("Ligado")).toHaveLength(1);
     expect(screen.getByLabelText(/Porta/)).toHaveValue(587);
     expect(screen.queryByLabelText("Apagar a senha gravada")).not.toBeInTheDocument();
   });
 
   it("falha ao ler e tenta de novo", async () => {
     const user = userEvent.setup();
-    const api = mockBackend(rotas({ "GET v1/canais/email": fail(500, "banco fora") }));
+    const api = mockBackend(
+      rotas({
+        "GET v1/canais/email": fail(500, "banco fora"),
+        "GET v1/canais/whatsapp": fail(500, "banco fora"),
+      }),
+    );
     renderApp(<CanaisPage />);
-    await user.click(await screen.findByRole("button", { name: "Tentar novamente" }));
-    await waitFor(() => expect(api.to("GET v1/canais/email").length).toBeGreaterThan(1));
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(2),
+    );
+    for (const b of screen.getAllByRole("button", { name: "Tentar novamente" }))
+      await user.click(b);
+    await waitFor(() => {
+      expect(api.to("GET v1/canais/email").length).toBeGreaterThan(1);
+      expect(api.to("GET v1/canais/whatsapp").length).toBeGreaterThan(1);
+    });
   });
 });

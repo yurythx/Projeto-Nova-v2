@@ -492,7 +492,10 @@ function TabelaCard({
         <p className="mt-3 text-sm text-muted">
           Cada categoria de cada secretaria da origem vai a uma oferta e a uma unidade daqui, com a
           prioridade que substitui o SLA da categoria. Ofertas com o mesmo nome se juntam. A linha
-          &ldquo;(qualquer outra)&rdquo; recebe o que não estiver na tabela.
+          &ldquo;(qualquer outra)&rdquo; recebe o que não estiver na tabela. A categoria no catálogo
+          é o bloco em que a oferta aparece na central: a sugestão usa a raiz da árvore do GLPI
+          (&ldquo;Hardware &gt; Impressora&rdquo; fica em &ldquo;Hardware&rdquo;); em branco, a
+          oferta fica em &ldquo;Outros&rdquo;.
         </p>
         {secretarias.length > 0 && (
           <form onSubmit={sugerir} className="grid gap-3" aria-label="Sugerir a tabela">
@@ -523,6 +526,7 @@ function TabelaCard({
                     <th className="p-2">Chamados</th>
                     <th className="p-2">Unidade</th>
                     <th className="p-2">Oferta</th>
+                    <th className="p-2">Categoria no catálogo</th>
                     <th className="p-2">Tipo</th>
                     <th className="p-2">Prioridade</th>
                   </tr>
@@ -557,6 +561,15 @@ function TabelaCard({
                             value={l.oferta}
                             maxLength={160}
                             onChange={(e) => mudar(i, "oferta", e.target.value)}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            aria-label={`Categoria no catálogo de ${nome}`}
+                            value={l.catalogo ?? ""}
+                            maxLength={80}
+                            placeholder="Outros"
+                            onChange={(e) => mudar(i, "catalogo", e.target.value)}
                           />
                         </td>
                         <td className="p-2">

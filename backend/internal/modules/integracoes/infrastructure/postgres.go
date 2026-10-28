@@ -281,7 +281,7 @@ func (r *Repository) SLAs(ctx context.Context, db database.DBTX, conexao uuid.UU
 
 func (r *Repository) ListarTabela(ctx context.Context, db database.DBTX, conexao uuid.UUID) ([]domain.Linha, error) {
 	rows, err := db.Query(ctx, `SELECT d.secretaria, d.categoria, d.categoria_nome, d.chamados, d.com_prazo, d.nivel, d.unidade_id,
-			coalesce(u.nome, ''), d.oferta, d.tipo, d.prioridade
+			coalesce(u.nome, ''), d.oferta, d.catalogo, d.tipo, d.prioridade
 		FROM integracoes_depara d LEFT JOIN unidades u ON u.id = d.unidade_id
 		WHERE d.conexao_id = $1 ORDER BY d.secretaria, d.categoria = -1, d.chamados DESC, d.categoria`, conexao)
 	if err != nil {
@@ -292,7 +292,7 @@ func (r *Repository) ListarTabela(ctx context.Context, db database.DBTX, conexao
 	for rows.Next() {
 		var l domain.Linha
 		if err := rows.Scan(&l.Secretaria, &l.Categoria, &l.CategoriaNome, &l.Chamados, &l.ComPrazo, &l.Nivel, &l.UnidadeID,
-			&l.UnidadeNome, &l.Oferta, &l.Tipo, &l.Prioridade); err != nil {
+			&l.UnidadeNome, &l.Oferta, &l.Catalogo, &l.Tipo, &l.Prioridade); err != nil {
 			return nil, mapDB(err)
 		}
 		out = append(out, l)
@@ -306,9 +306,10 @@ func (r *Repository) TrocarTabela(ctx context.Context, db database.DBTX, conexao
 	}
 	for _, l := range linhas {
 		if _, err := db.Exec(ctx, `INSERT INTO integracoes_depara
-			(conexao_id, secretaria, categoria, categoria_nome, chamados, com_prazo, nivel, unidade_id, oferta, tipo, prioridade)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-			conexao, l.Secretaria, l.Categoria, l.CategoriaNome, l.Chamados, l.ComPrazo, l.Nivel, l.UnidadeID, l.Oferta, l.Tipo, l.Prioridade); err != nil {
+			(conexao_id, secretaria, categoria, categoria_nome, chamados, com_prazo, nivel, unidade_id, oferta, catalogo, tipo, prioridade)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+			conexao, l.Secretaria, l.Categoria, l.CategoriaNome, l.Chamados, l.ComPrazo, l.Nivel, l.UnidadeID, l.Oferta, l.Catalogo,
+			l.Tipo, l.Prioridade); err != nil {
 			return mapDB(err)
 		}
 	}

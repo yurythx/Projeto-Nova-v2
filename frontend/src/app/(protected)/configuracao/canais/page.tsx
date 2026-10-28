@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle2, Mail, MessageCircle, Send, XCircle } from "lucide-react";
+import { CheckCircle2, Mail, Send, XCircle } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
+import { WhatsAppCard } from "@/components/canais/WhatsAppCard";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
@@ -13,7 +14,7 @@ import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import type { EmailCanal } from "@/lib/plataforma/canais";
+import type { EmailCanal, WhatsAppCanal } from "@/lib/plataforma/canais";
 
 const ORIGEM: Record<EmailCanal["origem"], string> = {
   tela: "Configurado aqui",
@@ -208,9 +209,10 @@ function EmailCard({ email, onSalvo }: { email: EmailCanal; onSalvo: () => void 
   );
 }
 
-/** Canais dos avisos (ADR 078): o e-mail agora, o WhatsApp a seguir. */
+/** Canais dos avisos (ADR 078): e-mail e WhatsApp, cada um liga e desliga. */
 export default function CanaisPage() {
   const email = useApiQuery<EmailCanal>("v1/canais/email");
+  const whatsapp = useApiQuery<WhatsAppCanal>("v1/canais/whatsapp");
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -233,18 +235,21 @@ export default function CanaisPage() {
           />
         )}
       </DataState>
-      <Card>
-        <CardHeader>
-          <CardTitle as="h2" className="flex items-center gap-2">
-            <MessageCircle size={18} aria-hidden="true" /> WhatsApp
-            <Badge tone="neutral">Em breve</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pb-5 text-sm text-muted">
-          Os mesmos avisos pelo WhatsApp, pela API oficial da Meta ou pela Evolution API, à escolha
-          da administração. As pessoas já podem deixar o número no perfil.
-        </CardContent>
-      </Card>
+      <DataState
+        loading={whatsapp.isLoading}
+        error={whatsapp.error}
+        onRetry={() => void whatsapp.mutate()}
+        empty={false}
+        rows={4}
+      >
+        {whatsapp.data && (
+          <WhatsAppCard
+            key={whatsapp.data.updated_at ?? "novo"}
+            whatsapp={whatsapp.data}
+            onSalvo={() => void whatsapp.mutate()}
+          />
+        )}
+      </DataState>
     </div>
   );
 }

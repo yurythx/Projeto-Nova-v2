@@ -4381,6 +4381,141 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "CanaisTesteWhatsAppRequest": {
+        "properties": {
+          "para": {
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "para"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CanaisWhatsApp": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "evolution_instancia": {
+            "type": "string"
+          },
+          "evolution_url": {
+            "type": "string"
+          },
+          "meta_idioma": {
+            "type": "string"
+          },
+          "meta_modelo": {
+            "type": "string"
+          },
+          "meta_numero_id": {
+            "type": "string"
+          },
+          "provedor": {
+            "type": "string"
+          },
+          "receber": {
+            "type": "boolean"
+          },
+          "tem_app_secret": {
+            "type": "boolean"
+          },
+          "tem_chave": {
+            "type": "boolean"
+          },
+          "tem_token": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_by": {
+            "type": "string"
+          },
+          "webhook_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativo",
+          "evolution_instancia",
+          "evolution_url",
+          "meta_idioma",
+          "meta_modelo",
+          "meta_numero_id",
+          "provedor",
+          "receber",
+          "tem_app_secret",
+          "tem_chave",
+          "tem_token"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "CanaisWhatsAppRequest": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "evolution_chave": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "evolution_instancia": {
+            "maxLength": 100,
+            "type": "string"
+          },
+          "evolution_url": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "meta_app_secret": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "meta_idioma": {
+            "maxLength": 10,
+            "type": "string"
+          },
+          "meta_modelo": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "meta_numero_id": {
+            "maxLength": 32,
+            "type": "string"
+          },
+          "meta_token": {
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "novo_webhook": {
+            "type": "boolean"
+          },
+          "provedor": {
+            "enum": [
+              "meta",
+              "evolution"
+            ],
+            "type": "string"
+          },
+          "receber": {
+            "type": "boolean"
+          },
+          "remover_chave": {
+            "type": "boolean"
+          },
+          "remover_token": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "CatalogCategory": {
         "properties": {
           "count": {
@@ -7817,6 +7952,9 @@
       },
       "IntegracoesLinha": {
         "properties": {
+          "catalogo": {
+            "type": "string"
+          },
           "categoria": {
             "type": "integer"
           },
@@ -19864,6 +20002,285 @@
           }
         ],
         "summary": "Canais — testar o e-mail",
+        "tags": [
+          "canais"
+        ]
+      }
+    },
+    "/api/v1/canais/whatsapp": {
+      "get": {
+        "description": "O WhatsApp dos avisos (ADR 078): o provedor ativo (API oficial da Meta ou Evolution API), os dados de cada um, se envia, se recebe respostas e o endereço do webhook a cadastrar no provedor. Token, chave e App Secret nunca saem: tem_token, tem_chave e tem_app_secret dizem se há. Exige canais:manage.",
+        "operationId": "getCanaisWhatsapp",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CanaisWhatsApp"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Canais — configuração do WhatsApp",
+        "tags": [
+          "canais"
+        ]
+      },
+      "put": {
+        "description": "Grava a configuração. Credencial vazia mantém a gravada; remover_token e remover_chave apagam. Ligado, o provedor escolhido precisa estar completo (na Meta, o modelo aprovado de três variáveis: título, mensagem e link). Receber exige o envio ligado e, na Meta, o App Secret. O endereço do webhook nasce na primeira vez que a entrada liga; novo_webhook troca o token e invalida o antigo. As credenciais ficam cifradas, e a troca vai para a auditoria (sem elas). Exige canais:manage.",
+        "operationId": "putCanaisWhatsapp",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanaisWhatsAppRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CanaisWhatsApp"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Canais — salvar o WhatsApp",
+        "tags": [
+          "canais"
+        ]
+      }
+    },
+    "/api/v1/canais/whatsapp/testar": {
+      "post": {
+        "description": "Manda um aviso de teste para o número informado com a configuração gravada, ligada ou não (na Meta, pelo modelo aprovado). A recusa do provedor volta em 200 com ok false e a mensagem dele. Exige canais:manage.",
+        "operationId": "postCanaisWhatsappTestar",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanaisTesteWhatsAppRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {},
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Canais — testar o WhatsApp",
+        "tags": [
+          "canais"
+        ]
+      }
+    },
+    "/api/v1/canais/whatsapp/webhook/{token}": {
+      "get": {
+        "description": "Público: a Meta chama ao cadastrar o endereço, com hub.mode=subscribe, hub.verify_token (o mesmo token do endereço) e hub.challenge, que volta em texto. Token errado ou entrada desligada: 404.",
+        "operationId": "getCanaisWhatsappWebhookToken",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hub.mode",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "hub.verify_token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "hub.challenge",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Canais — desafio do webhook da Meta",
+        "tags": [
+          "canais"
+        ]
+      },
+      "post": {
+        "description": "Público: o provedor entrega as mensagens. Só aceita o token secreto do endereço; na Meta, também a assinatura X-Hub-Signature-256 feita com o App Secret (401 se não confere). A mensagem de texto de quem deixou o número vira comentário no chamado de que ela fala (\"#N\" ou o único em andamento) e recebe a confirmação. A mesma mensagem entra uma vez só. Erro ao gravar: 500, para o provedor tentar de novo.",
+        "operationId": "postCanaisWhatsappWebhookToken",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Canais — mensagens recebidas pelo WhatsApp",
         "tags": [
           "canais"
         ]

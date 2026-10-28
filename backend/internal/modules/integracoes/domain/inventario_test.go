@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -64,7 +65,8 @@ func TestInventarioESugestao(t *testing.T) {
 		t.Fatalf("sem a linha %s/%d: %+v", sec, cat, linhas)
 		return Linha{}
 	}
-	if l := achar("PREFEITURA", 7); l.Oferta != "Computadores" || l.Prioridade != "alta" || l.UnidadeID == nil || *l.UnidadeID != u || l.Tipo != "requisicao" {
+	if l := achar("PREFEITURA", 7); l.Oferta != "Computadores" || l.Catalogo != "Serviços" || l.Prioridade != "alta" || l.UnidadeID == nil ||
+		*l.UnidadeID != u || l.Tipo != "requisicao" {
 		t.Fatalf("PREFEITURA/7: %+v", l)
 	}
 	if l := achar("PREFEITURA", 0); l.Oferta != OfertaGeral || l.Prioridade != "media" || l.Tipo != "requisicao" {
@@ -73,7 +75,10 @@ func TestInventarioESugestao(t *testing.T) {
 	if l := achar("SMS", 70); l.Prioridade != "alta" || l.Nivel != "Solução N1" || l.UnidadeID != nil {
 		t.Fatalf("a mesma categoria em outra secretaria herda o prazo: %+v", l)
 	}
-	if l := achar("SMS", 3); l.Oferta != OfertaGeral || l.CategoriaNome != "(categoria 3 apagada)" {
+	if l := achar("PREFEITURA", 9); l.Catalogo != "" {
+		t.Fatalf("categoria sem pai fica em Outros: %+v", l)
+	}
+	if l := achar("SMS", 3); l.Oferta != OfertaGeral || l.CategoriaNome != "(categoria 3 apagada)" || l.Catalogo != "" {
 		t.Fatalf("categoria apagada: %+v", l)
 	}
 	if l := achar("PREFEITURA", CategoriaQualquer); l.Oferta != OfertaGeral || l.UnidadeID == nil {
@@ -84,6 +89,11 @@ func TestInventarioESugestao(t *testing.T) {
 	}
 	if len(porChave) == 0 {
 		t.Fatal("sem linhas")
+	}
+
+	// A raiz longa é cortada no tamanho do catálogo.
+	if r := raiz(strings.Repeat("a", 90) + " > b"); len([]rune(r)) != CatalogoMax {
+		t.Fatalf("raiz longa: %d", len([]rune(r)))
 	}
 
 	// Um prazo só é alta; dois são alta e média.

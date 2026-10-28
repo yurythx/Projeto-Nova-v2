@@ -42,6 +42,21 @@ O e-mail já existe ([ADR 049](049-correio-contratos-e-cadastros.md)), mas só s
   - o e-mail vai para o contato que a pessoa deixou ou, sem ele, para o e-mail do login, nunca para o marcador `.invalid` de quem veio do SSO sem e-mail;
   - o corpo leva o link do chamado e o caminho para desligar os avisos;
   - quem pediu recebe também a confirmação de abertura e o aviso de que o chamado tem um responsável.
+- **Fase 3** (migração 35):
+  - `canais_whatsapp` guarda os dois provedores, com as credenciais de cada um cifradas à parte. Trocar de provedor não apaga a do outro.
+  - **Meta:** o aviso vai pelo modelo aprovado de três variáveis (título, mensagem e link), porque fora da janela de 24 horas a Meta só aceita modelo. Os parâmetros vão sem quebra de linha, que a Meta recusa.
+  - **Evolution:** vai em texto livre.
+  - O sino manda pelo WhatsApp os avisos do atendimento para quem deixou o número. Rotas `GET/PUT /canais/whatsapp` e `POST /canais/whatsapp/testar`.
+- **Fase 4** (migração 36):
+  - o webhook público `/canais/whatsapp/webhook/{token}` só aceita o token secreto do endereço, conferido em tempo constante. Na Meta, também a assinatura `X-Hub-Signature-256` com o App Secret, e o desafio de cadastro usa o mesmo token;
+  - a pessoa é achada pelo número que deixou, contando o celular brasileiro sem o nono dígito, como o WhatsApp às vezes manda. Número de dois donos não vale;
+  - a mensagem de texto de **quem pediu** vira comentário no chamado do `#N` ou no único em andamento. Com mais de um, a resposta pede o número. Quem atende responde pela central, onde está a nota interna;
+  - a mesma mensagem entra uma vez só (a reserva do correio), e a confirmação volta em texto livre dentro da janela de 24 horas;
+  - erro ao gravar volta 500, para o provedor tentar de novo.
+
+- **Categorias vindas do GLPI** (migração 37): no GLPI a categoria é uma árvore, e regras e prazos estão amarrados nela.
+  - **Na tabela de-para:** a nova coluna `catalogo` é sugerida com a raiz da árvore (`Hardware > Impressora` fica em "Hardware"), e quem revisa pode mudar. Categoria sem pai fica em "Outros". No CSV do `importarglpi`, a coluna é opcional.
+  - **Na carga:** a categoria do catálogo é achada pelo nome ou criada, e a oferta criada entra nela, já com a regra e a prioridade da tabela. A oferta que já existia só ganha categoria se não tinha nenhuma: a escolha de alguém não é desfeita.
 
 ## Consequências
 

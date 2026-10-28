@@ -74,6 +74,8 @@ export interface Linha {
   unidade_id: string | null;
   unidade_nome?: string;
   oferta: string;
+  /** Categoria do catálogo em blocos (ADR 078); vazia, "Outros". */
+  catalogo: string;
   tipo: "incidente" | "requisicao";
   prioridade: "critica" | "alta" | "media" | "baixa";
 }

@@ -68,6 +68,7 @@ func NewRouter(d *Dependencies) chi.Router {
 		iaconfig.ConexaoDoAmbiente(ia.Endpoint, ia.APIKey, ia.Modelo, int(ia.Timeout.Seconds())),
 		audit.NewWriter(d.DB), d.Logger)
 	outboxStats := outbox.NewStatsHandlers(d.OutboxStats, d.Logger)
+	canaisHandlers := canais.NewHandlers(d.Canais, audit.NewWriter(d.DB), d.Logger)
 
 	r.Route("/api/v1", func(api chi.Router) {
 		// IP real + user agent no context: toda auditoria gravada pelos
@@ -86,6 +87,10 @@ func NewRouter(d *Dependencies) chi.Router {
 		// Login local fora do limiter público: tem o próprio (adaptativo).
 		localauth.RegisterRoutes(api, localAuth, d.Logger, d.RateLimiters.Login)
 
+		// Webhook do WhatsApp (ADR 078): quem chama é o provedor, sem sessão;
+		// o token secreto do endereço (e, na Meta, a assinatura) protege.
+		canais.RegisterWebhookRoutes(api, canaisHandlers)
+
 		// ---------------- grupo AUTENTICADO ----------------
 		api.Group(func(authed chi.Router) {
 			authed.Use(auth.RequireAuthentication(d.Verifier, d.IAM.Enrich, d.Logger, d.Credencial))
@@ -99,7 +104,7 @@ func NewRouter(d *Dependencies) chi.Router {
 			brandingHandlers.RegisterAdminRoutes(authed)
 			keycloakconfig.RegisterRoutes(authed, keycloakHandlers, d.Logger)
 			iaconfig.RegisterRoutes(authed, iaHandlers, d.Logger)
-			canais.RegisterRoutes(authed, canais.NewHandlers(d.Canais, audit.NewWriter(d.DB), d.Logger), d.Logger)
+			canais.RegisterRoutes(authed, canaisHandlers, d.Logger)
 			notificacoes.RegisterRoutes(authed, notificacoes.NewHandlers(d.Notificacoes, d.Logger))
 			outbox.RegisterStatsRoutes(authed, outboxStats, d.Logger)
 			d.LGPD.RegisterRoutes(authed)
