@@ -118,6 +118,14 @@ func (c carregadorGLPI) Carregar(ctx context.Context, conexao intdomain.Conexao,
 	return im.Executar(ctx)
 }
 
+// Desfazer remove o que a carga do GLPI trouxe (ADR 079).
+func (c carregadorGLPI) Desfazer(ctx context.Context, gravar bool, progresso intapp.Progresso) (any, error) {
+	if !c.ativo() {
+		return nil, errors.New("o atendimento está desligado: ligue o módulo antes de desfazer")
+	}
+	return glpi.Desfazer(ctx, c.pool, gravar, progresso)
+}
+
 // credenciais encadeia os reconhecedores de token de máquina: o primeiro
 // que reconhece o formato decide.
 func credenciais(reconhecedores ...auth.Credencial) auth.Credencial {

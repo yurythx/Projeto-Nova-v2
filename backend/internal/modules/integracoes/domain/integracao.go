@@ -30,6 +30,10 @@ const (
 	TarefaExtracao  = "extracao"
 	TarefaSimulacao = "simulacao"
 	TarefaCarga     = "carga"
+	// TarefaDesfazerSimulacao mostra o que o desfazer da carga removeria;
+	// TarefaDesfazer remove (ADR 079).
+	TarefaDesfazerSimulacao = "desfazer_simulacao"
+	TarefaDesfazer          = "desfazer"
 
 	EstadoPendente    = "pendente"
 	EstadoEmAndamento = "em_andamento"
@@ -270,8 +274,8 @@ type Tarefa struct {
 
 // NovaTarefa valida o pedido.
 func NovaTarefa(conexao uuid.UUID, tipo, quem string) (Tarefa, error) {
-	if !slices.Contains([]string{TarefaExtracao, TarefaSimulacao, TarefaCarga}, tipo) {
-		return Tarefa{}, Recusa{"a tarefa é extracao, simulacao ou carga"}
+	if !slices.Contains([]string{TarefaExtracao, TarefaSimulacao, TarefaCarga, TarefaDesfazerSimulacao, TarefaDesfazer}, tipo) {
+		return Tarefa{}, Recusa{"a tarefa é extracao, simulacao, carga, desfazer_simulacao ou desfazer"}
 	}
 	return Tarefa{ID: uuid.New(), ConexaoID: conexao, Tipo: tipo, Estado: EstadoPendente, PedidaPor: quem, CriadaEm: time.Now().UTC()}, nil
 }

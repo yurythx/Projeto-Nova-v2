@@ -345,8 +345,10 @@ func (im *Importador) ofertaDoMapa(ctx context.Context, tx pgx.Tx, chave string,
 	if errCat != nil {
 		return uuid.Nil, errCat
 	}
+	criada := false
 	switch {
 	case database.IsNoRows(err):
+		criada = true
 		o, err := domain.NovaOferta(Cortar(d.Oferta, domain.NomeMax), "Importada do GLPI.", d.Tipo, nil, d.Unidade, true)
 		if err != nil {
 			return uuid.Nil, err
@@ -366,7 +368,9 @@ func (im *Importador) ofertaDoMapa(ctx context.Context, tx pgx.Tx, chave string,
 			return uuid.Nil, err
 		}
 	}
-	if err := marcar(ctx, tx, "oferta", chave, id); err != nil {
+	// A oferta que já existia fica fora do desfazer da carga.
+	if _, err := tx.Exec(ctx, `INSERT INTO atendimento_importacao (origem, tipo, id_origem, destino, criado)
+		VALUES ($1, 'oferta', $2, $3, $4)`, Origem, chave, id, criada); err != nil {
 		return uuid.Nil, err
 	}
 	im.ofertas[chave] = id
@@ -394,7 +398,11 @@ func (im *Importador) categoria(ctx context.Context, tx pgx.Tx, nome string) (*u
 		if c, err = im.Repo.InsertCategoria(ctx, tx, c); err != nil {
 			return nil, err
 		}
-		id, err = c.ID, nil
+		// Registrada como criada pela carga: o desfazer a leva junto.
+		if err := marcarCriado(ctx, tx, "categoria", "nome:"+chave, c.ID); err != nil {
+			return nil, err
+		}
+		id = c.ID
 	} else if err != nil {
 		return nil, err
 	}
@@ -566,6 +574,14 @@ func (im *Importador) data(s string, padrao time.Time) time.Time {
 		return padrao
 	}
 	return t.UTC()
+}
+
+// marcarCriado registra o que a carga criou e que outra execução pode já
+// ter registrado (a categoria, a equipe, a política).
+func marcarCriado(ctx context.Context, tx pgx.Tx, tipo, id string, destino uuid.UUID) error {
+	_, err := tx.Exec(ctx, `INSERT INTO atendimento_importacao (origem, tipo, id_origem, destino) VALUES ($1, $2, $3, $4)
+		ON CONFLICT DO NOTHING`, Origem, tipo, id, destino)
+	return err
 }
 
 func marcar(ctx context.Context, tx pgx.Tx, tipo, id string, destino uuid.UUID) error {

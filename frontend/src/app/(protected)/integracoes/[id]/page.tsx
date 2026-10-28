@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 
+import {
+  DesfazerCarga,
+  type Desfeito,
+  ResumoDesfazer,
+} from "@/components/integracoes/DesfazerCarga";
 import { ResumoExpediente, type Expediente } from "@/components/integracoes/ResumoExpediente";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -121,12 +126,13 @@ export default function ConexaoPage() {
     }
   }
 
-  async function pedir(tipo: TipoTarefa) {
-    if (
-      await run(() => apiClient.post(`${base}/tarefas`, { tipo }), `${ROTULO_TAREFA[tipo]} pedida`)
-    ) {
-      void tarefas.mutate();
-    }
+  async function pedir(tipo: TipoTarefa, confirmacao?: string) {
+    const ok = await run(
+      () => apiClient.post(`${base}/tarefas`, { tipo, confirmacao }),
+      `${ROTULO_TAREFA[tipo]} pedida`,
+    );
+    if (ok) void tarefas.mutate();
+    return Boolean(ok);
   }
 
   async function cancelar(t: Tarefa) {
@@ -352,6 +358,9 @@ conector --vigiar`}</pre>
                             gravou={t.relatorio.gravou === true}
                           />
                         ) : null}
+                        {t.relatorio && t.tipo.startsWith("desfazer") && (
+                          <ResumoDesfazer relatorio={t.relatorio as unknown as Desfeito} />
+                        )}
                         {t.relatorio && (
                           <details>
                             <summary className="cursor-pointer text-sm">Relatório</summary>
@@ -380,6 +389,8 @@ conector --vigiar`}</pre>
                     Atualizar
                   </Button>
                 </div>
+                <hr className="border-surface-border" />
+                <DesfazerCarga nome={c.nome} ocupado={algumaAtiva} onPedir={pedir} />
               </CardContent>
             </Card>
 

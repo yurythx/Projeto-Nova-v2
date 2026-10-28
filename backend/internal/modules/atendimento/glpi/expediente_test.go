@@ -174,7 +174,7 @@ func expedienteDeTeste(t *testing.T, login, feriado string) *memoria {
 
 func TestCargaDoExpediente(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	ana := dbtest.User(t, pool)
 	var login string
@@ -305,7 +305,7 @@ func (r repoDoExpedienteFalho) InsertEquipe(ctx context.Context, db database.DBT
 
 func TestCargaDoExpedienteComFalhas(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	_, _ = pool.Exec(ctx, `DELETE FROM atendimento_politicas WHERE unidade_id IS NULL`)
 	t.Cleanup(func() {

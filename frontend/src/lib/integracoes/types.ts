@@ -2,7 +2,7 @@
 // de-para e tarefas.
 
 export type Modo = "direto" | "conector";
-export type TipoTarefa = "extracao" | "simulacao" | "carga";
+export type TipoTarefa = "extracao" | "simulacao" | "carga" | "desfazer_simulacao" | "desfazer";
 export type EstadoTarefa = "pendente" | "em_andamento" | "concluida" | "falhou" | "cancelada";
 
 export interface Conexao {
@@ -84,6 +84,8 @@ export const ROTULO_TAREFA: Record<TipoTarefa, string> = {
   extracao: "Extração",
   simulacao: "Simulação",
   carga: "Carga",
+  desfazer_simulacao: "Simulação do desfazer",
+  desfazer: "Desfazer carga",
 };
 
 export const ROTULO_ESTADO: Record<EstadoTarefa, string> = {

@@ -56,3 +56,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [076](076-modulo-de-integracoes.md) | Módulo de integrações: extrair para a área de preparo, revisar a tabela de-para e carregar pela tela, com um conector na rede da origem | Aceito e implementado |
 | [077](077-usuarios-do-sso.md) | Usuários do SSO trazidos de uma vez pela API de administração do Keycloak, e não só no primeiro login | Aceito e implementado |
 | [078](078-central-do-solicitante-e-canais.md) | Central do solicitante em blocos, como a do GLPI, e canais de comunicação (e-mail e WhatsApp) na plataforma | Aceito e implementado (central, e-mail, WhatsApp de saída e de entrada) |
+| [079](079-desfazer-a-carga.md) | Desfazer a carga do GLPI: simular, confirmar pelo nome da conexão e manter o que foi mexido aqui | Aceito e implementado |

@@ -52,6 +52,9 @@ type Extrator interface {
 // Carregador roda a carga sobre a área de preparo, com a tabela de-para.
 type Carregador interface {
 	Carregar(ctx context.Context, c domain.Conexao, tabela []domain.Linha, gravar bool, leitor Leitor, progresso Progresso) (any, error)
+	// Desfazer remove o que a carga trouxe e ninguém mexeu depois; gravar
+	// falso só simula (ADR 079).
+	Desfazer(ctx context.Context, gravar bool, progresso Progresso) (any, error)
 }
 
 // Service implementa os casos de uso.

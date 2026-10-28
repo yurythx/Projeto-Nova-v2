@@ -5908,6 +5908,8 @@ components:
             x-projeto-nova-generated: true
         IntegracoesTarefaRequest:
             properties:
+                confirmacao:
+                    type: string
                 tipo:
                     type: string
             required:
@@ -18005,7 +18007,7 @@ paths:
             tags:
                 - integracoes
         post:
-            description: extracao, simulacao ou carga. Uma por conexão de cada vez; o que falta para rodar é recusado com 422. A extração do modo conector espera o conector.
+            description: extracao, simulacao, carga, desfazer_simulacao ou desfazer. Uma por conexão de cada vez; o que falta para rodar é recusado com 422. A extração do modo conector espera o conector. O desfazer (ADR 079) remove o que a carga trouxe e ninguém mexeu depois, e pede confirmacao igual ao nome da conexão.
             operationId: postIntegracoesConexoesIdTarefas
             parameters:
                 - in: path

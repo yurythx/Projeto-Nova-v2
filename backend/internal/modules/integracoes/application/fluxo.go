@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -224,9 +225,10 @@ func (s *Service) SalvarTabela(ctx context.Context, identity auth.Identity, id u
 	return s.Tabela(ctx, identity, id)
 }
 
-// PedirTarefa enfileira a extração, a simulação ou a carga. O que falta
-// para ela rodar é recusado agora, e não na fila.
-func (s *Service) PedirTarefa(ctx context.Context, identity auth.Identity, id uuid.UUID, tipo string) (domain.Tarefa, error) {
+// PedirTarefa enfileira a extração, a simulação, a carga ou o desfazer.
+// O que falta para ela rodar é recusado agora, e não na fila. O desfazer
+// que remove de fato pede confirmacao igual ao nome da conexão.
+func (s *Service) PedirTarefa(ctx context.Context, identity auth.Identity, id uuid.UUID, tipo, confirmacao string) (domain.Tarefa, error) {
 	c, err := s.ObterConexao(ctx, identity, id)
 	if err != nil {
 		return domain.Tarefa{}, err
@@ -234,6 +236,9 @@ func (s *Service) PedirTarefa(ctx context.Context, identity auth.Identity, id uu
 	t, err := domain.NovaTarefa(id, tipo, identity.Username)
 	if err != nil {
 		return domain.Tarefa{}, MapError(err)
+	}
+	if tipo == domain.TarefaDesfazer && strings.TrimSpace(confirmacao) != c.Nome {
+		return domain.Tarefa{}, MapError(domain.Recusa{Msg: "para desfazer a carga, digite o nome da conexão"})
 	}
 	if err := s.conferir(ctx, c, tipo); err != nil {
 		return domain.Tarefa{}, MapError(err)
@@ -259,6 +264,9 @@ func (s *Service) conferir(ctx context.Context, c domain.Conexao, tipo string) e
 	}
 	if s.carregador == nil {
 		return domain.Recusa{Msg: "a carga está indisponível: o atendimento precisa estar ligado"}
+	}
+	if tipo == domain.TarefaDesfazerSimulacao || tipo == domain.TarefaDesfazer {
+		return nil
 	}
 	n, err := s.repo.Contagens(ctx, s.pool, c.ID)
 	if err != nil {
@@ -333,7 +341,8 @@ func (s *Service) Passo(ctx context.Context) error {
 	for ctx.Err() == nil {
 		t, ok, err := s.repo.Pegar(ctx, s.pool, nil, []string{domain.TarefaExtracao}, domain.ModoDireto)
 		if err == nil && !ok {
-			t, ok, err = s.repo.Pegar(ctx, s.pool, nil, []string{domain.TarefaSimulacao, domain.TarefaCarga}, "")
+			t, ok, err = s.repo.Pegar(ctx, s.pool, nil, []string{domain.TarefaSimulacao, domain.TarefaCarga,
+				domain.TarefaDesfazerSimulacao, domain.TarefaDesfazer}, "")
 		}
 		if err != nil || !ok {
 			return err
@@ -391,6 +400,9 @@ func (s *Service) rodar(ctx context.Context, t domain.Tarefa, progresso Progress
 	}
 	if s.carregador == nil {
 		return nil, errors.New("carga indisponível")
+	}
+	if t.Tipo == domain.TarefaDesfazerSimulacao || t.Tipo == domain.TarefaDesfazer {
+		return s.carregador.Desfazer(ctx, t.Tipo == domain.TarefaDesfazer, progresso)
 	}
 	tabela, err := s.repo.ListarTabela(ctx, s.pool, c.ID)
 	if err != nil {

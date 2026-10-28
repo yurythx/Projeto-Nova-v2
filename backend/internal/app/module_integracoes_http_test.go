@@ -86,6 +86,7 @@ func modulo(t *testing.T, h *apiHarness) *integracoes.Module {
 func TestIntegracoesHTTP(t *testing.T) {
 	ctx := context.Background()
 	h := newHarness(t)
+	dbtest.Exclusivo(t, h.d.DB, "glpi")
 	admin := h.admin()
 	_, comum := h.user("nova-user")
 	h.setModule(admin, "atendimento", true)
@@ -170,6 +171,29 @@ func TestIntegracoesHTTP(t *testing.T) {
 		t.Fatalf("chamado 11 com a prioridade da tabela e o prazo do GLPI: %s %v", prioridade, meta)
 	}
 
+	// Desfazer a carga (ADR 079): a simulação conta e não remove; sem o
+	// nome da conexão, recusa; com ele, remove os três chamados.
+	importados := func() int {
+		var n int
+		if err := h.d.DB.QueryRow(ctx, `SELECT count(*) FROM atendimento_solicitacoes WHERE unidade_id = $1`, u).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	for _, pedido := range []string{`{"tipo":"desfazer_simulacao"}`, `{"tipo":"desfazer","confirmacao":"GLPI da prefeitura"}`} {
+		h.expect(http.StatusUnprocessableEntity, http.MethodPost, um+"/tarefas", admin, `{"tipo":"desfazer","confirmacao":"outra"}`)
+		h.expect(http.StatusCreated, http.MethodPost, um+"/tarefas", admin, pedido)
+		if err := mod.Servico().Passo(ctx); err != nil {
+			t.Fatal(err)
+		}
+		tarefas = data[[]intdomain.Tarefa](t, h.expect(http.StatusOK, http.MethodGet, um+"/tarefas", admin, ""))
+		gravou := strings.Contains(pedido, `"desfazer"`)
+		if tarefas[0].Estado != intdomain.EstadoConcluida || !strings.Contains(string(tarefas[0].Relatorio), `"chamados":3`) ||
+			strings.Contains(string(tarefas[0].Relatorio), `"gravou":true`) != gravou || (importados() == 0) != gravou {
+			t.Fatalf("%s: %+v %d", pedido, tarefas[0], importados())
+		}
+	}
+
 	// Cancelar a tarefa pendente.
 	pendente := data[intdomain.Tarefa](t, h.expect(http.StatusCreated, http.MethodPost, um+"/tarefas", admin, `{"tipo":"simulacao"}`))
 	h.expect(http.StatusBadRequest, http.MethodPost, "/api/v1/integracoes/tarefas/x/cancelar", admin, "")
@@ -252,6 +276,9 @@ func TestPortasDasIntegracoes(t *testing.T) {
 	desligado := carregadorGLPI{ativo: func() bool { return false }}
 	if _, err := desligado.Carregar(ctx, c, nil, false, nil, nil); err == nil {
 		t.Fatal("atendimento desligado")
+	}
+	if _, err := desligado.Desfazer(ctx, false, nil); err == nil {
+		t.Fatal("desfazer com o atendimento desligado")
 	}
 	ligado := carregadorGLPI{ativo: func() bool { return true }}
 	c.Fuso = "Lugar/Nenhum"

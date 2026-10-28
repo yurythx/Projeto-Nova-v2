@@ -135,7 +135,7 @@ func TestConector(t *testing.T) {
 	if _, ok, err := s.Reconhecer(ctx, domain.PrefixoToken+"nenhum"); !ok || status(err) != http.StatusUnauthorized {
 		t.Fatalf("token que não há: %v %v", ok, err)
 	}
-	if _, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaExtracao); status(err) != http.StatusUnprocessableEntity {
+	if _, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaExtracao, ""); status(err) != http.StatusUnprocessableEntity {
 		t.Fatalf("extrair sem token: %v", err)
 	}
 	token, err := s.EmitirToken(ctx, admin(), c.ID)
@@ -151,7 +151,7 @@ func TestConector(t *testing.T) {
 	if _, ok, err := s.ConectorPegar(ctx, id); ok || err != nil {
 		t.Fatalf("nada pedido: %v %v", ok, err)
 	}
-	pedida, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaExtracao)
+	pedida, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaExtracao, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func TestTabelaEInventario(t *testing.T) {
 		"sugerir":    func() error { _, err := s.SugerirTabela(ctx, admin(), nada, nil); return err }(),
 		"salvar":     func() error { _, err := s.SalvarTabela(ctx, admin(), nada, nil); return err }(),
 		"tarefas":    func() error { _, err := s.ListarTarefas(ctx, admin(), nada); return err }(),
-		"pedir":      func() error { _, err := s.PedirTarefa(ctx, admin(), nada, "carga"); return err }(),
+		"pedir":      func() error { _, err := s.PedirTarefa(ctx, admin(), nada, "carga", ""); return err }(),
 	} {
 		if status(err) != http.StatusNotFound {
 			t.Errorf("%s de quem não há: %v", nome, err)
@@ -276,7 +276,7 @@ func TestFalhasDoRepositorio(t *testing.T) {
 	if _, err := base.SalvarTabela(ctx, admin(), c.ID, []domain.Linha{{Secretaria: "S", Categoria: -1, Oferta: "O", Tipo: "incidente", Prioridade: "alta"}}); err != nil {
 		t.Fatal(err)
 	}
-	tf, _ := base.PedirTarefa(ctx, admin(), k.ID, domain.TarefaExtracao)
+	tf, _ := base.PedirTarefa(ctx, admin(), k.ID, domain.TarefaExtracao, "")
 	itens := []domain.Item{{Tipo: domain.ItemPessoa, ID: 1, Dados: d}}
 	linha := []domain.Linha{{Secretaria: "S", Categoria: -1, Oferta: "O", Tipo: "incidente", Prioridade: "alta"}}
 	com := func(metodos ...string) *Service {
@@ -314,15 +314,15 @@ func TestFalhasDoRepositorio(t *testing.T) {
 		"trocar":      func() error { _, err := com("TrocarTabela").SalvarTabela(ctx, admin(), c.ID, linha); return err }(),
 		"listarTab":   func() error { _, err := com("ListarTabela").Tabela(ctx, admin(), c.ID); return err }(),
 		"inserir": func() error {
-			_, err := com("InserirTarefa").PedirTarefa(ctx, admin(), c.ID, domain.TarefaSimulacao)
+			_, err := com("InserirTarefa").PedirTarefa(ctx, admin(), c.ID, domain.TarefaSimulacao, "")
 			return err
 		}(),
 		"conferir": func() error {
-			_, err := com("Contagens").PedirTarefa(ctx, admin(), c.ID, domain.TarefaCarga)
+			_, err := com("Contagens").PedirTarefa(ctx, admin(), c.ID, domain.TarefaCarga, "")
 			return err
 		}(),
 		"conferirTab": func() error {
-			_, err := com("ListarTabela").PedirTarefa(ctx, admin(), c.ID, domain.TarefaCarga)
+			_, err := com("ListarTabela").PedirTarefa(ctx, admin(), c.ID, domain.TarefaCarga, "")
 			return err
 		}(),
 		"listarTar": func() error { _, err := com("ListarTarefas").ListarTarefas(ctx, admin(), c.ID); return err }(),
@@ -343,7 +343,10 @@ func TestPedirTarefa(t *testing.T) {
 	ctx := context.Background()
 	s, _, _ := novoServico(t, infrastructure.NewRepository())
 	c := conexao(t, s, domain.ModoDireto)
-	pedir := func(svc *Service, tipo string) error { _, err := svc.PedirTarefa(ctx, admin(), c.ID, tipo); return err }
+	pedir := func(svc *Service, tipo string) error {
+		_, err := svc.PedirTarefa(ctx, admin(), c.ID, tipo, "")
+		return err
+	}
 	if err := pedir(s, "limpar"); status(err) != http.StatusUnprocessableEntity {
 		t.Fatalf("tipo: %v", err)
 	}
@@ -376,6 +379,30 @@ func TestPedirTarefa(t *testing.T) {
 	}
 	if lista, err := s.ListarTarefas(ctx, admin(), c.ID); err != nil || len(lista) != 1 {
 		t.Fatalf("lista: %+v %v", lista, err)
+	}
+}
+
+// O desfazer não pede extração nem tabela, mas o que remove de fato pede
+// o nome da conexão.
+func TestPedirDesfazer(t *testing.T) {
+	ctx := context.Background()
+	s, _, _ := novoServico(t, infrastructure.NewRepository())
+	c := conexao(t, s, domain.ModoDireto)
+	if _, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaDesfazer, "outro nome"); status(err) != http.StatusUnprocessableEntity {
+		t.Fatalf("sem confirmar: %v", err)
+	}
+	semCarga := NewService(s.pool, s.repo, eventos{}, s.cipher)
+	if _, err := semCarga.PedirTarefa(ctx, admin(), c.ID, domain.TarefaDesfazerSimulacao, ""); status(err) != http.StatusUnprocessableEntity {
+		t.Fatalf("sem o atendimento: %v", err)
+	}
+	if _, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaDesfazerSimulacao, ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Passo(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaDesfazer, " "+c.Nome+" "); err != nil {
+		t.Fatal(err)
 	}
 	if err := s.CancelarTarefa(ctx, admin(), uuid.New()); status(err) != http.StatusNotFound {
 		t.Fatalf("cancelar o que não há: %v", err)

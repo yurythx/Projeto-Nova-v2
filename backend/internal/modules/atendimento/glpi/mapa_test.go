@@ -80,7 +80,7 @@ func TestSecretariaEMeta(t *testing.T) {
 
 func TestImportacaoComMapa(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	var nome string
 	if err := pool.QueryRow(ctx, `SELECT nome FROM unidades WHERE id = $1`, u).Scan(&nome); err != nil {
@@ -206,7 +206,7 @@ func (regraCheia) ContarRegras(context.Context, database.DBTX, *uuid.UUID) (int,
 
 func TestRegraRespeitaOTeto(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -240,7 +240,7 @@ func (ofertaFalha) InsertOferta(context.Context, database.DBTX, domain.Oferta) (
 
 func TestOfertaDoMapaFalhas(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	t.Cleanup(func() {
 		ctx := context.Background()
@@ -292,7 +292,7 @@ func TestOfertaDoMapaFalhas(t *testing.T) {
 }
 
 func TestExecutarParaQuandoCancelado(t *testing.T) {
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	ctx, cancelar := context.WithCancel(context.Background())
 	defer cancelar()
 	m := novaMemoria()

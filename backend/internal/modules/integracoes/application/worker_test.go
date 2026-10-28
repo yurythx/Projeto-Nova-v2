@@ -61,7 +61,7 @@ func TestWorkerExtraiSimulaECarrega(t *testing.T) {
 	s.WithLogger(silencio())
 	c := pronta(t, s)
 
-	ex, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaExtracao)
+	ex, err := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaExtracao, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestWorkerExtraiSimulaECarrega(t *testing.T) {
 		t.Fatal("a data da extração")
 	}
 
-	sim, _ := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaSimulacao)
+	sim, _ := s.PedirTarefa(ctx, admin(), c.ID, domain.TarefaSimulacao, "")
 	if err := s.Passo(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -103,6 +103,19 @@ func TestWorkerExtraiSimulaECarrega(t *testing.T) {
 	_ = s.Passo(ctx)
 	if tf := estado(t, s, ruim.ID); tf.Estado != domain.EstadoFalhou {
 		t.Fatalf("relatório ilegível: %+v", tf)
+	}
+
+	// O desfazer vai ao carregador, simulando ou gravando.
+	car.rel = nil
+	for _, tipo := range []string{domain.TarefaDesfazerSimulacao, domain.TarefaDesfazer} {
+		des := enfileirar(t, s, c.ID, tipo)
+		if err := s.Passo(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if tf := estado(t, s, des.ID); tf.Estado != domain.EstadoConcluida || !car.desfez || car.gravou != (tipo == domain.TarefaDesfazer) ||
+			!strings.Contains(string(tf.Relatorio), `"chamados": 3`) {
+			t.Fatalf("%s: %+v %+v", tipo, tf, car)
+		}
 	}
 }
 

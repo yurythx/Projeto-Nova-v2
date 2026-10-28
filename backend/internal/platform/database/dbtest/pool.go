@@ -52,3 +52,23 @@ func Unidade(t testing.TB, pool *pgxpool.Pool) uuid.UUID {
 	}
 	return un
 }
+
+// Exclusivo segura até o fim do teste a trava nome no banco: os testes de
+// pacotes diferentes que mexem nos mesmos dados globais (o registro da
+// importação do GLPI) se revezam em vez de apagar o que o outro gravou.
+func Exclusivo(t testing.TB, pool *pgxpool.Pool, nome string) {
+	t.Helper()
+	ctx := context.Background()
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(hashtext($1))`, nome); err != nil {
+		conn.Release()
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext($1))`, nome)
+		conn.Release()
+	})
+}

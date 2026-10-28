@@ -47,6 +47,8 @@ type SugestaoRequest struct {
 // TarefaRequest pede uma tarefa.
 type TarefaRequest struct {
 	Tipo string `json:"tipo" validate:"required"`
+	// Confirmacao é o nome da conexão, pedido só no desfazer.
+	Confirmacao string `json:"confirmacao,omitempty"`
 }
 
 // ItensRequest é um lote do conector.
@@ -280,7 +282,7 @@ func (h *Handlers) pedir(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	t, err := h.svc.PedirTarefa(r.Context(), identity, id, req.Tipo)
+	t, err := h.svc.PedirTarefa(r.Context(), identity, id, req.Tipo, req.Confirmacao)
 	if err != nil {
 		h.fail(w, r, err)
 		return

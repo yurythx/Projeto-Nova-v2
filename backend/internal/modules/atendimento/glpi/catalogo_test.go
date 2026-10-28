@@ -24,7 +24,7 @@ func (categoriaFalha) InsertCategoria(context.Context, database.DBTX, domain.Cat
 // criada entra nela; a que já existia só ganha categoria se não tinha.
 func TestCatalogoDoGLPI(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	sfx := uuid.NewString()[:6]
 	hardware := "Hardware " + sfx

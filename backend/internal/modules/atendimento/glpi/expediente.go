@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -373,12 +374,20 @@ func (im *Importador) politica(ctx context.Context, cal Calendario, metas []doma
 	}
 	return database.WithTx(ctx, im.Pool, func(ctx context.Context, tx pgx.Tx) error {
 		if r.Politica == "criada" {
-			if _, err := im.Repo.SalvarPolitica(ctx, tx, p); err != nil {
+			salva, err := im.Repo.SalvarPolitica(ctx, tx, p)
+			if err != nil {
+				return err
+			}
+			if err := marcarCriado(ctx, tx, "politica", "institucional", salva.ID); err != nil {
 				return err
 			}
 		}
 		for _, f := range novos {
-			if _, err := im.Repo.InsertFeriado(ctx, tx, f); err != nil {
+			salvo, err := im.Repo.InsertFeriado(ctx, tx, f)
+			if err != nil {
+				return err
+			}
+			if err := marcarCriado(ctx, tx, "feriado", "data:"+salvo.Data, salvo.ID); err != nil {
 				return err
 			}
 		}
@@ -425,7 +434,7 @@ func (im *Importador) equipes(ctx context.Context, grupos []Grupo, r *RelatorioE
 		if !im.Gravar {
 			continue
 		}
-		if err := im.gravarEquipe(ctx, Cortar(g.Nome, domain.NomeMax), d.Unidade, ativos); err != nil {
+		if err := im.gravarEquipe(ctx, g.ID, Cortar(g.Nome, domain.NomeMax), d.Unidade, ativos); err != nil {
 			return fmt.Errorf("equipe %q: %w", g.Nome, err)
 		}
 	}
@@ -453,7 +462,7 @@ func (im *Importador) ativos(ctx context.Context, ids []uuid.UUID) ([]uuid.UUID,
 	return out, rows.Err()
 }
 
-func (im *Importador) gravarEquipe(ctx context.Context, nome string, unidade *uuid.UUID, membros []uuid.UUID) error {
+func (im *Importador) gravarEquipe(ctx context.Context, grupo int, nome string, unidade *uuid.UUID, membros []uuid.UUID) error {
 	return database.WithTx(ctx, im.Pool, func(ctx context.Context, tx pgx.Tx) error {
 		var id uuid.UUID
 		var atuais []uuid.UUID
@@ -467,7 +476,10 @@ func (im *Importador) gravarEquipe(ctx context.Context, nome string, unidade *uu
 			if e, err = im.Repo.InsertEquipe(ctx, tx, e); err != nil {
 				return err
 			}
-			id, err = e.ID, nil
+			if err := marcarCriado(ctx, tx, "equipe", "grupo:"+strconv.Itoa(grupo), e.ID); err != nil {
+				return err
+			}
+			id = e.ID
 		} else if err != nil {
 			return err
 		}

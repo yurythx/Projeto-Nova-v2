@@ -254,6 +254,7 @@ type carregador struct {
 	gravou   bool
 	tabela   []domain.Linha
 	chamados int
+	desfez   bool
 	// antes roda antes do progresso: é onde o teste cancela a tarefa.
 	antes func()
 }
@@ -283,6 +284,12 @@ func (c *carregador) Carregar(ctx context.Context, conexao domain.Conexao, tabel
 		return c.rel, nil
 	}
 	return map[string]int{"importados": total}, nil
+}
+
+func (c *carregador) Desfazer(ctx context.Context, gravar bool, progresso Progresso) (any, error) {
+	c.desfez, c.gravou = true, gravar
+	progresso(1, 1)
+	return map[string]int{"chamados": 3}, c.err
 }
 
 // novoServico é o serviço sobre o banco de teste, com os dublês.

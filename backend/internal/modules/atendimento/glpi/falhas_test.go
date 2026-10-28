@@ -57,7 +57,7 @@ func (r gravacaoFalha) InsertAvaliacao(ctx context.Context, db database.DBTX, a 
 
 func TestImportacaoFalhasNaGravacao(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	casado := dbtest.User(t, pool)
 	var login string

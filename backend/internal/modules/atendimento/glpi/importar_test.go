@@ -108,7 +108,7 @@ func sscan(caminho, formato string, id *int) bool {
 
 func TestImportacaoDoGLPI(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	tecnico := dbtest.User(t, pool)
 	var tecEmail string
@@ -275,7 +275,7 @@ func (r insertFalha) InsertSolicitacao(ctx context.Context, db database.DBTX, s 
 
 func TestImportacaoFalhas(t *testing.T) {
 	ctx := context.Background()
-	pool := dbtest.Pool(t)
+	pool := poolDaCarga(t)
 	u := dbtest.Unidade(t, pool)
 	g := &glpiFalso{
 		categorias: []Categoria{},
