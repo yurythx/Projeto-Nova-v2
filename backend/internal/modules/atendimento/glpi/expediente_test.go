@@ -108,6 +108,7 @@ func glpiDoExpediente(t *testing.T, quebrado string) *Cliente {
 			"/Calendar_Holiday": []map[string]any{{"calendars_id": 3, "holidays_id": 9}, {"calendars_id": 3, "holidays_id": 99}},
 			"/Group":            []map[string]any{{"id": 7, "completename": "Grupo Técnico - SMS", "entities_id": 1}},
 			"/Group_User":       []map[string]any{{"groups_id": 7, "users_id": 5}, {"groups_id": 8, "users_id": 6}},
+			"/Group_Ticket":     []map[string]any{{"groups_id": 7, "type": 2}, {"groups_id": 7, "type": 2}, {"groups_id": 7, "type": 1}},
 		}[caminho]
 		if corpo == nil {
 			w.WriteHeader(http.StatusNotFound)
@@ -132,7 +133,7 @@ func TestClienteDoExpediente(t *testing.T) {
 		t.Fatalf("calendários: %+v %v", cals, err)
 	}
 	gs, err := c.Grupos(ctx)
-	if err != nil || len(gs) != 1 || gs[0].EntidadeID != 1 || len(gs[0].Membros) != 1 || gs[0].Membros[0] != 5 {
+	if err != nil || len(gs) != 1 || gs[0].EntidadeID != 1 || len(gs[0].Membros) != 1 || gs[0].Membros[0] != 5 || gs[0].Chamados != 2 {
 		t.Fatalf("grupos: %+v %v", gs, err)
 	}
 	for _, q := range []string{"/Calendar", "/CalendarSegment", "/Holiday", "/Calendar_Holiday"} {
@@ -140,7 +141,7 @@ func TestClienteDoExpediente(t *testing.T) {
 			t.Errorf("%s quebrado", q)
 		}
 	}
-	for _, q := range []string{"/Group", "/Group_User"} {
+	for _, q := range []string{"/Group", "/Group_User", "/Group_Ticket"} {
 		if _, err := glpiDoExpediente(t, q).Grupos(ctx); err == nil {
 			t.Errorf("%s quebrado", q)
 		}
@@ -161,9 +162,11 @@ func expedienteDeTeste(t *testing.T, login, feriado string) *memoria {
 	o.guardar(ItemPreparo{Tipo: ItemCalendario, ID: 3, Dados: dados(t, Calendario{ID: 3, Nome: "Horário Comercial",
 		Turnos:   []Turno{{Dia: 1, Inicio: "07:00:00", Fim: "11:00:00"}, {Dia: 1, Inicio: "13:00:00", Fim: "17:00:00"}},
 		Feriados: []Feriado{{Nome: feriado, Inicio: "2015-12-10", Fim: "2015-12-10", Perpetuo: 1}}})})
-	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 7, Dados: dados(t, Grupo{ID: 7, Nome: "Grupo Técnico - SMS", EntidadeID: 1, Membros: []int{5, 6}})})
-	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 8, Dados: dados(t, Grupo{ID: 8, Nome: "Grupo de outra", EntidadeID: 2, Membros: []int{5}})})
-	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 9, Dados: dados(t, Grupo{ID: 9, Nome: "Vazio", EntidadeID: 1})})
+	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 7, Dados: dados(t, Grupo{ID: 7, Nome: "Grupo Técnico - SMS", EntidadeID: 1, Membros: []int{5, 6}, Chamados: 40})})
+	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 8, Dados: dados(t, Grupo{ID: 8, Nome: "Grupo de outra", EntidadeID: 2, Membros: []int{5}, Chamados: 3})})
+	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 9, Dados: dados(t, Grupo{ID: 9, Nome: "Vazio", EntidadeID: 1, Chamados: 1})})
+	// Do AD, com membros, mas sem nunca atender: fica de fora.
+	o.guardar(ItemPreparo{Tipo: ItemGrupo, ID: 10, Dados: dados(t, Grupo{ID: 10, Nome: "Domain Users", EntidadeID: 1, Membros: []int{5}})})
 	o.guardar(ItemPreparo{Tipo: ItemPessoa, ID: 5, Dados: dados(t, pessoaPreparada{Pessoa: Pessoa{ID: 5, Login: login}})})
 	o.guardar(ItemPreparo{Tipo: ItemPessoa, ID: 6, Dados: dados(t, pessoaPreparada{Pessoa: Pessoa{ID: 6, Login: "sem-conta-" + uuid.NewString()}})})
 	return o
@@ -205,7 +208,7 @@ func TestCargaDoExpediente(t *testing.T) {
 	// A simulação conta e não grava.
 	sim := executar(false).Expediente
 	if sim == nil || sim.Politica != "criada" || sim.Calendario != "Horário Comercial" || len(sim.Metas) != 4 || sim.Feriados != 2 ||
-		sim.Equipes != 1 || sim.Membros != 1 || sim.MembrosSemPar != 1 || len(sim.SemUnidade) != 1 {
+		sim.Equipes != 1 || sim.Membros != 1 || sim.MembrosSemPar != 1 || len(sim.SemUnidade) != 1 || sim.GruposSemChamado != 1 {
 		t.Fatalf("simulação: %+v", sim)
 	}
 	if _, err := infrastructure.NewRepository().GetPolitica(ctx, pool, nil); !errors.Is(err, domain.ErrNaoEncontrado) {

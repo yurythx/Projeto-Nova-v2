@@ -17,6 +17,7 @@ describe("Resumo de prazos e equipes da carga", () => {
           membros: 9,
           membros_sem_par: 2,
           grupos_sem_unidade: ["Grupo da OUTRA"],
+          grupos_sem_chamado: 381,
         }}
       />,
     );
@@ -29,6 +30,7 @@ describe("Resumo de prazos e equipes da carga", () => {
       "3 equipe(s) dos grupos do GLPI, com 9 pessoa(s); 2 sem conta aqui",
     );
     expect(resumo).toHaveTextContent("Grupos sem unidade na tabela: Grupo da OUTRA.");
+    expect(resumo).toHaveTextContent("381 grupo(s) do GLPI que nunca atenderam");
   });
 
   it("na carga, sem calendário e sem pendências", () => {
@@ -50,5 +52,6 @@ describe("Resumo de prazos e equipes da carga", () => {
     expect(resumo).not.toHaveTextContent("Metas");
     expect(resumo).not.toHaveTextContent("sem conta");
     expect(resumo).not.toHaveTextContent("Grupos sem unidade");
+    expect(resumo).not.toHaveTextContent("nunca atenderam");
   });
 });

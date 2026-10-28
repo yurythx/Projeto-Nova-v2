@@ -48,6 +48,9 @@ type Grupo struct {
 	Nome       string `json:"completename"`
 	EntidadeID int    `json:"entities_id"`
 	Membros    []int  `json:"membros"`
+	// Chamados é quantos chamados foram atribuídos ao grupo: o GLPI traz
+	// do AD centenas de grupos, e só os que atendem viram equipe.
+	Chamados int `json:"chamados"`
 }
 
 // Expediente lê o calendário e os grupos técnicos (ADR 078): é com eles
@@ -110,7 +113,22 @@ func (c *Cliente) Grupos(ctx context.Context) ([]Grupo, error) {
 	if _, err := c.get(ctx, "/Group_User?range=0-99999", &membros); err != nil {
 		return nil, err
 	}
+	// Tipo 2 é o grupo atribuído ao chamado (1 é o requerente, 3 observa).
+	var ligas []struct {
+		Grupo int `json:"groups_id"`
+		Tipo  int `json:"type"`
+	}
+	if _, err := c.get(ctx, "/Group_Ticket?range=0-199999", &ligas); err != nil {
+		return nil, err
+	}
+	atendidos := map[int]int{}
+	for _, l := range ligas {
+		if l.Tipo == 2 {
+			atendidos[l.Grupo]++
+		}
+	}
 	for i := range grupos {
+		grupos[i].Chamados = atendidos[grupos[i].ID]
 		grupos[i].Membros = []int{}
 		for _, m := range membros {
 			if m.Grupo == grupos[i].ID {
@@ -133,6 +151,8 @@ type RelatorioExpediente struct {
 	Membros       int      `json:"membros"`
 	MembrosSemPar int      `json:"membros_sem_par"`
 	SemUnidade    []string `json:"grupos_sem_unidade,omitempty"`
+	// GruposSemChamado são os grupos que nunca atenderam: ficam de fora.
+	GruposSemChamado int `json:"grupos_sem_chamado"`
 }
 
 // matrizUsual é a matriz de impacto x urgência da tela (a soma dos dois).
@@ -366,10 +386,15 @@ func (im *Importador) politica(ctx context.Context, cal Calendario, metas []doma
 	})
 }
 
-// equipes cria, na unidade da secretaria de cada grupo, a equipe com as
-// pessoas que casaram; a que já existe com o mesmo nome ganha quem falta.
+// equipes cria, na unidade da secretaria de cada grupo que já atendeu
+// chamados, a equipe com as pessoas que casaram; a que já existe com o
+// mesmo nome ganha quem falta.
 func (im *Importador) equipes(ctx context.Context, grupos []Grupo, r *RelatorioExpediente) error {
 	for _, g := range grupos {
+		if g.Chamados == 0 {
+			r.GruposSemChamado++
+			continue
+		}
 		if len(g.Membros) == 0 {
 			continue
 		}

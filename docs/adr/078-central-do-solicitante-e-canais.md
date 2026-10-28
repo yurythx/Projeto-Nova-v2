@@ -61,7 +61,7 @@ O e-mail já existe ([ADR 049](049-correio-contratos-e-cadastros.md)), mas só s
 - **Prazos e equipes vindos do GLPI.** O conector extrai também os calendários (turnos e feriados) e os grupos técnicos com os membros. A carga, na simulação só contando, faz três coisas:
   - **Política institucional de prazos:** os turnos vêm do calendário que os SLAs usam (no da prefeitura, o "Horário Comercial"). A matriz é a usual da tela. As metas vêm dos pares do GLPI (SLM), da solução mais curta para a mais longa: alta, média e baixa. Na prefeitura, N1 = 30 min/4 h, N2 = 2 h/24 h, N3 = 2 h/36 h. A crítica, que o GLPI não tem, fica com metade da alta. A política já configurada não é sobrescrita.
   - **Feriados:** os do calendário, deste ano em diante. O perpétuo vale neste ano e no próximo. O tipo sai do nome: nacionais conhecidos, pontos facultativos (carnaval, cinzas, Corpus Christi) e o resto municipal.
-  - **Equipes:** cada grupo vira uma equipe na unidade da sua secretaria (a linha "*" da tabela), com as pessoas que casam com contas ativas daqui. A equipe que já existe com o mesmo nome só ganha quem falta.
+  - **Equipes:** só o grupo que já atendeu chamados (atribuído em `Group_Ticket`) vira equipe. Na prefeitura, o GLPI tem 401 grupos, quase todos trazidos do AD; sem esse critério, a simulação criaria 384 equipes. Cada grupo vira uma equipe na unidade da sua secretaria (a linha "*" da tabela), com as pessoas que casam com contas ativas daqui. A equipe que já existe com o mesmo nome só ganha quem falta.
 
 ## Consequências
 

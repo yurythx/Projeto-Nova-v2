@@ -8,6 +8,8 @@ export interface Expediente {
   membros: number;
   membros_sem_par: number;
   grupos_sem_unidade?: string[];
+  /** Grupos que nunca atenderam (do AD, em geral): não viram equipe. */
+  grupos_sem_chamado?: number;
 }
 
 const POLITICA: Record<Expediente["politica"], string> = {
@@ -46,6 +48,11 @@ export function ResumoExpediente({
           {e.equipes} equipe(s) dos grupos do GLPI, com {e.membros} pessoa(s)
           {e.membros_sem_par > 0 ? `; ${e.membros_sem_par} sem conta aqui ficaram de fora` : ""}.
         </li>
+        {(e.grupos_sem_chamado ?? 0) > 0 && (
+          <li>
+            {e.grupos_sem_chamado} grupo(s) do GLPI que nunca atenderam um chamado ficaram de fora.
+          </li>
+        )}
         {(e.grupos_sem_unidade ?? []).length > 0 && (
           <li>Grupos sem unidade na tabela: {e.grupos_sem_unidade!.join(", ")}.</li>
         )}
