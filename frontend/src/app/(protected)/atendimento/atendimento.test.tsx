@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ME, fail, identityRoutes, mockBackend, page, renderApp } from "@/test/backend";
-import { resetNavigation } from "@/test/navigation";
+import { resetNavigation, router } from "@/test/navigation";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
 
@@ -41,68 +41,157 @@ function perms(...p: string[]) {
 
 beforeEach(() => resetNavigation({ id: "s1" }));
 
-describe("Atendimento — portal do servidor", () => {
-  it("abre pela oferta e acompanha", async () => {
-    const user = userEvent.setup();
-    const api = mockBackend({
+const categoria = {
+  id: "c1",
+  nome: "Acesso",
+  descricao: "Contas e senhas",
+  icone: "key-round",
+  ordem: 1,
+  ativa: true,
+};
+
+describe("Atendimento — central do solicitante", () => {
+  it("início em blocos, com o que está em andamento", async () => {
+    mockBackend({
       ...identityRoutes(perms("atendimento:abrir")),
-      "GET v1/atendimento/catalogo": { data: [oferta] },
-      "GET v1/atendimento/minhas": (req) =>
-        req.query.get("situacao") === "todas"
-          ? page([{ ...sol, estado: "encerrado" }])
-          : page([{ ...sol, estado: "aguardando_servidor" }]),
-      "POST v1/atendimento/solicitacoes": { status: 201, data: sol },
+      "GET v1/atendimento/minhas": page([{ ...sol, estado: "aguardando_servidor" }]),
     });
     renderApp(<AtendimentoPortalPage />);
 
+    const portas = await screen.findByRole("list", { name: "O que você precisa" });
+    const links = within(portas).getAllByRole("link");
+    expect(links.map((l) => l.getAttribute("href"))).toEqual([
+      "/atendimento?ver=pedido",
+      "/atendimento?ver=problema",
+      "/atendimento?ver=chamados",
+      "/wiki",
+    ]);
+    expect(await within(portas).findByText("1 em andamento")).toBeInTheDocument();
     expect(await screen.findByText("Aguardando resposta do servidor")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "#42 · Senha expirou" })).toHaveAttribute(
       "href",
       "/atendimento/solicitacoes/s1",
     );
     expect(screen.queryByText("Incidente")).not.toBeInTheDocument();
+  });
 
-    await user.selectOptions(await screen.findByLabelText("Preciso de ajuda com *"), "o1");
+  it("catálogo em blocos: categorias da porta, Outros e busca", async () => {
+    resetNavigation({}, "/atendimento", "ver=problema");
+    const user = userEvent.setup();
+    mockBackend({
+      ...identityRoutes(perms("atendimento:abrir")),
+      "GET v1/atendimento/catalogo": {
+        data: [
+          { ...oferta, categoria_id: "c1", icone: "mail" },
+          { ...oferta, id: "o2", nome: "Impressora parou" },
+          { ...oferta, id: "o3", nome: "Novo computador", tipo: "requisicao" },
+        ],
+      },
+      "GET v1/atendimento/catalogo/categorias": { data: [categoria] },
+    });
+    const lista = renderApp(<AtendimentoPortalPage />);
+    const blocos = await screen.findByRole("list", { name: "Categorias" });
+    expect(
+      within(blocos)
+        .getAllByRole("link")
+        .map((l) => l.getAttribute("href")),
+    ).toEqual([
+      "/atendimento?ver=problema&categoria=c1",
+      "/atendimento?ver=problema&categoria=outros",
+    ]);
+    expect(screen.queryByText("Novo computador")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Procurar no catálogo"), "impressora");
+    const achados = await screen.findByRole("list", { name: "Atendimentos" });
+    expect(within(achados).getByRole("link", { name: /Impressora parou/ })).toHaveAttribute(
+      "href",
+      "/atendimento?oferta=o2",
+    );
+    await user.clear(screen.getByLabelText("Procurar no catálogo"));
+    await user.type(screen.getByLabelText("Procurar no catálogo"), "xyz");
+    expect(await screen.findByText("Nada encontrado com “xyz”.")).toBeInTheDocument();
+    lista.unmount();
+
+    resetNavigation({}, "/atendimento", "ver=problema&categoria=c1");
+    renderApp(<AtendimentoPortalPage />);
+    const ofertas = await screen.findByRole("list", { name: "Atendimentos" });
+    expect(within(ofertas).getAllByRole("link")).toHaveLength(1);
+    expect(
+      within(ofertas).getByRole("link", { name: /Não consigo acessar o e-mail/ }),
+    ).toHaveAttribute("href", "/atendimento?oferta=o1");
+    const trilha = screen.getByRole("navigation", { name: "Você está em" });
+    expect(within(trilha).getByRole("link", { name: "Relatar um problema" })).toHaveAttribute(
+      "href",
+      "/atendimento?ver=problema",
+    );
+    expect(within(trilha).getByText("Acesso")).toHaveAttribute("aria-current", "page");
+  });
+
+  it("abre pela oferta e vai para o chamado criado", async () => {
+    resetNavigation({}, "/atendimento", "oferta=o1");
+    const user = userEvent.setup();
+    const api = mockBackend({
+      ...identityRoutes(perms("atendimento:abrir")),
+      "GET v1/atendimento/catalogo": { data: [oferta] },
+      "POST v1/atendimento/solicitacoes": { status: 201, data: sol },
+    });
+    renderApp(<AtendimentoPortalPage />);
+
+    expect(await screen.findByRole("heading", { name: oferta.nome })).toBeInTheDocument();
     expect(screen.getByText("senha, bloqueio")).toBeInTheDocument();
     await user.type(screen.getByLabelText("Resumo *"), "Senha expirou");
     await user.type(screen.getByLabelText("Detalhes"), "desde hoje");
-    await user.click(screen.getByRole("button", { name: "Enviar solicitação" }));
+    await user.click(screen.getByRole("button", { name: "Abrir chamado" }));
     await waitFor(() => expect(api.to("POST v1/atendimento/solicitacoes")).toHaveLength(1));
     expect(api.to("POST v1/atendimento/solicitacoes")[0]!.body).toEqual({
       oferta_id: "o1",
       titulo: "Senha expirou",
       descricao: "desde hoje",
     });
-    expect(await screen.findByText("Solicitação enviada")).toBeInTheDocument();
-    expect(screen.getByLabelText("Resumo *")).toHaveValue("");
-
-    await user.click(screen.getByRole("tab", { name: "Todas" }));
-    expect(await screen.findByText("Encerrada")).toBeInTheDocument();
+    expect(await screen.findByText("Chamado aberto. Acompanhe por aqui.")).toBeInTheDocument();
+    expect(router.push).toHaveBeenCalledWith("/atendimento/solicitacoes/s1");
   });
 
   it("preenche campos complementares e formata descrição estruturada", async () => {
+    resetNavigation({}, "/atendimento", "oferta=o1");
     const user = userEvent.setup();
     const api = mockBackend({
       ...identityRoutes(perms("atendimento:abrir")),
-      "GET v1/atendimento/catalogo": { data: [oferta] },
-      "GET v1/atendimento/minhas": page([]),
+      "GET v1/atendimento/catalogo": {
+        data: [
+          {
+            ...oferta,
+            campos: [
+              { chave: "ramal", rotulo: "Ramal", tipo: "numero", obrigatorio: true },
+              {
+                chave: "sistema",
+                rotulo: "Sistema",
+                tipo: "lista",
+                obrigatorio: false,
+                opcoes: ["SEI", "Folha"],
+              },
+            ],
+          },
+        ],
+      },
       "POST v1/atendimento/solicitacoes": { status: 201, data: sol },
     });
     renderApp(<AtendimentoPortalPage />);
 
-    await user.selectOptions(await screen.findByLabelText("Preciso de ajuda com *"), "o1");
+    await user.type(await screen.findByLabelText("Ramal *"), "3450");
+    await user.selectOptions(screen.getByLabelText("Sistema"), "SEI");
     await user.type(screen.getByLabelText("Resumo *"), "Computador não liga");
     await user.type(screen.getByLabelText("Localização / Ramal"), "Bloco B - Sala 102");
     await user.type(screen.getByLabelText("Patrimônio / Equipamento"), "PAT-2024-9912");
     await user.selectOptions(screen.getByLabelText("Impacto percebido"), "setorial");
     await user.type(screen.getByLabelText("Detalhes"), "Houve oscilação de energia");
 
-    await user.click(screen.getByRole("button", { name: "Enviar solicitação" }));
+    await user.click(screen.getByRole("button", { name: "Abrir chamado" }));
     await waitFor(() => expect(api.to("POST v1/atendimento/solicitacoes")).toHaveLength(1));
 
-    const body = api.to("POST v1/atendimento/solicitacoes")[0]!.body as Record<string, string>;
+    const body = api.to("POST v1/atendimento/solicitacoes")[0]!.body as Record<string, unknown>;
     expect(body.oferta_id).toBe("o1");
     expect(body.titulo).toBe("Computador não liga");
+    expect(body.respostas).toEqual({ ramal: "3450", sistema: "SEI" });
     expect(body.descricao).toContain("[Informações Complementares]");
     expect(body.descricao).toContain("• Local / Ramal: Bloco B - Sala 102");
     expect(body.descricao).toContain("• Patrimônio / Ativo: PAT-2024-9912");
@@ -110,35 +199,59 @@ describe("Atendimento — portal do servidor", () => {
     expect(body.descricao).toContain("Houve oscilação de energia");
   });
 
-  it("sem ofertas, falha ao abrir e perfil sem abertura", async () => {
+  it("meus chamados: em andamento e todos", async () => {
+    resetNavigation({}, "/atendimento", "ver=chamados");
     const user = userEvent.setup();
     mockBackend({
       ...identityRoutes(perms("atendimento:abrir")),
-      "GET v1/atendimento/catalogo": { data: [] },
-      "GET v1/atendimento/minhas": page([]),
+      "GET v1/atendimento/minhas": (req) =>
+        req.query.get("situacao") === "todas" ? page([{ ...sol, estado: "encerrado" }]) : page([]),
     });
-    const vazio = renderApp(<AtendimentoPortalPage />);
-    expect(await screen.findByText("Nenhum atendimento disponível")).toBeInTheDocument();
-    expect(screen.getByText("Nada em andamento")).toBeInTheDocument();
-    vazio.unmount();
+    renderApp(<AtendimentoPortalPage />);
+    expect(await screen.findByText("Nada em andamento")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Todos" }));
+    expect(await screen.findByText("Encerrada")).toBeInTheDocument();
+  });
 
+  it("sem ofertas, oferta indisponível, falha ao abrir e perfil sem abertura", async () => {
+    const user = userEvent.setup();
+    resetNavigation({}, "/atendimento", "ver=pedido");
     mockBackend({
       ...identityRoutes(perms("atendimento:abrir")),
       "GET v1/atendimento/catalogo": { data: [oferta] },
-      "GET v1/atendimento/minhas": page([]),
+      "GET v1/atendimento/catalogo/categorias": { data: [] },
+    });
+    const vazio = renderApp(<AtendimentoPortalPage />);
+    expect(await screen.findByText("Nenhum atendimento disponível aqui")).toBeInTheDocument();
+    vazio.unmount();
+
+    resetNavigation({}, "/atendimento", "oferta=sumiu");
+    mockBackend({
+      ...identityRoutes(perms("atendimento:abrir")),
+      "GET v1/atendimento/catalogo": { data: [oferta] },
+    });
+    const sumiu = renderApp(<AtendimentoPortalPage />);
+    expect(await screen.findByText("Este atendimento não está disponível")).toBeInTheDocument();
+    sumiu.unmount();
+
+    resetNavigation({}, "/atendimento", "oferta=o1");
+    mockBackend({
+      ...identityRoutes(perms("atendimento:abrir")),
+      "GET v1/atendimento/catalogo": { data: [oferta] },
       "POST v1/atendimento/solicitacoes": fail(422, "esta oferta não está mais disponível"),
     });
     const erro = renderApp(<AtendimentoPortalPage />);
-    await user.selectOptions(await screen.findByLabelText("Preciso de ajuda com *"), "o1");
-    await user.type(screen.getByLabelText("Resumo *"), "Pedido");
-    await user.click(screen.getByRole("button", { name: "Enviar solicitação" }));
+    await user.type(await screen.findByLabelText("Resumo *"), "Pedido");
+    await user.click(screen.getByRole("button", { name: "Abrir chamado" }));
     expect(await screen.findByText("esta oferta não está mais disponível")).toBeInTheDocument();
     expect(screen.getByLabelText("Resumo *")).toHaveValue("Pedido");
+    expect(router.push).not.toHaveBeenCalled();
     erro.unmount();
 
+    resetNavigation();
     const api = mockBackend(identityRoutes(perms("atendimento:atender")));
     renderApp(<AtendimentoPortalPage />);
-    expect(await screen.findByText("Seu perfil não abre solicitações")).toBeInTheDocument();
+    expect(await screen.findByText("Seu perfil não abre chamados")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ir para a fila da equipe" })).toHaveAttribute(
       "href",
       "/atendimento/fila",
@@ -393,13 +506,51 @@ describe("Atendimento — solicitação", () => {
           solicitacao: { ...sol, estado: "encerrado", encerrada_em: sol.updated_at },
           papeis: ["solicitante"],
           proximos: [],
+          passagens: [
+            { id: 1, para: "aberto", autor_nome: "João", em: sol.created_at },
+            {
+              id: 2,
+              de: "aberto",
+              para: "encerrado",
+              autor_nome: "Ana",
+              em: "2026-10-21T14:00:00Z",
+            },
+          ],
+          comentarios: [
+            {
+              id: "c1",
+              autor_id: "ana",
+              autor_nome: "Ana",
+              texto: "Pode testar agora",
+              interno: false,
+              created_at: "2026-10-21T13:00:00Z",
+            },
+            {
+              id: "c2",
+              autor_nome: "Ana",
+              texto: "segredo da equipe",
+              interno: true,
+              created_at: "2026-10-21T13:30:00Z",
+            },
+          ],
         }),
       },
     });
     const fim = renderApp(<SolicitacaoPage />);
     expect(await screen.findByText("Encerrada em")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Enviar" })).not.toBeInTheDocument();
-    expect(screen.getByText("Nenhuma mensagem ainda.")).toBeInTheDocument();
+    // Quem pediu vê a linha do tempo: a abertura, as mensagens públicas e as
+    // passagens, em ordem; a nota interna não entra nem se chegar.
+    const linha = screen.getByRole("list", { name: "Linha do tempo do chamado" });
+    const itens = within(linha).getAllByRole("listitem");
+    expect(itens).toHaveLength(3);
+    expect(itens[0]).toHaveTextContent("Chamado aberto por João");
+    expect(itens[0]).toHaveTextContent("desde hoje");
+    expect(itens[1]).toHaveTextContent("Ana");
+    expect(itens[1]).toHaveTextContent("Pode testar agora");
+    expect(itens[2]).toHaveTextContent("Passou para Encerrada · Ana");
+    expect(screen.queryByText("segredo da equipe")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Histórico" })).not.toBeInTheDocument();
     fim.unmount();
 
     mockBackend({

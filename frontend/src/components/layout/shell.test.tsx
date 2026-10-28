@@ -104,6 +104,43 @@ describe("DashboardShell", () => {
     await userEvent.click(toggle);
     await userEvent.click(toggle);
   });
+
+  it("quem só pede entra na central: sem menu, sem busca, e as outras rotas voltam", async () => {
+    mockWebSocket();
+    const p = ["atendimento:abrir"];
+    mockBackend({
+      ...identityRoutes({
+        roles: [],
+        permissions: p,
+        scopes: [{ perfil: "servidor", origem: "ad", permissions: p }],
+      }),
+      ...wsTicketRoute,
+      "GET v1/lgpd/consent": { data: { accepted: true } },
+    });
+    const tela = (
+      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+        <DashboardShell userLabel="ana@x.gov.br">
+          <p>conteúdo</p>
+        </DashboardShell>
+      </SWRConfig>
+    );
+    const fora = render(withBrand(tela));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/atendimento"));
+    expect(screen.queryByText("conteúdo")).not.toBeInTheDocument();
+    fora.unmount();
+
+    resetNavigation({}, "/atendimento/solicitacoes/s1");
+    render(withBrand(tela));
+    expect(await screen.findByText("conteúdo")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("navigation", { name: "Menu principal" })).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByLabelText("Buscar em todo o sistema")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Alternar menu de navegação" }),
+    ).not.toBeInTheDocument();
+    expect(router.replace).not.toHaveBeenCalled();
+  });
 });
 
 describe("PublicShell", () => {

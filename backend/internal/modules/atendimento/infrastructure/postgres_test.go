@@ -98,16 +98,27 @@ func TestRepositorioPropagaFalhas(t *testing.T) {
 	o := domain.Oferta{ID: id, Nome: "E-mail", Ativa: true}
 	e := domain.Equipe{ID: id, Nome: "N1"}
 	calls := map[string]func(database.DBTX) error{
-		"ListOfertas":  func(db database.DBTX) error { _, err := r.ListOfertas(ctx, db, domain.Filtro{}); return err },
-		"GetOferta":    func(db database.DBTX) error { _, err := r.GetOferta(ctx, db, id); return err },
-		"InsertOferta": func(db database.DBTX) error { _, err := r.InsertOferta(ctx, db, o); return err },
-		"UpdateOferta": func(db database.DBTX) error { _, err := r.UpdateOferta(ctx, db, o); return err },
-		"ListEquipes":  func(db database.DBTX) error { _, err := r.ListEquipes(ctx, db, domain.Filtro{}); return err },
-		"GetEquipe":    func(db database.DBTX) error { _, err := r.GetEquipe(ctx, db, id); return err },
-		"InsertEquipe": func(db database.DBTX) error { _, err := r.InsertEquipe(ctx, db, e); return err },
-		"UpdateEquipe": func(db database.DBTX) error { _, err := r.UpdateEquipe(ctx, db, e); return err },
-		"ContarAtivos": func(db database.DBTX) error { _, err := r.ContarAtivos(ctx, db, []uuid.UUID{id}); return err },
-		"Candidatos":   func(db database.DBTX) error { _, err := r.Candidatos(ctx, db, id); return err },
+		"ListOfertas":    func(db database.DBTX) error { _, err := r.ListOfertas(ctx, db, domain.Filtro{}); return err },
+		"GetOferta":      func(db database.DBTX) error { _, err := r.GetOferta(ctx, db, id); return err },
+		"InsertOferta":   func(db database.DBTX) error { _, err := r.InsertOferta(ctx, db, o); return err },
+		"UpdateOferta":   func(db database.DBTX) error { _, err := r.UpdateOferta(ctx, db, o); return err },
+		"ListEquipes":    func(db database.DBTX) error { _, err := r.ListEquipes(ctx, db, domain.Filtro{}); return err },
+		"GetEquipe":      func(db database.DBTX) error { _, err := r.GetEquipe(ctx, db, id); return err },
+		"InsertEquipe":   func(db database.DBTX) error { _, err := r.InsertEquipe(ctx, db, e); return err },
+		"UpdateEquipe":   func(db database.DBTX) error { _, err := r.UpdateEquipe(ctx, db, e); return err },
+		"ContarAtivos":   func(db database.DBTX) error { _, err := r.ContarAtivos(ctx, db, []uuid.UUID{id}); return err },
+		"Candidatos":     func(db database.DBTX) error { _, err := r.Candidatos(ctx, db, id); return err },
+		"ListCategorias": func(db database.DBTX) error { _, err := r.ListCategorias(ctx, db, true); return err },
+		"GetCategoria":   func(db database.DBTX) error { _, err := r.GetCategoria(ctx, db, id); return err },
+		"InsertCategoria": func(db database.DBTX) error {
+			_, err := r.InsertCategoria(ctx, db, domain.Categoria{ID: id})
+			return err
+		},
+		"UpdateCategoria": func(db database.DBTX) error {
+			_, err := r.UpdateCategoria(ctx, db, domain.Categoria{ID: id})
+			return err
+		},
+		"DeleteCategoria": func(db database.DBTX) error { return r.DeleteCategoria(ctx, db, id) },
 	}
 	for name, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {

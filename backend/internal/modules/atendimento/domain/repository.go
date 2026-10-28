@@ -37,6 +37,14 @@ type Repository interface {
 // SolicitacaoRepository persiste a solicitação, as passagens e a conversa.
 type SolicitacaoRepository interface {
 	ListOfertasAtivas(ctx context.Context, db database.DBTX) ([]Oferta, error)
+	// Categorias do catálogo em blocos (ADR 078), em ordem; soAtivas para
+	// a central do solicitante.
+	ListCategorias(ctx context.Context, db database.DBTX, soAtivas bool) ([]Categoria, error)
+	GetCategoria(ctx context.Context, db database.DBTX, id uuid.UUID) (Categoria, error)
+	InsertCategoria(ctx context.Context, db database.DBTX, c Categoria) (Categoria, error)
+	UpdateCategoria(ctx context.Context, db database.DBTX, c Categoria) (Categoria, error)
+	// DeleteCategoria apaga; as ofertas dela ficam sem categoria.
+	DeleteCategoria(ctx context.Context, db database.DBTX, id uuid.UUID) error
 
 	ListSolicitacoes(ctx context.Context, db database.DBTX, f FiltroSolicitacao) ([]Solicitacao, int64, error)
 	GetSolicitacao(ctx context.Context, db database.DBTX, id uuid.UUID) (Solicitacao, error)

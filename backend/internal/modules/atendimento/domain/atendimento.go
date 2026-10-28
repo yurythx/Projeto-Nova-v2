@@ -69,8 +69,13 @@ type Oferta struct {
 	UnidadeID *uuid.UUID `json:"unidade_id,omitempty"`
 	Ativa     bool       `json:"ativa"`
 	Campos    []Campo    `json:"campos"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	// Categoria, ícone e ordem do bloco na central (ADR 078). Sem
+	// categoria, a oferta aparece em "Outros".
+	CategoriaID *uuid.UUID `json:"categoria_id,omitempty"`
+	Icone       string     `json:"icone"`
+	Ordem       int        `json:"ordem"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // Equipe atende as solicitações de uma unidade.
@@ -155,7 +160,8 @@ func (o Oferta) Aplicar(nome, descricao, tipo string, produto, unidade *uuid.UUI
 // Igual ignora os horários.
 func (o Oferta) Igual(other Oferta) bool {
 	return o.ID == other.ID && o.Nome == other.Nome && o.Descricao == other.Descricao && o.Tipo == other.Tipo && o.Ativa == other.Ativa &&
-		MesmaUnidade(o.ProdutoID, other.ProdutoID) && MesmaUnidade(o.UnidadeID, other.UnidadeID) && camposIguais(o.Campos, other.Campos)
+		MesmaUnidade(o.ProdutoID, other.ProdutoID) && MesmaUnidade(o.UnidadeID, other.UnidadeID) && camposIguais(o.Campos, other.Campos) &&
+		MesmaUnidade(o.CategoriaID, other.CategoriaID) && o.Icone == other.Icone && o.Ordem == other.Ordem
 }
 
 func camposIguais(a, b []Campo) bool {

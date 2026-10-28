@@ -392,6 +392,60 @@ components:
                 - nome
             type: object
             x-projeto-nova-generated: true
+        AtendimentoCategoria:
+            properties:
+                ativa:
+                    type: boolean
+                created_at:
+                    format: date-time
+                    type: string
+                descricao:
+                    type: string
+                icone:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+                ordem:
+                    type: integer
+                updated_at:
+                    format: date-time
+                    type: string
+            required:
+                - ativa
+                - created_at
+                - descricao
+                - icone
+                - id
+                - nome
+                - ordem
+                - updated_at
+            type: object
+            x-projeto-nova-generated: true
+        AtendimentoCategoriaRequest:
+            properties:
+                ativa:
+                    nullable: true
+                    type: boolean
+                descricao:
+                    maxLength: 300
+                    type: string
+                icone:
+                    maxLength: 40
+                    type: string
+                nome:
+                    maxLength: 80
+                    type: string
+                ordem:
+                    maximum: 999
+                    minimum: 0
+                    type: integer
+            required:
+                - nome
+            type: object
+            x-projeto-nova-generated: true
         AtendimentoCelula:
             properties:
                 impacto:
@@ -1314,16 +1368,23 @@ components:
                     items:
                         $ref: '#/components/schemas/AtendimentoCampo'
                     type: array
+                categoria_id:
+                    format: uuid
+                    type: string
                 created_at:
                     format: date-time
                     type: string
                 descricao:
+                    type: string
+                icone:
                     type: string
                 id:
                     format: uuid
                     type: string
                 nome:
                     type: string
+                ordem:
+                    type: integer
                 produto_id:
                     format: uuid
                     type: string
@@ -1340,8 +1401,10 @@ components:
                 - campos
                 - created_at
                 - descricao
+                - icone
                 - id
                 - nome
+                - ordem
                 - tipo
                 - updated_at
             type: object
@@ -1356,12 +1419,25 @@ components:
                         $ref: '#/components/schemas/AtendimentoCampoInput'
                     nullable: true
                     type: array
+                categoria_id:
+                    maxLength: 36
+                    nullable: true
+                    type: string
                 descricao:
                     maxLength: 4000
+                    type: string
+                icone:
+                    maxLength: 40
+                    nullable: true
                     type: string
                 nome:
                     maxLength: 160
                     type: string
+                ordem:
+                    maximum: 999
+                    minimum: 0
+                    nullable: true
+                    type: integer
                 produto_id:
                     format: uuid
                     nullable: true
@@ -8562,6 +8638,188 @@ paths:
             security:
                 - bearerAuth: []
             summary: Atendimento — Listar/consultar /atendimento/catalogo
+            tags:
+                - atendimento
+    /api/v1/atendimento/catalogo/categorias:
+        get:
+            description: As categorias ativas do catálogo em blocos da central do solicitante (ADR 078), em ordem e por nome. Exige atendimento:abrir.
+            operationId: getAtendimentoCatalogoCategorias
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtendimentoCategoria'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — categorias do catálogo
+            tags:
+                - atendimento
+    /api/v1/atendimento/categorias:
+        get:
+            description: Todas as categorias do catálogo, ativas ou não, para quem gere ofertas em alguma unidade (atendimento:manage).
+            operationId: getAtendimentoCategorias
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtendimentoCategoria'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — listar as categorias
+            tags:
+                - atendimento
+        post:
+            description: 'Cria a categoria do catálogo em blocos: nome (até 80, único), descrição (até 300), ícone (até 40 letras minúsculas, dígitos e hífens) e ordem (0 a 999). A categoria é da instituição: exige atendimento:manage em toda ela.'
+            operationId: postAtendimentoCategorias
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoCategoriaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoCategoria'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — criar uma categoria
+            tags:
+                - atendimento
+    /api/v1/atendimento/categorias/{id}:
+        delete:
+            description: 'Apaga a categoria. As ofertas dela não são apagadas: aparecem em "Outros" na central. Exige atendimento:manage em toda a instituição.'
+            operationId: deleteAtendimentoCategoriasId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Sem conteúdo.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — apagar uma categoria
+            tags:
+                - atendimento
+        put:
+            description: Altera nome, descrição, ícone, ordem e se está ativa. Inativa, a categoria some da central, e as ofertas dela continuam no cadastro. Exige atendimento:manage em toda a instituição.
+            operationId: putAtendimentoCategoriasId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtendimentoCategoriaRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtendimentoCategoria'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atendimento — alterar uma categoria
             tags:
                 - atendimento
     /api/v1/atendimento/contratos-de-apoio:

@@ -58,6 +58,97 @@ function cartao(nome: string) {
   return screen.getByRole("heading", { name: nome }).closest("div.rounded-xl") as HTMLElement;
 }
 
+describe("Atendimento — categorias do catálogo", () => {
+  it("cria, edita e apaga a categoria, e a oferta entra nela", async () => {
+    const user = userEvent.setup();
+    const acesso = {
+      id: "cat1",
+      nome: "Acesso",
+      descricao: "Contas",
+      icone: "lock",
+      ordem: 1,
+      ativa: true,
+    };
+    const api = mockBackend(
+      rotas({
+        "GET v1/atendimento/categorias": {
+          data: [acesso, { ...acesso, id: "cat2", nome: "Antiga", ativa: false, descricao: "" }],
+        },
+        "POST v1/atendimento/categorias": { status: 201, data: acesso },
+        "PUT v1/atendimento/categorias/cat1": { data: acesso },
+        "DELETE v1/atendimento/categorias/cat1": { status: 204 },
+      }),
+    );
+    renderApp(<AtendimentoCadastroPage />);
+
+    const card = await screen.findByRole("heading", { name: "Categorias do catálogo" });
+    const secao = card.closest("div.rounded-xl") as HTMLElement;
+    expect(await within(secao).findByText("Fora da central")).toBeInTheDocument();
+
+    const nova = within(secao).getByRole("form", { name: "Nova categoria" });
+    await user.type(within(nova).getByLabelText("Nome *"), "Impressão");
+    await user.selectOptions(within(nova).getByLabelText("Ícone"), "printer");
+    await user.clear(within(nova).getByLabelText("Ordem"));
+    await user.type(within(nova).getByLabelText("Ordem"), "2");
+    await user.click(within(nova).getByRole("button", { name: "Criar categoria" }));
+    await waitFor(() => expect(api.to("POST v1/atendimento/categorias")).toHaveLength(1));
+    expect(api.to("POST v1/atendimento/categorias")[0]!.body).toEqual({
+      nome: "Impressão",
+      descricao: "",
+      icone: "printer",
+      ordem: 2,
+      ativa: true,
+    });
+
+    await user.click(within(secao).getAllByRole("button", { name: "Editar" })[0]!);
+    const edicao = within(secao).getByRole("form", { name: "Editar categoria" });
+    expect(within(edicao).getByLabelText("Nome *")).toHaveValue("Acesso");
+    await user.click(within(edicao).getByLabelText("Aparece na central"));
+    await user.click(within(edicao).getByRole("button", { name: "Salvar categoria" }));
+    await waitFor(() => expect(api.to("PUT v1/atendimento/categorias/cat1")).toHaveLength(1));
+    expect(api.to("PUT v1/atendimento/categorias/cat1")[0]!.body).toMatchObject({ ativa: false });
+
+    await user.click(within(secao).getAllByRole("button", { name: "Editar" })[0]!);
+    await user.click(within(secao).getByRole("button", { name: "Cancelar" }));
+    expect(within(secao).getByRole("form", { name: "Nova categoria" })).toBeInTheDocument();
+
+    await user.click(within(secao).getAllByRole("button", { name: "Apagar" })[0]!);
+    const dialogo = await screen.findByRole("dialog");
+    await user.click(within(dialogo).getByRole("button", { name: "Apagar" }));
+    await waitFor(() => expect(api.to("DELETE v1/atendimento/categorias/cat1")).toHaveLength(1));
+
+    const oferta = cartao("Nova oferta");
+    await user.type(within(oferta).getByLabelText("Nome *"), "Senha");
+    await user.selectOptions(within(oferta).getByLabelText("Categoria na central"), "cat1");
+    await user.selectOptions(within(oferta).getByLabelText("Ícone do bloco"), "key-round");
+    await user.click(within(oferta).getByRole("button", { name: "Cadastrar oferta" }));
+    await waitFor(() => expect(api.to("POST v1/atendimento/ofertas")).toHaveLength(1));
+    expect(api.to("POST v1/atendimento/ofertas")[0]!.body).toMatchObject({
+      categoria_id: "cat1",
+      icone: "key-round",
+      ordem: 0,
+    });
+  });
+
+  it("sem gestão em toda a instituição, não há categorias", async () => {
+    const p = ["atendimento:manage"];
+    mockBackend(
+      rotas(
+        { "GET v1/atendimento/categorias": { data: [] } },
+        {
+          permissions: p,
+          scopes: [{ perfil: "p", origem: "manual", unidade_id: "u1", permissions: p }],
+        },
+      ),
+    );
+    renderApp(<AtendimentoCadastroPage />);
+    expect(await screen.findByRole("heading", { name: "Nova oferta" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Categorias do catálogo" }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("Atendimento — ofertas e equipes", () => {
   it("cadastra oferta e equipe e corrige as duas", async () => {
     const user = userEvent.setup();
@@ -87,6 +178,9 @@ describe("Atendimento — ofertas e equipes", () => {
       produto_id: null,
       unidade_id: null,
       ativa: false,
+      categoria_id: "",
+      icone: "",
+      ordem: 0,
     });
 
     await user.click(screen.getByRole("button", { name: "Editar Pedido geral" }));

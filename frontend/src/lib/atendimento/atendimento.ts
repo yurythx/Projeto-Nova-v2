@@ -34,6 +34,20 @@ export interface Oferta {
   unidade_id?: string;
   ativa: boolean;
   campos?: CampoOferta[];
+  /** Bloco na central (ADR 078): sem categoria, aparece em "Outros". */
+  categoria_id?: string;
+  icone?: string;
+  ordem?: number;
+}
+
+/** Categoria do catálogo em blocos da central (ADR 078). */
+export interface Categoria {
+  id: string;
+  nome: string;
+  descricao: string;
+  icone: string;
+  ordem: number;
+  ativa: boolean;
 }
 
 export interface Solicitacao {

@@ -55,3 +55,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [075](075-de-para-do-glpi.md) | Tabela de-para do GLPI: secretaria e categoria → unidade, oferta e prioridade; regra da fila para os pedidos novos; metas só para quem teve SLA no GLPI | Aceito e implementado |
 | [076](076-modulo-de-integracoes.md) | Módulo de integrações: extrair para a área de preparo, revisar a tabela de-para e carregar pela tela, com um conector na rede da origem | Aceito e implementado |
 | [077](077-usuarios-do-sso.md) | Usuários do SSO trazidos de uma vez pela API de administração do Keycloak, e não só no primeiro login | Aceito e implementado |
+| [078](078-central-do-solicitante-e-canais.md) | Central do solicitante em blocos, como a do GLPI, e canais de comunicação (e-mail e WhatsApp) na plataforma | Aceito; fase 1 (central) implementada |

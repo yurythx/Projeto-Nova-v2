@@ -111,7 +111,7 @@ func coletar[T any](rows interface {
 
 // ListOfertasAtivas devolve o catálogo que o servidor vê, por nome.
 func (r *Repository) ListOfertasAtivas(ctx context.Context, db database.DBTX) ([]domain.Oferta, error) {
-	rows, err := db.Query(ctx, `SELECT `+ofertaCols+` FROM atendimento_ofertas WHERE ativa ORDER BY nome, id`)
+	rows, err := db.Query(ctx, `SELECT `+ofertaCols+` FROM atendimento_ofertas WHERE ativa ORDER BY ordem, nome, id`)
 	if err != nil {
 		return nil, mapDB(err)
 	}

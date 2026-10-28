@@ -13,6 +13,7 @@ import { TarefasCard } from "@/components/atendimento/TarefasCard";
 import { SegredoVinculadoCard } from "@/components/atendimento/SegredoVinculadoCard";
 import { ContratoDeApoioCard } from "@/components/atendimento/ContratoDeApoioCard";
 import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAtendimentoCard";
+import { LinhaDoTempo } from "@/components/atendimento/LinhaDoTempo";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
 import { RespostasProntas } from "@/components/atendimento/RespostasProntas";
 import { ProblemasDoIncidente } from "@/components/atendimento/ProblemasDoIncidente";
@@ -331,10 +332,17 @@ export function SolicitacaoDetalhe() {
 
             <Card>
               <CardHeader>
-                <CardTitle as="h2">Conversa</CardTitle>
+                <CardTitle as="h2">{tecnico ? "Conversa" : "Acompanhamento"}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-4 pb-5">
-                {d.comentarios.length === 0 ? (
+                {!tecnico ? (
+                  <LinhaDoTempo
+                    solicitacao={s}
+                    comentarios={d.comentarios}
+                    passagens={d.passagens}
+                    eu={me?.id}
+                  />
+                ) : d.comentarios.length === 0 ? (
                   <p className="text-sm text-muted">Nenhuma mensagem ainda.</p>
                 ) : (
                   <ol className="flex flex-col gap-3">
@@ -404,24 +412,26 @@ export function SolicitacaoDetalhe() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle as="h2">Histórico</CardTitle>
-              </CardHeader>
-              <CardContent className="pb-5">
-                <ol className="flex flex-col gap-2 text-sm">
-                  {d.passagens.map((p) => (
-                    <li key={p.id} className="flex flex-wrap gap-x-2">
-                      <span className="font-medium">{rotuloEstado(p.para)}</span>
-                      <span className="text-muted">
-                        {fmtDateTime(p.em)}
-                        {p.autor_nome ? ` · ${p.autor_nome}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </CardContent>
-            </Card>
+            {tecnico && (
+              <Card>
+                <CardHeader>
+                  <CardTitle as="h2">Histórico</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-5">
+                  <ol className="flex flex-col gap-2 text-sm">
+                    {d.passagens.map((p) => (
+                      <li key={p.id} className="flex flex-wrap gap-x-2">
+                        <span className="font-medium">{rotuloEstado(p.para)}</span>
+                        <span className="text-muted">
+                          {fmtDateTime(p.em)}
+                          {p.autor_nome ? ` · ${p.autor_nome}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </DataState>

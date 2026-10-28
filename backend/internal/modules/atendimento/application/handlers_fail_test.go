@@ -39,6 +39,9 @@ type leituraFalha struct{ stubRepo }
 func (leituraFalha) ListOfertasAtivas(context.Context, database.DBTX) ([]domain.Oferta, error) {
 	return nil, errors.New("banco")
 }
+func (leituraFalha) ListCategorias(context.Context, database.DBTX, bool) ([]domain.Categoria, error) {
+	return nil, errors.New("banco")
+}
 func (leituraFalha) VisitasEmAndamento(context.Context, database.DBTX, domain.Filtro) ([]domain.VisitaEmCampo, error) {
 	return nil, errors.New("banco")
 }
@@ -56,6 +59,8 @@ func TestHandlersDoPortalComFalha(t *testing.T) {
 		url  string
 	}{
 		{h.Catalogo, "/atendimento/catalogo"},
+		{h.CategoriasDoCatalogo, "/atendimento/catalogo/categorias"},
+		{h.ListarCategorias, "/atendimento/categorias"},
 		{h.ListarMinhas, "/atendimento/minhas?situacao=abertas"},
 		{h.ListarFila, "/atendimento/fila"},
 		{h.Candidatos, "/atendimento/candidatos?unidade_id=" + uuid.NewString()},

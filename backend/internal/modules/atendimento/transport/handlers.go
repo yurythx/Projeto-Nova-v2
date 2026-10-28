@@ -24,6 +24,20 @@ type OfertaRequest struct {
 	UnidadeID *uuid.UUID      `json:"unidade_id"`
 	Ativa     *bool           `json:"ativa"`
 	Campos    *[]domain.Campo `json:"campos"`
+	// Bloco na central (ADR 078): categoria_id "" tira da categoria;
+	// ausente conserva.
+	CategoriaID *string `json:"categoria_id" validate:"omitempty,max=36"`
+	Icone       *string `json:"icone" validate:"omitempty,max=40"`
+	Ordem       *int    `json:"ordem" validate:"omitempty,min=0,max=999"`
+}
+
+// CategoriaRequest é o corpo de criação e edição de uma categoria.
+type CategoriaRequest struct {
+	Nome      string `json:"nome" validate:"required,max=80"`
+	Descricao string `json:"descricao" validate:"max=300"`
+	Icone     string `json:"icone" validate:"max=40"`
+	Ordem     int    `json:"ordem" validate:"min=0,max=999"`
+	Ativa     *bool  `json:"ativa"`
 }
 
 // EquipeRequest é o corpo de criação e edição de uma equipe.
@@ -57,6 +71,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtendimentoAbrir))
 		r.Get("/atendimento/catalogo", h.Catalogo)
+		r.Get("/atendimento/catalogo/categorias", h.CategoriasDoCatalogo)
 		r.Post("/atendimento/solicitacoes", h.Abrir)
 		r.Post("/atendimento/deflexao", h.RegistrarDeflexao)
 		r.Get("/atendimento/minhas", h.ListarMinhas)
@@ -114,6 +129,10 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Put("/atendimento/eventos/configuracao", h.ConfigurarEventos)
 		r.Put("/atendimento/xla", h.SalvarMetasXLA)
 		r.Post("/atendimento/ofertas", h.CriarOferta)
+		r.Get("/atendimento/categorias", h.ListarCategorias)
+		r.Post("/atendimento/categorias", h.CriarCategoria)
+		r.Put("/atendimento/categorias/{id}", h.AtualizarCategoria)
+		r.Delete("/atendimento/categorias/{id}", h.ApagarCategoria)
 		r.Get("/atendimento/ofertas/{id}", h.ObterOferta)
 		r.Put("/atendimento/ofertas/{id}", h.AtualizarOferta)
 		r.Get("/atendimento/equipes", h.ListarEquipes)
@@ -140,8 +159,25 @@ func (h *Handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 	httputil.WriteError(w, r, h.logger, application.MapError(err))
 }
 
-func (req OfertaRequest) entrada() application.OfertaEntrada {
-	return application.OfertaEntrada{Nome: req.Nome, Descricao: req.Descricao, Tipo: req.Tipo, ProdutoID: req.ProdutoID, UnidadeID: req.UnidadeID, Ativa: req.Ativa, Campos: req.Campos}
+func (req OfertaRequest) entrada() (application.OfertaEntrada, error) {
+	in := application.OfertaEntrada{Nome: req.Nome, Descricao: req.Descricao, Tipo: req.Tipo, ProdutoID: req.ProdutoID, UnidadeID: req.UnidadeID,
+		Ativa: req.Ativa, Campos: req.Campos, Icone: req.Icone, Ordem: req.Ordem}
+	if req.CategoriaID != nil {
+		// "" tira da categoria (uuid.Nil).
+		id := uuid.Nil
+		if *req.CategoriaID != "" {
+			var err error
+			if id, err = uuid.Parse(*req.CategoriaID); err != nil {
+				return in, apperrors.Validation("categoria_id não é um identificador válido")
+			}
+		}
+		in.CategoriaID = &id
+	}
+	return in, nil
+}
+
+func (req CategoriaRequest) entrada() application.CategoriaEntrada {
+	return application.CategoriaEntrada{Nome: req.Nome, Descricao: req.Descricao, Icone: req.Icone, Ordem: req.Ordem, Ativa: req.Ativa}
 }
 
 func (req EquipeRequest) entrada() application.EquipeEntrada {
@@ -164,8 +200,13 @@ func (h *Handlers) CriarOferta(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
+	in, err := req.entrada()
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	o, err := h.svc.CriarOferta(r.Context(), identity, req.entrada())
+	o, err := h.svc.CriarOferta(r.Context(), identity, in)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -199,8 +240,13 @@ func (h *Handlers) AtualizarOferta(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
+	in, err := req.entrada()
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	o, err := h.svc.AtualizarOferta(r.Context(), identity, id, req.entrada())
+	o, err := h.svc.AtualizarOferta(r.Context(), identity, id, in)
 	if err != nil {
 		h.fail(w, r, err)
 		return

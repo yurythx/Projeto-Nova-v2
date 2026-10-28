@@ -23,7 +23,7 @@ func NewRepository() *Repository { return &Repository{} }
 
 var _ domain.Repository = (*Repository)(nil)
 
-const ofertaCols = `id, nome, descricao, tipo, produto_id, unidade_id, ativa, created_at, updated_at, campos`
+const ofertaCols = `id, nome, descricao, tipo, produto_id, unidade_id, ativa, created_at, updated_at, campos, categoria_id, icone, ordem`
 
 const equipeCols = `e.id, e.nome, e.unidade_id, e.ola_horas, e.created_at, e.updated_at,
 	COALESCE((SELECT array_agg(m.user_id ORDER BY m.user_id) FROM atendimento_equipe_membros m WHERE m.equipe_id = e.id), '{}')`
@@ -38,6 +38,8 @@ func mapDB(err error) error {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			switch {
+			case strings.Contains(pgErr.ConstraintName, "categoria_id"):
+				return domain.ErrCategoriaInexistente
 			case strings.Contains(pgErr.ConstraintName, "oferta_id"):
 				return domain.ErrOfertaInexistente
 			case strings.Contains(pgErr.ConstraintName, "solicitacao_id"):
@@ -53,6 +55,8 @@ func mapDB(err error) error {
 		return domain.ErrUnidadeInexistente
 	case database.IsCheckViolation(err):
 		return domain.ErrEntradaInvalida
+	case database.IsUniqueViolation(err) && strings.Contains(err.Error(), "atendimento_categorias_nome"):
+		return domain.ErrCategoriaRepetida
 	default:
 		return fmt.Errorf("atendimento: %w", err)
 	}
@@ -68,7 +72,7 @@ func idsOrEmpty(ids []uuid.UUID) []uuid.UUID {
 func scanOferta(row interface{ Scan(...any) error }) (domain.Oferta, error) {
 	var o domain.Oferta
 	var raw []byte
-	err := row.Scan(&o.ID, &o.Nome, &o.Descricao, &o.Tipo, &o.ProdutoID, &o.UnidadeID, &o.Ativa, &o.CreatedAt, &o.UpdatedAt, &raw)
+	err := row.Scan(&o.ID, &o.Nome, &o.Descricao, &o.Tipo, &o.ProdutoID, &o.UnidadeID, &o.Ativa, &o.CreatedAt, &o.UpdatedAt, &raw, &o.CategoriaID, &o.Icone, &o.Ordem)
 	if err != nil {
 		return domain.Oferta{}, err
 	}
@@ -151,8 +155,8 @@ func (r *Repository) InsertOferta(ctx context.Context, db database.DBTX, o domai
 		return domain.Oferta{}, err
 	}
 	out, err := scanOferta(db.QueryRow(ctx, `INSERT INTO atendimento_ofertas (`+ofertaCols+`)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING `+ofertaCols,
-		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, o.CreatedAt, o.UpdatedAt, campos))
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING `+ofertaCols,
+		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, o.CreatedAt, o.UpdatedAt, campos, o.CategoriaID, o.Icone, o.Ordem))
 	if err != nil {
 		return domain.Oferta{}, mapDB(err)
 	}
@@ -166,9 +170,10 @@ func (r *Repository) UpdateOferta(ctx context.Context, db database.DBTX, o domai
 		return domain.Oferta{}, err
 	}
 	out, err := scanOferta(db.QueryRow(ctx, `UPDATE atendimento_ofertas
-		SET nome = $2, descricao = $3, tipo = $4, produto_id = $5, unidade_id = $6, ativa = $7, campos = $8
+		SET nome = $2, descricao = $3, tipo = $4, produto_id = $5, unidade_id = $6, ativa = $7, campos = $8,
+			categoria_id = $9, icone = $10, ordem = $11
 		WHERE id = $1 RETURNING `+ofertaCols,
-		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, campos))
+		o.ID, o.Nome, o.Descricao, o.Tipo, o.ProdutoID, o.UnidadeID, o.Ativa, campos, o.CategoriaID, o.Icone, o.Ordem))
 	if err != nil {
 		return domain.Oferta{}, mapDB(err)
 	}

@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Globe } from "lucide-react";
 
 import { AuthFlashToast } from "@/components/layout/AuthFlashToast";
@@ -23,7 +24,8 @@ import {
   setSidebarCollapsed,
   subscribeSidebarCollapsed,
 } from "@/lib/layout/sidebarCollapsedStore";
-import { PlataformaProvider } from "@/lib/plataforma/PlataformaProvider";
+import { rotaDaCentral, soSolicitante } from "@/lib/plataforma/central";
+import { PlataformaProvider, usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import { CONNECTION_LABEL, CONNECTION_TONE } from "@/lib/websocket/connectionCopy";
 
 const MD_BREAKPOINT_QUERY = "(min-width: 768px)";
@@ -59,6 +61,16 @@ function ShellBody({
     () => initialCollapsed,
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Quem só pede entra na central (ADR 078): sem o menu do sistema, e
+  // qualquer outra rota volta para ela.
+  const { me } = usePlataforma();
+  const central = soSolicitante(me);
+  const pathname = usePathname();
+  const router = useRouter();
+  const foraDaCentral = central && !rotaDaCentral(pathname);
+  useEffect(() => {
+    if (foraDaCentral) router.replace("/atendimento");
+  }, [foraDaCentral, router]);
 
   function toggle() {
     if (window.matchMedia(MD_BREAKPOINT_QUERY).matches) setSidebarCollapsed(!collapsed);
@@ -71,9 +83,9 @@ function ShellBody({
         <AuthFlashToast />
       </Suspense>
       <GovHeader
-        homeHref="/dashboard"
-        searchAction="/busca"
-        onToggleMenu={toggle}
+        homeHref={central ? "/atendimento" : "/dashboard"}
+        searchAction={central ? undefined : "/busca"}
+        onToggleMenu={central ? undefined : toggle}
         menuExpanded={mobileOpen || !collapsed}
         actions={
           <>
@@ -92,14 +104,20 @@ function ShellBody({
           </>
         }
       />
-      <Sidebar
-        collapsed={collapsed}
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+      {!central && (
+        <Sidebar
+          collapsed={collapsed}
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
+      )}
       <div
         className={`flex min-h-dvh flex-col pt-[var(--topbar-h)] transition-[padding] duration-[var(--shell-motion)] ${
-          collapsed ? "md:pl-[var(--sidebar-w-collapsed)]" : "md:pl-[var(--sidebar-w)]"
+          central
+            ? "mx-auto w-full max-w-6xl"
+            : collapsed
+              ? "md:pl-[var(--sidebar-w-collapsed)]"
+              : "md:pl-[var(--sidebar-w)]"
         }`}
       >
         <main
@@ -108,7 +126,7 @@ function ShellBody({
           className="min-w-0 flex-1 px-4 pb-10 pt-6 outline-none sm:px-8"
         >
           <ConnectionStateProvider value={state}>
-            <ModuleGate>{children}</ModuleGate>
+            <ModuleGate>{foraDaCentral ? null : children}</ModuleGate>
           </ConnectionStateProvider>
         </main>
         <GovFooter />

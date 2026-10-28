@@ -3,6 +3,8 @@
 import { type FormEvent, useState } from "react";
 
 import { AlertasDoMonitoramentoCard } from "@/components/atendimento/AlertasDoMonitoramentoCard";
+import { CategoriasDoCatalogo } from "@/components/atendimento/CategoriasDoCatalogo";
+import { OPCOES_DE_ICONE } from "@/components/atendimento/IconeDoCatalogo";
 import { EtapasDeAprovacao } from "@/components/atendimento/EtapasDeAprovacao";
 import { TarefasDaOferta } from "@/components/atendimento/TarefasDaOferta";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
@@ -20,6 +22,7 @@ import { useApiQuery } from "@/lib/api/swr";
 import {
   rotuloTipo,
   type CampoOferta,
+  type Categoria,
   type Oferta,
   type Pessoa,
 } from "@/lib/atendimento/atendimento";
@@ -55,8 +58,9 @@ const opcoesTipo = [
 ];
 
 export default function AtendimentoCadastroPage() {
-  const { can } = usePlataforma();
+  const { can, canGlobal } = usePlataforma();
   const gerencia = can("atendimento:manage");
+  const categorias = useApiQuery<Categoria[]>(gerencia ? "v1/atendimento/categorias" : null);
   const ofertas = useApiQuery<Oferta[]>("v1/atendimento/ofertas");
   const equipes = useApiQuery<Equipe[]>("v1/atendimento/equipes");
   const produtos = useApiQuery<Produto[]>(can("produtos:manage") ? "v1/produtos" : null);
@@ -90,6 +94,9 @@ export default function AtendimentoCadastroPage() {
       produto_id: idOuNulo(fd, "produto_id"),
       unidade_id: idOuNulo(fd, "unidade_id"),
       ativa: fd.get("ativa") === "on",
+      categoria_id: texto(fd, "categoria_id"),
+      icone: texto(fd, "icone"),
+      ordem: Number(fd.get("ordem") || 0),
     };
     if (editando || perguntas.length > 0) body.campos = perguntas;
     const ok = await run(
@@ -147,6 +154,8 @@ export default function AtendimentoCadastroPage() {
         description="O que o servidor pode pedir, em linguagem simples, e as equipes que atendem cada unidade. Só membros de uma equipe da unidade podem assumir as solicitações dela."
       />
 
+      {canGlobal("atendimento:manage") && <CategoriasDoCatalogo categorias={categorias} />}
+
       {gerencia && (
         <Card>
           <CardHeader>
@@ -195,6 +204,34 @@ export default function AtendimentoCadastroPage() {
                 label="Unidade da oferta"
                 defaultValue={editOferta?.unidade_id}
               />
+              <div className="grid gap-3 sm:grid-cols-[1fr_1fr_8rem]">
+                <Select
+                  id="oferta-categoria"
+                  name="categoria_id"
+                  label="Categoria na central"
+                  defaultValue={editOferta?.categoria_id ?? ""}
+                  options={[
+                    { value: "", label: "Sem categoria (Outros)" },
+                    ...(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nome })),
+                  ]}
+                />
+                <Select
+                  id="oferta-icone"
+                  name="icone"
+                  label="Ícone do bloco"
+                  defaultValue={editOferta?.icone ?? ""}
+                  options={OPCOES_DE_ICONE}
+                />
+                <Input
+                  id="oferta-ordem"
+                  name="ordem"
+                  type="number"
+                  label="Ordem"
+                  min={0}
+                  max={999}
+                  defaultValue={editOferta?.ordem ?? 0}
+                />
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   id="oferta-ativa"

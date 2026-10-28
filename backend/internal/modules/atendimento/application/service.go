@@ -42,6 +42,11 @@ type OfertaEntrada struct {
 	Ativa                 *bool
 	// Campos nil conserva os atuais na edição e vale nenhum na criação.
 	Campos *[]domain.Campo
+	// Bloco na central (ADR 078). nil conserva; CategoriaID uuid.Nil tira
+	// da categoria.
+	CategoriaID *uuid.UUID
+	Icone       *string
+	Ordem       *int
 }
 
 // EquipeEntrada são os campos de uma equipe.
@@ -178,6 +183,12 @@ func MapError(err error) error {
 		return causa(err, apperrors.Conflict("escolha, em Atendimento > Configuração, a oferta em que os alertas abrem incidente"))
 	case errors.Is(err, domain.ErrAlertaInvalido):
 		return causa(err, apperrors.Validation("alerta fora do formato do Alertmanager (status e fingerprint)"))
+	case errors.Is(err, domain.ErrApresentacaoInvalida):
+		return causa(err, apperrors.Validation("a categoria tem nome (até 80) e descrição (até 300); o ícone é um nome de até 40 letras minúsculas, dígitos e hífens, e a ordem vai de 0 a 999"))
+	case errors.Is(err, domain.ErrCategoriaRepetida):
+		return causa(err, apperrors.Conflict("já há uma categoria com esse nome"))
+	case errors.Is(err, domain.ErrCategoriaInexistente):
+		return causa(err, apperrors.Validation("categoria não encontrada"))
 	case errors.Is(err, domain.ErrEntradaInvalida):
 		return causa(err, apperrors.Validation("informe o nome (até 160 caracteres); a descrição cabe em 4000 e a equipe em 100 pessoas"))
 	case errors.Is(err, domain.ErrForaDoEscopo):
@@ -336,6 +347,9 @@ func (s *Service) CriarOferta(ctx context.Context, identity auth.Identity, in Of
 	if o, err = aplicarCampos(o, in.Campos); err != nil {
 		return domain.Oferta{}, MapError(err)
 	}
+	if o, err = s.apresentar(ctx, o, in); err != nil {
+		return domain.Oferta{}, MapError(err)
+	}
 	if !ver(identity, o.UnidadeID) {
 		return domain.Oferta{}, MapError(domain.ErrForaDoEscopo)
 	}
@@ -367,6 +381,9 @@ func (s *Service) AtualizarOferta(ctx context.Context, identity auth.Identity, i
 	if in.Campos == nil {
 		next.Campos = prev.Campos
 	} else if next, err = aplicarCampos(next, in.Campos); err != nil {
+		return domain.Oferta{}, MapError(err)
+	}
+	if next, err = s.apresentar(ctx, next, in); err != nil {
 		return domain.Oferta{}, MapError(err)
 	}
 	if !ver(identity, next.UnidadeID) {

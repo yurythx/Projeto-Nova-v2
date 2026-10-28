@@ -28,7 +28,7 @@ describe("Atendimento — navegação", () => {
       </AtendimentoLayout>,
     );
     expect(await screen.findByRole("link", { name: "Fila da equipe" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Minhas solicitações" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Central de atendimento" })).toHaveAttribute(
       "href",
       "/atendimento",
     );
@@ -37,13 +37,52 @@ describe("Atendimento — navegação", () => {
   });
 });
 
+describe("Atendimento — central sem abas", () => {
+  it("quem só pede não vê as abas", async () => {
+    resetNavigation({}, "/atendimento");
+    mockBackend(identityRoutes(perms("atendimento:abrir")));
+    renderApp(
+      <AtendimentoLayout>
+        <p>conteúdo</p>
+      </AtendimentoLayout>,
+    );
+    expect(await screen.findByText("conteúdo")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("navigation", { name: "Seções do atendimento" }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+});
+
 describe("Atendimento — falha de leitura e nova tentativa", () => {
-  const casos: { nome: string; rota: string; tela: ReactElement; perms: string[] }[] = [
+  const casos: {
+    nome: string;
+    rota: string;
+    tela: ReactElement;
+    perms: string[];
+    busca?: string;
+  }[] = [
     {
       nome: "catálogo",
       rota: "GET v1/atendimento/catalogo",
       tela: <AtendimentoPortalPage />,
       perms: ["atendimento:abrir"],
+      busca: "ver=pedido",
+    },
+    {
+      nome: "categorias do catálogo",
+      rota: "GET v1/atendimento/catalogo/categorias",
+      tela: <AtendimentoPortalPage />,
+      perms: ["atendimento:abrir"],
+      busca: "ver=problema",
+    },
+    {
+      nome: "oferta do pedido",
+      rota: "GET v1/atendimento/catalogo",
+      tela: <AtendimentoPortalPage />,
+      perms: ["atendimento:abrir"],
+      busca: "oferta=o1",
     },
     {
       nome: "minhas",
@@ -77,12 +116,13 @@ describe("Atendimento — falha de leitura e nova tentativa", () => {
     },
   ];
 
-  it.each(casos)("$nome", async ({ rota, tela, perms: p }) => {
-    resetNavigation({ id: "s1" }, "/atendimento");
+  it.each(casos)("$nome", async ({ rota, tela, perms: p, busca }) => {
+    resetNavigation({ id: "s1" }, "/atendimento", busca);
     const user = userEvent.setup();
     const api = mockBackend({
       ...identityRoutes(perms(...p)),
       "GET v1/atendimento/catalogo": { data: [] },
+      "GET v1/atendimento/catalogo/categorias": { data: [] },
       "GET v1/atendimento/minhas": { data: [] },
       "GET v1/atendimento/fila": { data: [] },
       "GET v1/atendimento/fila/topicos": { data: { topicos: [] } },
