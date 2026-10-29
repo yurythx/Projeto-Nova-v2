@@ -48,6 +48,8 @@ type SolicitacaoRepository interface {
 
 	ListSolicitacoes(ctx context.Context, db database.DBTX, f FiltroSolicitacao) ([]Solicitacao, int64, error)
 	GetSolicitacao(ctx context.Context, db database.DBTX, id uuid.UUID) (Solicitacao, error)
+	// Importado diz se a solicitação veio de outro sistema (ADR 081).
+	Importado(ctx context.Context, db database.DBTX, id uuid.UUID) (bool, error)
 	// TravarSolicitacao bloqueia a linha até o fim da transação: duas
 	// passagens simultâneas sobre a mesma solicitação são serializadas.
 	TravarSolicitacao(ctx context.Context, db database.DBTX, id uuid.UUID) error
@@ -57,6 +59,8 @@ type SolicitacaoRepository interface {
 	SetSegredo(ctx context.Context, db database.DBTX, id uuid.UUID, segredo *uuid.UUID, agora time.Time) error
 	// SetContratoApoio grava ou limpa (nil) o contrato de apoio (ADR 071).
 	SetContratoApoio(ctx context.Context, db database.DBTX, id uuid.UUID, c *ContratoDeApoio, agora time.Time) error
+	// SetAtivo grava ou limpa (nil) o item de configuração (CMDB) vinculado.
+	SetAtivo(ctx context.Context, db database.DBTX, id uuid.UUID, ativo *uuid.UUID, nome string, agora time.Time) error
 	// AbrirAtribuicao abre o trecho do responsável, com a equipe dele na
 	// unidade; FecharAtribuicao fecha o trecho aberto, se houver (ADR 073).
 	AbrirAtribuicao(ctx context.Context, db database.DBTX, solicitacao, responsavel uuid.UUID, unidade *uuid.UUID, em time.Time) error
@@ -312,6 +316,7 @@ type FiltroSolicitacao struct {
 	// categoria do catálogo e período de abertura [De, Ate).
 	Prioridade         string
 	Unidade, Categoria *uuid.UUID
+	Ativo              *uuid.UUID
 	De, Ate            *time.Time
 	// Ordem é uma de OrdensDaLista; vazia mantém a ordem da fila (mais
 	// antigas primeiro) ou a de quem abriu (mais novas primeiro).

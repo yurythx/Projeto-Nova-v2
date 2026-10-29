@@ -54,6 +54,9 @@ func (s *Service) RegistrarApontamento(ctx context.Context, identity auth.Identi
 	if !slices.Contains(p, domain.PapelTecnico) {
 		return domain.Apontamento{}, MapError(domain.ErrForaDoEscopo)
 	}
+	if err := s.recusarEspelho(ctx, s.pool, solicitacaoID); err != nil {
+		return domain.Apontamento{}, MapError(err)
+	}
 
 	nome := identity.Username
 	if nome == "" {

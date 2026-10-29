@@ -66,7 +66,11 @@ type Solicitacao struct {
 	ContratoApoioID    *uuid.UUID `json:"contrato_apoio_id,omitempty"`
 	ContratoApoio      string     `json:"contrato_apoio,omitempty"`
 	ContratoPrazoHoras *int       `json:"contrato_prazo_horas,omitempty"`
-	CreatedAt          time.Time  `json:"created_at"`
+	// AtivoID é o item de configuração (CMDB) afetado ou solicitado, com o
+	// nome copiado quando foi vinculado.
+	AtivoID   *uuid.UUID `json:"ativo_id,omitempty"`
+	AtivoNome string     `json:"ativo_nome,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
 
 	OfertaNome      string `json:"oferta_nome"`

@@ -107,7 +107,10 @@ func lerMapa(ctx context.Context, pool *pgxpool.Pool, caminho string) (*glpi.Map
 		return nil, fmt.Errorf("--mapa: %w", err)
 	}
 	defer f.Close()
-	rows, err := pool.Query(ctx, `SELECT id, nome FROM unidades WHERE ativo`)
+	rows, err := pool.Query(ctx, `SELECT u.id, u.nome, u.sigla, COALESCE(e.nome, ''), COALESCE(e.sigla, ''), u.parent_id IS NULL
+		FROM unidades u LEFT JOIN entidades e ON e.id = u.entidade_id
+		WHERE u.ativo
+		ORDER BY u.parent_id IS NOT NULL`)
 	if err != nil {
 		return nil, fmt.Errorf("unidades: %w", err)
 	}
@@ -115,11 +118,21 @@ func lerMapa(ctx context.Context, pool *pgxpool.Pool, caminho string) (*glpi.Map
 	unidades := map[string]uuid.UUID{}
 	for rows.Next() {
 		var id uuid.UUID
-		var nome string
-		if err := rows.Scan(&id, &nome); err != nil {
+		var nome, sigla, entNome, entSigla string
+		var raiz bool
+		if err := rows.Scan(&id, &nome, &sigla, &entNome, &entSigla, &raiz); err != nil {
 			return nil, err
 		}
 		unidades[nome] = id
+		if raiz {
+			for _, chave := range []string{sigla, entNome, entSigla} {
+				if chave != "" {
+					if _, existe := unidades[chave]; !existe {
+						unidades[chave] = id
+					}
+				}
+			}
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

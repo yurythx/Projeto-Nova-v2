@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -29,6 +31,8 @@ type Service struct {
 	outbox    *outbox.Writer
 	logger    *slog.Logger
 	passagens Passagens
+	portas    domain.Portas
+	produtos  domain.Produtos
 }
 
 // Passagens lê os caminhos acrescentados no quadro. Nil mantém só o fluxo de fábrica.
@@ -42,6 +46,12 @@ func NewService(pool *pgxpool.Pool, repo domain.Repository, ob *outbox.Writer, l
 
 // ComPassagens liga os caminhos acrescentados nos quadros de projetos e de tarefas.
 func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+// ComPortas liga as portas de mudanças, problemas, ativos, solicitações e produtos.
+func (s *Service) ComPortas(portas domain.Portas, produtos domain.Produtos) {
+	s.portas = portas
+	s.produtos = produtos
+}
 
 func (s *Service) mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error) {
 	if s.passagens == nil {
@@ -72,11 +82,45 @@ func MapError(err error) error {
 		return apperrors.Validation("horas devem ser maiores que zero e até 24h, com descrição")
 	case errors.Is(err, domain.ErrApontamentoNaoEncontrado):
 		return apperrors.NotFound("apontamento não encontrado")
+	case errors.Is(err, domain.ErrForaDoEscopo):
+		return apperrors.Forbidden("fora do seu escopo de gestão")
+	case errors.Is(err, domain.ErrVinculoInvalido):
+		return apperrors.Validation("o vínculo precisa apontar para uma mudança, problema, ativo ou solicitação")
+	case errors.Is(err, domain.ErrVinculoInexistente):
+		return apperrors.Validation("item do vínculo ou produto não encontrado")
+	case errors.Is(err, domain.ErrDeOutraUnidade):
+		return apperrors.Validation("o vínculo ou produto precisa ser compatível com a unidade do projeto")
+	case errors.Is(err, domain.ErrIntegracaoDesligada):
+		return apperrors.Validation("o módulo deste vínculo está desligado")
 	}
 	return err
 }
 
+func (s *Service) conferirProduto(ctx context.Context, db database.DBTX, produto, unidade *uuid.UUID) error {
+	if produto == nil || s.produtos == nil {
+		return nil
+	}
+	dona, err := s.produtos.Consultar(ctx, db, *produto)
+	if err != nil {
+		return err
+	}
+	if !domain.MesmaUnidadeCompativel(unidade, dona) {
+		return domain.ErrDeOutraUnidade
+	}
+	return nil
+}
+
+func alvoUnidade(u *uuid.UUID) auth.Target {
+	if u == nil {
+		return auth.Target{}
+	}
+	return auth.InUnidade(*u)
+}
+
 func (s *Service) Criar(ctx context.Context, idt auth.Identity, e domain.EntradaProjeto) (*domain.Projeto, error) {
+	if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(e.UnidadeID)) {
+		return nil, domain.ErrForaDoEscopo
+	}
 	if err := e.Validar(); err != nil {
 		return nil, err
 	}
@@ -100,6 +144,9 @@ func (s *Service) Criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 	}
 
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.conferirProduto(ctx, tx, p.ProdutoID, p.UnidadeID); err != nil {
+			return err
+		}
 		if err := s.repo.Criar(ctx, tx, p); err != nil {
 			return err
 		}
@@ -122,14 +169,23 @@ func (s *Service) Obter(ctx context.Context, idt auth.Identity, id uuid.UUID) (*
 	if err != nil {
 		return nil, err
 	}
+	if !auth.Can(idt, auth.PermProjetosRead, alvoUnidade(p.UnidadeID)) && !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
+		return nil, domain.ErrForaDoEscopo
+	}
 	return s.comProximos(ctx, s.pool, p)
 }
 
 func (s *Service) Listar(ctx context.Context, idt auth.Identity, estado, busca string) ([]domain.Projeto, error) {
-	f := domain.FiltroProjetos{
-		Estado: estado,
-		Busca:  busca,
+	return s.ListarPorFiltro(ctx, idt, domain.FiltroProjetos{Estado: estado, Busca: busca})
+}
+
+func (s *Service) ListarPorFiltro(ctx context.Context, idt auth.Identity, f domain.FiltroProjetos) ([]domain.Projeto, error) {
+	cob := auth.CoverageOf(idt, auth.PermProjetosRead)
+	if !cob.All && len(cob.Unidades) == 0 {
+		cob = auth.CoverageOf(idt, auth.PermProjetosManage)
 	}
+	f.Restrito = !cob.All
+	f.Unidades = cob.Unidades
 	lista, err := s.repo.Listar(ctx, s.pool, f)
 	if err != nil {
 		return nil, err
@@ -167,8 +223,14 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 		if err != nil {
 			return err
 		}
+		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) || !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(e.UnidadeID)) {
+			return domain.ErrForaDoEscopo
+		}
 		if p.Estado == domain.EstadoCancelado {
 			return domain.ErrProjetoEncerrado
+		}
+		if err := s.conferirProduto(ctx, tx, e.ProdutoID, e.UnidadeID); err != nil {
+			return err
 		}
 
 		res, err := s.repo.Atualizar(ctx, tx, id, e)
@@ -195,6 +257,9 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 		p, err := s.repo.Obter(ctx, tx, id)
 		if err != nil {
 			return err
+		}
+		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
+			return domain.ErrForaDoEscopo
 		}
 
 		mapa, err := s.mapa(ctx, tx, "projetos")
@@ -223,7 +288,7 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 	return atualizado, nil
 }
 
-func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*domain.Tarefa, error) {
+func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
 	mapa, err := s.mapa(ctx, s.pool, "tarefas")
 	if err != nil {
 		return nil, err
@@ -239,6 +304,7 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 		ResponsavelNome: responsavel,
 		Estado:          estado,
 		Ordem:           ordem,
+		DataLimite:      dataLimite,
 	}
 	if err := s.repo.CriarTarefa(ctx, s.pool, t); err != nil {
 		return nil, err
@@ -246,7 +312,7 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 	return t, nil
 }
 
-func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*domain.Tarefa, error) {
+func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
 	atual, err := s.repo.EstadoDaTarefa(ctx, s.pool, id)
 	if err != nil {
 		return nil, err
@@ -258,7 +324,7 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 	if !domain.EstadoDeTarefaAceito(atual, estado, mapa) {
 		return nil, domain.ErrEstadoInvalido
 	}
-	return s.repo.AtualizarTarefa(ctx, s.pool, id, titulo, descricao, responsavel, estado, ordem)
+	return s.repo.AtualizarTarefa(ctx, s.pool, id, titulo, descricao, responsavel, estado, ordem, dataLimite)
 }
 
 func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Tarefa, error) {
@@ -266,7 +332,15 @@ func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoI
 }
 
 func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID) error {
-	return s.repo.ExcluirTarefa(ctx, s.pool, id)
+	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.ExcluirTarefa(ctx, tx, id); err != nil {
+			return err
+		}
+		if s.outbox != nil {
+			_ = s.outbox.Write(ctx, tx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), uuid.Nil, map[string]any{"id": id})
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), nil, nil))
+	})
 }
 
 func (s *Service) ListarVinculos(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Vinculo, error) {
@@ -274,21 +348,49 @@ func (s *Service) ListarVinculos(ctx context.Context, idt auth.Identity, projeto
 }
 
 func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, tipo string, alvoID uuid.UUID, rotulo string) (*domain.Vinculo, error) {
+	if err := domain.NovoVinculo(tipo, alvoID); err != nil {
+		return nil, err
+	}
 	v := &domain.Vinculo{
 		ID:           uuid.New(),
 		ProjetoID:    projetoID,
 		Tipo:         tipo,
 		AlvoID:       alvoID,
-		Rotulo:       rotulo,
+		Rotulo:       strings.TrimSpace(rotulo),
 		VinculadoPor: idt.Email,
 	}
 
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		p, err := s.repo.Obter(ctx, tx, projetoID)
+		if err != nil {
+			return err
+		}
+		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
+			return domain.ErrForaDoEscopo
+		}
+		if p.Estado == domain.EstadoCancelado {
+			return domain.ErrProjetoEncerrado
+		}
+		if s.portas != nil {
+			if !s.portas.Disponivel(tipo) {
+				return domain.ErrIntegracaoDesligada
+			}
+			item, err := s.portas.Consultar(ctx, tx, tipo, alvoID)
+			if err != nil {
+				return err
+			}
+			if !domain.MesmaUnidadeCompativel(p.UnidadeID, item.UnidadeID) {
+				return domain.ErrDeOutraUnidade
+			}
+			if v.Rotulo == "" {
+				v.Rotulo = item.Rotulo
+			}
+		}
 		if err := s.repo.CriarVinculo(ctx, tx, v); err != nil {
 			return err
 		}
 		if s.outbox != nil {
-			payload := map[string]any{"projeto_id": projetoID, "tipo": tipo, "alvo_id": alvoID, "rotulo": rotulo}
+			payload := map[string]any{"projeto_id": projetoID, "tipo": tipo, "alvo_id": alvoID, "rotulo": v.Rotulo}
 			_ = s.outbox.Write(ctx, tx, "projetos.vinculo.created", "projeto", projetoID.String(), uuid.Nil, payload)
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.created", "projeto", projetoID.String(), nil, v))
@@ -300,7 +402,15 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 }
 
 func (s *Service) Desvincular(ctx context.Context, idt auth.Identity, vinculoID uuid.UUID) error {
-	return s.repo.ExcluirVinculo(ctx, s.pool, vinculoID)
+	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.ExcluirVinculo(ctx, tx, vinculoID); err != nil {
+			return err
+		}
+		if s.outbox != nil {
+			_ = s.outbox.Write(ctx, tx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), uuid.Nil, map[string]any{"id": vinculoID})
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), nil, nil))
+	})
 }
 
 func (s *Service) RegistrarApontamento(
@@ -397,5 +507,13 @@ func (s *Service) ListarApontamentos(
 }
 
 func (s *Service) ExcluirApontamento(ctx context.Context, idt auth.Identity, apontamentoID uuid.UUID) error {
-	return s.repo.ExcluirApontamento(ctx, s.pool, apontamentoID)
+	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.ExcluirApontamento(ctx, tx, apontamentoID); err != nil {
+			return err
+		}
+		if s.outbox != nil {
+			_ = s.outbox.Write(ctx, tx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), uuid.Nil, map[string]any{"id": apontamentoID})
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), nil, nil))
+	})
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, ChevronRight, ClipboardList, SlidersHorizontal } from "lucide-react";
-import { type FormEvent, type ReactNode, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useCallback, useMemo, useState } from "react";
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 import { PedidoDeContato } from "@/components/canais/ContatoParaAvisos";
@@ -21,6 +21,8 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { OrgTree } from "@/lib/plataforma/types";
 import {
   FRAME_SOLICITACAO,
   proximoPasso,
@@ -36,7 +38,7 @@ import {
 export const PORTAS = {
   pedido: {
     tipo: "requisicao" as TipoSolicitacao,
-    titulo: "Fazer um pedido",
+    titulo: "Abrir um chamado",
     descricao: "Acesso, equipamento, instalação, cadastro: algo que você precisa.",
     icone: "shopping-cart",
   },
@@ -98,7 +100,7 @@ function Blocos({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   );
 }
 
-/** Trilha de volta: Central › Fazer um pedido › Acesso. */
+/** Trilha de volta: Central › Abrir um chamado › Acesso. */
 function Trilha({ passos }: { passos: { rotulo: string; href?: string }[] }) {
   return (
     <nav aria-label="Você está em" className="text-sm text-muted">
@@ -224,23 +226,125 @@ function ordenar<T extends { ordem?: number; nome: string }>(lista: T[]): T[] {
 
 /** Catálogo de uma porta: as categorias em blocos e, dentro de uma, as ofertas. */
 export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria?: string }) {
+  const { me } = usePlataforma();
   const p = PORTAS[porta];
   const catalogo = useApiQuery<Oferta[]>("v1/atendimento/catalogo");
   const categorias = useApiQuery<Categoria[]>("v1/atendimento/catalogo/categorias");
+  const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const [busca, setBusca] = useState("");
-  const ofertas = useMemo(
-    () => ordenar((catalogo.data ?? []).filter((o) => o.tipo === p.tipo)),
-    [catalogo.data, p.tipo],
+  const [secretariaFiltro, setSecretariaFiltro] = useState<string>("");
+
+  const secretarias = useMemo(() => {
+    const mapa = new Map<string, { id: string; nome: string; sigla: string }>();
+    const unidadesNaArvore = new Map<string, { id: string; nome: string; sigla: string }>();
+    for (const ent of tree.data ?? []) {
+      for (const u of ent.unidades) {
+        unidadesNaArvore.set(u.id, {
+          id: u.id,
+          nome: u.nome,
+          sigla: u.sigla || u.nome,
+        });
+      }
+    }
+    for (const o of catalogo.data ?? []) {
+      if (o.tipo === p.tipo) {
+        if (o.secretaria_id) {
+          mapa.set(o.secretaria_id, {
+            id: o.secretaria_id,
+            nome: o.secretaria_nome || o.secretaria_sigla || "Unidade",
+            sigla: o.secretaria_sigla || o.secretaria_nome || "Unidade",
+          });
+        } else if (o.unidade_id && unidadesNaArvore.has(o.unidade_id)) {
+          const u = unidadesNaArvore.get(o.unidade_id)!;
+          mapa.set(u.id, u);
+        }
+      }
+    }
+    return [...mapa.values()].sort((a, b) => a.sigla.localeCompare(b.sigla, "pt-BR"));
+  }, [catalogo.data, p.tipo, tree.data]);
+
+  const secretariaPadrao = useMemo(() => {
+    if (secretarias.length <= 1) return "todas";
+    for (const escopo of me?.scopes ?? []) {
+      if (escopo.unidade_id) {
+        if (secretarias.some((s) => s.id === escopo.unidade_id)) {
+          return escopo.unidade_id;
+        }
+        for (const ent of tree.data ?? []) {
+          const matchU = ent.unidades.find((u) => u.id === escopo.unidade_id);
+          if (matchU?.parent_id && secretarias.some((s) => s.id === matchU.parent_id)) {
+            return matchU.parent_id;
+          }
+        }
+      }
+      if (escopo.entidade_id) {
+        const ent = (tree.data ?? []).find((e) => e.id === escopo.entidade_id);
+        if (ent) {
+          const achou = secretarias.find((s) => ent.unidades.some((u) => u.id === s.id));
+          if (achou) return achou.id;
+        }
+      }
+    }
+    return secretarias[0]?.id ?? "todas";
+  }, [me?.scopes, secretarias, tree.data]);
+
+  const secretariaAtiva = secretariaFiltro || secretariaPadrao;
+
+  const ofertas = useMemo(() => {
+    const raw = (catalogo.data ?? []).filter((o) => {
+      if (o.tipo !== p.tipo) return false;
+      if (secretarias.length <= 1 || secretariaAtiva === "todas") return true;
+      const secId = o.secretaria_id || o.unidade_id;
+      return secId === secretariaAtiva;
+    });
+
+    const vistos = new Set<string>();
+    const unicos: Oferta[] = [];
+    for (const o of raw) {
+      const chave = `${o.secretaria_id || o.unidade_id || "global"}:${o.nome.trim().toLowerCase()}`;
+      if (!vistos.has(chave)) {
+        vistos.add(chave);
+        unicos.push(o);
+      }
+    }
+    return ordenar(unicos);
+  }, [catalogo.data, p.tipo, secretarias.length, secretariaAtiva]);
+
+  const conhecidas = useMemo(
+    () => new Set((categorias.data ?? []).map((c) => c.id)),
+    [categorias.data],
   );
-  const conhecidas = new Set((categorias.data ?? []).map((c) => c.id));
-  const daCategoria = (o: Oferta) =>
-    o.categoria_id && conhecidas.has(o.categoria_id) ? o.categoria_id : OUTROS;
-  const grupos = [
-    ...ordenar(categorias.data ?? []).filter((c) => ofertas.some((o) => daCategoria(o) === c.id)),
-    ...(ofertas.some((o) => daCategoria(o) === OUTROS)
-      ? [{ id: OUTROS, nome: "Outros", descricao: "Demais atendimentos.", icone: "" }]
-      : []),
-  ];
+  const daCategoria = useCallback(
+    (o: Oferta) => (o.categoria_id && conhecidas.has(o.categoria_id) ? o.categoria_id : OUTROS),
+    [conhecidas],
+  );
+
+  const grupos = useMemo(() => {
+    const lista = ordenar(categorias.data ?? []).filter((c) =>
+      ofertas.some((o) => daCategoria(o) === c.id),
+    );
+    const vistas = new Set<string>();
+    const deduplicadas: Categoria[] = [];
+    for (const cat of lista) {
+      const chave = cat.nome.trim().toLowerCase();
+      if (!vistas.has(chave)) {
+        vistas.add(chave);
+        deduplicadas.push(cat);
+      }
+    }
+    if (ofertas.some((o) => daCategoria(o) === OUTROS)) {
+      deduplicadas.push({
+        id: OUTROS,
+        nome: "Outros",
+        descricao: "Demais atendimentos.",
+        icone: "",
+        ordem: 999,
+        ativa: true,
+      });
+    }
+    return deduplicadas;
+  }, [categorias.data, daCategoria, ofertas]);
+
   const termo = busca.trim().toLocaleLowerCase("pt-BR");
   const escolhida = grupos.find((g) => g.id === categoria);
   const visiveis = termo
@@ -258,6 +362,20 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
           ...(escolhida ? [{ rotulo: escolhida.nome }] : []),
         ]}
       />
+      {secretarias.length > 1 && (
+        <SectionTabsInline
+          label="Entidade provedora do atendimento"
+          value={secretariaAtiva}
+          onChange={setSecretariaFiltro}
+          tabs={[
+            { value: "todas", label: "Todas as centrais" },
+            ...secretarias.map((s) => ({
+              value: s.id,
+              label: s.sigla && s.sigla !== s.nome ? `${s.sigla} · ${s.nome}` : s.nome,
+            })),
+          ]}
+        />
+      )}
       <div className="relative">
         <Input
           id="central-busca"
@@ -286,15 +404,23 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
             <p className="text-sm text-muted">Nada encontrado com “{busca.trim()}”.</p>
           ) : (
             <Blocos rotulo="Atendimentos">
-              {visiveis.map((o) => (
-                <Bloco
-                  key={o.id}
-                  href={`${BASE}?oferta=${o.id}`}
-                  titulo={o.nome}
-                  descricao={o.descricao}
-                  icone={<IconeDoCatalogo nome={o.icone} padrao={p.icone} size={24} />}
-                />
-              ))}
+              {visiveis.map((o) => {
+                const rotuloSec = o.secretaria_sigla || o.secretaria_nome;
+                return (
+                  <Bloco
+                    key={o.id}
+                    href={`${BASE}?oferta=${o.id}`}
+                    titulo={o.nome}
+                    descricao={o.descricao}
+                    icone={<IconeDoCatalogo nome={o.icone} padrao={p.icone} size={24} />}
+                    selo={
+                      secretarias.length > 1 && rotuloSec ? (
+                        <Badge tone="neutral">{rotuloSec}</Badge>
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
             </Blocos>
           )
         ) : (

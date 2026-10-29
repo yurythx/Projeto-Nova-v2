@@ -19,6 +19,7 @@ import { MudancaDetalhe } from "@/app/(protected)/mudancas/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
+import { FiltroPorUnidade, filtrarPorUnidade } from "@/components/servicos/FiltroPorUnidade";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -59,6 +60,7 @@ function MudancasConteudo() {
   const gere = can("mudancas:manage");
   const ve = gere || can("mudancas:aprovar");
   const [estado, setEstado] = useState("");
+  const [unidadeFiltro, setUnidadeFiltro] = useState("todas");
   const [formAberto, setFormAberto] = useState(false);
   const [quadro, setQuadro] = useState<"rascunho" | "em_avaliacao" | "cancelada">("rascunho");
   const look = useAparencia("nova-faixas:mudancas");
@@ -161,7 +163,8 @@ function MudancasConteudo() {
     if (ok) void mudancas.mutate();
   }
 
-  const lista = mudancas.data ?? [];
+  const todasMudancas = mudancas.data ?? [];
+  const lista = filtrarPorUnidade(todasMudancas, unidadeFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (m) => faixaDaMudanca(m.estado));
   const quadrosMudanca = (
     [
@@ -217,6 +220,13 @@ function MudancasConteudo() {
           { value: "kanban", label: "Quadro" },
           { value: "lista", label: "Lista" },
         ]}
+      />
+
+      <FiltroPorUnidade
+        rotulo="Filtrar mudanças por unidade"
+        itens={todasMudancas}
+        value={unidadeFiltro}
+        onChange={setUnidadeFiltro}
       />
 
       {!kanban && (

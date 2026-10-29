@@ -18,6 +18,7 @@ import {
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
+import { FiltroPorUnidade, filtrarPorUnidade } from "@/components/servicos/FiltroPorUnidade";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -107,12 +108,16 @@ export default function AtivosPage() {
 function Ativos() {
   const { can } = usePlataforma();
   const gere = can("ativos:manage");
+  const le = gere || can("ativos:read");
   const produto = useSearchParams().get("produto") ?? undefined;
   const ativos = useApiQuery<Ativo[]>(
-    gere ? withQuery("v1/ativos", { produto_id: produto }) : null,
+    le ? withQuery("v1/ativos", { produto_id: produto }) : null,
   );
-  const produtos = useApiQuery<Produto[]>(gere && can("produtos:manage") ? "v1/produtos" : null);
+  const produtos = useApiQuery<Produto[]>(
+    le && (can("produtos:manage") || can("produtos:read")) ? "v1/produtos" : null,
+  );
   const [editando, setEditando] = useState<Ativo | null>(null);
+  const [unidadeFiltro, setUnidadeFiltro] = useState("todas");
   const { run, pending } = useAction();
   const look = useAparencia("nova-faixas:ativos");
   const fabricaAtivo: ColunaFaixa[] = colunasEmOrdem(
@@ -125,7 +130,7 @@ function Ativos() {
   const catalogo = useQuadro("ativos", fabricaAtivo);
   const controles = { oficial: catalogo.oficial };
 
-  if (!gere) {
+  if (!le) {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader eyebrow="Gestão de serviços" title="Ativos" />
@@ -182,7 +187,8 @@ function Ativos() {
     if (ok) void ativos.mutate();
   }
 
-  const lista = ativos.data ?? [];
+  const todosAtivos = ativos.data ?? [];
+  const lista = filtrarPorUnidade(todosAtivos, unidadeFiltro);
   const colunasAtivo = colunasVisiveis(catalogo.colunas, lista, (a) => a.estado);
   return (
     <div className="flex flex-col gap-6">
@@ -191,22 +197,22 @@ function Ativos() {
         title="Ativos"
         description="Equipamentos, sistemas, licenças, links e serviços contratados que sustentam os produtos digitais."
         actions={
-          <>
-            {gere && (
+          gere ? (
+            <>
               <Link href="/ativos/colunas" className={buttonClass("secondary")}>
                 Colunas
               </Link>
-            )}
-            <Button
-              type="button"
-              onClick={() => {
-                setEditando(null);
-                requestAnimationFrame(() => document.getElementById("ativo-nome")?.focus());
-              }}
-            >
-              Novo ativo
-            </Button>
-          </>
+              <Button
+                type="button"
+                onClick={() => {
+                  setEditando(null);
+                  requestAnimationFrame(() => document.getElementById("ativo-nome")?.focus());
+                }}
+              >
+                Novo ativo
+              </Button>
+            </>
+          ) : undefined
         }
       />
       {produto && (
@@ -218,96 +224,105 @@ function Ativos() {
         </p>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle as="h2">{editando ? "Editar ativo" : "Novo ativo"}</CardTitle>
-        </CardHeader>
-        <CardContent className="pb-5">
-          <form
-            key={editando?.id ?? "novo"}
-            onSubmit={salvar}
-            className="mt-3 grid gap-3 sm:grid-cols-2"
-          >
-            <Input
-              id="ativo-nome"
-              name="nome"
-              label="Nome *"
-              required
-              maxLength={160}
-              defaultValue={editando?.nome}
-              autoComplete="off"
-            />
-            <Input
-              id="ativo-identificador"
-              name="identificador"
-              label="Patrimônio ou número de série"
-              maxLength={80}
-              defaultValue={editando?.identificador}
-              autoComplete="off"
-            />
-            <Select
-              id="ativo-tipo"
-              name="tipo"
-              label="Tipo"
-              defaultValue={editando?.tipo ?? "hardware"}
-              options={(Object.keys(TIPO_ATIVO) as TipoAtivo[]).map((t) => ({
-                value: t,
-                label: TIPO_ATIVO[t],
-              }))}
-            />
-            <Select
-              id="ativo-estado"
-              name="estado"
-              label="Estado"
-              defaultValue={editando?.estado ?? "em_uso"}
-              options={ordenarColunas(
-                catalogo.colunas.filter(
-                  (coluna) => coluna.ativa !== false || coluna.id === editando?.estado,
-                ),
-              ).map((coluna) => ({
-                value: coluna.id,
-                label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
-              }))}
-            />
-            <Select
-              id="ativo-produto"
-              name="produto_id"
-              label="Produto que sustenta"
-              defaultValue={editando?.produto_id ?? produto ?? ""}
-              options={[
-                { value: "", label: "Nenhum" },
-                ...(produtos.data ?? []).map((p) => ({ value: p.id, label: p.nome })),
-              ]}
-            />
-            <UnidadeDonaSelect
-              id="ativo-unidade"
-              permission="ativos:manage"
-              label="Unidade"
-              defaultValue={editando?.unidade_id}
-            />
-            <div className="sm:col-span-2">
-              <Textarea
-                id="ativo-descricao"
-                name="descricao"
-                label="Descrição"
-                maxLength={4000}
-                rows={2}
-                defaultValue={editando?.descricao}
+      <FiltroPorUnidade
+        rotulo="Filtrar ativos por unidade"
+        itens={todosAtivos}
+        value={unidadeFiltro}
+        onChange={setUnidadeFiltro}
+      />
+
+      {gere && (
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2">{editando ? "Editar ativo" : "Novo ativo"}</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-5">
+            <form
+              key={editando?.id ?? "novo"}
+              onSubmit={salvar}
+              className="mt-3 grid gap-3 sm:grid-cols-2"
+            >
+              <Input
+                id="ativo-nome"
+                name="nome"
+                label="Nome *"
+                required
+                maxLength={160}
+                defaultValue={editando?.nome}
+                autoComplete="off"
               />
-            </div>
-            <div className="flex flex-wrap gap-2 sm:col-span-2">
-              <Button type="submit" loading={pending}>
-                {editando ? "Salvar ativo" : "Cadastrar ativo"}
-              </Button>
-              {editando && (
-                <Button type="button" variant="secondary" onClick={() => setEditando(null)}>
-                  Cancelar edição
+              <Input
+                id="ativo-identificador"
+                name="identificador"
+                label="Patrimônio ou número de série"
+                maxLength={80}
+                defaultValue={editando?.identificador}
+                autoComplete="off"
+              />
+              <Select
+                id="ativo-tipo"
+                name="tipo"
+                label="Tipo"
+                defaultValue={editando?.tipo ?? "hardware"}
+                options={(Object.keys(TIPO_ATIVO) as TipoAtivo[]).map((t) => ({
+                  value: t,
+                  label: TIPO_ATIVO[t],
+                }))}
+              />
+              <Select
+                id="ativo-estado"
+                name="estado"
+                label="Estado"
+                defaultValue={editando?.estado ?? "em_uso"}
+                options={ordenarColunas(
+                  catalogo.colunas.filter(
+                    (coluna) => coluna.ativa !== false || coluna.id === editando?.estado,
+                  ),
+                ).map((coluna) => ({
+                  value: coluna.id,
+                  label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
+                }))}
+              />
+              <Select
+                id="ativo-produto"
+                name="produto_id"
+                label="Produto que sustenta"
+                defaultValue={editando?.produto_id ?? produto ?? ""}
+                options={[
+                  { value: "", label: "Nenhum" },
+                  ...(produtos.data ?? []).map((p) => ({ value: p.id, label: p.nome })),
+                ]}
+              />
+              <UnidadeDonaSelect
+                id="ativo-unidade"
+                permission="ativos:manage"
+                label="Unidade"
+                defaultValue={editando?.unidade_id}
+              />
+              <div className="sm:col-span-2">
+                <Textarea
+                  id="ativo-descricao"
+                  name="descricao"
+                  label="Descrição"
+                  maxLength={4000}
+                  rows={2}
+                  defaultValue={editando?.descricao}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <Button type="submit" loading={pending}>
+                  {editando ? "Salvar ativo" : "Cadastrar ativo"}
                 </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                {editando && (
+                  <Button type="button" variant="secondary" onClick={() => setEditando(null)}>
+                    Cancelar edição
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <DataState
         loading={ativos.isLoading}
@@ -325,10 +340,12 @@ function Ativos() {
           colunaDe={(a) => a.estado}
           idDe={(a) => a.id}
           nomeDe={(a) => a.nome}
-          aoRenomear={(a, nome) => void renomearAtivo(a, nome)}
+          aoRenomear={gere ? (a, nome) => void renomearAtivo(a, nome) : undefined}
           aoAbrir={(a) => {
-            setEditando(a);
-            document.getElementById("ativo-nome")?.focus();
+            if (gere) {
+              setEditando(a);
+              document.getElementById("ativo-nome")?.focus();
+            }
           }}
           render={(a, vista) => (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -338,6 +355,12 @@ function Ativos() {
                   onSalvar={vista.salvarNome}
                   className="text-left font-medium text-foreground hover:underline"
                 />
+                <Link
+                  href={`/ativos/${a.id}`}
+                  className="block text-xs font-medium text-primary hover:underline"
+                >
+                  Ver no CMDB →
+                </Link>
                 <p className="text-sm text-muted">
                   {TIPO_ATIVO[a.tipo]}
                   {a.identificador ? ` · ${a.identificador}` : ""}
@@ -352,18 +375,20 @@ function Ativos() {
                 <Badge tone={seloDoEstado(catalogo.colunas, a.estado, ESTADO_ATIVO[a.estado]).tone}>
                   {seloDoEstado(catalogo.colunas, a.estado, ESTADO_ATIVO[a.estado]).label}
                 </Badge>
-                <Button type="button" variant="secondary" onClick={() => setEditando(a)}>
-                  Editar {a.nome}
-                </Button>
+                {gere && (
+                  <Button type="button" variant="secondary" onClick={() => setEditando(a)}>
+                    Editar {a.nome}
+                  </Button>
+                )}
               </div>
             </div>
           )}
         />
       </DataState>
 
-      <CredenciaisDaMaquina />
+      {gere && <CredenciaisDaMaquina />}
 
-      {lista.length >= 2 ? (
+      {gere && lista.length >= 2 ? (
         <Relacoes origemOpcoes={lista} onMudou={() => void ativos.mutate()} />
       ) : null}
     </div>

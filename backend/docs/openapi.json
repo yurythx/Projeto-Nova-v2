@@ -1053,6 +1053,9 @@
             },
             "type": "array"
           },
+          "espelho": {
+            "type": "boolean"
+          },
           "etapa_atual": {
             "type": "string"
           },
@@ -1927,6 +1930,16 @@
           },
           "produto_id": {
             "format": "uuid",
+            "type": "string"
+          },
+          "secretaria_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "secretaria_nome": {
+            "type": "string"
+          },
+          "secretaria_sigla": {
             "type": "string"
           },
           "tipo": {
@@ -7803,6 +7816,9 @@
           "perfil": {
             "type": "string"
           },
+          "sincronizar": {
+            "type": "boolean"
+          },
           "tem_credenciais": {
             "type": "boolean"
           },
@@ -7832,6 +7848,7 @@
           "modo",
           "nome",
           "perfil",
+          "sincronizar",
           "tem_credenciais",
           "tem_token",
           "tipo",
@@ -8009,6 +8026,15 @@
           "total": {
             "minimum": 0,
             "type": "integer"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "IntegracoesSincronizacaoRequest": {
+        "properties": {
+          "ligada": {
+            "type": "boolean"
           }
         },
         "type": "object",
@@ -10165,6 +10191,11 @@
       },
       "ProjetosTarefaRequest": {
         "properties": {
+          "data_limite": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
           "descricao": {
             "maxLength": 2000,
             "type": "string"
@@ -27577,6 +27608,85 @@
           }
         ],
         "summary": "Integrações — inventário da área de preparo",
+        "tags": [
+          "integracoes"
+        ]
+      }
+    },
+    "/api/v1/integracoes/conexoes/{id}/sincronizacao": {
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putIntegracoesConexoesIdSincronizacao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegracoesSincronizacaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/IntegracoesConexao"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Integrações — Salvar /integracoes/conexoes/{id}/sincronizacao",
         "tags": [
           "integracoes"
         ]

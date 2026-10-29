@@ -22,14 +22,12 @@ import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { buttonClass } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import {
   type Categoria,
   type Estado,
   rotuloEstado,
-  rotuloTipo,
   type Solicitacao,
 } from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
@@ -63,25 +61,17 @@ function FilaDaEquipe() {
   const vista: Vista = params.get("vista") === "lista" ? "lista" : "kanban";
   const filtros = lerFiltros(params);
   const kanban = vista === "kanban";
-  const fila = useApiPage<Solicitacao>(
-    atende
-      ? withQuery(
-          "v1/atendimento/fila",
-          kanban
-            ? // O quadro mostra o fluxo em andamento, uma coluna por estado.
-              {
-                responsavel: filtros.responsavel || undefined,
-                tipo: filtros.tipo || undefined,
-                page: 1,
-                page_size: 100,
-              }
-            : consultaDaLista(filtros),
-        )
-      : null,
-  );
-  const arvore = useApiQuery<OrgTree[]>(atende && !kanban ? "v1/iam/org-tree" : null);
+  const consulta = kanban
+    ? {
+        ...consultaDaLista(filtros),
+        page: 1,
+        page_size: 100,
+      }
+    : consultaDaLista(filtros);
+  const fila = useApiPage<Solicitacao>(atende ? withQuery("v1/atendimento/fila", consulta) : null);
+  const arvore = useApiQuery<OrgTree[]>(atende ? "v1/iam/org-tree" : null);
   const categorias = useApiQuery<Categoria[]>(
-    atende && !kanban ? "v1/atendimento/catalogo/categorias" : null,
+    atende ? "v1/atendimento/catalogo/categorias" : null,
   );
   const unidades = (arvore.data ?? []).flatMap((e) =>
     e.unidades.map((u) => ({ value: u.id, label: `${e.nome} — ${u.nome}` })),
@@ -134,12 +124,16 @@ function FilaDaEquipe() {
   }
 
   const itens = fila.data?.items ?? [];
+  const incluirEncerradas = filtros.situacao === "todas";
   const colunasQuadro = colunasVisiveis(
-    catalogo.colunas.filter((coluna) => coluna.id !== "encerrado" && coluna.id !== "cancelado"),
+    catalogo.colunas.filter(
+      (coluna) => incluirEncerradas || (coluna.id !== "encerrado" && coluna.id !== "cancelado"),
+    ),
     itens,
     (s) => {
       const faixa = faixaDaFila(s.estado);
-      return faixa === "encerrado" || faixa === "cancelado" ? null : faixa;
+      if (!incluirEncerradas && (faixa === "encerrado" || faixa === "cancelado")) return null;
+      return faixa;
     },
   );
 
@@ -180,39 +174,12 @@ function FilaDaEquipe() {
         ]}
       />
 
-      {kanban ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Select
-            id="fila-responsavel"
-            label="Responsável"
-            value={filtros.responsavel}
-            onChange={(e) => mudar({ responsavel: e.target.value })}
-            options={[
-              { value: "", label: "Todos" },
-              { value: "eu", label: "Comigo" },
-              { value: "nenhum", label: "Sem responsável" },
-            ]}
-          />
-          <Select
-            id="fila-tipo"
-            label="Tipo"
-            value={filtros.tipo}
-            onChange={(e) => mudar({ tipo: e.target.value })}
-            options={[
-              { value: "", label: "Todos" },
-              { value: "incidente", label: rotuloTipo("incidente") },
-              { value: "requisicao", label: rotuloTipo("requisicao") },
-            ]}
-          />
-        </div>
-      ) : (
-        <FiltrosDaLista
-          filtros={filtros}
-          unidades={unidades}
-          categorias={(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nome }))}
-          mudar={mudar}
-        />
-      )}
+      <FiltrosDaLista
+        filtros={filtros}
+        unidades={unidades}
+        categorias={(categorias.data ?? []).map((c) => ({ value: c.id, label: c.nome }))}
+        mudar={mudar}
+      />
 
       <DataState
         loading={fila.isLoading}

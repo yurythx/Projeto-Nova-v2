@@ -38,6 +38,10 @@ export interface Oferta {
   categoria_id?: string;
   icone?: string;
   ordem?: number;
+  /** Secretaria/entidade provedora quando há múltiplas centrais (ex.: SECITI, SMS, SEMED). */
+  secretaria_id?: string;
+  secretaria_nome?: string;
+  secretaria_sigla?: string;
 }
 
 /** Categoria do catálogo em blocos da central (ADR 078). */
@@ -87,6 +91,9 @@ export interface Solicitacao {
   contrato_apoio_id?: string;
   contrato_apoio?: string;
   contrato_prazo_horas?: number;
+  /** Item de configuração (CMDB) vinculado ao chamado. */
+  ativo_id?: string;
+  ativo_nome?: string;
 }
 
 export interface ContratoDeApoio {
@@ -254,6 +261,7 @@ export interface LinhaSecretaria {
 export interface LinhaEquipe {
   equipe_id: string;
   nome: string;
+  unidade_id?: string;
   ola_horas: number | null;
   concluidas: number;
   no_prazo: number;
@@ -304,6 +312,8 @@ export interface Detalhe {
   etapa_atual?: string;
   /** Trabalho de cada equipe no pedido (ADR 068), só para quem atende. */
   tarefas?: Tarefa[];
+  /** Veio do GLPI e muda lá até a virada (ADR 081): aqui, só leitura. */
+  espelho?: boolean;
 }
 
 export interface Tarefa {

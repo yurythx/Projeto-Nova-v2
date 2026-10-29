@@ -68,6 +68,9 @@ func (s *Service) ConcluirPorMudanca(ctx context.Context, tx pgx.Tx, id, autor u
 	if err != nil {
 		return nil, err
 	}
+	if err := s.recusarEspelho(ctx, tx, id); err != nil {
+		return nil, err
+	}
 	if sol.Estado == domain.EstadoResolvido || sol.Estado == domain.EstadoAtendido || sol.Estado == domain.EstadoEncerrado {
 		return nil, nil
 	}

@@ -18,6 +18,7 @@ import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDo
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
+import { FiltroPorUnidade, filtrarPorUnidade } from "@/components/servicos/FiltroPorUnidade";
 import { COLUNAS_PROBLEMA, ProblemasKanban } from "@/components/servicos/ProblemasKanban";
 import { ProblemaDetalhe } from "@/app/(protected)/problemas/[id]/page";
 import { Badge } from "@/components/ui/Badge";
@@ -77,6 +78,7 @@ function ProblemasConteudo() {
   const le = gere || can("problemas:read");
   const [estado, setEstado] = useState("");
   const [busca, setBusca] = useState("");
+  const [unidadeFiltro, setUnidadeFiltro] = useState("todas");
   const [formAberto, setFormAberto] = useState(false);
   const [quadro, setQuadro] = useState<EstadoProblema>("registrado");
   const look = useAparencia("nova-faixas:problemas");
@@ -88,7 +90,7 @@ function ProblemasConteudo() {
     le
       ? withQuery("v1/problemas", {
           estado: kanban ? undefined : estado,
-          q: kanban ? undefined : busca,
+          q: busca || undefined,
         })
       : null,
   );
@@ -232,7 +234,8 @@ function ProblemasConteudo() {
     if (okPost) void problemas.mutate();
   }
 
-  const lista = problemas.data ?? [];
+  const todosProblemas = problemas.data ?? [];
+  const lista = filtrarPorUnidade(todosProblemas, unidadeFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
   const quadros = ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map(
     (coluna) => ({
@@ -277,8 +280,15 @@ function ProblemasConteudo() {
         ]}
       />
 
-      {!kanban && (
-        <div className="grid gap-3 sm:grid-cols-2">
+      <FiltroPorUnidade
+        rotulo="Filtrar problemas por unidade"
+        itens={todosProblemas}
+        value={unidadeFiltro}
+        onChange={setUnidadeFiltro}
+      />
+
+      <div className={`grid gap-3 ${kanban ? "sm:grid-cols-1" : "sm:grid-cols-2"}`}>
+        {!kanban && (
           <Select
             id="problemas-estado"
             label="Estado"
@@ -294,14 +304,14 @@ function ProblemasConteudo() {
               ),
             ]}
           />
-          <Input
-            id="problemas-busca"
-            label="Buscar no título ou no contorno"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-      )}
+        )}
+        <Input
+          id="problemas-busca"
+          label="Buscar no título ou no contorno"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+      </div>
 
       <DataState
         loading={problemas.isLoading}

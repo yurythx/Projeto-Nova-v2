@@ -14,6 +14,7 @@ import (
 	mudancas "github.com/yurythx/projeto-nova-v2/internal/modules/mudancas/domain"
 	problemas "github.com/yurythx/projeto-nova-v2/internal/modules/problemas/domain"
 	produtos "github.com/yurythx/projeto-nova-v2/internal/modules/produtos/domain"
+	projetos "github.com/yurythx/projeto-nova-v2/internal/modules/projetos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
@@ -52,6 +53,16 @@ type stubProblemas struct {
 
 func (s stubProblemas) Get(context.Context, database.DBTX, uuid.UUID) (problemas.Problema, error) {
 	return s.p, s.err
+}
+
+type stubMudancas struct {
+	mudancas.Repository
+	m   mudancas.Mudanca
+	err error
+}
+
+func (s stubMudancas) Get(context.Context, database.DBTX, uuid.UUID) (mudancas.Mudanca, error) {
+	return s.m, s.err
 }
 
 func ligadoSe(ok bool) func(string) bool { return func(string) bool { return ok } }
@@ -143,6 +154,51 @@ func TestPortasDosServicos(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := quebrados.Consultar(ctx, nil, mudancas.VinculoAtivo, id); !errors.Is(err, errBanco) {
+		t.Fatal(err)
+	}
+
+	// Alvos do projeto.
+	alvosProj, prodProj := portasProjetos(
+		stubProdutos{item: produtos.Produto{UnidadeID: &u}},
+		stubAtendimento{sol: atendimento.Solicitacao{Numero: 9, Titulo: "Sem rede"}},
+		stubAtivos{item: ativos.Ativo{Nome: "Firewall"}},
+		stubProblemas{p: problemas.Problema{Numero: 5, Titulo: "Rota"}},
+		stubMudancas{m: mudancas.Mudanca{Numero: 12, Titulo: "Troca de switch"}},
+		ligadoSe(true),
+	)
+	for tipo, rotulo := range map[string]string{
+		projetos.VinculoMudanca:     "Mudança #12 · Troca de switch",
+		projetos.VinculoProblema:    "Problema #5 · Rota",
+		projetos.VinculoSolicitacao: "Solicitação #9 · Sem rede",
+		projetos.VinculoAtivo:       "Ativo · Firewall",
+	} {
+		if a, err := alvosProj.Consultar(ctx, nil, tipo, id); err != nil || a.Rotulo != rotulo {
+			t.Errorf("projeto %s: %+v %v", tipo, a, err)
+		}
+		if !alvosProj.Disponivel(tipo) {
+			t.Errorf("projeto %s disponível", tipo)
+		}
+	}
+	if alvosProj.Disponivel("inexistente") {
+		t.Fatal("tipo desconhecido em projetos")
+	}
+	if got, err := prodProj.Consultar(ctx, nil, id); err != nil || *got != u {
+		t.Fatalf("produto do projeto: %v %v", got, err)
+	}
+	quebradosProj, _ := portasProjetos(
+		stubProdutos{},
+		stubAtendimento{err: atendimento.ErrNaoEncontrado},
+		stubAtivos{err: errBanco},
+		stubProblemas{err: problemas.ErrNaoEncontrado},
+		stubMudancas{err: mudancas.ErrNaoEncontrado},
+		ligadoSe(true),
+	)
+	for _, tipo := range []string{projetos.VinculoMudanca, projetos.VinculoProblema, projetos.VinculoSolicitacao} {
+		if _, err := quebradosProj.Consultar(ctx, nil, tipo, id); !errors.Is(err, projetos.ErrVinculoInexistente) {
+			t.Fatalf("%s: %v", tipo, err)
+		}
+	}
+	if _, err := quebradosProj.Consultar(ctx, nil, projetos.VinculoAtivo, id); !errors.Is(err, errBanco) {
 		t.Fatal(err)
 	}
 }

@@ -167,11 +167,29 @@ func curto(nome string) string {
 	return strings.TrimSpace(partes[len(partes)-1])
 }
 
+// ApelidosSecretaria devolve os nomes e siglas pelos quais cada uma das 3
+// entidades do GLPI (PREFEITURA, SMS, SEMECEL) se identifica na árvore de
+// entidades e unidades da instituição (ADR 075).
+func ApelidosSecretaria(sec string) []string {
+	switch strings.ToUpper(strings.TrimSpace(sec)) {
+	case "PREFEITURA":
+		return []string{"PREFEITURA", "SECITI", "CIÊNCIA, TECNOLOGIA E INOVAÇÃO", "CIENCIA, TECNOLOGIA E INOVACAO", "TI DA PREFEITURA"}
+	case "SMS":
+		return []string{"SMS", "SEDE DA SMS", "SECRETARIA MUNICIPAL DE SAÚDE", "SECRETARIA MUNICIPAL DE SAUDE", "TI DA SAÚDE", "TI DA SAUDE"}
+	case "SEMECEL":
+		return []string{"SEMECEL", "SEMED", "SECRETARIA MUNICIPAL DE EDUCAÇÃO", "SECRETARIA MUNICIPAL DE EDUCACAO", "TI DA EDUCAÇÃO", "TI DA EDUCACAO", "SECRETARIA EXECUTIVA"}
+	default:
+		return []string{strings.TrimSpace(sec)}
+	}
+}
+
 // Sugerir monta a tabela a partir do inventário: a oferta é o nome da
 // categoria, a prioridade vem do prazo que os chamados tiveram e, sem
 // prazo, do prazo que a mesma categoria teve em outra secretaria. Cada
 // secretaria ganha a linha "*", para a categoria que surgir depois.
-// unidades leva a secretaria à unidade daqui (sem caixa).
+// unidades leva a secretaria à unidade daqui (sem caixa, aceitando também
+// as siglas e nomes oficiais das 3 entidades: PREFEITURA/SECITI, SMS e
+// SEMECEL/SEMED).
 func Sugerir(inv Inventario, unidades map[string]uuid.UUID) []Linha {
 	prioridade := map[string]string{}
 	for _, n := range inv.Niveis {
@@ -186,9 +204,11 @@ func Sugerir(inv Inventario, unidades map[string]uuid.UUID) []Linha {
 		}
 	}
 	unidade := func(sec string) *uuid.UUID {
-		for nome, id := range unidades {
-			if strings.EqualFold(strings.TrimSpace(nome), sec) {
-				return &id
+		for _, candidato := range ApelidosSecretaria(sec) {
+			for nome, id := range unidades {
+				if strings.EqualFold(strings.TrimSpace(nome), candidato) {
+					return &id
+				}
 			}
 		}
 		return nil

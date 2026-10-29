@@ -36,17 +36,17 @@ var errSimulacao = errors.New("glpi: simulação do desfazer")
 
 // mexidos marca os chamados importados que receberam alguma ação aqui
 // depois da carga. O registro da importação nasce na transação do
-// chamado, e o que a carga grava leva a data do GLPI: o que é posterior
-// ao registro foi feito aqui. Na dúvida o chamado fica, que é o lado
-// seguro.
+// chamado, e o que a carga e a sincronização (ADR 081) gravam leva a data
+// do GLPI: o que é posterior à última passagem delas foi feito aqui. Na
+// dúvida o chamado fica, que é o lado seguro.
 const mexidos = `
 CREATE TEMP TABLE desfazer_chamados ON COMMIT DROP AS
-SELECT i.destino AS id, i.created_at AS em, s.numero,
+SELECT i.destino AS id, i.em, s.numero,
        (EXISTS (SELECT 1 FROM audit_logs l WHERE l.resource_type = 'solicitacao' AND l.resource_id = i.destino::text AND l.created_at > i.created_at)
      OR EXISTS (SELECT 1 FROM atendimento_comentarios x WHERE x.solicitacao_id = i.destino AND x.created_at > i.created_at)
      OR EXISTS (SELECT 1 FROM atendimento_passagens x WHERE x.solicitacao_id = i.destino AND x.em > i.created_at)
      OR EXISTS (SELECT 1 FROM atendimento_avaliacoes x WHERE x.solicitacao_id = i.destino AND x.created_at > i.created_at)
-     OR EXISTS (SELECT 1 FROM atendimento_atribuicoes x WHERE x.solicitacao_id = i.destino)
+     OR EXISTS (SELECT 1 FROM atendimento_atribuicoes x WHERE x.solicitacao_id = i.destino AND x.inicio > i.created_at)
      OR EXISTS (SELECT 1 FROM atendimento_apontamentos x WHERE x.solicitacao_id = i.destino)
      OR EXISTS (SELECT 1 FROM atendimento_tarefas x WHERE x.solicitacao_id = i.destino)
      OR EXISTS (SELECT 1 FROM atendimento_aprovacoes x WHERE x.solicitacao_id = i.destino)
@@ -55,9 +55,10 @@ SELECT i.destino AS id, i.created_at AS em, s.numero,
      OR EXISTS (SELECT 1 FROM correio_recebidos x WHERE x.solicitacao_id = i.destino)
      OR EXISTS (SELECT 1 FROM ocorrencias x WHERE x.chamado_id = i.destino)
      OR EXISTS (SELECT 1 FROM problemas_incidentes x WHERE x.solicitacao_id = i.destino)) AS mexido
-  FROM atendimento_importacao i
-  JOIN atendimento_solicitacoes s ON s.id = i.destino
- WHERE i.origem = 'glpi' AND i.tipo = 'solicitacao'`
+  FROM (SELECT destino, GREATEST(created_at, COALESCE(sincronizado_em, created_at)) AS created_at,
+               GREATEST(created_at, COALESCE(sincronizado_em, created_at)) AS em
+          FROM atendimento_importacao WHERE origem = 'glpi' AND tipo = 'solicitacao') i
+  JOIN atendimento_solicitacoes s ON s.id = i.destino`
 
 // cadastros são os cadastros que a carga criou, na ordem de remoção. Um
 // cadastro fica quando alguém o alterou aqui depois da carga ou quando o
@@ -70,10 +71,10 @@ var cadastros = []struct {
 	{"categoria", "atendimento_categorias", "categoria",
 		`EXISTS (SELECT 1 FROM atendimento_ofertas o WHERE o.categoria_id = c.id)`},
 	{"equipe", "atendimento_equipes", "equipe",
-		`EXISTS (SELECT 1 FROM atendimento_regras x WHERE x.equipe_id = c.id)
+		`EXISTS (SELECT 1 FROM atendimento_regras x WHERE x.equipe_id = c.id AND x.nome NOT LIKE 'GLPI: %')
 		 OR EXISTS (SELECT 1 FROM atendimento_oferta_tarefas x WHERE x.equipe_id = c.id)
 		 OR EXISTS (SELECT 1 FROM atendimento_tarefas x WHERE x.equipe_id = c.id)
-		 OR EXISTS (SELECT 1 FROM atendimento_atribuicoes x WHERE x.equipe_id = c.id)`},
+		 OR EXISTS (SELECT 1 FROM atendimento_atribuicoes x WHERE x.equipe_id = c.id AND x.inicio > k.em)`},
 	{"politica", "atendimento_politicas", "politica", `false`},
 	{"feriado", "atendimento_feriados", "feriado", `false`},
 }
@@ -139,6 +140,7 @@ func Desfazer(ctx context.Context, pool *pgxpool.Pool, gravar bool, progresso fu
 			WHEN 'equipe' THEN EXISTS (SELECT 1 FROM atendimento_equipes x WHERE x.id = i.destino)
 			WHEN 'politica' THEN EXISTS (SELECT 1 FROM atendimento_politicas x WHERE x.id = i.destino)
 			WHEN 'feriado' THEN EXISTS (SELECT 1 FROM atendimento_feriados x WHERE x.id = i.destino)
+			WHEN 'acompanhamento' THEN EXISTS (SELECT 1 FROM atendimento_comentarios x WHERE x.id = i.destino)
 			ELSE true END`); err != nil {
 		return r, fmt.Errorf("registro: %w", err)
 	}

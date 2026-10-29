@@ -73,9 +73,42 @@ type Service struct {
 	caixa     mail.Caixa       // entrada de e-mail (WithCaixa); nil = desligada
 	segredos  Segredos         // nome do segredo no cofre; nil recusa o vínculo
 	contratos ContratosDeApoio // contratos de apoio (ADR 071); nil recusa o vínculo
+	ativos    Ativos           // item de configuração (CMDB); nil recusa o vínculo
 	passagens Passagens        // caminhos acrescentados na fila; nil = só o fluxo de fábrica
 	// assistente é a IA de quem atende (WithAssistente, ADR 065); nil = sem IA.
 	assistente Assistente
+	// espelho diz se a sincronização com o GLPI está ligada (WithEspelho,
+	// ADR 081); nil = desligada.
+	espelho func(ctx context.Context) (bool, error)
+}
+
+// WithEspelho liga o chamado importado só para leitura enquanto a
+// sincronização com a origem estiver ligada.
+func (s *Service) WithEspelho(ativo func(ctx context.Context) (bool, error)) *Service {
+	s.espelho = ativo
+	return s
+}
+
+// espelhado diz se a solicitação é o espelho de um chamado que ainda muda
+// na origem: importada, com a sincronização ligada.
+func (s *Service) espelhado(ctx context.Context, db database.DBTX, id uuid.UUID) (bool, error) {
+	if s.espelho == nil {
+		return false, nil
+	}
+	ativo, err := s.espelho(ctx)
+	if err != nil || !ativo {
+		return false, err
+	}
+	return s.repo.Importado(ctx, db, id)
+}
+
+// recusarEspelho recusa mudar o espelho: ele muda na origem até a virada.
+func (s *Service) recusarEspelho(ctx context.Context, db database.DBTX, id uuid.UUID) error {
+	espelho, err := s.espelhado(ctx, db, id)
+	if err == nil && espelho {
+		err = domain.ErrEspelho
+	}
+	return err
 }
 
 // Passagens lê os caminhos acrescentados no quadro.
@@ -102,8 +135,16 @@ type ContratosDeApoio interface {
 	Obter(ctx context.Context, identity auth.Identity, id uuid.UUID) (domain.ContratoDeApoio, error)
 }
 
+// Ativos consulta o item de configuração (CMDB) que a solicitação afeta.
+type Ativos interface {
+	Consultar(ctx context.Context, db database.DBTX, id uuid.UUID) (nome string, unidadeID *uuid.UUID, err error)
+}
+
 // WithContratos liga a porta dos contratos de apoio.
 func (s *Service) WithContratos(c ContratosDeApoio) *Service { s.contratos = c; return s }
+
+// WithAtivos liga a porta de ativos (CMDB).
+func (s *Service) WithAtivos(a Ativos) *Service { s.ativos = a; return s }
 
 // WithSegredo liga a porta do cofre.
 func (s *Service) WithSegredo(segredos Segredos) *Service { s.segredos = segredos; return s }
@@ -137,6 +178,8 @@ func MapError(err error) error {
 		return nil
 	case errors.Is(err, domain.ErrNaoEncontrado):
 		return causa(err, apperrors.NotFound("registro de atendimento não encontrado"))
+	case errors.Is(err, domain.ErrEspelho):
+		return causa(err, apperrors.Conflict("este chamado é atendido no GLPI até a virada: mude-o por lá"))
 	case errors.Is(err, domain.ErrSemIA):
 		return causa(err, apperrors.FeatureDisabled("a IA do atendimento não está configurada"))
 	case errors.Is(err, domain.ErrRespostaDaIA):
@@ -225,6 +268,12 @@ func MapError(err error) error {
 		return causa(err, apperrors.Validation("o cofre está desligado"))
 	case errors.Is(err, domain.ErrSegredoAusente):
 		return causa(err, apperrors.Validation("segredo não encontrado no seu cofre"))
+	case errors.Is(err, domain.ErrAtivosDesligado):
+		return causa(err, apperrors.Validation("o módulo de ativos está desligado"))
+	case errors.Is(err, domain.ErrAtivoAusente):
+		return causa(err, apperrors.Validation("ativo não encontrado"))
+	case errors.Is(err, domain.ErrAtivoDeOutraUnidade):
+		return causa(err, apperrors.Validation("o ativo precisa ser da mesma unidade da solicitação"))
 	case errors.Is(err, domain.ErrComentarioInvalido):
 		return causa(err, apperrors.Validation("escreva o comentário (até 4000 caracteres)"))
 	case errors.Is(err, domain.ErrNotaInternaNegada):

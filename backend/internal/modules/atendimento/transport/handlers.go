@@ -96,6 +96,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Post("/atendimento/solicitacoes/{id}/ia/resumo", h.Resumir)
 		r.Post("/atendimento/ia/sugestoes/{id}/decisao", h.DecidirSugestao)
 		r.Put("/atendimento/solicitacoes/{id}/segredo", h.VincularSegredo)
+		r.Put("/atendimento/solicitacoes/{id}/ativo", h.VincularAtivo)
 		r.Post("/atendimento/solicitacoes/{id}/visitas", h.IniciarVisita)
 		r.Post("/atendimento/visitas/{id}/checkout", h.ConcluirVisita)
 		r.Post("/atendimento/visitas/{id}/cancelar", h.CancelarVisita)

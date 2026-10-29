@@ -39,12 +39,12 @@ func mapDB(err error) error {
 }
 
 const colunasConexao = `id, tipo, nome, modo, url, perfil, fuso, credenciais <> '', token_hash IS NOT NULL, token_em, extraido_em,
-	created_at, updated_at, created_by, credenciais`
+	created_at, updated_at, created_by, credenciais, sincronizar`
 
 func scanConexao(row pgx.Row) (domain.Conexao, error) {
 	var c domain.Conexao
 	err := row.Scan(&c.ID, &c.Tipo, &c.Nome, &c.Modo, &c.URL, &c.Perfil, &c.Fuso, &c.TemCredenciais, &c.TemToken, &c.TokenEm, &c.ExtraidoEm,
-		&c.CreatedAt, &c.UpdatedAt, &c.CreatedBy, &c.Cifradas)
+		&c.CreatedAt, &c.UpdatedAt, &c.CreatedBy, &c.Cifradas, &c.Sincronizar)
 	return c, mapDB(err)
 }
 
@@ -111,6 +111,31 @@ func (r *Repository) PorToken(ctx context.Context, db database.DBTX, hash string
 func (r *Repository) MarcarExtracao(ctx context.Context, db database.DBTX, id uuid.UUID, quando time.Time) error {
 	tag, err := db.Exec(ctx, `UPDATE integracoes_conexoes SET extraido_em = $2 WHERE id = $1`, id, quando)
 	return afetou(tag.RowsAffected(), err)
+}
+
+func (r *Repository) SetSincronizar(ctx context.Context, db database.DBTX, id uuid.UUID, ligar bool) error {
+	tag, err := db.Exec(ctx, `UPDATE integracoes_conexoes SET sincronizar = $2, updated_at = now() WHERE id = $1`, id, ligar)
+	return afetou(tag.RowsAffected(), err)
+}
+
+func (r *Repository) Sincronizando(ctx context.Context, db database.DBTX) (bool, error) {
+	var sim bool
+	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM integracoes_conexoes WHERE sincronizar)`).Scan(&sim)
+	return sim, mapDB(err)
+}
+
+// ParaSincronizar olha a extração pedida, não a concluída: com o conector
+// fora do ar, a sincronização espera o intervalo em vez de repetir.
+func (r *Repository) ParaSincronizar(ctx context.Context, db database.DBTX, antes time.Time) ([]uuid.UUID, error) {
+	rows, err := db.Query(ctx, `SELECT c.id FROM integracoes_conexoes c WHERE c.sincronizar
+		AND NOT EXISTS (SELECT 1 FROM integracoes_tarefas t WHERE t.conexao_id = c.id AND t.estado IN ('pendente', 'em_andamento'))
+		AND NOT EXISTS (SELECT 1 FROM integracoes_tarefas t WHERE t.conexao_id = c.id AND t.tipo = 'extracao' AND t.criada_em > $1)
+		ORDER BY c.created_at`, antes)
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	return ids, mapDB(err)
 }
 
 func (r *Repository) GravarItens(ctx context.Context, db database.DBTX, conexao uuid.UUID, itens []domain.Item) error {

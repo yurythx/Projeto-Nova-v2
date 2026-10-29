@@ -2,6 +2,7 @@ package projetos
 
 import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/application"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/infrastructure"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/transport"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
@@ -22,6 +23,13 @@ type Module struct {
 func (m *Module) ComPassagens(p application.Passagens) {
 	if m != nil && m.service != nil {
 		m.service.ComPassagens(p)
+	}
+}
+
+// ComPortas liga os vínculos de mudanças, problemas, ativos, solicitações e produtos.
+func (m *Module) ComPortas(portas domain.Portas, produtos domain.Produtos) {
+	if m != nil && m.service != nil {
+		m.service.ComPortas(portas, produtos)
 	}
 }
 

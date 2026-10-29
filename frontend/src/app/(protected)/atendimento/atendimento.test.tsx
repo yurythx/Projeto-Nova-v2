@@ -126,6 +126,73 @@ describe("Atendimento — central do solicitante", () => {
     expect(within(trilha).getByText("Acesso")).toHaveAttribute("aria-current", "page");
   });
 
+  it("separa o catálogo pelas 3 entidades provedoras (SECITI, SMS, SEMED) e pré-seleciona a lotação", async () => {
+    resetNavigation({}, "/atendimento", "ver=problema&categoria=c1");
+    const user = userEvent.setup();
+    mockBackend({
+      ...identityRoutes({
+        permissions: ["atendimento:abrir"],
+        scopes: [
+          {
+            perfil: "servidor",
+            unidade_id: "u-sms",
+            origem: "ad",
+            permissions: ["atendimento:abrir"],
+          },
+        ],
+      }),
+      "GET v1/atendimento/catalogo": {
+        data: [
+          {
+            ...oferta,
+            id: "o-pref",
+            nome: "Impressora parou",
+            categoria_id: "c1",
+            secretaria_id: "u-seciti",
+            secretaria_nome: "Ciência, Tecnologia e Inovação",
+            secretaria_sigla: "SECITI",
+          },
+          {
+            ...oferta,
+            id: "o-sms",
+            nome: "Impressora parou",
+            categoria_id: "c1",
+            secretaria_id: "u-sms",
+            secretaria_nome: "Secretaria Municipal de Saúde",
+            secretaria_sigla: "SMS",
+          },
+          {
+            ...oferta,
+            id: "o-semed",
+            nome: "Impressora parou",
+            categoria_id: "c1",
+            secretaria_id: "u-semed",
+            secretaria_nome: "Secretaria Municipal de Educação",
+            secretaria_sigla: "SEMED",
+          },
+        ],
+      },
+      "GET v1/atendimento/catalogo/categorias": { data: [categoria] },
+    });
+    renderApp(<AtendimentoPortalPage />);
+
+    // Servidor lotado na SMS já vê apenas a oferta da SMS pré-selecionada.
+    const ofertas = await screen.findByRole("list", { name: "Atendimentos" });
+    expect(within(ofertas).getAllByRole("link")).toHaveLength(1);
+    expect(within(ofertas).getByRole("link")).toHaveAttribute("href", "/atendimento?oferta=o-sms");
+
+    // Pode alternar para a Educação (SEMED) ou ver todas as 3 centrais identificadas pela sigla.
+    const abas = screen.getByRole("tablist", { name: "Entidade provedora do atendimento" });
+    await user.click(within(abas).getByRole("tab", { name: /SEMED/ }));
+    expect(within(ofertas).getByRole("link")).toHaveAttribute(
+      "href",
+      "/atendimento?oferta=o-semed",
+    );
+
+    await user.click(within(abas).getByRole("tab", { name: "Todas as centrais" }));
+    expect(within(ofertas).getAllByRole("link")).toHaveLength(3);
+  });
+
   it("abre pela oferta e vai para o chamado criado", async () => {
     resetNavigation({}, "/atendimento", "oferta=o1");
     const user = userEvent.setup();
@@ -538,6 +605,28 @@ describe("Atendimento — solicitação", () => {
     expect(api.to("POST v1/atendimento/solicitacoes/s1/estado")[0]!.body).toEqual({
       estado: "encerrado",
     });
+  });
+
+  it("o espelho do GLPI é só para consulta", async () => {
+    mockBackend({
+      ...identityRoutes(perms("atendimento:atender")),
+      "GET v1/atendimento/solicitacoes/s1": {
+        data: detalhe({
+          solicitacao: {
+            ...sol,
+            estado: "em_atendimento",
+            responsavel_id: "ana",
+            responsavel_nome: "Ana",
+          },
+          proximos: [],
+          espelho: true,
+        }),
+      },
+    });
+    renderApp(<SolicitacaoPage />);
+    expect(await screen.findByText(/continua sendo atendido lá/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Assumir" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Enviar" })).not.toBeInTheDocument();
   });
 
   it("aguardando o servidor, encerrada e inexistente", async () => {

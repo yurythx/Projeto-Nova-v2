@@ -15,6 +15,7 @@ import (
 	problemasapp "github.com/yurythx/projeto-nova-v2/internal/modules/problemas/application"
 	problemas "github.com/yurythx/projeto-nova-v2/internal/modules/problemas/domain"
 	produtos "github.com/yurythx/projeto-nova-v2/internal/modules/produtos/domain"
+	projetos "github.com/yurythx/projeto-nova-v2/internal/modules/projetos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
@@ -44,6 +45,30 @@ func (p produtoUnidade) Consultar(ctx context.Context, db database.DBTX, id uuid
 		return nil, err
 	}
 	return item.UnidadeID, nil
+}
+
+// ativoAtendimento é o ativo visto pela solicitação de atendimento.
+type ativoAtendimento struct {
+	repo  ativos.Repository
+	ativo func() bool
+}
+
+func (a ativoAtendimento) Consultar(ctx context.Context, db database.DBTX, id uuid.UUID) (string, *uuid.UUID, error) {
+	if !a.ativo() {
+		return "", nil, atendimento.ErrAtivosDesligado
+	}
+	item, err := a.repo.Get(ctx, db, id)
+	if errors.Is(err, ativos.ErrNaoEncontrado) {
+		return "", nil, atendimento.ErrAtivoAusente
+	}
+	if err != nil {
+		return "", nil, err
+	}
+	rotulo := item.Nome
+	if item.Identificador != "" {
+		rotulo = item.Nome + " [" + item.Identificador + "]"
+	}
+	return rotulo, item.UnidadeID, nil
 }
 
 // ativoProblema é o ativo visto pelos problemas.
@@ -171,6 +196,69 @@ func portasMudancas(prod produtos.Repository, atend atendimento.Repository, ativ
 	return alvosMudanca{problemas: prob, solicitacao: atend, ativos: ativ, ligado: ligado},
 		produtoUnidade{repo: prod, ativo: func() bool { return ligado("produtos") },
 			desligado: mudancas.ErrIntegracaoDesligada, naoEncontrado: mudancas.ErrVinculoInexistente}
+}
+
+// alvosProjeto é como o projeto enxerga mudanças, problemas, solicitações e ativos.
+type alvosProjeto struct {
+	mudancas    mudancas.Repository
+	problemas   problemas.Repository
+	solicitacao atendimento.Repository
+	ativos      ativos.Repository
+	ligado      func(key string) bool
+}
+
+var moduloDoVinculoProjeto = map[string]string{
+	projetos.VinculoMudanca:     "mudancas",
+	projetos.VinculoProblema:    "problemas",
+	projetos.VinculoSolicitacao: "atendimento",
+	projetos.VinculoAtivo:       "ativos",
+}
+
+func (a alvosProjeto) Disponivel(tipo string) bool {
+	key, ok := moduloDoVinculoProjeto[tipo]
+	return ok && a.ligado(key)
+}
+
+func (a alvosProjeto) Consultar(ctx context.Context, db database.DBTX, tipo string, id uuid.UUID) (projetos.Alvo, error) {
+	switch tipo {
+	case projetos.VinculoMudanca:
+		m, err := a.mudancas.Get(ctx, db, id)
+		if err != nil {
+			return projetos.Alvo{}, inexistenteProjeto(err, mudancas.ErrNaoEncontrado)
+		}
+		return projetos.Alvo{Rotulo: fmt.Sprintf("Mudança #%d · %s", m.Numero, m.Titulo), UnidadeID: m.UnidadeID}, nil
+	case projetos.VinculoProblema:
+		p, err := a.problemas.Get(ctx, db, id)
+		if err != nil {
+			return projetos.Alvo{}, inexistenteProjeto(err, problemas.ErrNaoEncontrado)
+		}
+		return projetos.Alvo{Rotulo: fmt.Sprintf("Problema #%d · %s", p.Numero, p.Titulo), UnidadeID: p.UnidadeID}, nil
+	case projetos.VinculoSolicitacao:
+		s, err := a.solicitacao.GetSolicitacao(ctx, db, id)
+		if err != nil {
+			return projetos.Alvo{}, inexistenteProjeto(err, atendimento.ErrNaoEncontrado)
+		}
+		return projetos.Alvo{Rotulo: fmt.Sprintf("Solicitação #%d · %s", s.Numero, s.Titulo), UnidadeID: s.UnidadeID}, nil
+	default:
+		item, err := a.ativos.Get(ctx, db, id)
+		if err != nil {
+			return projetos.Alvo{}, inexistenteProjeto(err, ativos.ErrNaoEncontrado)
+		}
+		return projetos.Alvo{Rotulo: "Ativo · " + item.Nome, UnidadeID: item.UnidadeID}, nil
+	}
+}
+
+func inexistenteProjeto(err, naoEncontrado error) error {
+	if errors.Is(err, naoEncontrado) {
+		return projetos.ErrVinculoInexistente
+	}
+	return err
+}
+
+func portasProjetos(prod produtos.Repository, atend atendimento.Repository, ativ ativos.Repository, prob problemas.Repository, mud mudancas.Repository, ligado func(string) bool) (projetos.Portas, projetos.Produtos) {
+	return alvosProjeto{mudancas: mud, problemas: prob, solicitacao: atend, ativos: ativ, ligado: ligado},
+		produtoUnidade{repo: prod, ativo: func() bool { return ligado("produtos") },
+			desligado: projetos.ErrIntegracaoDesligada, naoEncontrado: projetos.ErrVinculoInexistente}
 }
 
 // concluiSolicitacao e concluiProblema são os casos de uso que a mudança

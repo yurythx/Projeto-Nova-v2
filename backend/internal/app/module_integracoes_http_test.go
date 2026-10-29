@@ -171,8 +171,29 @@ func TestIntegracoesHTTP(t *testing.T) {
 		t.Fatalf("chamado 11 com a prioridade da tabela e o prazo do GLPI: %s %v", prioridade, meta)
 	}
 
+	// Sincronizar até a virada (ADR 081): ligada, o importado é só leitura
+	// no atendimento; desligada, volta a ser daqui.
+	var importado string
+	if err := h.d.DB.QueryRow(ctx, `SELECT i.destino::text FROM atendimento_importacao i JOIN atendimento_solicitacoes s ON s.id = i.destino
+		WHERE i.origem = 'glpi' AND i.tipo = 'solicitacao' AND s.estado NOT IN ('encerrado', 'cancelado') LIMIT 1`).Scan(&importado); err != nil {
+		t.Fatal(err)
+	}
+	h.expect(http.StatusBadRequest, http.MethodPut, um+"/sincronizacao", admin, `{`)
+	h.expect(http.StatusBadRequest, http.MethodPut, base+"/x/sincronizacao", admin, `{}`)
+	if c := data[intdomain.Conexao](t, h.expect(http.StatusOK, http.MethodPut, um+"/sincronizacao", admin, `{"ligada":true}`)); !c.Sincronizar {
+		t.Fatalf("ligada: %+v", c)
+	}
+	comentar := "/api/v1/atendimento/solicitacoes/" + importado + "/comentarios"
+	if r := h.expect(http.StatusConflict, http.MethodPost, comentar, admin, `{"texto":"daqui"}`).Body.String(); !strings.Contains(r, "GLPI") {
+		t.Fatalf("espelho: %s", r)
+	}
+	h.expect(http.StatusOK, http.MethodPut, um+"/sincronizacao", admin, `{"ligada":false}`)
+	h.expect(http.StatusCreated, http.MethodPost, comentar, admin, `{"texto":"daqui"}`)
+	_, _ = h.d.DB.Exec(ctx, `DELETE FROM atendimento_comentarios WHERE solicitacao_id = $1 AND texto = 'daqui'`, importado)
+
 	// Desfazer a carga (ADR 079): a simulação conta e não remove; sem o
-	// nome da conexão, recusa; com ele, remove os três chamados.
+	// nome da conexão, recusa; com ele, remove os dois chamados que
+	// ninguém mexeu aqui (o comentado acima fica).
 	importados := func() int {
 		var n int
 		if err := h.d.DB.QueryRow(ctx, `SELECT count(*) FROM atendimento_solicitacoes WHERE unidade_id = $1`, u).Scan(&n); err != nil {
@@ -188,8 +209,9 @@ func TestIntegracoesHTTP(t *testing.T) {
 		}
 		tarefas = data[[]intdomain.Tarefa](t, h.expect(http.StatusOK, http.MethodGet, um+"/tarefas", admin, ""))
 		gravou := strings.Contains(pedido, `"desfazer"`)
-		if tarefas[0].Estado != intdomain.EstadoConcluida || !strings.Contains(string(tarefas[0].Relatorio), `"chamados":3`) ||
-			strings.Contains(string(tarefas[0].Relatorio), `"gravou":true`) != gravou || (importados() == 0) != gravou {
+		rel := string(tarefas[0].Relatorio)
+		if tarefas[0].Estado != intdomain.EstadoConcluida || !strings.Contains(rel, `"chamados":2`) || !strings.Contains(rel, `"chamados_mantidos":1`) ||
+			strings.Contains(rel, `"gravou":true`) != gravou || (importados() == 1) != gravou {
 			t.Fatalf("%s: %+v %d", pedido, tarefas[0], importados())
 		}
 	}
@@ -279,6 +301,9 @@ func TestPortasDasIntegracoes(t *testing.T) {
 	}
 	if _, err := desligado.Desfazer(ctx, false, nil); err == nil {
 		t.Fatal("desfazer com o atendimento desligado")
+	}
+	if ativo, err := (espelhoGLPI{ativo: func() bool { return false }}).Ativo(ctx); ativo || err != nil {
+		t.Fatalf("integrações desligadas, sem espelho: %v %v", ativo, err)
 	}
 	ligado := carregadorGLPI{ativo: func() bool { return true }}
 	c.Fuso = "Lugar/Nenhum"

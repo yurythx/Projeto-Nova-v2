@@ -80,6 +80,8 @@ func registerPlugins(d *Dependencies) {
 	integracoesModule.Servico().WithExtrator(extratorGLPI{abrir: abrirGLPI}).
 		WithCarregador(carregadorGLPI{pool: d.DB, ativo: func() bool { return d.Kernel.Enabled(atendimento.Key) }})
 	d.Credencial = credenciais(ativosModule.Reconhecer, integracoesModule.Reconhecer)
+	// Sincronizando com o GLPI, o importado muda lá até a virada (ADR 081).
+	atendimentoModule.ComEspelho(espelhoGLPI{svc: integracoesModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(integracoes.Key) }}.Ativo)
 	problemasModule := problemas.New(deps, portasProblemas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
 		ativosModule.Repositorio(), ligado))
 	alvos, produtoDaMudanca := portasMudancas(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
@@ -87,6 +89,9 @@ func registerPlugins(d *Dependencies) {
 	mudancasModule := mudancas.New(deps, alvos, produtoDaMudanca)
 	mudancasModule.ComEfeitos(efeitosCascata{atend: atendimentoModule, prob: problemasModule, ligado: ligado})
 	projetosModule := projetos.New(deps)
+	alvosProj, produtoDoProjeto := portasProjetos(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
+		ativosModule.Repositorio(), problemasModule.Repositorio(), mudancasModule.Repositorio(), ligado)
+	projetosModule.ComPortas(alvosProj, produtoDoProjeto)
 	quadrosModule := quadros.New(deps)
 	problemasModule.ComPassagens(quadrosModule)
 	mudancasModule.ComPassagens(quadrosModule)
@@ -96,6 +101,7 @@ func registerPlugins(d *Dependencies) {
 	cofreModule := cofre.New(deps)
 	cofreModule.ComConfirmacao(confirmaSenha{reauth: signumModule.Reautenticador()}, d.RateLimiters.Lockout)
 	atendimentoModule.ComSegredo(portaSegredo{svc: cofreModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(cofre.Key) }})
+	atendimentoModule.ComAtivos(ativoAtendimento{repo: ativosModule.Repositorio(), ativo: func() bool { return d.Kernel.Enabled(ativos.Key) }})
 	contratosModule := contratos.New(deps, programasDoAtivo{mod: ativosModule, ativo: func() bool { return d.Kernel.Enabled(ativos.Key) }})
 	atendimentoModule.ComContratos(portaContratos{svc: contratosModule.Servico(), ativo: func() bool { return d.Kernel.Enabled(contratos.Key) }})
 	ia := d.Config.IA

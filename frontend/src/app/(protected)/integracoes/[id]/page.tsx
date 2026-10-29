@@ -10,8 +10,10 @@ import {
   ResumoDesfazer,
 } from "@/components/integracoes/DesfazerCarga";
 import { ResumoExpediente, type Expediente } from "@/components/integracoes/ResumoExpediente";
+import { Sincronizacao } from "@/components/integracoes/Sincronizacao";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -133,6 +135,14 @@ export default function ConexaoPage() {
     );
     if (ok) void tarefas.mutate();
     return Boolean(ok);
+  }
+
+  async function sincronizar(ligar: boolean) {
+    const ok = await run(
+      () => apiClient.put(`${base}/sincronizacao`, { ligada: ligar }),
+      ligar ? "Sincronização ligada" : "Sincronização desligada",
+    );
+    if (ok) recarregar();
   }
 
   async function cancelar(t: Tarefa) {
@@ -390,6 +400,13 @@ conector --vigiar`}</pre>
                   </Button>
                 </div>
                 <hr className="border-surface-border" />
+                <Sincronizacao
+                  ligada={c.sincronizar}
+                  extraidoEm={c.extraido_em}
+                  ocupado={pending}
+                  onMudar={sincronizar}
+                />
+                <hr className="border-surface-border" />
                 <DesfazerCarga nome={c.nome} ocupado={algumaAtiva} onPedir={pedir} />
               </CardContent>
             </Card>
@@ -469,6 +486,12 @@ function TabelaCard({
 }) {
   const { run, pending } = useAction();
   const [edicao, setEdicao] = useState<Linha[]>(linhas);
+  const [filtroSecretaria, setFiltroSecretaria] = useState<string>("todas");
+
+  const secretariasNaTabela = useMemo(
+    () => Array.from(new Set(edicao.map((l) => l.secretaria))).sort(),
+    [edicao],
+  );
 
   function mudar(i: number, campo: keyof Linha, valor: string) {
     setEdicao((atual) =>
@@ -535,6 +558,20 @@ function TabelaCard({
         )}
         {edicao.length > 0 && (
           <>
+            {secretariasNaTabela.length > 1 && (
+              <SectionTabsInline
+                label="Secretaria da tabela de-para"
+                tabs={[
+                  { value: "todas", label: `Todas (${edicao.length})` },
+                  ...secretariasNaTabela.map((sec) => ({
+                    value: sec,
+                    label: `${sec} (${edicao.filter((l) => l.secretaria === sec).length})`,
+                  })),
+                ]}
+                value={filtroSecretaria}
+                onChange={setFiltroSecretaria}
+              />
+            )}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -551,6 +588,9 @@ function TabelaCard({
                 </thead>
                 <tbody>
                   {edicao.map((l, i) => {
+                    if (filtroSecretaria !== "todas" && l.secretaria !== filtroSecretaria) {
+                      return null;
+                    }
                     const nome = `${l.secretaria} ${l.categoria_nome}`;
                     return (
                       <tr

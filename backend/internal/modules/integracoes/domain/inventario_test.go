@@ -102,4 +102,25 @@ func TestInventarioESugestao(t *testing.T) {
 	if um.Niveis[0].Prioridade != "alta" {
 		t.Fatalf("um prazo: %+v", um.Niveis)
 	}
+
+	// As 3 entidades do GLPI (PREFEITURA, SMS, SEMECEL) também casam pelas
+	// siglas e nomes da estrutura organizacional (SECITI, Sede da SMS, SEMED).
+	uSeciti, uSms, uSemed := uuid.New(), uuid.New(), uuid.New()
+	tresEntidades := map[int]string{1: "RAIZ > PREFEITURA", 2: "RAIZ > SMS", 3: "RAIZ > SEMECEL"}
+	invTres := MontarInventario([]Grupo{
+		{Entidade: 1, Categoria: 7, Chamados: 10},
+		{Entidade: 2, Categoria: 7, Chamados: 8},
+		{Entidade: 3, Categoria: 7, Chamados: 5},
+	}, tresEntidades, categorias, nil, nil)
+	linhasTres := Sugerir(invTres, map[string]uuid.UUID{
+		"SECITI":      uSeciti,
+		"Sede da SMS": uSms,
+		"SEMED":       uSemed,
+	})
+	esperadoPorSec := map[string]uuid.UUID{"PREFEITURA": uSeciti, "SMS": uSms, "SEMECEL": uSemed}
+	for _, l := range linhasTres {
+		if l.UnidadeID == nil || *l.UnidadeID != esperadoPorSec[l.Secretaria] {
+			t.Fatalf("separação das 3 entidades (%s): %+v", l.Secretaria, l)
+		}
+	}
 }

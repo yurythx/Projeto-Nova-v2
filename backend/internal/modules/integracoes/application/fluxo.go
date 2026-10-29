@@ -132,6 +132,17 @@ func (s *Service) terminar(ctx context.Context, t domain.Tarefa, relatorio []byt
 			if err := s.repo.MarcarExtracao(ctx, tx, t.ConexaoID, s.agora().UTC()); err != nil {
 				return err
 			}
+			// Sincronizando, a carga vem logo depois da extração (ADR 081).
+			c, err := s.repo.GetConexao(ctx, tx, t.ConexaoID)
+			if err != nil {
+				return err
+			}
+			if c.Sincronizar {
+				carga, _ := domain.NovaTarefa(c.ID, domain.TarefaCarga, domain.PedidaPelaSincronizacao)
+				if err := s.repo.InserirTarefa(ctx, tx, carga); err != nil {
+					return err
+				}
+			}
 		}
 		return s.registrar(ctx, tx, "integracoes.tarefa."+estado, "integracoes_tarefa", t.ID,
 			map[string]any{"tipo": t.Tipo, "conexao_id": t.ConexaoID.String(), "erro": falha != ""})
@@ -190,7 +201,9 @@ func (s *Service) Tabela(ctx context.Context, identity auth.Identity, id uuid.UU
 }
 
 // SugerirTabela troca a tabela pela sugerida a partir do inventário.
-// unidades leva cada secretaria a uma unidade daqui.
+// unidades leva cada secretaria a uma unidade daqui; o que não vier
+// preenchido é resolvido pelas unidades raiz e siglas do banco (PREFEITURA
+// -> SECITI, SMS -> SMS, SEMECEL -> SEMED).
 func (s *Service) SugerirTabela(ctx context.Context, identity auth.Identity, id uuid.UUID, unidades map[string]uuid.UUID) ([]domain.Linha, error) {
 	if _, err := s.ObterConexao(ctx, identity, id); err != nil {
 		return nil, err
@@ -202,7 +215,41 @@ func (s *Service) SugerirTabela(ctx context.Context, identity auth.Identity, id 
 	if len(inv.Grupos) == 0 {
 		return nil, MapError(domain.Recusa{Msg: "extraia os dados da origem antes de montar a tabela"})
 	}
-	return s.SalvarTabela(ctx, identity, id, domain.Sugerir(inv, unidades))
+	mapa := map[string]uuid.UUID{}
+	if s.pool != nil {
+		rows, err := s.pool.Query(ctx, `SELECT u.id, u.nome, u.sigla, COALESCE(e.nome, ''), COALESCE(e.sigla, ''), u.parent_id IS NULL
+			FROM unidades u LEFT JOIN entidades e ON e.id = u.entidade_id
+			WHERE u.ativo
+			ORDER BY u.parent_id IS NOT NULL`)
+		if err == nil {
+			for rows.Next() {
+				var uid uuid.UUID
+				var nome, sigla, entNome, entSigla string
+				var raiz bool
+				if rows.Scan(&uid, &nome, &sigla, &entNome, &entSigla, &raiz) == nil {
+					if _, ok := mapa[nome]; !ok {
+						mapa[nome] = uid
+					}
+					if raiz {
+						for _, k := range []string{sigla, entNome, entSigla} {
+							if k != "" {
+								if _, ok := mapa[k]; !ok {
+									mapa[k] = uid
+								}
+							}
+						}
+					}
+				}
+			}
+			rows.Close()
+		}
+	}
+	for k, v := range unidades {
+		if v != uuid.Nil {
+			mapa[k] = v
+		}
+	}
+	return s.SalvarTabela(ctx, identity, id, domain.Sugerir(inv, mapa))
 }
 
 // SalvarTabela troca a tabela inteira pela revisada.
@@ -338,6 +385,9 @@ func (s *Service) Passo(ctx context.Context) error {
 	} else if n > 0 {
 		s.logger.Info("integracoes: tarefas retomadas", slog.Int("tarefas", n))
 	}
+	if err := s.agendar(ctx); err != nil {
+		return err
+	}
 	for ctx.Err() == nil {
 		t, ok, err := s.repo.Pegar(ctx, s.pool, nil, []string{domain.TarefaExtracao}, domain.ModoDireto)
 		if err == nil && !ok {
@@ -350,6 +400,59 @@ func (s *Service) Passo(ctx context.Context) error {
 		s.executar(ctx, t)
 	}
 	return nil
+}
+
+// agendar pede a extração das conexões que sincronizam (ADR 081), uma a
+// cada IntervaloSincronizacao. Outra tarefa pedida no meio tempo (pela
+// tela) faz a vez dela.
+func (s *Service) agendar(ctx context.Context) error {
+	ids, err := s.repo.ParaSincronizar(ctx, s.pool, s.agora().Add(-domain.IntervaloSincronizacao))
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		t, _ := domain.NovaTarefa(id, domain.TarefaExtracao, domain.PedidaPelaSincronizacao)
+		if err := s.repo.InserirTarefa(ctx, s.pool, t); err != nil && !errors.Is(err, domain.ErrTarefaAtiva) {
+			return err
+		}
+	}
+	return nil
+}
+
+// Sincronizar liga ou desliga a sincronização até a virada (ADR 081). Para
+// ligar, a conexão precisa poder extrair e carregar sem ninguém olhando.
+func (s *Service) Sincronizar(ctx context.Context, identity auth.Identity, id uuid.UUID, ligar bool) (domain.Conexao, error) {
+	c, err := s.ObterConexao(ctx, identity, id)
+	if err != nil {
+		return domain.Conexao{}, err
+	}
+	if ligar {
+		for _, tipo := range []string{domain.TarefaExtracao, domain.TarefaCarga} {
+			if err := s.conferir(ctx, c, tipo); err != nil {
+				return domain.Conexao{}, MapError(err)
+			}
+		}
+	}
+	evento := "integracoes.sincronizacao.desligada"
+	if ligar {
+		evento = "integracoes.sincronizacao.ligada"
+	}
+	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.SetSincronizar(ctx, tx, id, ligar); err != nil {
+			return err
+		}
+		return s.registrar(ctx, tx, evento, "integracoes_conexao", id, map[string]any{"ligada": ligar})
+	})
+	if err != nil {
+		return domain.Conexao{}, MapError(err)
+	}
+	return s.ObterConexao(ctx, identity, id)
+}
+
+// SincronizacaoAtiva diz se alguma conexão sincroniza: o atendimento deixa
+// os importados só para leitura.
+func (s *Service) SincronizacaoAtiva(ctx context.Context) (bool, error) {
+	return s.repo.Sincronizando(ctx, s.pool)
 }
 
 // executar roda a tarefa. Cancelada na tela, ela para no próximo

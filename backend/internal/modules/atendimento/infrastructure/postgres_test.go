@@ -255,6 +255,7 @@ func TestSolicitacoesPropagamFalhas(t *testing.T) {
 		},
 		"GetSolicitacao":       func(db database.DBTX) error { _, err := r.GetSolicitacao(ctx, db, id); return err },
 		"TravarSolicitacao":    func(db database.DBTX) error { return r.TravarSolicitacao(ctx, db, id) },
+		"Importado":            func(db database.DBTX) error { _, err := r.Importado(ctx, db, id); return err },
 		"InsertSolicitacao":    func(db database.DBTX) error { _, err := r.InsertSolicitacao(ctx, db, s); return err },
 		"UpdateSolicitacao":    func(db database.DBTX) error { return r.UpdateSolicitacao(ctx, db, s) },
 		"InsertPassagem":       func(db database.DBTX) error { _, err := r.InsertPassagem(ctx, db, domain.Passagem{}); return err },

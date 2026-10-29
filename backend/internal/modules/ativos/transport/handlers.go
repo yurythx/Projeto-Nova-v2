@@ -42,9 +42,12 @@ func NewHandlers(svc *application.Service, logger *slog.Logger) *Handlers {
 }
 
 // RegisterRoutes monta o cadastro. O relato da máquina exige
-// ativos:reportar. O restante exige ativos:manage; o serviço ainda
-// restringe pela unidade dona.
+// ativos:reportar; a leitura serve a quem gere ou consulta na cadeia de
+// assistência/projetos; alterar exige ativos:manage.
 func (h *Handlers) RegisterRoutes(r chi.Router) {
+	r.Get("/ativos", h.Listar)
+	r.Get("/ativos/{id}", h.Obter)
+	r.Get("/ativos/{id}/relacoes", h.ListarRelacoes)
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtivosReportar))
 		r.Post("/ativos/inventario", h.Inventariar)
@@ -54,11 +57,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/ativos/credenciais", h.ListarCredenciais)
 		r.Post("/ativos/credenciais", h.EmitirCredencial)
 		r.Delete("/ativos/credenciais/{id}", h.RevogarCredencial)
-		r.Get("/ativos", h.Listar)
 		r.Post("/ativos", h.Criar)
-		r.Get("/ativos/{id}", h.Obter)
 		r.Put("/ativos/{id}", h.Atualizar)
-		r.Get("/ativos/{id}/relacoes", h.ListarRelacoes)
 		r.Post("/ativos/{id}/relacoes", h.Relacionar)
 		r.Delete("/ativos/{id}/relacoes/{relacao}", h.Desrelacionar)
 	})

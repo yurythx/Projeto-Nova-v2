@@ -33,14 +33,25 @@ func (r *Repository) ComContratoNoPeriodo(ctx context.Context, db database.DBTX,
 	return coletar(rows, scanSolicitacao)
 }
 
-// SecretariasDe sobe a árvore de cada unidade até o topo.
+// SecretariasDe sobe a árvore de cada unidade até o topo e resolve o nome
+// e a sigla da secretaria (usando a entidade quando a unidade raiz se
+// chama "Sede", "Secretaria Executiva" ou "Gabinete").
 func (r *Repository) SecretariasDe(ctx context.Context, db database.DBTX, unidades []uuid.UUID) (map[uuid.UUID]domain.Secretaria, error) {
 	rows, err := db.Query(ctx, `WITH RECURSIVE sobe AS (
 			SELECT id AS origem, id, parent_id, 0 AS nivel FROM unidades WHERE id = ANY($1::uuid[])
 			UNION ALL
 			SELECT s.origem, u.id, u.parent_id, s.nivel + 1 FROM sobe s JOIN unidades u ON u.id = s.parent_id WHERE s.nivel < 32
 		)
-		SELECT s.origem, u.id, u.nome, u.sigla FROM sobe s JOIN unidades u ON u.id = s.id WHERE s.parent_id IS NULL`, idsOrEmpty(unidades))
+		SELECT s.origem, u.id,
+			CASE WHEN lower(u.nome) IN ('sede', 'secretaria executiva', 'gabinete') OR lower(u.nome) LIKE 'sede %'
+				THEN COALESCE(NULLIF(e.nome, ''), u.nome)
+				ELSE u.nome
+			END,
+			COALESCE(NULLIF(u.sigla, ''), e.sigla, '')
+		FROM sobe s
+		JOIN unidades u ON u.id = s.id
+		LEFT JOIN entidades e ON e.id = u.entidade_id
+		WHERE s.parent_id IS NULL`, idsOrEmpty(unidades))
 	if err != nil {
 		return nil, mapDB(err)
 	}
@@ -77,7 +88,7 @@ func (r *Repository) AvaliacoesDe(ctx context.Context, db database.DBTX, solicit
 
 // TarefasDoPeriodo lê as tarefas com dona dos pedidos do escopo.
 func (r *Repository) TarefasDoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]domain.TarefaMedida, error) {
-	rows, err := db.Query(ctx, `SELECT t.equipe_id, e.nome, e.ola_horas, t.estado, t.created_at, t.feita_em
+	rows, err := db.Query(ctx, `SELECT t.equipe_id, e.nome, e.unidade_id, e.ola_horas, t.estado, t.created_at, t.feita_em
 		FROM atendimento_tarefas t
 		JOIN atendimento_equipes e ON e.id = t.equipe_id
 		JOIN atendimento_solicitacoes s ON s.id = t.solicitacao_id
@@ -90,7 +101,7 @@ func (r *Repository) TarefasDoPeriodo(ctx context.Context, db database.DBTX, res
 	out := []domain.TarefaMedida{}
 	for rows.Next() {
 		var t domain.TarefaMedida
-		if err := rows.Scan(&t.EquipeID, &t.EquipeNome, &t.OLAHoras, &t.Estado, &t.CreatedAt, &t.FeitaEm); err != nil {
+		if err := rows.Scan(&t.EquipeID, &t.EquipeNome, &t.UnidadeID, &t.OLAHoras, &t.Estado, &t.CreatedAt, &t.FeitaEm); err != nil {
 			return nil, mapDB(err)
 		}
 		out = append(out, t)

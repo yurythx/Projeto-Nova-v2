@@ -120,6 +120,7 @@ func TestImportacaoDoGLPI(t *testing.T) {
 		categorias: []Categoria{{ID: 7, Nome: "TI > E-mail"}},
 		chamados: []Chamado{
 			{ID: 101, Titulo: "E-mail fora", Conteudo: "&lt;p&gt;Não envia&lt;/p&gt;", Abertura: "2025-03-10 09:00:00",
+				Atribuido: "2025-03-10 09:15:00", EsperaSegundos: 1800,
 				Solucao: "2025-03-10 11:30:00", Fechamento: "2025-03-11 08:00:00", Status: 6, Tipo: 1, Urgencia: 4, Impacto: 3, CategoriaID: 7},
 			{ID: 102, Titulo: "", Conteudo: "Pedido de acesso", Abertura: "2025-04-01 14:00:00", Status: 2, Tipo: 2, Urgencia: 1, Impacto: 1,
 				Modificado: "2025-04-02 10:00:00"},
@@ -190,8 +191,12 @@ func TestImportacaoDoGLPI(t *testing.T) {
 		t.Fatalf("última atualização do 101: %v", sol.UpdatedAt)
 	}
 	ps, _ := repo.ListPassagens(ctx, pool, id)
-	if len(ps) != 3 || ps[2].Para != domain.EstadoEncerrado {
-		t.Fatalf("passagens: %+v", ps)
+	if len(ps) != 5 || ps[1].Para != domain.EstadoEmAtendimento || !ps[1].Em.Equal(abertura.Add(15*time.Minute)) ||
+		ps[2].Para != domain.EstadoAguardandoServidor || ps[4].Para != domain.EstadoEncerrado {
+		t.Fatalf("passagens com takeintoaccountdate e waiting_duration: %+v", ps)
+	}
+	if ind := domain.Resumir([]domain.Solicitacao{sol}, map[uuid.UUID][]domain.Passagem{sol.ID: ps}); ind.Amostra.FCR != 0 {
+		t.Fatalf("chamado com waiting_duration no GLPI não pode inflar o FCR: %+v", ind)
 	}
 	cs, _ := repo.ListComentarios(ctx, pool, id, true)
 	if len(cs) != 3 || !cs[1].Interno || !strings.HasPrefix(cs[2].Texto, "Escrito por Ana Souza no GLPI.") {

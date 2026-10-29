@@ -41,14 +41,14 @@ func NewHandlers(svc *application.Service, logger *slog.Logger) *Handlers {
 	return &Handlers{svc: svc, logger: logger}
 }
 
-// RegisterRoutes monta o cadastro. Tudo exige produtos:manage; o serviço
-// ainda restringe pela unidade dona.
+// RegisterRoutes monta o cadastro. A leitura serve a quem gere ou consulta
+// produtos na cadeia de valor; alterar exige produtos:manage.
 func (h *Handlers) RegisterRoutes(r chi.Router) {
+	r.Get("/produtos", h.Listar)
+	r.Get("/produtos/{id}", h.Obter)
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermProdutosManage))
-		r.Get("/produtos", h.Listar)
 		r.Post("/produtos", h.Criar)
-		r.Get("/produtos/{id}", h.Obter)
 		r.Put("/produtos/{id}", h.Atualizar)
 		r.Post("/produtos/{id}/estagio", h.MudarEstagio)
 	})

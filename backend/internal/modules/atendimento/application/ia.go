@@ -135,7 +135,7 @@ func (s *Service) paraIA(ctx context.Context, identity auth.Identity, id uuid.UU
 	if !slices.Contains(ps, domain.PapelTecnico) {
 		return domain.Solicitacao{}, MapError(domain.ErrForaDoEscopo)
 	}
-	return sol, nil
+	return sol, MapError(s.recusarEspelho(ctx, s.pool, id))
 }
 
 func (s *Service) gravarSugestao(ctx context.Context, identity auth.Identity, sug domain.Sugestao) (domain.Sugestao, error) {

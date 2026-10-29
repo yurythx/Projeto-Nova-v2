@@ -17,12 +17,15 @@ const ativoMock = {
 describe("AtivoVinculadoCard (CMDB no Atendimento)", () => {
   it("renderiza opções de ativos e permite associar equipamento ao chamado", async () => {
     const user = userEvent.setup();
-    mockBackend({
+    const api = mockBackend({
       ...identityRoutes({ permissions: ["ativos:read", "atendimento:atender"] }, [
         moduleStatus("ativos"),
       ]),
       "GET v1/ativos": {
         data: [ativoMock],
+      },
+      "PUT v1/atendimento/solicitacoes/sol-10/ativo": {
+        data: {},
       },
     });
 
@@ -43,5 +46,8 @@ describe("AtivoVinculadoCard (CMDB no Atendimento)", () => {
     expect(screen.getByText("[PAT-2024-8841]")).toBeInTheDocument();
     expect(screen.getByText("Equipamento")).toBeInTheDocument();
     expect(screen.getByText("Em uso")).toBeInTheDocument();
+    expect(api.to("PUT v1/atendimento/solicitacoes/sol-10/ativo")[0]!.body).toEqual({
+      ativo_id: "at-1",
+    });
   });
 });

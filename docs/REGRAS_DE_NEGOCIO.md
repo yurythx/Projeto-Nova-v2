@@ -643,13 +643,50 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   número do chamado e o remetente é o e-mail de quem abriu ou de quem
   atende. A mesma mensagem não entra duas vezes. Remetente estranho,
   chamado encerrado ou número ausente não geram comentário.
+- **Separação das 3 entidades provedoras (ADR 075 / ADR 078):** o catálogo de
+  ofertas enriquecido (`GET /api/v1/atendimento/catalogo`) identifica a
+  secretaria/entidade provedora de cada oferta (no cenário importado do GLPI:
+  **Prefeitura/SECITI**, **Saúde/SMS** e **Educação/SEMED**). Na central do
+  solicitante (`/atendimento`), quando há mais de uma entidade provedora, o
+  catálogo pré-seleciona automaticamente a central correspondente à lotação
+  do servidor e exibe abas para alternar entre as centrais ou consultar todas,
+  evitando colisão de ofertas homônimas entre secretarias.
+- **Integrações e carga do GLPI (ADR 072, 075, 076, 078, 079, 080, 081):**
+  `integracoes:manage` gerencia conexões, área de preparo, inventário e a
+  tabela De-Para; `integracoes:conector` autentica o conector de máquina
+  (`nova_con_`). A sugestão da tabela De-Para vincula automaticamente as 3
+  entidades do GLPI (`PREFEITURA` → `SECITI`, `SMS` → `SMS`, `SEMECEL` →
+  `SEMED`), importa acompanhamentos e soluções técnicas (`ITILSolution`),
+  expediente, feriados, grupos técnicos por entidade e regras de triagem, e
+  preserva `takeintoaccountdate` e `waiting_duration` nas passagens de estado
+  para não distorcer TTO, pausa de SLA, FCR e experiência (XLA).
+  Com a sincronização ligada até a virada (ADR 081), chamados espelhados do
+  GLPI ficam somente leitura no atendimento local (`ErrEspelho`) e recebem as
+  atualizações incrementais da origem.
+- **Vínculo persistente Solicitação ↔ Ativo (CMDB) e Rastreabilidade Reversa:**
+  quem atende a unidade pode vincular ou desvincular um **Item de Configuração**
+  (`PUT /api/v1/atendimento/solicitacoes/{id}/ativo`, gravando `ativo_id` e
+  `ativo_nome` na solicitação e auditando a ação). O ativo precisa pertencer à
+  mesma unidade da solicitação e o módulo de ativos precisa estar ligado;
+  chamados encerrados, cancelados ou espelhados do GLPI recusam a alteração.
+  A fila (`GET /api/v1/atendimento/fila`) aceita `?ativo_id=` e a ficha da
+  solicitação exibe os **Problemas**, **Mudanças** e **Projetos** vinculados.
+  No relatório por secretaria (`GET /api/v1/atendimento/relatorio/secretarias`),
+  cada linha de `Equipes (OLA)` inclui o `unidade_id` da secretaria de topo para
+  acompanhar o filtro por entidade (`SECITI`, `SMS`, `SEMED`).
 
 ### Ativos
-- `ativos:manage` cadastra os itens da unidade que cobre: equipamento,
+- `ativos:read` consulta os itens e relações no escopo da unidade (concedido
+  também aos perfis operacionais da cadeia ITIL v5 para vínculo cruzado);
+  `ativos:manage` cadastra, edita e relaciona os itens da unidade que cobre: equipamento,
   sistema ou licença, serviço contratado, rede ou outro. Estados:
   planejado, em uso, em manutenção, desativado. Não há exclusão: o ativo
-  que sai de uso fica **desativado**, para que o histórico de problemas e
-  mudanças siga apontando para ele.
+  que sai de uso fica **desativado**, para que o histórico de chamados, problemas,
+  mudanças e projetos siga apontando para ele.
+- **Ficha do Item de Configuração (`/ativos/[id]`):** reúne dados patrimoniais,
+  inventário coletado pelo agente, relações na CMDB (`depende`, `composto`,
+  `conectado`) e rastreabilidade reversa nas 4 práticas ITIL v5 (**Chamados**,
+  **Problemas**, **Mudanças** e **Projetos** vinculados ao ativo).
 - O **identificador** (patrimônio, número de série) é opcional, mas,
   quando informado, não se repete.
 - Pode apontar para o **produto digital** que sustenta, desde que o
@@ -685,7 +722,9 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   da mesma unidade do problema.
   O vínculo guarda número e título do incidente no momento da ligação.
   Ligar de novo o que já está ligado não duplica. Problema encerrado não
-  aceita nem desfaz vínculos.
+  aceita nem desfaz vínculos. A listagem (`GET /api/v1/problemas`) aceita
+  `?solicitacao_id=` e `?ativo_id=` para consulta reversa a partir do chamado
+  ou do item de configuração.
 - **No incidente:** o técnico vê o problema relacionado e, se já for erro
   conhecido, o contorno a aplicar.
 - **Sugestões de recorrência:** uma oferta com **3 ou mais incidentes em
@@ -789,13 +828,14 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 
 ### Projetos
 - **Finalidade:** Gestão e acompanhamento de iniciativas, planos de ação, cronogramas e entregas estratégicas ou operacionais.
-- **Permissões:** `projetos:read` para consulta e `projetos:manage` para criação, edição e condução das fases e tarefas.
+- **Permissões e escopo:** `projetos:read` para consulta e `projetos:manage` para criação, edição, transição de estado, tarefas, vínculos e apontamentos no escopo da unidade dona do projeto (sem unidade: gestão institucional). Projeto `cancelado` não aceita edições nem novos vínculos.
 - **Ciclo de vida do projeto:**
   - `planejado` → `em_andamento` | `cancelado`
   - `em_andamento` → `suspenso` | `concluido` | `cancelado`
   - `suspenso` → `em_andamento` | `cancelado`
   - `concluido` e `cancelado` encerram o ciclo de vida.
 - **Tarefas e marcos:** cada projeto possui tarefas ordenadas com estados `a_fazer`, `em_andamento`, `concluida` e `bloqueada`.
+- **Vínculos da Cadeia de Valor (ITIL v5):** cada projeto pode apontar para um **produto digital** (`produto_id`) e vincular itens de **mudanças**, **problemas**, **ativos** e **solicitações**, validados quanto à existência no módulo de origem, módulo ligado no Kernel e compatibilidade de unidade. Quando o rótulo é omitido, o sistema preenche o rótulo oficial do item vinculado. A listagem aceita `?produto_id=` e `?alvo_tipo=&alvo_id=` para rastreabilidade reversa nas fichas de problemas, mudanças e produtos.
 - **Visões integradas:** interface em lista, quadro Kanban e Cronograma / Linha do Tempo (Gantt) de 90 dias.
 - **Apontamento de Horas & Timesheet:** registro de esforço técnico por tarefa ou projeto (data, horas entre 0 e 24h, custo/hora e descrição das atividades). Cálculo automático do total de horas realizadas, custo acumulado e acompanhamento visual da taxa de queima do orçamento previsto.
 
@@ -914,3 +954,15 @@ Corrigidos (antes eram pontos de atenção): perfis de gestão com escopo
 valiam para a plataforma toda (ADR 013); estrutura desativada seguia
 dando acesso e recebendo processos, e excluir uma unidade-mãe deixava as
 subunidades sem mãe em silêncio — ver a seção 2.4.
+
+### 9. Catálogo de Atendimento e Alinhamento Kanban vs. Lista (Pós-Migração GLPI)
+
+1. **Central de Atendimento ("Abrir um chamado"):**
+   - O portal principal adota a nomenclatura oficial "Abrir um chamado" (em vez de "Fazer um pedido") para requisições e "Relatar um problema" para incidentes.
+   - **Resolução de Entidade Provedora:** Usuários com lotação (seja em nível de departamento, unidade ou entidade) têm sua secretaria raiz detectada automaticamente através da árvore hierárquica (`v1/iam/org-tree`). O catálogo inicializa filtrado para a central da secretaria correspondente do usuário.
+   - **Deduplicação de Serviços:** Ofertas com nomes idênticos importadas de múltiplas entidades (ex.: SECITI, SMS, SEMED) ou recargas de GLPI são deduplicadas por entidade/chave. Ao alternar para "Todas as centrais", as ofertas exibem distintivo explícito da secretaria provedora (`Badge`), evitando confusão ao solicitante.
+
+2. **Paridade Rigorosa entre Kanban e Listas Operacionais:**
+   - **Fila de Atendimento (`/atendimento/fila`):** Os parâmetros de busca (`q`), recorte de unidade (`unidade`), categoria, prioridade, período e situação (`situacao`) são compartilhados integralmente entre o modo Lista e o modo Quadro (Kanban).
+   - **Chamados Concluídos e Migrados:** Por padrão operacional, o quadro foca no fluxo em andamento (`abertas`). Quando a situação selecionada for `"todas"`, o quadro incorpora as colunas de "Encerradas" e "Canceladas", exibindo os chamados importados do GLPI e concluídos.
+   - **Problemas e Projetos (`/problemas`, `/projetos`):** A busca textual rápida (`busca`) e o filtro por unidade (`unidadeFiltro`) operam de forma bidirecional e simétrica tanto na visualização em lista quanto no quadro Kanban.

@@ -228,7 +228,7 @@ describe("Mudanças — detalhe", () => {
       "href",
       "/atendimento/solicitacoes/s1",
     );
-    expect(screen.getByRole("link", { name: "Switch" })).toHaveAttribute("href", "/ativos");
+    expect(screen.getByRole("link", { name: "Switch" })).toHaveAttribute("href", "/ativos/a1");
 
     const titulo = screen.getByLabelText("Título *");
     await user.clear(titulo);

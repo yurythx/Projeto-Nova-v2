@@ -58,3 +58,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [078](078-central-do-solicitante-e-canais.md) | Central do solicitante em blocos, como a do GLPI, e canais de comunicação (e-mail e WhatsApp) na plataforma | Aceito e implementado (central, e-mail, WhatsApp de saída e de entrada) |
 | [079](079-desfazer-a-carga.md) | Desfazer a carga do GLPI: simular, confirmar pelo nome da conexão e manter o que foi mexido aqui | Aceito e implementado |
 | [080](080-lista-de-chamados-como-o-glpi.md) | Lista de chamados como a do GLPI: busca, filtros recolhidos, colunas que ordenam e a última atualização do GLPI | Aceito e implementado |
+| [081](081-sincronizar-com-o-glpi-ate-a-virada.md) | Sincronizar com o GLPI a cada 15 minutos até a virada, com os importados só para leitura | Aceito e implementado |

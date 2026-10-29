@@ -26,6 +26,7 @@ const (
 	EventoSolicitacaoComentada = "atendimento.solicitacao.comentada"
 	EventoSolicitacaoAvaliada  = "atendimento.solicitacao.avaliada"
 	EventoSolicitacaoSegredo   = "atendimento.solicitacao.segredo_vinculado"
+	EventoSolicitacaoAtivo     = "atendimento.solicitacao.ativo_vinculado"
 )
 
 // Recortes de responsável da fila.
@@ -63,6 +64,7 @@ type FiltroFila struct {
 	Finalizadas               bool
 	Texto, Prioridade         string
 	Unidade, Categoria        string
+	Ativo                     string
 	De, Ate                   string
 	Ordem                     string
 	Desc                      bool
@@ -83,7 +85,7 @@ func (f FiltroFila) recortes(filtro *domain.FiltroSolicitacao) error {
 	for _, c := range []struct {
 		texto string
 		alvo  **uuid.UUID
-	}{{f.Unidade, &filtro.Unidade}, {f.Categoria, &filtro.Categoria}} {
+	}{{f.Unidade, &filtro.Unidade}, {f.Categoria, &filtro.Categoria}, {f.Ativo, &filtro.Ativo}} {
 		if c.texto == "" {
 			continue
 		}
@@ -128,6 +130,9 @@ type Detalhe struct {
 	EtapaAtual string             `json:"etapa_atual,omitempty"`
 	// Tarefas são o trabalho de cada equipe no pedido, só para quem atende.
 	Tarefas []domain.Tarefa `json:"tarefas"`
+	// Espelho: o chamado veio do GLPI e muda lá até a virada (ADR 081);
+	// aqui é só leitura, sem próximos passos.
+	Espelho bool `json:"espelho,omitempty"`
 }
 
 // papeis devolve como identity age sobre a solicitação. Vazio = não vê.
@@ -142,9 +147,37 @@ func papeis(identity auth.Identity, sol domain.Solicitacao) []string {
 	return out
 }
 
-// Catalogo devolve as ofertas que o servidor pode pedir.
+// Catalogo devolve as ofertas que o servidor pode pedir, enriquecidas
+// com a secretaria provedora para separar as entidades no catálogo.
 func (s *Service) Catalogo(ctx context.Context) ([]domain.Oferta, error) {
-	return s.repo.ListOfertasAtivas(ctx, s.pool)
+	lista, err := s.repo.ListOfertasAtivas(ctx, s.pool)
+	if err != nil || len(lista) == 0 {
+		return lista, err
+	}
+	unidades := []uuid.UUID{}
+	for _, o := range lista {
+		if o.UnidadeID != nil && !slices.Contains(unidades, *o.UnidadeID) {
+			unidades = append(unidades, *o.UnidadeID)
+		}
+	}
+	if len(unidades) == 0 {
+		return lista, nil
+	}
+	secs, err := s.repo.SecretariasDe(ctx, s.pool, unidades)
+	if err != nil {
+		return lista, nil
+	}
+	for i := range lista {
+		if lista[i].UnidadeID != nil {
+			if sec, ok := secs[*lista[i].UnidadeID]; ok {
+				id := sec.ID
+				lista[i].SecretariaID = &id
+				lista[i].SecretariaNome = sec.Nome
+				lista[i].SecretariaSigla = sec.Sigla
+			}
+		}
+	}
+	return lista, nil
 }
 
 // Abrir registra a solicitação pela oferta, a primeira passagem, o evento
@@ -353,6 +386,12 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	}
 	sol = sol.ComPassagens(extrasDaFila(sol, mapa))
 	detalhe := Detalhe{Solicitacao: sol, Papeis: ps, Proximos: sol.Proximos(ps...), Passagens: passagens, Comentarios: comentarios, Visitas: visitas}
+	if detalhe.Espelho, err = s.espelhado(ctx, s.pool, id); err != nil {
+		return Detalhe{}, MapError(err)
+	}
+	if detalhe.Espelho {
+		detalhe.Proximos = []string{}
+	}
 	avaliacao, err := s.repo.GetAvaliacao(ctx, s.pool, id)
 	if err != nil && !errors.Is(err, domain.ErrNaoEncontrado) {
 		return Detalhe{}, MapError(err)
@@ -417,6 +456,46 @@ func (s *Service) VincularSegredo(ctx context.Context, identity auth.Identity, i
 			return nil, err
 		}
 		return nil, nil
+	})
+	if err != nil {
+		return Detalhe{}, err
+	}
+	return s.Obter(ctx, identity, id)
+}
+
+// VincularAtivo associa um item de configuração (CMDB) à solicitação, ou limpa quando ativo vem nulo.
+func (s *Service) VincularAtivo(ctx context.Context, identity auth.Identity, id uuid.UUID, ativo *uuid.UUID) (Detalhe, error) {
+	err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, ps []string) ([]notificacoes.Enviada, error) {
+		if !slices.Contains(ps, domain.PapelTecnico) {
+			return nil, domain.ErrForaDoEscopo
+		}
+		if sol.Finalizada() {
+			return nil, domain.ErrSolicitacaoFinalizada
+		}
+		var nome string
+		if ativo != nil {
+			if s.ativos == nil {
+				return nil, domain.ErrAtivosDesligado
+			}
+			var unidadeAtivo *uuid.UUID
+			var err error
+			nome, unidadeAtivo, err = s.ativos.Consultar(ctx, tx, *ativo)
+			if err != nil {
+				return nil, err
+			}
+			if unidadeAtivo != nil && !domain.MesmaUnidade(unidadeAtivo, sol.UnidadeID) {
+				return nil, domain.ErrAtivoDeOutraUnidade
+			}
+		}
+		if err := s.repo.SetAtivo(ctx, tx, sol.ID, ativo, nome, s.agora().UTC()); err != nil {
+			return nil, err
+		}
+		payload := payloadDe(sol)
+		if ativo != nil {
+			payload["ativo_id"] = ativo.String()
+			payload["ativo_nome"] = nome
+		}
+		return nil, s.registrar(ctx, tx, EventoSolicitacaoAtivo, "solicitacao", sol.ID, payload, payload, nil)
 	})
 	if err != nil {
 		return Detalhe{}, err
@@ -607,6 +686,9 @@ func (s *Service) alterar(ctx context.Context, identity auth.Identity, id uuid.U
 		ps := papeis(identity, sol)
 		if len(ps) == 0 {
 			return domain.ErrNaoEncontrado
+		}
+		if err := s.recusarEspelho(ctx, tx, id); err != nil {
+			return err
 		}
 		enviadas, err = fn(ctx, tx, sol, ps)
 		return err

@@ -81,6 +81,7 @@ func (m *Module) Manifest() kernel.Manifest {
 		Icon:           "server",
 		Route:          "/ativos",
 		Permissions: []kernel.PermissionInfo{
+			{Key: "ativos:read", Description: "Consultar os ativos da unidade e as relações de dependência"},
 			{Key: "ativos:manage", Description: "Cadastrar os ativos da unidade e ligá-los aos produtos"},
 			{Key: "ativos:reportar", Description: "A própria máquina informa patrimônio e capacidade, sem alterar o cadastro feito à mão"},
 		},

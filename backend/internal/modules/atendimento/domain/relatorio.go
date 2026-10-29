@@ -38,6 +38,7 @@ type LinhaSecretaria struct {
 type TarefaMedida struct {
 	EquipeID   uuid.UUID
 	EquipeNome string
+	UnidadeID  *uuid.UUID
 	OLAHoras   *int
 	Estado     string
 	CreatedAt  time.Time
@@ -48,9 +49,10 @@ type TarefaMedida struct {
 // e os trechos em que um chamado esteve com ela (ADR 073). A tarefa
 // dispensada não conta: não houve trabalho a medir.
 type LinhaEquipe struct {
-	EquipeID          uuid.UUID `json:"equipe_id"`
-	Nome              string    `json:"nome"`
-	OLAHoras          *int      `json:"ola_horas"`
+	EquipeID          uuid.UUID  `json:"equipe_id"`
+	Nome              string     `json:"nome"`
+	UnidadeID         *uuid.UUID `json:"unidade_id,omitempty"`
+	OLAHoras          *int       `json:"ola_horas"`
 	Concluidas        int       `json:"concluidas"`
 	NoPrazo           int       `json:"no_prazo"`
 	NoPrazoPercentual *float64  `json:"no_prazo_percentual"`
@@ -143,17 +145,19 @@ func ResumirEquipes(tarefas []TarefaMedida, atribuicoes []Atribuicao, passagens 
 	out := []LinhaEquipe{}
 	horas := map[uuid.UUID][]float64{}
 	horasChamados := map[uuid.UUID][]float64{}
-	linha := func(id uuid.UUID, nome string, ola *int) *LinhaEquipe {
+	linha := func(id uuid.UUID, nome string, unidade *uuid.UUID, ola *int) *LinhaEquipe {
 		i, ok := idx[id]
 		if !ok {
 			i = len(out)
 			idx[id] = i
-			out = append(out, LinhaEquipe{EquipeID: id, Nome: nome, OLAHoras: ola})
+			out = append(out, LinhaEquipe{EquipeID: id, Nome: nome, UnidadeID: unidade, OLAHoras: ola})
+		} else if out[i].UnidadeID == nil && unidade != nil {
+			out[i].UnidadeID = unidade
 		}
 		return &out[i]
 	}
 	for _, a := range atribuicoes {
-		l := linha(a.EquipeID, a.EquipeNome, a.OLAHoras)
+		l := linha(a.EquipeID, a.EquipeNome, a.UnidadeID, a.OLAHoras)
 		tempo := TempoDaEquipe(a, passagens[a.SolicitacaoID], agora)
 		fora := a.OLAHoras != nil && tempo > time.Duration(*a.OLAHoras)*time.Hour
 		if a.Fim == nil {
@@ -170,7 +174,7 @@ func ResumirEquipes(tarefas []TarefaMedida, atribuicoes []Atribuicao, passagens 
 		}
 	}
 	for _, t := range tarefas {
-		l := linha(t.EquipeID, t.EquipeNome, t.OLAHoras)
+		l := linha(t.EquipeID, t.EquipeNome, t.UnidadeID, t.OLAHoras)
 		var limite *time.Time
 		if t.OLAHoras != nil {
 			v := t.CreatedAt.Add(time.Duration(*t.OLAHoras) * time.Hour)

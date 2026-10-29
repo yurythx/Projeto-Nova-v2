@@ -21,6 +21,13 @@ type Repository interface {
 	SetToken(ctx context.Context, db database.DBTX, id uuid.UUID, hash *string) error
 	PorToken(ctx context.Context, db database.DBTX, hash string) (Conexao, error)
 	MarcarExtracao(ctx context.Context, db database.DBTX, id uuid.UUID, quando time.Time) error
+	// SetSincronizar liga ou desliga a sincronização da conexão (ADR 081).
+	SetSincronizar(ctx context.Context, db database.DBTX, id uuid.UUID, ligar bool) error
+	// Sincronizando diz se alguma conexão está sincronizando.
+	Sincronizando(ctx context.Context, db database.DBTX) (bool, error)
+	// ParaSincronizar são as conexões sincronizando, sem tarefa ativa e
+	// sem extração pedida depois de antes.
+	ParaSincronizar(ctx context.Context, db database.DBTX, antes time.Time) ([]uuid.UUID, error)
 
 	GravarItens(ctx context.Context, db database.DBTX, conexao uuid.UUID, itens []Item) error
 	Versoes(ctx context.Context, db database.DBTX, conexao uuid.UUID) (map[int]string, error)

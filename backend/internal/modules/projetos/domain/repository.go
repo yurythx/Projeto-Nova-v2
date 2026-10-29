@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
@@ -9,10 +10,13 @@ import (
 
 // FiltroProjetos define os critérios de busca de projetos.
 type FiltroProjetos struct {
-	Estado   string
-	Busca    string
-	Unidades []uuid.UUID
-	Restrito bool
+	Estado    string
+	Busca     string
+	ProdutoID *uuid.UUID
+	AlvoTipo  string
+	AlvoID    *uuid.UUID
+	Unidades  []uuid.UUID
+	Restrito  bool
 }
 
 // Repository define as operações de persistência de projetos e suas tarefas.
@@ -25,7 +29,7 @@ type Repository interface {
 
 	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error
-	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*Tarefa, error)
+	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*Tarefa, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)
 	ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error
 

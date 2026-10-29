@@ -35,6 +35,11 @@ const (
 	TarefaDesfazerSimulacao = "desfazer_simulacao"
 	TarefaDesfazer          = "desfazer"
 
+	// IntervaloSincronizacao é de quanto em quanto a sincronização pede a
+	// extração (ADR 081); PedidaPelaSincronizacao assina essas tarefas.
+	IntervaloSincronizacao  = 15 * time.Minute
+	PedidaPelaSincronizacao = "sincronização"
+
 	EstadoPendente    = "pendente"
 	EstadoEmAndamento = "em_andamento"
 	EstadoConcluida   = "concluida"
@@ -112,9 +117,12 @@ type Conexao struct {
 	TemToken       bool       `json:"tem_token"`
 	TokenEm        *time.Time `json:"token_em,omitempty"`
 	ExtraidoEm     *time.Time `json:"extraido_em,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	CreatedBy      string     `json:"created_by"`
+	// Sincronizar extrai e carrega sozinho a cada IntervaloSincronizacao,
+	// até a virada (ADR 081).
+	Sincronizar bool      `json:"sincronizar"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedBy   string    `json:"created_by"`
 	// Cifradas são as credenciais como estão no banco.
 	Cifradas string `json:"-"`
 }

@@ -20,7 +20,7 @@ func nomeDe(alias string) string {
 var solicitacaoSelect = `SELECT s.id, s.numero, s.tipo, s.estado, s.titulo, s.descricao, s.oferta_id, s.produto_id,
 	s.unidade_id, s.solicitante_id, s.responsavel_id, s.resolvida_em, s.encerrada_em, s.created_at, s.updated_at,
 	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id, s.etapa_atual,
-	s.contrato_apoio_id, s.contrato_apoio, s.contrato_prazo_horas,
+	s.contrato_apoio_id, s.contrato_apoio, s.contrato_prazo_horas, s.ativo_id, s.ativo_nome,
 	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, ''), COALESCE(un.nome, ''), COALESCE(ca.nome, '')
 	FROM atendimento_solicitacoes s
 	JOIN atendimento_ofertas o ON o.id = s.oferta_id
@@ -47,7 +47,8 @@ const solicitacaoWhere = `
 		AND ($11::uuid IS NULL OR s.unidade_id = $11)
 		AND ($12::uuid IS NULL OR s.oferta_id IN (SELECT id FROM atendimento_ofertas WHERE categoria_id = $12))
 		AND ($13::timestamptz IS NULL OR s.created_at >= $13)
-		AND ($14::timestamptz IS NULL OR s.created_at < $14)`
+		AND ($14::timestamptz IS NULL OR s.created_at < $14)
+		AND ($15::uuid IS NULL OR s.ativo_id = $15)`
 
 // ordemDaLista leva a coluna pedida à expressão; o domínio já validou.
 var ordemDaLista = map[string]string{
@@ -93,7 +94,7 @@ func scanSolicitacao(row interface{ Scan(...any) error }) (domain.Solicitacao, e
 	err := row.Scan(&s.ID, &s.Numero, &s.Tipo, &s.Estado, &s.Titulo, &s.Descricao, &s.OfertaID, &s.ProdutoID,
 		&s.UnidadeID, &s.SolicitanteID, &s.ResponsavelID, &s.ResolvidaEm, &s.EncerradaEm, &s.CreatedAt, &s.UpdatedAt,
 		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID, &s.EtapaAtual,
-		&s.ContratoApoioID, &s.ContratoApoio, &s.ContratoPrazoHoras,
+		&s.ContratoApoioID, &s.ContratoApoio, &s.ContratoPrazoHoras, &s.AtivoID, &s.AtivoNome,
 		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome, &s.UnidadeNome, &s.CategoriaNome)
 	if err != nil {
 		return domain.Solicitacao{}, err
@@ -155,14 +156,14 @@ func (r *Repository) ListOfertasAtivas(ctx context.Context, db database.DBTX) ([
 // ListSolicitacoes devolve a página do filtro e o total.
 func (r *Repository) ListSolicitacoes(ctx context.Context, db database.DBTX, f domain.FiltroSolicitacao) ([]domain.Solicitacao, int64, error) {
 	args := []any{f.Solicitante, f.Restrito, idsOrEmpty(f.Unidades), f.Tipo, f.Estado, f.Finalizadas, f.Responsavel, f.SemDono, padraoLike(f.Texto),
-		f.Prioridade, f.Unidade, f.Categoria, f.De, f.Ate}
+		f.Prioridade, f.Unidade, f.Categoria, f.De, f.Ate, f.Ativo}
 	var total int64
 	if err := db.QueryRow(ctx, `SELECT count(*) FROM atendimento_solicitacoes s`+solicitacaoWhere, args...).Scan(&total); err != nil {
 		return nil, 0, mapDB(err)
 	}
 	rows, err := db.Query(ctx, solicitacaoSelect+solicitacaoWhere+`
 		ORDER BY `+ordenar(f)+`
-		LIMIT $15 OFFSET $16`, append(args, f.Limit, f.Offset)...)
+		LIMIT $16 OFFSET $17`, append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, mapDB(err)
 	}
@@ -177,6 +178,13 @@ func (r *Repository) GetSolicitacao(ctx context.Context, db database.DBTX, id uu
 		return domain.Solicitacao{}, mapDB(err)
 	}
 	return s, nil
+}
+
+// Importado procura a solicitação no registro da importação.
+func (r *Repository) Importado(ctx context.Context, db database.DBTX, id uuid.UUID) (bool, error) {
+	var achou bool
+	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM atendimento_importacao WHERE tipo = 'solicitacao' AND destino = $1)`, id).Scan(&achou)
+	return achou, mapDB(err)
 }
 
 // TravarSolicitacao bloqueia a linha na transação do chamador.
@@ -241,6 +249,21 @@ func (r *Repository) SetContratoApoio(ctx context.Context, db database.DBTX, id 
 // SetSegredo grava o id do cofre, ou limpa quando segredo é nulo.
 func (r *Repository) SetSegredo(ctx context.Context, db database.DBTX, id uuid.UUID, segredo *uuid.UUID, agora time.Time) error {
 	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes SET cofre_segredo_id = $2, updated_at = $3 WHERE id = $1`, id, segredo, agora)
+	if err != nil {
+		return mapDB(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
+	}
+	return nil
+}
+
+// SetAtivo grava o item de configuração (CMDB) e o seu nome, ou limpa os dois quando ativo é nulo.
+func (r *Repository) SetAtivo(ctx context.Context, db database.DBTX, id uuid.UUID, ativo *uuid.UUID, nome string, agora time.Time) error {
+	if ativo == nil {
+		nome = ""
+	}
+	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes SET ativo_id = $2, ativo_nome = $3, updated_at = $4 WHERE id = $1`, id, ativo, nome, agora)
 	if err != nil {
 		return mapDB(err)
 	}

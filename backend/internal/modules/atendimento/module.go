@@ -96,6 +96,13 @@ func (m *Module) ComSegredo(segredos application.Segredos) { m.svc.WithSegredo(s
 // não aponta contrato.
 func (m *Module) ComContratos(c application.ContratosDeApoio) { m.svc.WithContratos(c) }
 
+// ComAtivos liga o cadastro de ativos (CMDB). Sem ele, o chamado não aponta ativo.
+func (m *Module) ComAtivos(a application.Ativos) { m.svc.WithAtivos(a) }
+
+// ComEspelho deixa os chamados importados só para leitura enquanto a
+// sincronização com a origem estiver ligada (ADR 081).
+func (m *Module) ComEspelho(ativo func(ctx context.Context) (bool, error)) { m.svc.WithEspelho(ativo) }
+
 // ComAssistente liga a IA de quem atende (ADR 065). Sem ela, não há IA.
 func (m *Module) ComAssistente(a application.Assistente) { m.svc.WithAssistente(a) }
 

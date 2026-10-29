@@ -211,9 +211,63 @@ describe("Conexão de integração", () => {
     expect(api.to(`DELETE ${base}/token`)).toHaveLength(1);
   });
 
+  it("liga a sincronização até a virada e pede para desfazer a carga", async () => {
+    const user = userEvent.setup();
+    const api = mockBackend(
+      rotas({
+        [`PUT ${base}/sincronizacao`]: { data: { ...conector, sincronizar: true } },
+      }),
+    );
+    renderApp(<ConexaoPage />);
+    await user.click(await screen.findByRole("button", { name: "Ligar a sincronização" }));
+    expect(api.to(`PUT ${base}/sincronizacao`)[0]?.body).toEqual({ ligada: true });
+
+    await user.click(screen.getByRole("button", { name: "Simular desfazer" }));
+    expect(api.to(`POST ${base}/tarefas`).at(-1)?.body).toEqual({ tipo: "desfazer_simulacao" });
+  });
+
   it("mostra a conexão que não existe", async () => {
     mockBackend(rotas({ [`GET ${base}`]: fail(404, "conexão não encontrada") }));
     renderApp(<ConexaoPage />);
     expect(await screen.findByText(/conexão não encontrada|Não foi possível/)).toBeInTheDocument();
+  });
+
+  it("filtra a tabela de-para entre as 3 entidades (PREFEITURA, SMS e SEMECEL)", async () => {
+    const user = userEvent.setup();
+    mockBackend(
+      rotas({
+        [`GET ${base}/tabela`]: {
+          data: [
+            linha,
+            {
+              ...linha,
+              secretaria: "SMS",
+              categoria: 8,
+              categoria_nome: "Sistemas > e-SUS",
+              oferta: "e-SUS",
+            },
+            {
+              ...linha,
+              secretaria: "SEMECEL",
+              categoria: 9,
+              categoria_nome: "Educação > Diário Escolar",
+              oferta: "Diário Escolar",
+            },
+          ],
+        },
+      }),
+    );
+    renderApp(<ConexaoPage />);
+
+    expect(await screen.findByText("Sistemas > e-SUS")).toBeInTheDocument();
+    expect(screen.getByText("Educação > Diário Escolar")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "SMS (1)" }));
+    expect(screen.getByText("Sistemas > e-SUS")).toBeInTheDocument();
+    expect(screen.queryByText("Educação > Diário Escolar")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "SEMECEL (1)" }));
+    expect(screen.getByText("Educação > Diário Escolar")).toBeInTheDocument();
+    expect(screen.queryByText("Sistemas > e-SUS")).not.toBeInTheDocument();
   });
 });

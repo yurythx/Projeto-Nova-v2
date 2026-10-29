@@ -16,7 +16,11 @@ import { AvaliacaoAtendimentoCard } from "@/components/atendimento/AvaliacaoAten
 import { LinhaDoTempo } from "@/components/atendimento/LinhaDoTempo";
 import { PrazoCard } from "@/components/atendimento/PrazoCard";
 import { RespostasProntas } from "@/components/atendimento/RespostasProntas";
-import { ProblemasDoIncidente } from "@/components/atendimento/ProblemasDoIncidente";
+import {
+  MudancasDaSolicitacao,
+  ProblemasDoIncidente,
+  ProjetosDaSolicitacao,
+} from "@/components/atendimento/ProblemasDoIncidente";
 import { VisitasCard } from "@/components/atendimento/VisitasCard";
 import { useTopic } from "@/components/realtime/RealtimeProvider";
 import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
@@ -59,7 +63,9 @@ export function SolicitacaoDetalhe() {
   const tecnico = d?.papeis.includes("tecnico") ?? false;
   const solicitante = d?.papeis.includes("solicitante") ?? false;
   const s = d?.solicitacao;
-  const finalizada = s?.estado === "encerrado" || s?.estado === "cancelado";
+  // O espelho do GLPI (ADR 081) muda lá até a virada: aqui, só leitura.
+  const espelho = d?.espelho === true;
+  const finalizada = s?.estado === "encerrado" || s?.estado === "cancelado" || espelho;
   const responsaveis = useApiQuery<Pessoa[]>(
     tecnico && !finalizada ? `v1/atendimento/solicitacoes/${id}/responsaveis` : null,
   );
@@ -159,7 +165,13 @@ export function SolicitacaoDetalhe() {
               }
             />
 
-            {solicitante && s.estado === "aguardando_servidor" && (
+            {espelho && (
+              <p role="status" className="rounded-lg border border-info/40 bg-info/10 p-3 text-sm">
+                Este chamado veio do GLPI e continua sendo atendido lá até a mudança de sistema.
+                Aqui ele é só para consulta: o que mudar no GLPI aparece em até 15 minutos.
+              </p>
+            )}
+            {!espelho && solicitante && s.estado === "aguardando_servidor" && (
               <p
                 role="status"
                 className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm"
@@ -168,7 +180,7 @@ export function SolicitacaoDetalhe() {
                 volta para o atendimento.
               </p>
             )}
-            {solicitante && (s.estado === "resolvido" || s.estado === "atendido") && (
+            {!espelho && solicitante && (s.estado === "resolvido" || s.estado === "atendido") && (
               <p
                 role="status"
                 className="rounded-lg border border-success/40 bg-success/10 p-3 text-sm"
@@ -297,8 +309,17 @@ export function SolicitacaoDetalhe() {
             )}
 
             {tecnico && s.tipo === "incidente" && <ProblemasDoIncidente solicitacaoId={s.id} />}
+            {tecnico && <MudancasDaSolicitacao solicitacaoId={s.id} />}
+            {tecnico && <ProjetosDaSolicitacao solicitacaoId={s.id} />}
 
-            <AtivoVinculadoCard solicitacaoId={s.id} tecnico={tecnico} finalizada={finalizada} />
+            <AtivoVinculadoCard
+              solicitacaoId={s.id}
+              ativoId={s.ativo_id}
+              ativoNome={s.ativo_nome}
+              tecnico={tecnico}
+              finalizada={finalizada}
+              onMudou={recarregar}
+            />
 
             <SegredoVinculadoCard
               solicitacaoId={s.id}
@@ -322,13 +343,15 @@ export function SolicitacaoDetalhe() {
 
             <ApontamentosCard solicitacaoId={s.id} tecnico={tecnico} finalizada={finalizada} />
 
-            <AvaliacaoAtendimentoCard
-              solicitacao={s}
-              avaliacao={d.avaliacao}
-              solicitante={solicitante}
-              tecnico={tecnico}
-              onAvaliado={recarregar}
-            />
+            {(!espelho || d.avaliacao) && (
+              <AvaliacaoAtendimentoCard
+                solicitacao={s}
+                avaliacao={d.avaliacao}
+                solicitante={solicitante}
+                tecnico={tecnico}
+                onAvaliado={recarregar}
+              />
+            )}
 
             <Card>
               <CardHeader>

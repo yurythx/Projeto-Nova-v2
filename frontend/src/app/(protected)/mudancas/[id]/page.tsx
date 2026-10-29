@@ -28,6 +28,7 @@ import {
   type Mudanca,
   type Problema,
 } from "@/lib/servicos/servicos";
+import { ESTADO_PROJETO, type Projeto } from "@/lib/projetos/projetos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 type TipoVinculo = "problema" | "incidente" | "ativo";
@@ -61,7 +62,9 @@ export function MudancaDetalhe() {
   const [pedindo, setPedindo] = useState<EstadoMudanca | null>(null);
   const [folha, setFolha] = useState(false);
   const problemas = useApiQuery<Problema[]>(
-    vincula && tipo === "problema" && can("problemas:manage") ? "v1/problemas" : null,
+    vincula && tipo === "problema" && (can("problemas:manage") || can("problemas:read"))
+      ? "v1/problemas"
+      : null,
   );
   const incidentes = useApiPage<Solicitacao>(
     vincula && tipo === "incidente" && can("atendimento:atender")
@@ -69,7 +72,14 @@ export function MudancaDetalhe() {
       : null,
   );
   const ativos = useApiQuery<Ativo[]>(
-    vincula && tipo === "ativo" && can("ativos:manage") ? "v1/ativos" : null,
+    vincula && tipo === "ativo" && (can("ativos:manage") || can("ativos:read"))
+      ? "v1/ativos"
+      : null,
+  );
+  const projetos = useApiQuery<Projeto[]>(
+    id && (can("projetos:read") || can("projetos:manage"))
+      ? withQuery("v1/projetos", { alvo_tipo: "mudanca", alvo_id: id })
+      : null,
   );
   const { run, pending } = useAction();
 
@@ -328,7 +338,7 @@ export function MudancaDetalhe() {
                               ? `/problemas/${v.alvo_id}`
                               : v.tipo === "incidente"
                                 ? `/atendimento/solicitacoes/${v.alvo_id}`
-                                : "/ativos"
+                                : `/ativos/${v.alvo_id}`
                           }
                           className="text-primary hover:underline"
                         >
@@ -400,6 +410,28 @@ export function MudancaDetalhe() {
                 )}
               </CardContent>
             </Card>
+
+            {(projetos.data ?? []).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle as="h2">Projetos</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-5">
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {(projetos.data ?? []).map((pr) => (
+                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-2">
+                        <Link href={`/projetos/${pr.id}`} className="text-primary hover:underline">
+                          #{pr.numero} · {pr.titulo}
+                        </Link>
+                        <Badge tone={ESTADO_PROJETO[pr.estado].tone}>
+                          {ESTADO_PROJETO[pr.estado].label}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </DataState>

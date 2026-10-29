@@ -114,7 +114,7 @@ func (c carregadorGLPI) Carregar(ctx context.Context, conexao intdomain.Conexao,
 				Prioridade: l.Prioridade}}
 	}
 	im := &glpi.Importador{Fonte: &glpi.FontePreparo{Leitor: leitorGLPI{leitor}}, Pool: c.pool, Repo: atendinfra.NewRepository(),
-		Gravar: gravar, Fuso: fuso, Mapa: glpi.NovoMapa(linhas), Progresso: progresso}
+		Gravar: gravar, Fuso: fuso, Mapa: glpi.NovoMapa(linhas), Progresso: progresso, Sincronizar: conexao.Sincronizar}
 	return im.Executar(ctx)
 }
 
@@ -124,6 +124,20 @@ func (c carregadorGLPI) Desfazer(ctx context.Context, gravar bool, progresso int
 		return nil, errors.New("o atendimento está desligado: ligue o módulo antes de desfazer")
 	}
 	return glpi.Desfazer(ctx, c.pool, gravar, progresso)
+}
+
+// espelhoGLPI diz ao atendimento se a sincronização está ligada. Com as
+// integrações desligadas, não há sincronização.
+type espelhoGLPI struct {
+	svc   *intapp.Service
+	ativo func() bool
+}
+
+func (e espelhoGLPI) Ativo(ctx context.Context) (bool, error) {
+	if !e.ativo() {
+		return false, nil
+	}
+	return e.svc.SincronizacaoAtiva(ctx)
 }
 
 // credenciais encadeia os reconhecedores de token de máquina: o primeiro

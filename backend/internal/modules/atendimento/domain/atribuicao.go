@@ -13,6 +13,7 @@ type Atribuicao struct {
 	SolicitacaoID uuid.UUID
 	EquipeID      uuid.UUID
 	EquipeNome    string
+	UnidadeID     *uuid.UUID
 	OLAHoras      *int
 	Inicio        time.Time
 	Fim           *time.Time

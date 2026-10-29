@@ -395,6 +395,29 @@ func (im *Importador) politica(ctx context.Context, cal Calendario, metas []doma
 	})
 }
 
+// entidadeRaiz reporta se a entidade do grupo no GLPI é a raiz da
+// instalação, caso em que a secretaria atendida é inferida pelo nome do
+// grupo técnico.
+func entidadeRaiz(sec string) bool {
+	switch strings.ToUpper(strings.TrimSpace(sec)) {
+	case "", "RAIZ", "RONDONOPOLIS", "RONDONÓPOLIS":
+		return true
+	}
+	return false
+}
+
+func secretariaDoGrupo(nome string) string {
+	u := strings.ToUpper(nome)
+	switch {
+	case strings.Contains(u, "SMS") || strings.Contains(u, "SAUDE") || strings.Contains(u, "SAÚDE"):
+		return "SMS"
+	case strings.Contains(u, "SEMECEL") || strings.Contains(u, "SEMED") || strings.Contains(u, "EDUCACAO") || strings.Contains(u, "EDUCAÇÃO"):
+		return "SEMECEL"
+	default:
+		return "PREFEITURA"
+	}
+}
+
 // equipes cria, na unidade da secretaria de cada grupo que já atendeu
 // chamados, a equipe com as pessoas que casaram; a que já existe com o
 // mesmo nome ganha quem falta.
@@ -409,6 +432,9 @@ func (im *Importador) equipes(ctx context.Context, grupos []Grupo, r *RelatorioE
 		}
 		sec := im.secretarias[g.EntidadeID]
 		d, ok := im.Mapa.Destino(sec, CategoriaGeral)
+		if (!ok || d.Unidade == nil) && entidadeRaiz(sec) {
+			d, ok = im.Mapa.Destino(secretariaDoGrupo(g.Nome), CategoriaGeral)
+		}
 		if !ok || d.Unidade == nil {
 			r.SemUnidade = append(r.SemUnidade, g.Nome)
 			continue
@@ -487,6 +513,12 @@ func (im *Importador) gravarEquipe(ctx context.Context, grupo int, nome string, 
 			if !slices.Contains(atuais, m) {
 				atuais = append(atuais, m)
 			}
+		}
+		if im.equipesUnidade == nil {
+			im.equipesUnidade = map[uuid.UUID]uuid.UUID{}
+		}
+		if _, ja := im.equipesUnidade[*unidade]; !ja {
+			im.equipesUnidade[*unidade] = id
 		}
 		return im.Repo.SubstituirMembros(ctx, tx, id, atuais)
 	})

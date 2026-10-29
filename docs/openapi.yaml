@@ -747,6 +747,8 @@ components:
                     items:
                         $ref: '#/components/schemas/AtendimentoComentario'
                     type: array
+                espelho:
+                    type: boolean
                 etapa_atual:
                     type: string
                 papeis:
@@ -1387,6 +1389,13 @@ components:
                     type: integer
                 produto_id:
                     format: uuid
+                    type: string
+                secretaria_id:
+                    format: uuid
+                    type: string
+                secretaria_nome:
+                    type: string
+                secretaria_sigla:
                     type: string
                 tipo:
                     type: string
@@ -5698,6 +5707,8 @@ components:
                     type: string
                 perfil:
                     type: string
+                sincronizar:
+                    type: boolean
                 tem_credenciais:
                     type: boolean
                 tem_token:
@@ -5720,6 +5731,7 @@ components:
                 - modo
                 - nome
                 - perfil
+                - sincronizar
                 - tem_credenciais
                 - tem_token
                 - tipo
@@ -5846,6 +5858,12 @@ components:
                 total:
                     minimum: 0
                     type: integer
+            type: object
+            x-projeto-nova-generated: true
+        IntegracoesSincronizacaoRequest:
+            properties:
+                ligada:
+                    type: boolean
             type: object
             x-projeto-nova-generated: true
         IntegracoesSugestaoRequest:
@@ -7428,6 +7446,10 @@ components:
             x-projeto-nova-generated: true
         ProjetosTarefaRequest:
             properties:
+                data_limite:
+                    format: date-time
+                    nullable: true
+                    type: string
                 descricao:
                     maxLength: 2000
                     type: string
@@ -17957,6 +17979,52 @@ paths:
             security:
                 - bearerAuth: []
             summary: Integrações — inventário da área de preparo
+            tags:
+                - integracoes
+    /api/v1/integracoes/conexoes/{id}/sincronizacao:
+        put:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: putIntegracoesConexoesIdSincronizacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IntegracoesSincronizacaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/IntegracoesConexao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Integrações — Salvar /integracoes/conexoes/{id}/sincronizacao
             tags:
                 - integracoes
     /api/v1/integracoes/conexoes/{id}/tabela:

@@ -53,11 +53,12 @@ type EstadoRequest struct {
 }
 
 type TarefaRequest struct {
-	Titulo          string `json:"titulo" validate:"required,max=200"`
-	Descricao       string `json:"descricao" validate:"max=2000"`
-	ResponsavelNome string `json:"responsavel_nome" validate:"max=200"`
-	Estado          string `json:"estado" validate:"omitempty,min=1,max=40"`
-	Ordem           int    `json:"ordem"`
+	Titulo          string     `json:"titulo" validate:"required,max=200"`
+	Descricao       string     `json:"descricao" validate:"max=2000"`
+	ResponsavelNome string     `json:"responsavel_nome" validate:"max=200"`
+	Estado          string     `json:"estado" validate:"omitempty,min=1,max=40"`
+	Ordem           int        `json:"ordem"`
+	DataLimite      *time.Time `json:"data_limite"`
 }
 
 type VinculoRequest struct {
@@ -76,11 +77,14 @@ func NewHandlers(svc *application.Service, logger *slog.Logger) *Handlers {
 }
 
 func (h *Handlers) RegisterRoutes(r chi.Router) {
-	r.Get("/projetos", h.Listar)
-	r.Get("/projetos/{id}", h.Obter)
-	r.Get("/projetos/{id}/tarefas", h.ListarTarefas)
-	r.Get("/projetos/{id}/vinculos", h.ListarVinculos)
-	r.Get("/projetos/{id}/apontamentos", h.ListarApontamentos)
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RequirePermission(h.logger, auth.PermProjetosRead))
+		r.Get("/projetos", h.Listar)
+		r.Get("/projetos/{id}", h.Obter)
+		r.Get("/projetos/{id}/tarefas", h.ListarTarefas)
+		r.Get("/projetos/{id}/vinculos", h.ListarVinculos)
+		r.Get("/projetos/{id}/apontamentos", h.ListarApontamentos)
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermProjetosManage))
@@ -105,11 +109,26 @@ func (h *Handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func (h *Handlers) Listar(w http.ResponseWriter, r *http.Request) {
+	produtoID, err := httputil.OptionalUUIDQuery(r, "produto_id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	alvoID, err := httputil.OptionalUUIDQuery(r, "alvo_id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	estado := httputil.Query(r, "estado", 20)
-	busca := httputil.Query(r, "q", 100)
+	f := domain.FiltroProjetos{
+		Estado:    httputil.Query(r, "estado", 20),
+		Busca:     httputil.Query(r, "q", 100),
+		ProdutoID: produtoID,
+		AlvoTipo:  httputil.Query(r, "alvo_tipo", 20),
+		AlvoID:    alvoID,
+	}
 
-	lista, err := h.svc.Listar(r.Context(), identity, estado, busca)
+	lista, err := h.svc.ListarPorFiltro(r.Context(), identity, f)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -214,7 +233,7 @@ func (h *Handlers) CriarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelNome, req.Estado, req.Ordem)
+	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -234,7 +253,7 @@ func (h *Handlers) AtualizarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.ResponsavelNome, req.Estado, req.Ordem)
+	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite)
 	if err != nil {
 		h.fail(w, r, err)
 		return

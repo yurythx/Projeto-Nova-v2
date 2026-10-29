@@ -73,7 +73,7 @@ func (s *Service) ReceberCorreio(ctx context.Context, de, assunto, corpo, messag
 		texto = "(mensagem sem texto)"
 	}
 	if _, err := s.Comentar(ctx, auth.Identity{UserID: autor}, sol.ID, "Resposta por e-mail:\n"+texto, false); err != nil {
-		if errors.Is(err, domain.ErrSolicitacaoFinalizada) || errors.Is(err, domain.ErrComentarioInvalido) {
+		if errors.Is(err, domain.ErrSolicitacaoFinalizada) || errors.Is(err, domain.ErrComentarioInvalido) || errors.Is(err, domain.ErrEspelho) {
 			return nil
 		}
 		_ = s.repo.LiberarCorreio(ctx, s.pool, messageID)

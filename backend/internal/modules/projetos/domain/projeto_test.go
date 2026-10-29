@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/domain"
 )
 
@@ -55,4 +57,40 @@ func TestTransicoes(t *testing.T) {
 			t.Errorf("cancelado não deve ter próximos estados")
 		}
 	})
+}
+
+func TestVinculosEApontamentos(t *testing.T) {
+	id := uuid.New()
+	for _, tipo := range []string{domain.VinculoMudanca, domain.VinculoProblema, domain.VinculoAtivo, domain.VinculoSolicitacao} {
+		if err := domain.NovoVinculo(tipo, id); err != nil {
+			t.Fatalf("tipo %s deveria ser válido: %v", tipo, err)
+		}
+	}
+	if err := domain.NovoVinculo("invalido", id); err != domain.ErrVinculoInvalido {
+		t.Fatalf("esperava ErrVinculoInvalido, obteve %v", err)
+	}
+	if err := domain.NovoVinculo(domain.VinculoMudanca, uuid.Nil); err != domain.ErrVinculoInvalido {
+		t.Fatalf("esperava ErrVinculoInvalido para uuid.Nil, obteve %v", err)
+	}
+
+	uA, uB := uuid.New(), uuid.New()
+	if !domain.MesmaUnidadeCompativel(nil, &uA) || !domain.MesmaUnidadeCompativel(&uA, nil) || !domain.MesmaUnidadeCompativel(&uA, &uA) {
+		t.Fatal("unidades compatíveis recusadas")
+	}
+	if domain.MesmaUnidadeCompativel(&uA, &uB) {
+		t.Fatal("unidades distintas aceitas")
+	}
+
+	if err := (domain.Apontamento{Horas: 0, Descricao: "ok"}).Validar(); err != domain.ErrApontamentoInvalido {
+		t.Fatalf("horas zero: %v", err)
+	}
+	if err := (domain.Apontamento{Horas: 25, Descricao: "ok"}).Validar(); err != domain.ErrApontamentoInvalido {
+		t.Fatalf("horas > 24: %v", err)
+	}
+	if err := (domain.Apontamento{Horas: 4, Descricao: "  "}).Validar(); err != domain.ErrApontamentoInvalido {
+		t.Fatalf("descrição vazia: %v", err)
+	}
+	if err := (domain.Apontamento{Horas: 4, Descricao: "Análise"}).Validar(); err != nil {
+		t.Fatalf("apontamento válido: %v", err)
+	}
 }

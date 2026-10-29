@@ -40,14 +40,20 @@ var (
 	ErrSemResponsavel        = errors.New("atendimento: a solicitação precisa de um responsável")
 	ErrResponsavelInvalido   = errors.New("atendimento: o responsável precisa ser de uma equipe da unidade")
 	ErrSolicitacaoFinalizada = errors.New("atendimento: solicitação encerrada ou cancelada")
-	ErrComentarioInvalido    = errors.New("atendimento: comentário inválido")
-	ErrNotaInternaNegada     = errors.New("atendimento: só a equipe registra nota interna")
-	ErrOfertaInexistente     = errors.New("atendimento: oferta não encontrada")
-	ErrOfertaInativa         = errors.New("atendimento: oferta inativa")
-	ErrAvaliacaoInvalida     = errors.New("atendimento: avaliação inválida")
-	ErrAvaliacaoForaDeHora   = errors.New("atendimento: só se avalia o atendimento concluído")
+	// ErrEspelho: o chamado veio do GLPI e a sincronização está ligada; ele
+	// muda lá até a virada (ADR 081).
+	ErrEspelho             = errors.New("atendimento: chamado atendido no GLPI até a virada")
+	ErrComentarioInvalido  = errors.New("atendimento: comentário inválido")
+	ErrNotaInternaNegada   = errors.New("atendimento: só a equipe registra nota interna")
+	ErrOfertaInexistente   = errors.New("atendimento: oferta não encontrada")
+	ErrOfertaInativa       = errors.New("atendimento: oferta inativa")
+	ErrAvaliacaoInvalida   = errors.New("atendimento: avaliação inválida")
+	ErrAvaliacaoForaDeHora = errors.New("atendimento: só se avalia o atendimento concluído")
 	ErrAvaliacaoAlheia       = errors.New("atendimento: só quem abriu avalia o atendimento")
 	ErrAvaliacaoExistente    = errors.New("atendimento: esta solicitação já foi avaliada")
+	ErrAtivosDesligado       = errors.New("atendimento: cadastro de ativos desligado")
+	ErrAtivoAusente          = errors.New("atendimento: ativo não encontrado")
+	ErrAtivoDeOutraUnidade   = errors.New("atendimento: o ativo precisa ser da mesma unidade da solicitação")
 )
 
 // Produtos é a porta do plugin de produtos. Não há import entre plugins:
@@ -74,8 +80,14 @@ type Oferta struct {
 	CategoriaID *uuid.UUID `json:"categoria_id,omitempty"`
 	Icone       string     `json:"icone"`
 	Ordem       int        `json:"ordem"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	// SecretariaID, SecretariaNome e SecretariaSigla identificam a
+	// entidade/secretaria provedora no catálogo quando há mais de uma
+	// central de atendimento (ex.: Prefeitura/SECITI, SMS, SEMED).
+	SecretariaID    *uuid.UUID `json:"secretaria_id,omitempty"`
+	SecretariaNome  string     `json:"secretaria_nome,omitempty"`
+	SecretariaSigla string     `json:"secretaria_sigla,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 // Equipe atende as solicitações de uma unidade.

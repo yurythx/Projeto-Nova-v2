@@ -44,6 +44,8 @@ export interface Ativo {
   unidade_id?: string;
   origem?: "manual" | "agente";
   inventario?: InventarioMaquina;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const TIPO_ATIVO: Record<TipoAtivo, string> = {

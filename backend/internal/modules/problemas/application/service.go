@@ -142,6 +142,7 @@ func cobertura(identity auth.Identity) (bool, []uuid.UUID, bool) {
 type FiltroEntrada struct {
 	Estado        string
 	SolicitacaoID *uuid.UUID
+	AtivoID       *uuid.UUID
 	Busca         string
 }
 
@@ -152,7 +153,7 @@ func (s *Service) Listar(ctx context.Context, identity auth.Identity, f FiltroEn
 		return []domain.Problema{}, nil
 	}
 	lista, err := s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !todas, Unidades: unidades, Estado: f.Estado,
-		SolicitacaoID: f.SolicitacaoID, Busca: f.Busca})
+		SolicitacaoID: f.SolicitacaoID, AtivoID: f.AtivoID, Busca: f.Busca})
 	if err != nil {
 		return nil, MapError(err)
 	}

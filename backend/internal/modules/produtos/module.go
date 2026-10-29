@@ -41,6 +41,7 @@ func (m *Module) Manifest() kernel.Manifest {
 		Icon:           "package",
 		Route:          "/produtos",
 		Permissions: []kernel.PermissionInfo{
+			{Key: "produtos:read", Description: "Consultar o catálogo de produtos digitais da unidade"},
 			{Key: "produtos:manage", Description: "Cadastrar produtos digitais e mudar o estágio do ciclo de vida"},
 		},
 	}

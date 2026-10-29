@@ -89,6 +89,20 @@ func TestRegrasDoExpediente(t *testing.T) {
 	if hhmm("08:00:00") != "08:00" || hhmm("8") != "8" {
 		t.Fatal("hhmm")
 	}
+	if !entidadeRaiz("") || !entidadeRaiz("RAIZ") || !entidadeRaiz("RONDONOPOLIS") || entidadeRaiz("OUTRA") {
+		t.Fatal("entidadeRaiz")
+	}
+	for nome, quer := range map[string]string{
+		"RAIZ > Suporte SMS":      "SMS",
+		"RAIZ > TI da Saúde":      "SMS",
+		"RAIZ > TI SEMECEL":       "SEMECEL",
+		"RAIZ > Suporte Educação": "SEMECEL",
+		"RAIZ > N1 Geral":         "PREFEITURA",
+	} {
+		if got := secretariaDoGrupo(nome); got != quer {
+			t.Errorf("secretariaDoGrupo(%q): %s, quer %s", nome, got, quer)
+		}
+	}
 }
 
 // glpiDoExpediente responde as rotas do calendário e dos grupos.

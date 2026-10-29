@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { fmtDate } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -117,6 +118,7 @@ function baixar(rel: RelatorioSecretarias) {
 export default function AtendimentoRelatorioPage() {
   const { can } = usePlataforma();
   const [dias, setDias] = useState("90");
+  const [secretariaFiltro, setSecretariaFiltro] = useState("todas");
   const rel = useApiQuery<RelatorioSecretarias>(
     can("atendimento:atender") ? withQuery("v1/atendimento/relatorio/secretarias", { dias }) : null,
   );
@@ -172,6 +174,25 @@ export default function AtendimentoRelatorioPage() {
               Desde {fmtDate(r.desde)}.
               {r.truncado ? " A amostra passou do teto: entram os pedidos mais recentes." : ""}
             </p>
+            {r.secretarias.length > 1 && (
+              <div className="print:hidden">
+                <SectionTabsInline
+                  label="Filtrar relatório por secretaria"
+                  value={secretariaFiltro}
+                  onChange={setSecretariaFiltro}
+                  tabs={[
+                    { value: "todas", label: `Todas (${r.secretarias.length})` },
+                    ...r.secretarias.map((l) => {
+                      const chave = l.unidade_id ?? "institucional";
+                      return {
+                        value: chave,
+                        label: l.sigla ? `Central ${l.sigla}` : l.nome,
+                      };
+                    }),
+                  ]}
+                />
+              </div>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle as="h2">Por secretaria</CardTitle>
@@ -191,31 +212,39 @@ export default function AtendimentoRelatorioPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {r.secretarias.map((l) => (
-                      <tr
-                        key={l.unidade_id ?? "institucional"}
-                        className="border-t border-surface-border"
-                      >
-                        <th scope="row" className="py-1 pr-3 font-medium">
-                          {nomeDe(l)}
+                    {r.secretarias
+                      .filter(
+                        (l) =>
+                          secretariaFiltro === "todas" ||
+                          (l.unidade_id ?? "institucional") === secretariaFiltro,
+                      )
+                      .map((l) => (
+                        <tr
+                          key={l.unidade_id ?? "institucional"}
+                          className="border-t border-surface-border"
+                        >
+                          <th scope="row" className="py-1 pr-3 font-medium">
+                            {nomeDe(l)}
+                          </th>
+                          {COLUNAS.map((c) => (
+                            <td key={c.rotulo} className="py-1 pr-3">
+                              {c.valor(l)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    {secretariaFiltro === "todas" && (
+                      <tr className="border-t-2 border-surface-border font-semibold">
+                        <th scope="row" className="py-1 pr-3">
+                          Total
                         </th>
                         {COLUNAS.map((c) => (
                           <td key={c.rotulo} className="py-1 pr-3">
-                            {c.valor(l)}
+                            {c.valor(r.total)}
                           </td>
                         ))}
                       </tr>
-                    ))}
-                    <tr className="border-t-2 border-surface-border font-semibold">
-                      <th scope="row" className="py-1 pr-3">
-                        Total
-                      </th>
-                      {COLUNAS.map((c) => (
-                        <td key={c.rotulo} className="py-1 pr-3">
-                          {c.valor(r.total)}
-                        </td>
-                      ))}
-                    </tr>
+                    )}
                   </tbody>
                 </table>
               </CardContent>
@@ -242,18 +271,24 @@ export default function AtendimentoRelatorioPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {r.equipes.map((e) => (
-                        <tr key={e.equipe_id} className="border-t border-surface-border">
-                          <th scope="row" className="py-1 pr-3 font-medium">
-                            {e.nome}
-                          </th>
-                          {COLUNAS_EQUIPE.map((c) => (
-                            <td key={c.rotulo} className="py-1 pr-3">
-                              {c.valor(e)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
+                      {r.equipes
+                        .filter(
+                          (e) =>
+                            secretariaFiltro === "todas" ||
+                            (e.unidade_id ?? "institucional") === secretariaFiltro,
+                        )
+                        .map((e) => (
+                          <tr key={e.equipe_id} className="border-t border-surface-border">
+                            <th scope="row" className="py-1 pr-3 font-medium">
+                              {e.nome}
+                            </th>
+                            {COLUNAS_EQUIPE.map((c) => (
+                              <td key={c.rotulo} className="py-1 pr-3">
+                                {c.valor(e)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 )}

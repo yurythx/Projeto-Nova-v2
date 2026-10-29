@@ -44,6 +44,11 @@ type SugestaoRequest struct {
 	Unidades map[string]uuid.UUID `json:"unidades"`
 }
 
+// SincronizacaoRequest liga ou desliga a sincronização até a virada.
+type SincronizacaoRequest struct {
+	Ligada bool `json:"ligada"`
+}
+
 // TarefaRequest pede uma tarefa.
 type TarefaRequest struct {
 	Tipo string `json:"tipo" validate:"required"`
@@ -99,6 +104,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/integracoes/conexoes/{id}/tarefas", h.tarefas)
 		r.Post("/integracoes/conexoes/{id}/tarefas", h.pedir)
 		r.Post("/integracoes/tarefas/{id}/cancelar", h.cancelar)
+		r.Put("/integracoes/conexoes/{id}/sincronizacao", h.sincronizar)
 	})
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermIntegracoesConector))
@@ -288,6 +294,24 @@ func (h *Handlers) pedir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteCreated(w, t)
+}
+
+func (h *Handlers) sincronizar(w http.ResponseWriter, r *http.Request) {
+	id, identity, ok := h.comID(w, r)
+	if !ok {
+		return
+	}
+	var req SincronizacaoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	c, err := h.svc.Sincronizar(r.Context(), identity, id, req.Ligada)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, c)
 }
 
 func (h *Handlers) cancelar(w http.ResponseWriter, r *http.Request) {

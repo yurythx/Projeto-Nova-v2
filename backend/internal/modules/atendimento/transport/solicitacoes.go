@@ -42,6 +42,11 @@ type SegredoVinculoRequest struct {
 	SegredoID *uuid.UUID `json:"segredo_id"`
 }
 
+// AtivoVinculoRequest aponta o chamado para um item de configuração (CMDB). Nulo remove o vínculo.
+type AtivoVinculoRequest struct {
+	AtivoID *uuid.UUID `json:"ativo_id"`
+}
+
 // ComentarioRequest é a resposta ou, com interno, a nota da equipe.
 type ComentarioRequest struct {
 	Texto   string `json:"texto" validate:"required,max=4000"`
@@ -66,6 +71,7 @@ func filtroFila(r *http.Request, finalizadas bool) application.FiltroFila {
 		Prioridade:  httputil.Query(r, "prioridade", 20),
 		Unidade:     httputil.Query(r, "unidade", 36),
 		Categoria:   httputil.Query(r, "categoria", 36),
+		Ativo:       httputil.Query(r, "ativo_id", 36),
 		De:          httputil.Query(r, "aberta_de", 40),
 		Ate:         httputil.Query(r, "aberta_ate", 40),
 		Ordem:       httputil.Query(r, "ordem", 20),
@@ -199,6 +205,26 @@ func (h *Handlers) VincularSegredo(w http.ResponseWriter, r *http.Request) {
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
 	d, err := h.svc.VincularSegredo(r.Context(), identity, id, req.SegredoID)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, d)
+}
+
+func (h *Handlers) VincularAtivo(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req AtivoVinculoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	d, err := h.svc.VincularAtivo(r.Context(), identity, id, req.AtivoID)
 	if err != nil {
 		h.fail(w, r, err)
 		return

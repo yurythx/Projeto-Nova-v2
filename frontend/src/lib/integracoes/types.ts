@@ -17,6 +17,8 @@ export interface Conexao {
   tem_token: boolean;
   token_em?: string;
   extraido_em?: string;
+  /** Extrai e carrega sozinho a cada 15 minutos, até a virada (ADR 081). */
+  sincronizar: boolean;
   created_at: string;
   created_by: string;
 }

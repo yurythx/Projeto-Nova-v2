@@ -289,6 +289,7 @@ type Filtro struct {
 	Unidades      []uuid.UUID
 	Estado        string
 	SolicitacaoID *uuid.UUID
+	AtivoID       *uuid.UUID
 	Busca         string
 }
 

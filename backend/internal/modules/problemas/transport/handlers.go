@@ -69,17 +69,22 @@ func (h *Handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 	httputil.WriteError(w, r, h.logger, application.MapError(err))
 }
 
-// Listar aceita ?estado=, ?solicitacao_id= (problemas de um incidente) e
-// ?q= (título ou contorno).
+// Listar aceita ?estado=, ?solicitacao_id= (problemas de um incidente),
+// ?ativo_id= (problemas ligados a um ativo) e ?q= (título ou contorno).
 func (h *Handlers) Listar(w http.ResponseWriter, r *http.Request) {
 	solicitacao, err := httputil.OptionalUUIDQuery(r, "solicitacao_id")
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
+	ativo, err := httputil.OptionalUUIDQuery(r, "ativo_id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
 	identity, _ := auth.IdentityFromContext(r.Context())
 	lista, err := h.svc.Listar(r.Context(), identity, application.FiltroEntrada{
-		Estado: httputil.Query(r, "estado", 20), SolicitacaoID: solicitacao, Busca: httputil.Query(r, "q", 100),
+		Estado: httputil.Query(r, "estado", 20), SolicitacaoID: solicitacao, AtivoID: ativo, Busca: httputil.Query(r, "q", 100),
 	})
 	if err != nil {
 		h.fail(w, r, err)

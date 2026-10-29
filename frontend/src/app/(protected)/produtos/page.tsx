@@ -188,9 +188,17 @@ export default function ProdutosPage() {
                 {can("ativos:manage") && (
                   <Link
                     href={`/ativos?produto=${produto.id}`}
-                    className="mt-1 inline-block text-sm text-primary hover:underline"
+                    className="mt-1 mr-4 inline-block text-sm text-primary hover:underline"
                   >
                     Ver ativos de {produto.nome}
+                  </Link>
+                )}
+                {(can("projetos:read") || can("projetos:manage")) && (
+                  <Link
+                    href={`/projetos?vista=lista&produto=${produto.id}`}
+                    className="mt-1 inline-block text-sm text-primary hover:underline"
+                  >
+                    Ver projetos de {produto.nome}
                   </Link>
                 )}
               </div>

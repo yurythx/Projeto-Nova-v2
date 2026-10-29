@@ -47,6 +47,8 @@ func (s *Service) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto,
 			return fmt.Sprintf("O chamado #%d já foi encerrado. Para outro assunto, abra um novo chamado na Central de Atendimento.", sol.Numero), nil
 		case errors.Is(err, domain.ErrComentarioInvalido):
 			return "", nil
+		case errors.Is(err, domain.ErrEspelho):
+			return fmt.Sprintf("O chamado #%d é atendido no GLPI até a mudança de sistema. Responda por lá.", sol.Numero), nil
 		}
 		_ = s.repo.LiberarCorreio(ctx, s.pool, chave)
 		return "", err

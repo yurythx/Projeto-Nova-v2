@@ -126,6 +126,24 @@ func (r *Repository) Listar(ctx context.Context, db database.DBTX, f domain.Filt
 		n++
 	}
 
+	if f.ProdutoID != nil {
+		q += fmt.Sprintf(` AND produto_id = $%d`, n)
+		args = append(args, *f.ProdutoID)
+		n++
+	}
+
+	if f.AlvoID != nil {
+		if f.AlvoTipo != "" {
+			q += fmt.Sprintf(` AND EXISTS (SELECT 1 FROM projetos_vinculos v WHERE v.projeto_id = projetos.id AND v.tipo = $%d AND v.alvo_id = $%d)`, n, n+1)
+			args = append(args, f.AlvoTipo, *f.AlvoID)
+			n += 2
+		} else {
+			q += fmt.Sprintf(` AND EXISTS (SELECT 1 FROM projetos_vinculos v WHERE v.projeto_id = projetos.id AND v.alvo_id = $%d)`, n)
+			args = append(args, *f.AlvoID)
+			n++
+		}
+	}
+
 	if f.Restrito {
 		q += fmt.Sprintf(` AND (unidade_id = ANY($%d) OR unidade_id IS NULL)`, n)
 		args = append(args, f.Unidades)
@@ -219,14 +237,14 @@ func (r *Repository) CriarTarefa(ctx context.Context, db database.DBTX, t *domai
 	return mapDB(err)
 }
 
-func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int) (*domain.Tarefa, error) {
+func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
 	now := time.Now().UTC()
 	q := fmt.Sprintf(`UPDATE projetos_tarefas SET
-		titulo = $2, descricao = $3, responsavel_nome = $4, estado = $5, ordem = $6, updated_at = $7
+		titulo = $2, descricao = $3, responsavel_nome = $4, estado = $5, ordem = $6, data_limite = COALESCE($7, data_limite), updated_at = $8
 		WHERE id = $1
 		RETURNING %s`, colunasTarefa)
 
-	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavel, estado, ordem, now))
+	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavel, estado, ordem, dataLimite, now))
 	if err != nil {
 		return nil, mapDB(err)
 	}

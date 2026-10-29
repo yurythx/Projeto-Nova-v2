@@ -49,6 +49,7 @@ const (
 	PermTramiteCreate     Permission = "tramite:create"
 	PermTramiteRoute      Permission = "tramite:route"
 	PermTramiteManage     Permission = "tramite:manage"
+	PermProdutosRead      Permission = "produtos:read"
 	PermProdutosManage    Permission = "produtos:manage"
 	PermAtendimentoManage Permission = "atendimento:manage"
 	// PermAtendimentoAbrir: o servidor abre e acompanha as próprias solicitações.
@@ -57,6 +58,7 @@ const (
 	// responde, muda o estado). Cadastrar oferta e equipe é manage.
 	PermAtendimentoAtender Permission = "atendimento:atender"
 	// Ativos, problemas e mudanças (fases 6 e 7 da gestão de serviços).
+	PermAtivosRead      Permission = "ativos:read"
 	PermAtivosManage    Permission = "ativos:manage"
 	PermAtivosReportar  Permission = "ativos:reportar"
 	PermProblemasRead   Permission = "problemas:read"

@@ -45,6 +45,8 @@ func cifra(t *testing.T) *secretcrypto.Cipher {
 type falhaRepo struct {
 	domain.Repository
 	falha map[string]bool
+	// alvo é a conexão que ParaSincronizar:todas devolve.
+	alvo uuid.UUID
 }
 
 func falhando(metodos ...string) falhaRepo {
@@ -310,4 +312,21 @@ func conexao(t *testing.T, s *Service, modo string) domain.Conexao {
 	}
 	t.Cleanup(func() { _ = infrastructure.NewRepository().DeleteConexao(context.Background(), s.pool, c.ID) })
 	return c
+}
+
+func (f falhaRepo) SetSincronizar(ctx context.Context, db database.DBTX, id uuid.UUID, ligar bool) error {
+	if f.falha["SetSincronizar"] {
+		return errFalha
+	}
+	return f.Repository.SetSincronizar(ctx, db, id, ligar)
+}
+func (f falhaRepo) ParaSincronizar(ctx context.Context, db database.DBTX, antes time.Time) ([]uuid.UUID, error) {
+	if f.falha["ParaSincronizar"] {
+		return nil, errFalha
+	}
+	if f.falha["ParaSincronizar:todas"] {
+		// Como se a conexão estivesse livre: a inserção esbarra na ativa.
+		return []uuid.UUID{f.alvo}, nil
+	}
+	return f.Repository.ParaSincronizar(ctx, db, antes)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -73,6 +74,34 @@ func TestConexoes(t *testing.T) {
 	if err != nil || len(lista) == 0 {
 		t.Fatalf("lista: %v", err)
 	}
+
+	// A sincronização (ADR 081): ligada e sem tarefa, entra na fila do
+	// agendamento; com a extração pedida há pouco, não.
+	if err := r.SetSincronizar(ctx, pool, c.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := r.GetConexao(ctx, pool, c.ID); !g.Sincronizar {
+		t.Fatal("ligada")
+	}
+	if sim, err := r.Sincronizando(ctx, pool); !sim || err != nil {
+		t.Fatalf("sincronizando: %v", err)
+	}
+	if ids, err := r.ParaSincronizar(ctx, pool, time.Now().Add(-time.Minute)); err != nil || !slices.Contains(ids, c.ID) {
+		t.Fatalf("para sincronizar: %v %v", ids, err)
+	}
+	ex, _ := domain.NovaTarefa(c.ID, domain.TarefaExtracao, "teste")
+	if err := r.InserirTarefa(ctx, pool, ex); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Terminar(ctx, pool, ex.ID, domain.EstadoConcluida, nil, ""); err != nil {
+		t.Fatal(err)
+	}
+	if ids, _ := r.ParaSincronizar(ctx, pool, time.Now().Add(-time.Minute)); slices.Contains(ids, c.ID) {
+		t.Fatal("extração pedida há pouco")
+	}
+	if err := r.SetSincronizar(ctx, pool, c.ID, false); err != nil {
+		t.Fatal(err)
+	}
 	nada := uuid.New()
 	for nome, err := range map[string]error{
 		"get":         func() error { _, err := r.GetConexao(ctx, pool, nada); return err }(),
@@ -81,6 +110,7 @@ func TestConexoes(t *testing.T) {
 		"credenciais": r.SetCredenciais(ctx, pool, nada, "x"),
 		"token":       r.SetToken(ctx, pool, nada, nil),
 		"extração":    r.MarcarExtracao(ctx, pool, nada, quando),
+		"sincronizar": r.SetSincronizar(ctx, pool, nada, true),
 	} {
 		if !errors.Is(err, domain.ErrNaoEncontrado) {
 			t.Errorf("%s inexistente: %v", nome, err)
@@ -306,37 +336,40 @@ func TestFalhasDoBanco(t *testing.T) {
 	linha := []domain.Linha{{Secretaria: "S", Oferta: "O", Tipo: "incidente", Prioridade: "alta"}}
 	for _, db := range []database.DBTX{dbtest.Fail{}, dbtest.ScanFail{}, dbtest.RowsErr{}} {
 		chamadas := map[string]error{
-			"insert":      func() error { _, err := r.InsertConexao(ctx, db, domain.Conexao{}); return err }(),
-			"update":      r.UpdateConexao(ctx, db, domain.Conexao{}),
-			"get":         func() error { _, err := r.GetConexao(ctx, db, id); return err }(),
-			"list":        func() error { _, err := r.ListConexoes(ctx, db); return err }(),
-			"delete":      r.DeleteConexao(ctx, db, id),
-			"credenciais": r.SetCredenciais(ctx, db, id, ""),
-			"token":       r.SetToken(ctx, db, id, nil),
-			"porToken":    func() error { _, err := r.PorToken(ctx, db, ""); return err }(),
-			"extracao":    r.MarcarExtracao(ctx, db, id, time.Now()),
-			"gravar":      r.GravarItens(ctx, db, id, um),
-			"versoes":     func() error { _, err := r.Versoes(ctx, db, id); return err }(),
-			"ids":         func() error { _, err := r.IDs(ctx, db, id, ""); return err }(),
-			"itens":       func() error { _, _, err := r.Itens(ctx, db, id, "", 0, 1); return err }(),
-			"item":        func() error { _, _, err := r.Item(ctx, db, id, "", 1); return err }(),
-			"contagens":   func() error { _, err := r.Contagens(ctx, db, id); return err }(),
-			"grupos":      func() error { _, err := r.Grupos(ctx, db, id); return err }(),
-			"nomes":       func() error { _, err := r.Nomes(ctx, db, id, ""); return err }(),
-			"slas":        func() error { _, err := r.SLAs(ctx, db, id); return err }(),
-			"listarTab":   func() error { _, err := r.ListarTabela(ctx, db, id); return err }(),
-			"trocarTab":   r.TrocarTabela(ctx, db, id, linha),
-			"inserirTar":  r.InserirTarefa(ctx, db, domain.Tarefa{}),
-			"getTarefa":   func() error { _, err := r.GetTarefa(ctx, db, id); return err }(),
-			"listarTar":   func() error { _, err := r.ListarTarefas(ctx, db, id, 1); return err }(),
-			"pegar":       func() error { _, _, err := r.Pegar(ctx, db, nil, nil, ""); return err }(),
-			"progresso":   func() error { _, err := r.Progresso(ctx, db, id, 0, 0); return err }(),
-			"terminar":    r.Terminar(ctx, db, id, "", nil, ""),
-			"cancelar":    r.Cancelar(ctx, db, id),
-			"retomar":     func() error { _, err := r.Retomar(ctx, db, time.Now()); return err }(),
+			"insert":        func() error { _, err := r.InsertConexao(ctx, db, domain.Conexao{}); return err }(),
+			"update":        r.UpdateConexao(ctx, db, domain.Conexao{}),
+			"get":           func() error { _, err := r.GetConexao(ctx, db, id); return err }(),
+			"list":          func() error { _, err := r.ListConexoes(ctx, db); return err }(),
+			"delete":        r.DeleteConexao(ctx, db, id),
+			"credenciais":   r.SetCredenciais(ctx, db, id, ""),
+			"token":         r.SetToken(ctx, db, id, nil),
+			"porToken":      func() error { _, err := r.PorToken(ctx, db, ""); return err }(),
+			"extracao":      r.MarcarExtracao(ctx, db, id, time.Now()),
+			"gravar":        r.GravarItens(ctx, db, id, um),
+			"versoes":       func() error { _, err := r.Versoes(ctx, db, id); return err }(),
+			"ids":           func() error { _, err := r.IDs(ctx, db, id, ""); return err }(),
+			"itens":         func() error { _, _, err := r.Itens(ctx, db, id, "", 0, 1); return err }(),
+			"item":          func() error { _, _, err := r.Item(ctx, db, id, "", 1); return err }(),
+			"contagens":     func() error { _, err := r.Contagens(ctx, db, id); return err }(),
+			"grupos":        func() error { _, err := r.Grupos(ctx, db, id); return err }(),
+			"nomes":         func() error { _, err := r.Nomes(ctx, db, id, ""); return err }(),
+			"slas":          func() error { _, err := r.SLAs(ctx, db, id); return err }(),
+			"listarTab":     func() error { _, err := r.ListarTabela(ctx, db, id); return err }(),
+			"trocarTab":     r.TrocarTabela(ctx, db, id, linha),
+			"inserirTar":    r.InserirTarefa(ctx, db, domain.Tarefa{}),
+			"getTarefa":     func() error { _, err := r.GetTarefa(ctx, db, id); return err }(),
+			"listarTar":     func() error { _, err := r.ListarTarefas(ctx, db, id, 1); return err }(),
+			"pegar":         func() error { _, _, err := r.Pegar(ctx, db, nil, nil, ""); return err }(),
+			"progresso":     func() error { _, err := r.Progresso(ctx, db, id, 0, 0); return err }(),
+			"terminar":      r.Terminar(ctx, db, id, "", nil, ""),
+			"cancelar":      r.Cancelar(ctx, db, id),
+			"retomar":       func() error { _, err := r.Retomar(ctx, db, time.Now()); return err }(),
+			"sincronizar":   r.SetSincronizar(ctx, db, id, true),
+			"sincronizando": func() error { _, err := r.Sincronizando(ctx, db); return err }(),
+			"paraSinc":      func() error { _, err := r.ParaSincronizar(ctx, db, time.Now()); return err }(),
 		}
 		// ScanFail e RowsErr só falham na leitura: o Exec passa.
-		soExec := map[string]bool{"inserirTar": true, "trocarTab": true, "terminar": true, "retomar": true, "gravar": true}
+		soExec := map[string]bool{"inserirTar": true, "trocarTab": true, "terminar": true, "retomar": true, "gravar": true, "sincronizar": true}
 		_, falhaTudo := db.(dbtest.Fail)
 		for nome, err := range chamadas {
 			if err == nil && (falhaTudo || !soExec[nome]) {

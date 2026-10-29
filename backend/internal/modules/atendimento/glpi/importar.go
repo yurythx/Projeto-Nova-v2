@@ -35,15 +35,19 @@ type Importador struct {
 	Mapa *Mapa
 	// Progresso recebe, a cada página, os chamados lidos e o total.
 	Progresso func(feitos, total int)
+	// Sincronizar atualiza os chamados já importados que mudaram no GLPI
+	// (ADR 081). Desligado, o já importado não se toca.
+	Sincronizar bool
 
 	categorias  map[int]string
 	secretarias map[int]string // entidade do GLPI -> secretaria
 	slas        []SLA
 	metas       map[int]int // SLA do GLPI -> minutos
-	ofertas     map[string]uuid.UUID
-	catalogo    map[string]uuid.UUID // categorias do catálogo, pelo nome
-	novas       map[string]bool
-	pessoas     map[int]*pessoaCasada
+	ofertas        map[string]uuid.UUID
+	catalogo       map[string]uuid.UUID // categorias do catálogo, pelo nome
+	equipesUnidade map[uuid.UUID]uuid.UUID
+	novas          map[string]bool
+	pessoas        map[int]*pessoaCasada
 }
 
 type pessoaCasada struct {
@@ -53,10 +57,13 @@ type pessoaCasada struct {
 
 // Relatorio é o resultado da execução.
 type Relatorio struct {
-	Gravou       bool     `json:"gravou"`
-	Lidos        int      `json:"lidos"`
-	Importados   int      `json:"importados"`
-	JaImportados int      `json:"ja_importados"`
+	Gravou       bool `json:"gravou"`
+	Lidos        int  `json:"lidos"`
+	Importados   int  `json:"importados"`
+	JaImportados int  `json:"ja_importados"`
+	// Atualizados são os já importados que mudaram no GLPI e a
+	// sincronização trouxe de novo.
+	Atualizados  int      `json:"atualizados"`
 	OfertasNovas int      `json:"ofertas_novas"`
 	SemPar       []string `json:"sem_par"`
 	Erros        []string `json:"erros"`
@@ -100,7 +107,7 @@ func (im *Importador) Executar(ctx context.Context) (Relatorio, error) {
 	if im.ofertas, err = im.jaImportados(ctx, "oferta"); err != nil {
 		return rel, err
 	}
-	feitos, err := im.jaImportados(ctx, "solicitacao")
+	feitos, err := im.registrados(ctx)
 	if err != nil {
 		return rel, err
 	}
@@ -117,8 +124,16 @@ func (im *Importador) Executar(ctx context.Context) (Relatorio, error) {
 		}
 		for _, ch := range pagina {
 			rel.Lidos++
-			if _, ok := feitos[strconv.Itoa(ch.ID)]; ok {
-				rel.JaImportados++
+			if reg, ok := feitos[strconv.Itoa(ch.ID)]; ok {
+				if !im.Sincronizar || (reg.versao != "" && reg.versao == ch.Modificado) {
+					rel.JaImportados++
+					continue
+				}
+				if err := im.atualizar(ctx, ch, reg.destino); err != nil {
+					rel.Erros = append(rel.Erros, fmt.Sprintf("chamado %d: %v", ch.ID, err))
+					continue
+				}
+				rel.Atualizados++
 				continue
 			}
 			if err := im.importar(ctx, ch, &rel); errors.Is(err, errSemDestino) {
@@ -230,33 +245,7 @@ func (im *Importador) importar(ctx context.Context, ch Chamado, rel *Relatorio) 
 			}
 		}
 	}
-	partes, err := im.Fonte.Participantes(ctx, ch.ID)
-	if err != nil {
-		return err
-	}
-	var solicitante, tecnico *pessoaCasada
-	for _, p := range partes {
-		switch {
-		case p.Papel == 1 && solicitante == nil:
-			solicitante, err = im.pessoa(ctx, p.PessoaID)
-		case p.Papel == 2 && tecnico == nil:
-			tecnico, err = im.pessoa(ctx, p.PessoaID)
-		}
-		if err != nil {
-			return err
-		}
-	}
-	acomps, err := im.Fonte.Acompanhamentos(ctx, ch.ID)
-	if err != nil {
-		return err
-	}
-	autores := make([]*pessoaCasada, len(acomps))
-	for i, a := range acomps {
-		if autores[i], err = im.pessoa(ctx, a.AutorID); err != nil {
-			return err
-		}
-	}
-	sat, err := im.Fonte.Satisfacao(ctx, ch.ID)
+	l, err := im.ler(ctx, ch)
 	if err != nil {
 		return err
 	}
@@ -277,28 +266,21 @@ func (im *Importador) importar(ctx context.Context, ch Chamado, rel *Relatorio) 
 		if err != nil {
 			return err
 		}
-		sol, err := im.gravarChamado(ctx, tx, ch, oferta, tipo, destino, solicitante, tecnico)
+		sol, err := im.gravarChamado(ctx, tx, ch, oferta, tipo, destino, l.solicitante, l.tecnico)
 		if err != nil {
 			return err
 		}
-		for i, a := range acomps {
-			if err := im.gravarAcompanhamento(ctx, tx, sol, a, autores[i]); err != nil {
+		for i, a := range l.acomps {
+			if err := im.gravarAcompanhamento(ctx, tx, sol, a, l.autores[i]); err != nil {
 				return err
 			}
 		}
-		if sat != nil && domain.PodeAvaliar(sol) {
-			fim := sol.CreatedAt
-			if sol.ResolvidaEm != nil {
-				fim = *sol.ResolvidaEm
-			}
-			if _, err := im.Repo.InsertAvaliacao(ctx, tx, domain.Avaliacao{
-				ID: uuid.New(), SolicitacaoID: sol.ID, AutorID: sol.SolicitanteID, Nota: Nota(*sat.Nota),
-				Comentario: Texto(sat.Comentario, domain.TextoMax), CreatedAt: im.data(sat.Em, fim),
-			}); err != nil {
-				return err
-			}
+		if err := im.gravarAvaliacao(ctx, tx, sol, l.sat); err != nil {
+			return err
 		}
-		return marcar(ctx, tx, "solicitacao", strconv.Itoa(ch.ID), sol.ID)
+		_, err = tx.Exec(ctx, `INSERT INTO atendimento_importacao (origem, tipo, id_origem, destino, versao, sincronizado_em)
+			VALUES ($1, 'solicitacao', $2, $3, $4, now())`, Origem, strconv.Itoa(ch.ID), sol.ID, ch.Modificado)
+		return err
 	})
 	if err != nil && !conhecida {
 		// A oferta criada nesta transação foi desfeita com ela.
@@ -423,7 +405,13 @@ func (im *Importador) regra(ctx context.Context, tx pgx.Tx, d Destino, oferta uu
 	if err != nil || n >= TetoRegras {
 		return err
 	}
-	r, err := domain.NovaRegra(domain.Regra{Ordem: n, Nome: Cortar("GLPI: "+d.Oferta, domain.NomeMax), OfertaID: &oferta, Prioridade: d.Prioridade})
+	var equipe *uuid.UUID
+	if d.Unidade != nil && im.equipesUnidade != nil {
+		if eq, ok := im.equipesUnidade[*d.Unidade]; ok {
+			equipe = &eq
+		}
+	}
+	r, err := domain.NovaRegra(domain.Regra{Ordem: n, Nome: Cortar("GLPI: "+d.Oferta, domain.NomeMax), OfertaID: &oferta, Prioridade: d.Prioridade, EquipeID: equipe})
 	if err != nil {
 		return err
 	}
@@ -474,14 +462,8 @@ func (im *Importador) gravarChamado(ctx context.Context, tx pgx.Tx, ch Chamado, 
 		}
 	}
 	var fim *time.Time
-	switch estado {
-	case domain.EstadoResolvido, domain.EstadoAtendido, domain.EstadoEncerrado:
-		r := im.data(ch.Solucao, im.data(ch.Fechamento, abertura))
-		sol.ResolvidaEm, fim = &r, &r
-		if estado == domain.EstadoEncerrado {
-			e := im.data(ch.Fechamento, r)
-			sol.EncerradaEm, fim = &e, &e
-		}
+	sol.ResolvidaEm, sol.EncerradaEm, fim = im.marcos(estado, ch, abertura)
+	if fim != nil {
 		sol.UpdatedAt = *fim
 	}
 	salva, err := im.Repo.InsertSolicitacao(ctx, tx, sol)
@@ -497,20 +479,41 @@ func (im *Importador) gravarChamado(ctx context.Context, tx pgx.Tx, ch Chamado, 
 	if _, err := tx.Exec(ctx, `UPDATE atendimento_solicitacoes SET updated_at = $2 WHERE id = $1`, salva.ID, salva.UpdatedAt); err != nil {
 		return domain.Solicitacao{}, err
 	}
-	// O histórico mínimo: aberto, em atendimento quando houve, e o fim.
+	// O histórico mínimo: aberto, em atendimento quando houve (respeitando
+	// takeintoaccountdate e waiting_duration do GLPI), e o fim.
 	autor := ContaImportacao
 	if salva.ResponsavelID != nil {
 		autor = *salva.ResponsavelID
+	}
+	quando := im.data(ch.Modificado, abertura)
+	if fim != nil {
+		quando = *fim
+	}
+	inicioAtend := im.data(ch.Atribuido, abertura)
+	if inicioAtend.Before(abertura) {
+		inicioAtend = abertura
+	}
+	if inicioAtend.After(quando) {
+		inicioAtend = quando
 	}
 	aberto := domain.EstadoAberto
 	passos := []domain.Passagem{{Para: aberto, AutorID: &quem, Em: abertura}}
 	if estado != aberto {
 		emAtendimento := domain.EstadoEmAtendimento
-		passos = append(passos, domain.Passagem{De: &aberto, Para: emAtendimento, AutorID: &autor, Em: abertura})
+		passos = append(passos, domain.Passagem{De: &aberto, Para: emAtendimento, AutorID: &autor, Em: inicioAtend})
 		if estado != emAtendimento {
-			quando := abertura
-			if fim != nil {
-				quando = *fim
+			if espera := time.Duration(ch.EsperaSegundos) * time.Second; espera > 0 && estado != domain.EstadoAguardandoServidor {
+				inicioEspera := quando.Add(-espera)
+				if inicioEspera.Before(inicioAtend) {
+					inicioEspera = inicioAtend
+				}
+				if inicioEspera.Before(quando) {
+					aguardando := domain.EstadoAguardandoServidor
+					passos = append(passos,
+						domain.Passagem{De: &emAtendimento, Para: aguardando, AutorID: &autor, Em: inicioEspera},
+						domain.Passagem{De: &aguardando, Para: emAtendimento, AutorID: &autor, Em: quando},
+					)
+				}
 			}
 			passos = append(passos, domain.Passagem{De: &emAtendimento, Para: estado, AutorID: &autor, Em: quando})
 		}
@@ -519,6 +522,16 @@ func (im *Importador) gravarChamado(ctx context.Context, tx pgx.Tx, ch Chamado, 
 		p.SolicitacaoID = salva.ID
 		if _, err := im.Repo.InsertPassagem(ctx, tx, p); err != nil {
 			return domain.Solicitacao{}, err
+		}
+	}
+	if salva.ResponsavelID != nil && salva.Estado != aberto {
+		if err := im.Repo.AbrirAtribuicao(ctx, tx, salva.ID, *salva.ResponsavelID, salva.UnidadeID, inicioAtend); err != nil {
+			return domain.Solicitacao{}, err
+		}
+		if fim != nil {
+			if err := im.Repo.FecharAtribuicao(ctx, tx, salva.ID, *fim); err != nil {
+				return domain.Solicitacao{}, err
+			}
 		}
 	}
 	return salva, nil
@@ -535,11 +548,14 @@ func (im *Importador) gravarAcompanhamento(ctx context.Context, tx pgx.Tx, sol d
 	if strings.TrimSpace(texto) == "" {
 		return nil
 	}
-	_, err := im.Repo.InsertComentario(ctx, tx, domain.Comentario{
+	c, err := im.Repo.InsertComentario(ctx, tx, domain.Comentario{
 		ID: uuid.New(), SolicitacaoID: sol.ID, AutorID: &quem, Texto: strings.TrimSpace(texto),
 		Interno: a.Privado == 1, CreatedAt: im.data(a.Em, sol.CreatedAt),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	return marcarCriado(ctx, tx, "acompanhamento", strconv.Itoa(a.ID), c.ID)
 }
 
 // pessoa casa a pessoa do GLPI com um usuário daqui, pelo e-mail e depois

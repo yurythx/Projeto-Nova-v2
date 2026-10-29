@@ -4,56 +4,79 @@ import { ExternalLink, HardDrive, Link2, Unlink } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
+import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import { ESTADO_ATIVO, TIPO_ATIVO, type Ativo } from "@/lib/servicos/servicos";
 
 export function AtivoVinculadoCard({
   solicitacaoId,
+  ativoId: ativoIdProp,
+  ativoNome: ativoNomeProp,
   tecnico,
   finalizada,
+  onMudou,
 }: {
   solicitacaoId: string;
+  ativoId?: string;
+  ativoNome?: string;
   tecnico: boolean;
   finalizada: boolean;
+  onMudou?: () => void;
 }) {
   const { can, enabled } = usePlataforma();
   const ativoModuloAtivo = enabled("ativos");
-  const leAtivos = can("ativos:read") || can("ativos:manage");
+  const leAtivos = can("ativos:read") || can("ativos:manage") || can("atendimento:atender");
 
   const ativosQuery = useApiQuery<Ativo[]>(ativoModuloAtivo && leAtivos ? "v1/ativos" : null);
   const ativos = ativosQuery.data ?? [];
 
-  const storageKey = `atendimento:ativo:${solicitacaoId}`;
-  const [ativoId, setAtivoId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(storageKey) || "";
-    }
-    return "";
-  });
+  const [ativoIdLocal, setAtivoIdLocal] = useState<string | null>(null);
+  const ativoId = ativoIdLocal !== null ? ativoIdLocal : (ativoIdProp ?? "");
 
   const [selecionado, setSelecionado] = useState("");
+  const { run, pending } = useAction();
 
   if (!ativoModuloAtivo || !leAtivos) return null;
 
-  const ativoAtual = ativos.find((a) => a.id === ativoId);
+  const ativoAtual =
+    ativos.find((a) => a.id === ativoId) ??
+    (ativoId && ativoNomeProp
+      ? ({
+          id: ativoId,
+          nome: ativoNomeProp,
+          tipo: "hardware",
+          estado: "em_uso",
+          identificador: "",
+          descricao: "",
+        } as Ativo)
+      : undefined);
 
-  function associar(id: string) {
-    setAtivoId(id);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(storageKey, id);
-    }
+  async function associar(id: string) {
+    setAtivoIdLocal(id);
     setSelecionado("");
+    const ok = await run(
+      () => apiClient.put(`v1/atendimento/solicitacoes/${solicitacaoId}/ativo`, { ativo_id: id }),
+      "Ativo vinculado ao chamado",
+    );
+    if (ok) {
+      onMudou?.();
+    }
   }
 
-  function desassociar() {
-    setAtivoId("");
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(storageKey);
+  async function desassociar() {
+    setAtivoIdLocal("");
+    const ok = await run(
+      () => apiClient.put(`v1/atendimento/solicitacoes/${solicitacaoId}/ativo`, { ativo_id: null }),
+      "Ativo desvinculado do chamado",
+    );
+    if (ok) {
+      onMudou?.();
     }
   }
 
@@ -66,7 +89,7 @@ export function AtivoVinculadoCard({
         </div>
         {ativoAtual && (
           <Link
-            href="/ativos"
+            href={`/ativos/${ativoAtual.id}`}
             className="flex items-center gap-1 text-xs text-primary hover:underline font-medium"
           >
             <span>Ver no parque</span>
@@ -79,8 +102,15 @@ export function AtivoVinculadoCard({
           <div className="flex flex-col gap-2 rounded-lg border border-surface-border bg-surface p-3 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{ativoAtual.nome}</span>
-                <span className="font-mono text-xs text-muted">[{ativoAtual.identificador}]</span>
+                <Link
+                  href={`/ativos/${ativoAtual.id}`}
+                  className="font-semibold text-foreground hover:text-primary hover:underline"
+                >
+                  {ativoAtual.nome}
+                </Link>
+                {ativoAtual.identificador && (
+                  <span className="font-mono text-xs text-muted">[{ativoAtual.identificador}]</span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone="info">{TIPO_ATIVO[ativoAtual.tipo] || ativoAtual.tipo}</Badge>
@@ -98,7 +128,8 @@ export function AtivoVinculadoCard({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={desassociar}
+                  disabled={pending}
+                  onClick={() => void desassociar()}
                   className="text-danger hover:text-danger flex items-center gap-1 text-xs"
                 >
                   <Unlink className="h-3.5 w-3.5" />
@@ -123,7 +154,7 @@ export function AtivoVinculadoCard({
                     placeholder="Escolha um ativo do catálogo..."
                     options={ativos.map((a) => ({
                       value: a.id,
-                      label: `${a.nome} (${a.identificador})`,
+                      label: a.identificador ? `${a.nome} (${a.identificador})` : a.nome,
                     }))}
                   />
                 </div>
@@ -131,8 +162,8 @@ export function AtivoVinculadoCard({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={!selecionado}
-                  onClick={() => associar(selecionado)}
+                  disabled={!selecionado || pending}
+                  onClick={() => void associar(selecionado)}
                   className="flex items-center gap-1.5"
                 >
                   <Link2 className="h-3.5 w-3.5" />

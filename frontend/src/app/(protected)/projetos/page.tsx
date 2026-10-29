@@ -22,6 +22,7 @@ import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetosCronograma } from "@/components/projetos/ProjetosCronograma";
 import { COLUNAS_PROJETO, ProjetosKanban } from "@/components/projetos/ProjetosKanban";
+import { FiltroPorUnidade, filtrarPorUnidade } from "@/components/servicos/FiltroPorUnidade";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -71,12 +72,14 @@ function ProjetosConteudo() {
   const params = useSearchParams();
   const painel = usePainelNaUrl();
   const paramVista = params.get("vista");
+  const paramProduto = params.get("produto") ?? "";
   const vista: Vista =
     paramVista === "lista" ? "lista" : paramVista === "cronograma" ? "cronograma" : "kanban";
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const [estado, setEstado] = useState("");
   const [busca, setBusca] = useState("");
+  const [unidadeFiltro, setUnidadeFiltro] = useState("todas");
   const somenteFiltroLista = vista === "lista";
 
   const { run, pending } = useAction();
@@ -85,7 +88,8 @@ function ProjetosConteudo() {
     le
       ? withQuery("v1/projetos", {
           estado: somenteFiltroLista ? estado : undefined,
-          q: somenteFiltroLista ? busca : undefined,
+          q: busca || undefined,
+          produto_id: paramProduto || undefined,
         })
       : null,
   );
@@ -98,7 +102,11 @@ function ProjetosConteudo() {
   const [gerenteNome, setGerenteNome] = useState("");
   const [orcamento, setOrcamento] = useState("0");
   const [unidadeId, setUnidadeId] = useState("");
+  const [produtoId, setProdutoId] = useState("");
   const [quadro, setQuadro] = useState<EstadoProjeto>("planejado");
+  const produtos = useApiQuery<{ id: string; nome: string; unidade_id?: string }[]>(
+    modalAberto && (can("produtos:manage") || can("produtos:read")) ? "v1/produtos" : null,
+  );
   const look = useAparencia("nova-faixas:projetos");
   const catalogo = useQuadro("projetos", COLUNAS_PROJETO);
   const controles = { oficial: catalogo.oficial };
@@ -157,6 +165,7 @@ function ProjetosConteudo() {
         gerente_nome: gerenteNome,
         orcamento: Number(orcamento) || 0,
         unidade_id: unidadeId || undefined,
+        produto_id: produtoId || undefined,
       });
       for (const passo of passosDoProjeto(alvo)) {
         await apiClient.post(`v1/projetos/${res.data.id}/estado`, { estado: passo });
@@ -170,6 +179,7 @@ function ProjetosConteudo() {
       setObjetivo("");
       setGerenteNome("");
       setOrcamento("0");
+      setProdutoId("");
       setQuadro("planejado");
       void projetos.mutate();
       router.push(`/projetos/${criado.id}`);
@@ -207,7 +217,8 @@ function ProjetosConteudo() {
     if (ok) void projetos.mutate();
   }
 
-  const lista = projetos.data ?? [];
+  const todosProjetos = projetos.data ?? [];
+  const lista = filtrarPorUnidade(todosProjetos, unidadeFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
 
   return (
@@ -257,8 +268,15 @@ function ProjetosConteudo() {
         ]}
       />
 
-      {somenteFiltroLista && (
-        <div className="grid gap-3 sm:grid-cols-2">
+      <FiltroPorUnidade
+        rotulo="Filtrar projetos por unidade"
+        itens={todosProjetos}
+        value={unidadeFiltro}
+        onChange={setUnidadeFiltro}
+      />
+
+      <div className={`grid gap-3 ${somenteFiltroLista ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
+        {somenteFiltroLista && (
           <Select
             id="projetos-estado"
             label="Estado"
@@ -272,14 +290,14 @@ function ProjetosConteudo() {
               })),
             ]}
           />
-          <Input
-            id="projetos-busca"
-            label="Buscar no título ou objetivo"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-      )}
+        )}
+        <Input
+          id="projetos-busca"
+          label="Buscar no título ou objetivo"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+      </div>
 
       <DataState
         loading={projetos.isLoading || carregandoSessao}
@@ -475,6 +493,21 @@ function ProjetosConteudo() {
               onChange={(uid) => setUnidadeId(uid)}
             />
           </div>
+
+          {(produtos.data ?? []).length > 0 && (
+            <Select
+              id="proj-produto"
+              label="Produto digital (opcional)"
+              value={produtoId}
+              onChange={(e) => setProdutoId(e.target.value)}
+              options={[
+                { value: "", label: "Nenhum produto associado" },
+                ...(produtos.data ?? [])
+                  .filter((prod) => !unidadeId || !prod.unidade_id || prod.unidade_id === unidadeId)
+                  .map((prod) => ({ value: prod.id, label: prod.nome })),
+              ]}
+            />
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="secondary" onClick={() => setModalAberto(false)}>

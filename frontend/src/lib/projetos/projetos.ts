@@ -92,7 +92,6 @@ export const ESTADO_TAREFA: Record<EstadoTarefa, { label: string; tone: Tone }> 
   concluida: { label: "Concluída", tone: "success" },
   bloqueada: { label: "Bloqueada", tone: "danger" },
 };
-
 export interface ApontamentoHora {
   id: string;
   projeto_id: string;

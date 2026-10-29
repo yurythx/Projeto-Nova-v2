@@ -98,17 +98,55 @@ func causa(err error, api *apperrors.Error) error {
 	return api
 }
 
+var permissoesLeituraAtivos = []auth.Permission{
+	auth.PermAtivosManage,
+	auth.PermAtivosRead,
+	auth.PermAtendimentoAtender,
+	auth.PermProblemasManage,
+	auth.PermMudancasManage,
+	auth.PermProjetosRead,
+	auth.PermProjetosManage,
+}
+
 func pode(identity auth.Identity, unidade *uuid.UUID) bool {
 	return auth.Can(identity, auth.PermAtivosManage, domain.Dona(unidade))
 }
 
+func le(identity auth.Identity, unidade *uuid.UUID) bool {
+	alvo := domain.Dona(unidade)
+	for _, perm := range permissoesLeituraAtivos {
+		if auth.Can(identity, perm, alvo) {
+			return true
+		}
+	}
+	return false
+}
+
+func coberturaLeitura(identity auth.Identity) (bool, []uuid.UUID, bool) {
+	var unidades []uuid.UUID
+	visto := map[uuid.UUID]struct{}{}
+	for _, perm := range permissoesLeituraAtivos {
+		cob := auth.CoverageOf(identity, perm)
+		if cob.All {
+			return true, nil, true
+		}
+		for _, u := range cob.Unidades {
+			if _, ok := visto[u]; !ok {
+				visto[u] = struct{}{}
+				unidades = append(unidades, u)
+			}
+		}
+	}
+	return false, unidades, len(unidades) > 0
+}
+
 // Listar devolve os ativos do escopo; com produto, só os que o sustentam.
 func (s *Service) Listar(ctx context.Context, identity auth.Identity, produto *uuid.UUID) ([]domain.Ativo, error) {
-	cob := auth.CoverageOf(identity, auth.PermAtivosManage)
-	if !cob.All && len(cob.Unidades) == 0 {
+	all, unidades, ok := coberturaLeitura(identity)
+	if !ok {
 		return []domain.Ativo{}, nil
 	}
-	lista, err := s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !cob.All, Unidades: cob.Unidades, ProdutoID: produto})
+	lista, err := s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !all, Unidades: unidades, ProdutoID: produto})
 	return lista, MapError(err)
 }
 
@@ -118,7 +156,7 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	if err != nil {
 		return domain.Ativo{}, MapError(err)
 	}
-	if !pode(identity, a.UnidadeID) {
+	if !le(identity, a.UnidadeID) {
 		return domain.Ativo{}, MapError(domain.ErrNaoEncontrado)
 	}
 	return a, nil
@@ -291,11 +329,19 @@ func (s *Service) Relacionar(ctx context.Context, identity auth.Identity, origem
 	if err := domain.ValidarRelacao(origem, destino, tipo); err != nil {
 		return domain.Relacao{}, MapError(err)
 	}
-	if _, err := s.Obter(ctx, identity, origem); err != nil {
+	aOrig, err := s.Obter(ctx, identity, origem)
+	if err != nil {
 		return domain.Relacao{}, err
 	}
-	if _, err := s.Obter(ctx, identity, destino); err != nil {
+	if !pode(identity, aOrig.UnidadeID) {
+		return domain.Relacao{}, MapError(domain.ErrNaoEncontrado)
+	}
+	aDest, err := s.Obter(ctx, identity, destino)
+	if err != nil {
 		return domain.Relacao{}, err
+	}
+	if !pode(identity, aDest.UnidadeID) {
+		return domain.Relacao{}, MapError(domain.ErrNaoEncontrado)
 	}
 	if tipo == "depende" {
 		ciclo, err := s.repo.FechaCiclo(ctx, s.pool, origem, destino)
@@ -307,7 +353,7 @@ func (s *Service) Relacionar(ctx context.Context, identity auth.Identity, origem
 		}
 	}
 	item := domain.Relacao{ID: uuid.New(), OrigemID: origem, DestinoID: destino, Tipo: tipo}
-	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		if err := s.repo.InsertRelacao(ctx, tx, item); err != nil {
 			return err
 		}
@@ -318,8 +364,12 @@ func (s *Service) Relacionar(ctx context.Context, identity auth.Identity, origem
 
 // Desrelacionar remove o apontamento.
 func (s *Service) Desrelacionar(ctx context.Context, identity auth.Identity, origem, id uuid.UUID) error {
-	if _, err := s.Obter(ctx, identity, origem); err != nil {
+	aOrig, err := s.Obter(ctx, identity, origem)
+	if err != nil {
 		return err
+	}
+	if !pode(identity, aOrig.UnidadeID) {
+		return MapError(domain.ErrNaoEncontrado)
 	}
 	return MapError(database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		if err := s.repo.DeleteRelacao(ctx, tx, id, origem); err != nil {

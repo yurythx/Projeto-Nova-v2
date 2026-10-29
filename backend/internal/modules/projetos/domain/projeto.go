@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -8,6 +9,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 )
 
 const (
@@ -45,7 +48,48 @@ var (
 	ErrEstadoInvalido           = errors.New("projetos: estado inválido")
 	ErrApontamentoInvalido      = errors.New("projetos: horas devem ser maiores que zero e até 24h, com descrição")
 	ErrApontamentoNaoEncontrado = errors.New("projetos: apontamento não encontrado")
+	ErrForaDoEscopo             = errors.New("projetos: fora do seu escopo de gestão")
+	ErrVinculoInvalido          = errors.New("projetos: tipo de vínculo inválido")
+	ErrVinculoInexistente       = errors.New("projetos: item do vínculo não encontrado")
+	ErrDeOutraUnidade           = errors.New("projetos: o vínculo ou produto precisa ser da mesma unidade do projeto")
+	ErrIntegracaoDesligada      = errors.New("projetos: o módulo deste vínculo está desligado")
 )
+
+// Alvo é o que o projeto precisa saber de um item de outro plug-in.
+type Alvo struct {
+	Rotulo    string
+	UnidadeID *uuid.UUID
+}
+
+// Portas é como o projeto consulta os outros plug-ins (ligadas em
+// internal/app). Nil libera o rótulo informado sem consultar a origem.
+type Portas interface {
+	Consultar(ctx context.Context, db database.DBTX, tipo string, id uuid.UUID) (Alvo, error)
+	Disponivel(tipo string) bool
+}
+
+// Produtos é a porta do plug-in de produtos.
+type Produtos interface {
+	Consultar(ctx context.Context, db database.DBTX, id uuid.UUID) (unidade *uuid.UUID, err error)
+}
+
+// NovoVinculo valida o tipo e o identificador do vínculo.
+func NovoVinculo(tipo string, alvo uuid.UUID) error {
+	if !slices.Contains([]string{VinculoMudanca, VinculoProblema, VinculoAtivo, VinculoSolicitacao}, tipo) || alvo == uuid.Nil {
+		return ErrVinculoInvalido
+	}
+	return nil
+}
+
+// MesmaUnidadeVerifica se o recurso vinculado é compatível com a unidade do projeto
+// (projetos ou alvos institucionais — nil — aceitam qualquer unidade; quando ambos
+// têm unidade definida, precisam coincidir).
+func MesmaUnidadeCompativel(projetoUnidade, alvoUnidade *uuid.UUID) bool {
+	if projetoUnidade == nil || alvoUnidade == nil {
+		return true
+	}
+	return *projetoUnidade == *alvoUnidade
+}
 
 var transicoesProjeto = map[string][]string{
 	EstadoPlanejado:   {EstadoEmAndamento, EstadoCancelado},

@@ -103,6 +103,29 @@ func (s *Service) RelatorioPorSecretaria(ctx context.Context, identity auth.Iden
 		}
 	}
 	out.Equipes = domain.ResumirEquipes(tarefas, atribuicoes, comEquipe, agora)
+	unidadesEquipes := []uuid.UUID{}
+	for _, eq := range out.Equipes {
+		if eq.UnidadeID != nil {
+			if _, ok := secretarias[*eq.UnidadeID]; !ok && !slices.Contains(unidadesEquipes, *eq.UnidadeID) {
+				unidadesEquipes = append(unidadesEquipes, *eq.UnidadeID)
+			}
+		}
+	}
+	if len(unidadesEquipes) > 0 {
+		if mais, err := s.repo.SecretariasDe(ctx, s.pool, unidadesEquipes); err == nil {
+			for k, v := range mais {
+				secretarias[k] = v
+			}
+		}
+	}
+	for i := range out.Equipes {
+		if u := out.Equipes[i].UnidadeID; u != nil {
+			if sec, ok := secretarias[*u]; ok {
+				id := sec.ID
+				out.Equipes[i].UnidadeID = &id
+			}
+		}
+	}
 	comContrato, err := s.repo.ComContratoNoPeriodo(ctx, s.pool, restrito, cob.Unidades, desde)
 	if err != nil {
 		return Relatorio{}, MapError(err)

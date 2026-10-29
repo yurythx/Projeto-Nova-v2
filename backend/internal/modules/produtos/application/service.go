@@ -72,15 +72,54 @@ func causa(err error, api *apperrors.Error) error {
 	return api
 }
 
-// Listar devolve os produtos que a identidade gerencia. Quem só tem a
-// permissão num departamento, ou em lugar nenhum, recebe lista vazia:
+var permissoesLeituraProdutos = []auth.Permission{
+	auth.PermProdutosManage,
+	auth.PermProdutosRead,
+	auth.PermAtendimentoManage,
+	auth.PermAtivosManage,
+	auth.PermProblemasManage,
+	auth.PermMudancasManage,
+	auth.PermProjetosRead,
+	auth.PermProjetosManage,
+}
+
+func leProduto(identity auth.Identity, unidade *uuid.UUID) bool {
+	alvo := domain.Dona(unidade)
+	for _, perm := range permissoesLeituraProdutos {
+		if auth.Can(identity, perm, alvo) {
+			return true
+		}
+	}
+	return false
+}
+
+func coberturaLeituraProdutos(identity auth.Identity) (bool, []uuid.UUID, bool) {
+	var unidades []uuid.UUID
+	visto := map[uuid.UUID]struct{}{}
+	for _, perm := range permissoesLeituraProdutos {
+		cob := auth.CoverageOf(identity, perm)
+		if cob.All {
+			return true, nil, true
+		}
+		for _, u := range cob.Unidades {
+			if _, ok := visto[u]; !ok {
+				visto[u] = struct{}{}
+				unidades = append(unidades, u)
+			}
+		}
+	}
+	return false, unidades, len(unidades) > 0
+}
+
+// Listar devolve os produtos que a identidade gerencia ou consulta. Quem só
+// tem a permissão num departamento, ou em lugar nenhum, recebe lista vazia:
 // o produto pertence à unidade.
 func (s *Service) Listar(ctx context.Context, identity auth.Identity) ([]domain.Produto, error) {
-	cob := auth.CoverageOf(identity, auth.PermProdutosManage)
-	if !cob.All && len(cob.Unidades) == 0 {
+	all, unidades, ok := coberturaLeituraProdutos(identity)
+	if !ok {
 		return []domain.Produto{}, nil
 	}
-	return s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !cob.All, Unidades: cob.Unidades})
+	return s.repo.List(ctx, s.pool, domain.Filtro{Restrito: !all, Unidades: unidades})
 }
 
 // Obter devolve o produto. Fora do escopo a resposta é a mesma de quem
@@ -90,7 +129,7 @@ func (s *Service) Obter(ctx context.Context, identity auth.Identity, id uuid.UUI
 	if err != nil {
 		return domain.Produto{}, MapError(err)
 	}
-	if !auth.Can(identity, auth.PermProdutosManage, domain.Dona(p.UnidadeID)) {
+	if !leProduto(identity, p.UnidadeID) {
 		return domain.Produto{}, MapError(domain.ErrNaoEncontrado)
 	}
 	return p, nil

@@ -24,6 +24,7 @@ import {
   type Mudanca,
   type Problema,
 } from "@/lib/servicos/servicos";
+import { ESTADO_PROJETO, type Projeto } from "@/lib/projetos/projetos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 export function ProblemaDetalhe() {
@@ -38,10 +39,17 @@ export function ProblemaDetalhe() {
       ? withQuery("v1/atendimento/fila", { tipo: "incidente", situacao: "todas", page_size: 100 })
       : null,
   );
-  const ativos = useApiQuery<Ativo[]>(editavel && can("ativos:manage") ? "v1/ativos" : null);
+  const ativos = useApiQuery<Ativo[]>(
+    editavel && (can("ativos:manage") || can("ativos:read")) ? "v1/ativos" : null,
+  );
   const mudancas = useApiQuery<Mudanca[]>(
     id && (can("mudancas:manage") || can("mudancas:aprovar"))
       ? withQuery("v1/mudancas", { alvo_tipo: "problema", alvo_id: id })
+      : null,
+  );
+  const projetos = useApiQuery<Projeto[]>(
+    id && (can("projetos:read") || can("projetos:manage"))
+      ? withQuery("v1/projetos", { alvo_tipo: "problema", alvo_id: id })
       : null,
   );
   const [incidente, setIncidente] = useState("");
@@ -287,7 +295,16 @@ export function ProblemaDetalhe() {
                         key={a.ativo_id}
                         className="flex flex-wrap items-center justify-between gap-2"
                       >
-                        <span>{a.nome || "Ativo indisponível"}</span>
+                        {a.nome ? (
+                          <Link
+                            href={`/ativos/${a.ativo_id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {a.nome}
+                          </Link>
+                        ) : (
+                          <span>Ativo indisponível</span>
+                        )}
                         {editavel && (
                           <Button
                             type="button"
@@ -354,6 +371,28 @@ export function ProblemaDetalhe() {
                         </Link>
                         <Badge tone={ESTADO_MUDANCA[m.estado].tone}>
                           {ESTADO_MUDANCA[m.estado].label}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {(projetos.data ?? []).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle as="h2">Projetos</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-5">
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {(projetos.data ?? []).map((pr) => (
+                      <li key={pr.id} className="flex flex-wrap items-center justify-between gap-2">
+                        <Link href={`/projetos/${pr.id}`} className="text-primary hover:underline">
+                          #{pr.numero} · {pr.titulo}
+                        </Link>
+                        <Badge tone={ESTADO_PROJETO[pr.estado].tone}>
+                          {ESTADO_PROJETO[pr.estado].label}
                         </Badge>
                       </li>
                     ))}

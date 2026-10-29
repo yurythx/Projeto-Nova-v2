@@ -55,13 +55,17 @@ func TestProjetosRotas(t *testing.T) {
 		t.Fatalf("tarefa não encontrada: %s", tarefas)
 	}
 
-	// Vínculos
-	alvoID := uuid.NewString()
+	// Vínculos (valida a existência do item no módulo de origem e preenche rótulo se omitido)
+	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/projetos/"+p.ID+"/vinculos", admin,
+		`{"tipo":"mudanca","alvo_id":"`+uuid.NewString()+`","rotulo":"Inexistente"}`)
+
+	ativo := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/ativos", admin,
+		`{"nome":"Servidor de Banco","tipo":"hardware","estado":"em_uso"}`))
 	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/projetos/"+p.ID+"/vinculos", admin,
-		`{"tipo":"mudanca","alvo_id":"`+alvoID+`","rotulo":"Mudança #12: Migração de banco"}`)
+		`{"tipo":"ativo","alvo_id":"`+ativo.ID+`","rotulo":""}`)
 
 	vinculos := h.expect(http.StatusOK, http.MethodGet, "/api/v1/projetos/"+p.ID+"/vinculos", admin, "").Body.String()
-	if !strings.Contains(vinculos, "Migração de banco") {
+	if !strings.Contains(vinculos, "Ativo · Servidor de Banco") {
 		t.Fatalf("vínculo não encontrado: %s", vinculos)
 	}
 

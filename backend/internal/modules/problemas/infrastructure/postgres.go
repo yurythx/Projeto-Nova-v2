@@ -80,8 +80,9 @@ func (r *Repository) List(ctx context.Context, db database.DBTX, f domain.Filtro
 			AND ($3 = '' OR estado = $3)
 			AND ($4::uuid IS NULL OR EXISTS (SELECT 1 FROM problemas_incidentes i WHERE i.problema_id = p.id AND i.solicitacao_id = $4))
 			AND ($5 = '' OR titulo ILIKE '%' || $5 || '%' OR contorno ILIKE '%' || $5 || '%')
+			AND ($6::uuid IS NULL OR EXISTS (SELECT 1 FROM problemas_ativos a WHERE a.problema_id = p.id AND a.ativo_id = $6))
 		ORDER BY created_at DESC, id
-		LIMIT 200`, f.Restrito, idsOrEmpty(f.Unidades), f.Estado, f.SolicitacaoID, f.Busca)
+		LIMIT 200`, f.Restrito, idsOrEmpty(f.Unidades), f.Estado, f.SolicitacaoID, f.Busca, f.AtivoID)
 	if err != nil {
 		return nil, mapDB(err)
 	}

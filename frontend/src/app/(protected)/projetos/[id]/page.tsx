@@ -27,8 +27,10 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
-import { useApiQuery } from "@/lib/api/swr";
+import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import type { Solicitacao } from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import type { Ativo, Mudanca, Problema } from "@/lib/servicos/servicos";
 import {
   ESTADO_PROJETO,
   ESTADO_TAREFA,
@@ -101,6 +103,55 @@ export function ProjetoDetalheConteudo() {
   const [vinculoTipo, setVinculoTipo] = useState<TipoVinculoProjeto>("mudanca");
   const [vinculoAlvoId, setVinculoAlvoId] = useState("");
   const [vinculoRotulo, setVinculoRotulo] = useState("");
+
+  const mudancasOpcoes = useApiQuery<Mudanca[]>(
+    modalVinculo &&
+      vinculoTipo === "mudanca" &&
+      (can("mudancas:manage") || can("mudancas:aprovar"))
+      ? "v1/mudancas"
+      : null,
+  );
+  const problemasOpcoes = useApiQuery<Problema[]>(
+    modalVinculo &&
+      vinculoTipo === "problema" &&
+      (can("problemas:manage") || can("problemas:read"))
+      ? "v1/problemas"
+      : null,
+  );
+  const ativosOpcoes = useApiQuery<Ativo[]>(
+    modalVinculo && vinculoTipo === "ativo" && (can("ativos:manage") || can("ativos:read"))
+      ? "v1/ativos"
+      : null,
+  );
+  const solicitacoesOpcoes = useApiPage<Solicitacao>(
+    modalVinculo && vinculoTipo === "solicitacao" && can("atendimento:atender")
+      ? withQuery("v1/atendimento/fila", { situacao: "todas", page_size: 100 })
+      : null,
+  );
+  const jaVinculados = new Set(
+    listaVinculos.filter((v) => v.tipo === vinculoTipo).map((v) => v.alvo_id),
+  );
+  const opcoesCatalogoVinculo = (
+    vinculoTipo === "mudanca"
+      ? (mudancasOpcoes.data ?? []).map((m) => ({
+          value: m.id,
+          label: `Mudança #${m.numero} · ${m.titulo}`,
+        }))
+      : vinculoTipo === "problema"
+        ? (problemasOpcoes.data ?? []).map((pr) => ({
+            value: pr.id,
+            label: `Problema #${pr.numero} · ${pr.titulo}`,
+          }))
+        : vinculoTipo === "ativo"
+          ? (ativosOpcoes.data ?? []).map((a) => ({
+              value: a.id,
+              label: `Ativo · ${a.nome}`,
+            }))
+          : (solicitacoesOpcoes.data?.items ?? []).map((s) => ({
+              value: s.id,
+              label: `Solicitação #${s.numero} · ${s.titulo}`,
+            }))
+  ).filter((op) => !jaVinculados.has(op.value));
 
   // Estados para novo apontamento de horas
   const [modalApontamento, setModalApontamento] = useState(false);
@@ -220,7 +271,7 @@ export function ProjetoDetalheConteudo() {
         apiClient.post(`v1/projetos/${id}/vinculos`, {
           tipo: vinculoTipo,
           alvo_id: vinculoAlvoId.trim(),
-          rotulo: vinculoRotulo.trim() || `Item vinculado (${vinculoTipo})`,
+          rotulo: vinculoRotulo.trim(),
         }),
       "Item vinculado com sucesso",
     );
@@ -391,6 +442,19 @@ export function ProjetoDetalheConteudo() {
                       {new Date(p.created_at).toLocaleString("pt-BR")}
                     </p>
                   </div>
+                  {p.produto_id && (
+                    <div>
+                      <span className="text-muted">Produto Digital:</span>
+                      <p className="mt-0.5">
+                        <Link
+                          href="/produtos"
+                          className="font-medium text-primary hover:underline"
+                        >
+                          Ver no catálogo de produtos
+                        </Link>
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -642,7 +706,11 @@ export function ProjetoDetalheConteudo() {
                           ? `/mudancas/${v.alvo_id}`
                           : v.tipo === "problema"
                             ? `/problemas/${v.alvo_id}`
-                            : null;
+                            : v.tipo === "ativo"
+                              ? `/ativos/${v.alvo_id}`
+                              : v.tipo === "solicitacao"
+                                ? `/atendimento/solicitacoes/${v.alvo_id}`
+                                : null;
 
                       return (
                         <div
@@ -704,7 +772,11 @@ export function ProjetoDetalheConteudo() {
                   id="vinculo-tipo"
                   label="Tipo de vínculo *"
                   value={vinculoTipo}
-                  onChange={(e) => setVinculoTipo(e.target.value as TipoVinculoProjeto)}
+                  onChange={(e) => {
+                    setVinculoTipo(e.target.value as TipoVinculoProjeto);
+                    setVinculoAlvoId("");
+                    setVinculoRotulo("");
+                  }}
                   options={[
                     { value: "mudanca", label: "Mudança (CAB / Janela)" },
                     { value: "problema", label: "Problema (Causa Raiz)" },
@@ -712,6 +784,26 @@ export function ProjetoDetalheConteudo() {
                     { value: "solicitacao", label: "Chamado / Incidente" },
                   ]}
                 />
+
+                {opcoesCatalogoVinculo.length > 0 && (
+                  <Select
+                    id="vinculo-catalogo"
+                    label="Selecionar item existente"
+                    value={vinculoAlvoId}
+                    onChange={(e) => {
+                      const idEscolhido = e.target.value;
+                      setVinculoAlvoId(idEscolhido);
+                      const encontrado = opcoesCatalogoVinculo.find(
+                        (op) => op.value === idEscolhido,
+                      );
+                      if (encontrado && !vinculoRotulo) {
+                        setVinculoRotulo(encontrado.label);
+                      }
+                    }}
+                    placeholder="Escolha um item da lista..."
+                    options={opcoesCatalogoVinculo}
+                  />
+                )}
 
                 <Input
                   id="vinculo-alvo-id"
@@ -724,10 +816,10 @@ export function ProjetoDetalheConteudo() {
 
                 <Input
                   id="vinculo-rotulo"
-                  label="Rótulo descritivo"
+                  label="Rótulo descritivo (opcional)"
                   value={vinculoRotulo}
                   onChange={(e) => setVinculoRotulo(e.target.value)}
-                  placeholder="Ex.: Mudança #12: Migração do banco de dados"
+                  placeholder="Preenchido automaticamente se deixado em branco"
                   maxLength={200}
                 />
 

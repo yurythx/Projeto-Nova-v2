@@ -2,6 +2,7 @@ package glpi
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -38,6 +39,10 @@ type Chamado struct {
 	SLAResposta int `json:"slas_id_tto"`
 	// Modificado muda quando o chamado muda: é a versão da extração.
 	Modificado string `json:"date_mod"`
+	// Atribuido e EsperaSegundos preservam o início do atendimento (TTO) e
+	// o tempo em espera no GLPI, para não inflar o FCR nem distorcer o SLA.
+	Atribuido      string `json:"takeintoaccountdate"`
+	EsperaSegundos int    `json:"waiting_duration"`
 }
 
 // Entidade é um nó da árvore de entidades do GLPI.
@@ -239,8 +244,37 @@ func (c *Cliente) Participantes(ctx context.Context, chamado int) ([]Participant
 
 func (c *Cliente) Acompanhamentos(ctx context.Context, chamado int) ([]Acompanhamento, error) {
 	var out []Acompanhamento
-	_, err := c.get(ctx, fmt.Sprintf("/Ticket/%d/ITILFollowup?range=0-999", chamado), &out)
-	return out, err
+	if _, err := c.get(ctx, fmt.Sprintf("/Ticket/%d/ITILFollowup?range=0-999", chamado), &out); err != nil {
+		return nil, err
+	}
+	var solucoes []struct {
+		ID      int    `json:"id"`
+		Texto   string `json:"content"`
+		Em      string `json:"date_creation"`
+		Data    string `json:"date"`
+		AutorID int    `json:"users_id"`
+	}
+	if _, err := c.get(ctx, fmt.Sprintf("/Ticket/%d/ITILSolution?range=0-99", chamado), &solucoes); err != nil {
+		return nil, err
+	}
+	for _, s := range solucoes {
+		if strings.TrimSpace(s.Texto) == "" {
+			continue
+		}
+		id := s.ID
+		if id > 0 {
+			id = -id
+		} else {
+			id = -1000000 - len(out)
+		}
+		out = append(out, Acompanhamento{
+			ID:      id,
+			Texto:   "Solução registrada no GLPI:\n\n" + s.Texto,
+			Em:      cmp.Or(s.Em, s.Data),
+			AutorID: s.AutorID,
+		})
+	}
+	return out, nil
 }
 
 func (c *Cliente) Satisfacao(ctx context.Context, chamado int) (*Satisfacao, error) {

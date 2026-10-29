@@ -33,7 +33,7 @@ func (r *Repository) FecharAtribuicao(ctx context.Context, db database.DBTX, sol
 
 // AtribuicoesDoPeriodo lê os trechos com equipe, com o prazo atual dela.
 func (r *Repository) AtribuicoesDoPeriodo(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID, desde time.Time) ([]domain.Atribuicao, error) {
-	rows, err := db.Query(ctx, `SELECT a.solicitacao_id, a.equipe_id, COALESCE(e.nome, a.equipe_nome), e.ola_horas, a.inicio, a.fim
+	rows, err := db.Query(ctx, `SELECT a.solicitacao_id, a.equipe_id, COALESCE(e.nome, a.equipe_nome), e.unidade_id, e.ola_horas, a.inicio, a.fim
 		FROM atendimento_atribuicoes a
 		JOIN atendimento_equipes e ON e.id = a.equipe_id
 		JOIN atendimento_solicitacoes s ON s.id = a.solicitacao_id
@@ -46,7 +46,7 @@ func (r *Repository) AtribuicoesDoPeriodo(ctx context.Context, db database.DBTX,
 	out := []domain.Atribuicao{}
 	for rows.Next() {
 		var a domain.Atribuicao
-		if err := rows.Scan(&a.SolicitacaoID, &a.EquipeID, &a.EquipeNome, &a.OLAHoras, &a.Inicio, &a.Fim); err != nil {
+		if err := rows.Scan(&a.SolicitacaoID, &a.EquipeID, &a.EquipeNome, &a.UnidadeID, &a.OLAHoras, &a.Inicio, &a.Fim); err != nil {
 			return nil, mapDB(err)
 		}
 		out = append(out, a)

@@ -190,12 +190,15 @@ describe("Projetos — Detalhes e Tarefas", () => {
     resetNavigation({ id: "proj-1" }, "/projetos/proj-1");
 
     const api = mockBackend({
-      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      ...identityRoutes(perms("projetos:read", "projetos:manage", "problemas:read")),
       "GET v1/projetos/proj-1": {
-        data: projeto(),
+        data: projeto({ produto_id: "prod-1" }),
       },
       "GET v1/projetos/proj-1/tarefas": {
         data: [],
+      },
+      "GET v1/problemas": {
+        data: [{ id: "00000000-0000-0000-0000-000000000002", numero: 8, titulo: "Queda de link" }],
       },
       "GET v1/projetos/proj-1/vinculos": {
         data: [
@@ -205,6 +208,15 @@ describe("Projetos — Detalhes e Tarefas", () => {
             tipo: "mudanca",
             alvo_id: "00000000-0000-0000-0000-000000000001",
             rotulo: "Mudança #5: Troca de Switch",
+            vinculado_por: "admin@gov.br",
+            created_at: "2026-10-22T10:00:00Z",
+          },
+          {
+            id: "vinc-ativo",
+            projeto_id: "proj-1",
+            tipo: "ativo",
+            alvo_id: "00000000-0000-0000-0000-000000000099",
+            rotulo: "Ativo · Firewall Central",
             vinculado_por: "admin@gov.br",
             created_at: "2026-10-22T10:00:00Z",
           },
@@ -227,6 +239,14 @@ describe("Projetos — Detalhes e Tarefas", () => {
     renderApp(<ProjetoPage />);
 
     expect(await screen.findByText("Mudança #5: Troca de Switch")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ativo · Firewall Central" })).toHaveAttribute(
+      "href",
+      "/ativos/00000000-0000-0000-0000-000000000099",
+    );
+    expect(screen.getByRole("link", { name: "Ver no catálogo de produtos" })).toHaveAttribute(
+      "href",
+      "/produtos",
+    );
 
     await user.click(screen.getByTestId("adicionar-vinculo-btn"));
     expect(
@@ -234,7 +254,11 @@ describe("Projetos — Detalhes e Tarefas", () => {
     ).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText(/Tipo de vínculo/i), "problema");
-    await user.type(screen.getByLabelText(/ID do item/i), "00000000-0000-0000-0000-000000000002");
+    await user.selectOptions(
+      await screen.findByLabelText(/Selecionar item existente/i),
+      "00000000-0000-0000-0000-000000000002",
+    );
+    await user.clear(screen.getByLabelText(/Rótulo descritivo/i));
     await user.type(screen.getByLabelText(/Rótulo descritivo/i), "Problema #8: Queda de link");
 
     await user.click(screen.getByRole("button", { name: "Vincular" }));

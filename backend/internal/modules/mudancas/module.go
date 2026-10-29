@@ -18,15 +18,21 @@ const Key = "mudancas"
 
 // Module é o plugin.
 type Module struct {
+	repo     domain.Repository
 	svc      *application.Service
 	handlers *transport.Handlers
 }
 
 // New constrói o módulo.
 func New(deps modkit.Deps, portas domain.Portas, produtos domain.Produtos) *Module {
-	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, portas, produtos)
-	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
+	repo := infrastructure.NewRepository()
+	svc := application.NewService(deps.Pool, repo, deps.Outbox, portas, produtos)
+	return &Module{repo: repo, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
 }
+
+// Repositorio é a porta usada por outros módulos (ex.: projetos) para
+// conferir a mudança sem importar este módulo.
+func (m *Module) Repositorio() domain.Repository { return m.repo }
 
 // ComPassagens liga os caminhos acrescentados no quadro.
 func (m *Module) ComPassagens(p application.Passagens) {
