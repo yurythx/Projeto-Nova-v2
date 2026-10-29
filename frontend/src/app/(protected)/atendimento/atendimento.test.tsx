@@ -793,4 +793,41 @@ describe("Atendimento — solicitação", () => {
     tela.unmount();
     setActiveEntity("");
   });
+
+  it("o seletor global de entidade ativa (GLPI) filtra a fila da equipe para a entidade selecionada", async () => {
+    setActiveEntity("ent-sms");
+    resetNavigation({ id: "s1" }, "/atendimento/fila", "vista=lista");
+    mockBackend({
+      ...identityRoutes(perms("atendimento:atender")),
+      "GET v1/iam/org-tree": {
+        data: [
+          {
+            id: "ent-pref",
+            nome: "Prefeitura",
+            unidades: [{ id: "u-pref", nome: "Gabinete", departamentos: [] }],
+          },
+          {
+            id: "ent-sms",
+            nome: "SMS",
+            unidades: [{ id: "u-sms", nome: "Posto Central", departamentos: [] }],
+          },
+        ],
+      },
+      "GET v1/atendimento/fila": page([
+        { ...sol, id: "chamado-pref", numero: 101, titulo: "Chamado Gabinete", unidade_id: "u-pref" },
+        { ...sol, id: "chamado-sms", numero: 102, titulo: "Chamado Posto Saúde", unidade_id: "u-sms" },
+      ]),
+      "GET v1/atendimento/catalogo/categorias": { data: [] },
+    });
+
+    const tela = renderApp(<AtendimentoFilaPage />);
+    const tabela = await screen.findByRole("table", { name: "Solicitações da fila" });
+
+    // Apenas o chamado da SMS deve estar visível
+    expect(within(tabela).getByText(/Chamado Posto Saúde/)).toBeInTheDocument();
+    expect(within(tabela).queryByText(/Chamado Gabinete/)).not.toBeInTheDocument();
+
+    tela.unmount();
+    setActiveEntity("");
+  });
 });

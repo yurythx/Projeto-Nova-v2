@@ -1006,8 +1006,15 @@ subunidades sem mãe em silêncio — ver a seção 2.4.
    - **Reatribuição (*Reassign / Escalar*):** A reatribuição de chamados para outro técnico ou equipe é restrita a usuários com perfil de liderança técnica ou supervisão dentro do escopo da secretaria ou unidade provedora.
 
 2. **Entidade Ativa e Multi-tenancy (Gestão de Múltiplas Secretarias):**
-   - No modelo de excelência do GLPI, a comutação de secretarias ou órgãos subordinados ocorre preferencialmente via **Seletor de Entidade Ativa** na barra superior para gestores e administradores multi-lotação, garantindo que toda a navegação (catálogo, filas, ativos e relatórios) reflita coerentemente o contexto escolhido.
-   - No catálogo de autoatendimento, a seleção de instituições provedoras (ex.: SECITI, SMS, SEMED) deve evitar a sobrecarga de múltiplas abas horizontais que quebram o layout quando há várias secretarias, priorizando seleção contextualizada, intuitiva e acessível.
+   - No modelo do GLPI e da plataforma, a comutação de secretarias ocorre via **Seletor de Entidade Ativa** no cabeçalho para gestores e administradores multi-lotação (`activeEntityStore`).
+   - O rol de entidades raiz é estritamente limitado às **3 instituições oficiais**:
+     - **Prefeitura** (`d5759648-d424-4d4e-8970-c9f4e4a50194` - Prefeitura Municipal)
+     - **SMS** (`7222ff86-640d-45f3-a004-055cf2c32142` - Secretaria Municipal de Saúde)
+     - **SEMECEL** (`f304df6f-3e1a-4833-87d5-88d608bfede5` - Secretaria Municipal de Educação, Cultura, Esporte e Lazer)
+   - Unidades operacionais e de apoio subordinadas (ex.: SINFRA, TI, Arquivo, Fazenda) são organizadas como filhas dentro de suas respectivas entidades mãe e não poluem o seletor institucional superior.
+   - **Isolamento de Dados em Cascata:**
+     - Ao selecionar uma entidade específica (ex.: SMS), a interface aplica isolamento estrito no **Catálogo de Atendimento** (`/atendimento`), na **Fila da Equipe** (`/atendimento/fila`), no **Inventário de Ativos** (`/ativos`) e no painel de **Projetos** (`/projetos`), ocultando registros das demais entidades.
+     - A opção **"Todas as instituições (visão global)"** consolida dados intersecretariais exclusivamente para perfis autorizados de governança e auditoria.
 
 3. **Padronização e Semântica Visual dos Ícones do Catálogo de Atendimento:**
    - As ofertas e categorias de serviços municipais utilizam semântica visual estritamente associada a serviços e tecnologia da informação (ITSM), repudiando o uso de ícones comerciais de e-commerce (como carrinhos de compras `shopping-cart`).

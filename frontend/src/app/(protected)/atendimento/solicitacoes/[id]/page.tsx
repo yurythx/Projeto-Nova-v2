@@ -161,6 +161,16 @@ export function SolicitacaoDetalhe() {
                 <>
                   {tecnico && <Badge>{rotuloTipo(s.tipo)}</Badge>}
                   <Badge tone={tomEstado(s.estado)}>{rotuloEstado(s.estado)}</Badge>
+                  {tecnico && !finalizada && me && s.responsavel_id !== me.id && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => void atribuir(me.id)}
+                    >
+                      Assumir chamado
+                    </Button>
+                  )}
                 </>
               }
             />

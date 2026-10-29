@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 // Armazena a Entidade/Secretaria Ativa selecionada pelo usuário no cabeçalho
 // (conceito de Active Entity do GLPI). Permite que administradores e
 // técnicos com múltiplos escopos comutem o contexto globalmente.
@@ -32,4 +34,8 @@ export function subscribeActiveEntity(listener: () => void): () => void {
   return () => {
     listeners.delete(listener);
   };
+}
+
+export function useActiveEntity(): string {
+  return useSyncExternalStore(subscribeActiveEntity, getActiveEntitySnapshot, () => "");
 }

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, ChevronRight, ClipboardList, SlidersHorizontal } from "lucide-react";
-import { type FormEvent, type ReactNode, useCallback, useMemo, useState, useSyncExternalStore } from "react";
-import { getActiveEntitySnapshot, subscribeActiveEntity } from "@/lib/plataforma/activeEntityStore";
+import { type FormEvent, type ReactNode, useCallback, useMemo, useState } from "react";
+import { useActiveEntity } from "@/lib/plataforma/activeEntityStore";
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 import { PedidoDeContato } from "@/components/canais/ContatoParaAvisos";
@@ -234,7 +234,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
   const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const [busca, setBusca] = useState("");
   const [secretariaFiltro, setSecretariaFiltro] = useState<string>("");
-  const activeEntity = useSyncExternalStore(subscribeActiveEntity, getActiveEntitySnapshot, () => "");
+  const activeEntity = useActiveEntity();
 
   const unidadeParaEntidade = useMemo(() => {
     const mapa = new Map<string, string>();
