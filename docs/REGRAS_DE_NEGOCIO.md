@@ -966,3 +966,31 @@ subunidades sem mãe em silêncio — ver a seção 2.4.
    - **Fila de Atendimento (`/atendimento/fila`):** Os parâmetros de busca (`q`), recorte de unidade (`unidade`), categoria, prioridade, período e situação (`situacao`) são compartilhados integralmente entre o modo Lista e o modo Quadro (Kanban).
    - **Chamados Concluídos e Migrados:** Por padrão operacional, o quadro foca no fluxo em andamento (`abertas`). Quando a situação selecionada for `"todas"`, o quadro incorpora as colunas de "Encerradas" e "Canceladas", exibindo os chamados importados do GLPI e concluídos.
    - **Problemas e Projetos (`/problemas`, `/projetos`):** A busca textual rápida (`busca`) e o filtro por unidade (`unidadeFiltro`) operam de forma bidirecional e simétrica tanto na visualização em lista quanto no quadro Kanban.
+
+
+---
+
+### 10. Arquitetura de Navegação Estilo GLPI, Perfis SSO/AD e Ciclo de Vida Modular
+
+1. **Estrutura de Menus em 5 Seções Especializadas:**
+   - Inspirada no GLPI e nas práticas ITIL v5, a barra lateral é particionada em grupos funcionais de alto nível:
+     - **Assistência (ITSM / ITIL v5):** Dashboard de Governança, Calendário Operacional, Atendimento (Chamados/Requisições), Problemas, Mudanças (RFC) e Projetos.
+     - **Ativos (CMDB / Gerenciamento de Configuração):** Ativos de TI (Hardware, Software, Redes) e Catálogo de Produtos Digitais.
+     - **Módulos (Ferramentas de Apoio & Trâmites):** Processos Administrativos (Trâmite/Protocolo), Ocorrências Graves de TI, Wiki (Base de Conhecimento), Mercúrio (Chat) e Cofre de Senhas.
+     - **Administração (Pessoas, Estrutura & Governança - Core Imutável):** Gestão de Usuários, Estrutura Organizacional, Perfis de Acesso, Mapeamento AD e Trilha de Auditoria (WORM).
+     - **Configuração (Infraestrutura, Conectores Técnicos & Plugins):** Identidade Visual, Módulos do Kernel, Canais de Aviso (WhatsApp/E-mail), Integrações (GLPI Conector), Keycloak SSO, Inteligência Artificial, Egress & Webhooks e Monitoramento.
+
+2. **Experiência do Usuário Normal (Servidor Solicitante):**
+   - Usuários com o perfil básico `Servidor` (possuidores apenas de `atendimento:abrir`, representando a maioria do funcionalismo público) recebem uma interface estritamente enxuta:
+     - Na **Assistência**, visualizam exclusivamente o item **Atendimento** para submeter chamados ("Abrir um chamado" / "Relatar um problema") e acompanhar o andamento em linguagem acessível ("Minhas solicitações"). O Dashboard de governança e o Calendário de TI são **ocultados** para este perfil.
+     - As seções **Ativos**, **Administração** e **Configuração** permanecem 100% invisíveis e inacessíveis.
+   - **Concessão Granular ao Cofre:** Caso um servidor comum necessite de credenciais funcionais (ex.: sistemas tributários ou bancários), a permissão `cofre:read` e `cofre:reveal` pode ser atribuída à sua lotação ou grupo do AD; o item `/cofre` passa a figurar dinamicamente no menu de Módulos, restrito às pastas autorizadas.
+
+3. **Federação SSO & Mapeamento de Grupos do Active Directory (ADR 074 / ADR 077):**
+   - O provisionamento de papéis é automático via tokens OIDC emitidos pelo Keycloak federado ao AD.
+   - A tabela `ad_group_mappings` traduz os grupos do AD (`GG_TI_*`, `GG_AUDITORIA_*`, `GG_TODOS_SERVIDORES`) diretamente para perfis RBAC com escopo institucional ou por secretaria (`SECITI`, `SMS`, `SEMED`), dispensando intervenção manual no cadastro de acessos.
+
+4. **Ciclo de Vida Modular e Colapso Dinâmico de Seções (Kernel):**
+   - Cada plugin técnico é passível de ativação ou desativação em tempo real por administradores em `/configuracao/modulos`.
+   - Se um módulo for desativado (ex.: `mudancas`), ele é removido instantaneamente da barra lateral e das fichas de detalhes de outros módulos sem necessidade de recarregar a aplicação.
+   - Caso todos os módulos de uma seção estejam desativados ou fora do alcance do perfil do usuário, **o cabeçalho da seção inteira colapsa**, mantendo a interface sempre organizada e contextualizada.

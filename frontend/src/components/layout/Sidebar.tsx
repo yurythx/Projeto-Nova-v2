@@ -3,11 +3,21 @@
 import {
   Activity,
   BarChart3,
+  Bell,
+  Bot,
+  Building2,
   Calendar,
   ChevronDown,
+  Key,
+  KeyRound,
   LayoutDashboard,
-  Settings,
+  Network,
+  Palette,
+  Repeat,
+  Share2,
   ShieldCheck,
+  Sliders,
+  Users,
   type LucideProps,
 } from "lucide-react";
 import Link from "next/link";
@@ -27,37 +37,41 @@ export interface NavItem {
   children?: NavItem[];
 }
 
+export interface NavGroups {
+  assistencia: NavItem[];
+  ativos: NavItem[];
+  modules: NavItem[];
+  admin: NavItem[];
+  configuracao: NavItem[];
+}
+
 // Módulos que não entram no menu de "Módulos": o núcleo tem entradas
-// próprias em Administração; Egress é configuração; a Busca vive no
-// cabeçalho (#global-search).
-const HIDDEN_FROM_MENU = new Set(["iam", "audit", "egress", "search"]);
+// próprias em Administração; Egress, Canais e Integrações vivem em Configuração;
+// a Busca vive no cabeçalho (#global-search).
+const HIDDEN_FROM_MENU = new Set([
+  "iam",
+  "audit",
+  "egress",
+  "search",
+  "integracoes",
+  "canais",
+]);
 
 // Módulos agrupados sob a seção dedicada de Assistência (estilo ITIL/GLPI).
 const ASSISTENCIA_KEYS = new Set(["atendimento", "problemas", "mudancas", "projetos"]);
 const ASSISTENCIA_ORDER = ["atendimento", "problemas", "mudancas", "projetos"];
+
+// Módulos agrupados sob a seção dedicada de Ativos (CMDB estilo GLPI).
+const ATIVOS_KEYS = new Set(["ativos", "produtos"]);
+const ATIVOS_ORDER = ["ativos", "produtos"];
 
 // Módulos cuja tela principal é de gestão (a face pública fica no site
 // institucional): só aparecem no menu para quem tem a permissão.
 const MENU_PERMISSION: Record<string, string> = {
   catalog: "catalog:manage",
   contact: "contact:read",
+  cofre: "cofre:read",
 };
-
-const ADMIN_PERMISSIONS = [
-  "modules:manage",
-  "iam:manage",
-  "users:read",
-  "branding:manage",
-  "keycloak:manage",
-  "ia:manage",
-  "canais:manage",
-  "egress:manage",
-  "catalog:manage",
-  "contact:read",
-  "mercurio:manage",
-  "calendar:manage",
-  "blog:manage",
-];
 
 function childrenOf(
   key: string,
@@ -73,18 +87,25 @@ function childrenOf(
 }
 
 /** Monta o menu a partir do estado dos módulos no Kernel e das permissões
- * efetivas — um plugin desativado some do menu sem recarregar a página. */
+ * efetivas — organizado no padrão GLPI e ITIL v5 com 5 seções bem definidas:
+ * Assistência, Ativos, Módulos, Administração e Configuração. */
 export function buildNav(
   modules: ModuleStatus[],
   can: (p: string) => boolean,
   canGlobal: (p: string) => boolean = can,
   enabled: (m: string) => boolean = () => true,
-): { assistencia: NavItem[]; modules: NavItem[]; admin: NavItem[] } {
+): NavGroups {
   const activeMods = modules
     .filter((m) => m.enabled && !m.core && !HIDDEN_FROM_MENU.has(m.key) && m.route)
-    .filter((m) => !MENU_PERMISSION[m.key] || can(MENU_PERMISSION[m.key]!));
+    .filter(
+      (m) =>
+        !MENU_PERMISSION[m.key] ||
+        can(MENU_PERMISSION[m.key]!) ||
+        (m.key === "cofre" && can("cofre:manage")),
+    );
 
   const assistenciaMods: { key: string; item: NavItem }[] = [];
+  const ativosMods: { key: string; item: NavItem }[] = [];
   const mods: NavItem[] = [];
 
   for (const m of activeMods) {
@@ -102,44 +123,132 @@ export function buildNav(
       icon: m.icon,
       children: childrenOf(m.key, href, can, canGlobal, enabled),
     };
+
     if (ASSISTENCIA_KEYS.has(m.key)) {
-      assistenciaMods.push({ key: m.key, item });
+      // Regras de permissão para módulos de assistência
+      let visivel = false;
+      if (m.key === "atendimento") {
+        visivel =
+          can("atendimento:abrir") || can("atendimento:atender") || can("atendimento:manage");
+      } else if (m.key === "problemas") {
+        visivel = can("problemas:read") || can("problemas:manage");
+      } else if (m.key === "mudancas") {
+        visivel = can("mudancas:manage") || can("mudancas:aprovar");
+      } else if (m.key === "projetos") {
+        visivel = can("projetos:read") || can("projetos:manage");
+      }
+      if (visivel) {
+        assistenciaMods.push({ key: m.key, item });
+      }
+    } else if (ATIVOS_KEYS.has(m.key)) {
+      // Regras de permissão para CMDB / Ativos
+      let visivel = false;
+      if (m.key === "ativos") {
+        visivel = can("ativos:read") || can("ativos:manage");
+      } else if (m.key === "produtos") {
+        visivel = can("produtos:read") || can("produtos:manage");
+      }
+      if (visivel) {
+        ativosMods.push({ key: m.key, item });
+      }
     } else {
       mods.push(item);
     }
   }
 
+  // 1. ASSISTÊNCIA (ITIL v5 / GLPI Helpdesk)
+  // O Dashboard e o Calendário de TI são reservados a quem atende ou gerencia serviços.
+  // Usuários normais (apenas atendimento:abrir) veem diretamente o portal de Atendimento.
   const assistencia: NavItem[] = [];
+  const podeVerDashboard =
+    can("atendimento:atender") ||
+    can("problemas:read") ||
+    can("mudancas:manage") ||
+    can("projetos:read") ||
+    can("projetos:manage");
+  const podeVerCalendario =
+    can("atendimento:atender") ||
+    can("mudancas:manage") ||
+    can("mudancas:aprovar") ||
+    can("projetos:read") ||
+    can("projetos:manage");
+
   if (assistenciaMods.length > 0) {
-    assistencia.push({
-      href: "/assistencia",
-      label: "Dashboard",
-      icon: BarChart3,
-    });
-    assistencia.push({
-      href: "/assistencia/calendario",
-      label: "Calendário",
-      icon: Calendar,
-    });
+    if (podeVerDashboard) {
+      assistencia.push({
+        href: "/assistencia",
+        label: "Dashboard",
+        icon: BarChart3,
+      });
+    }
+    if (podeVerCalendario) {
+      assistencia.push({
+        href: "/assistencia/calendario",
+        label: "Calendário",
+        icon: Calendar,
+      });
+    }
     assistenciaMods.sort(
       (a, b) => ASSISTENCIA_ORDER.indexOf(a.key) - ASSISTENCIA_ORDER.indexOf(b.key),
     );
     assistencia.push(...assistenciaMods.map((m) => m.item));
   }
 
+  // 2. ATIVOS (CMDB / GLPI Assets)
+  const ativos: NavItem[] = [];
+  if (ativosMods.length > 0) {
+    ativosMods.sort((a, b) => ATIVOS_ORDER.indexOf(a.key) - ATIVOS_ORDER.indexOf(b.key));
+    ativos.push(...ativosMods.map((m) => m.item));
+  }
+
+  // 3. ADMINISTRAÇÃO (Pessoas, Estrutura e Governança do Core)
   const admin: NavItem[] = [];
-  if (can("audit:read")) admin.push({ href: "/auditoria", label: "Auditoria", icon: ShieldCheck });
-  if (can("monitoring:read"))
-    admin.push({ href: "/monitoramento", label: "Monitoramento", icon: Activity });
-  if (ADMIN_PERMISSIONS.some(can)) {
+  if (can("users:read") || can("users:manage")) {
+    admin.push({ href: "/configuracao/usuarios", label: "Usuários", icon: Users });
+  }
+  if (can("iam:manage")) {
     admin.push({
-      href: "/configuracao",
-      label: "Configurações",
-      icon: Settings,
-      children: childrenOf("config", "/configuracao", can, canGlobal, enabled),
+      href: "/configuracao/organizacao",
+      label: "Estrutura organizacional",
+      icon: Building2,
     });
   }
-  return { assistencia, modules: mods, admin };
+  if (canGlobal("iam:manage")) {
+    admin.push({ href: "/configuracao/perfis", label: "Perfis de acesso", icon: KeyRound });
+    admin.push({ href: "/configuracao/mapeamento-ad", label: "Mapeamento AD", icon: Network });
+  }
+  if (can("audit:read")) {
+    admin.push({ href: "/auditoria", label: "Auditoria", icon: ShieldCheck });
+  }
+
+  // 4. CONFIGURAÇÃO (Infraestrutura, Conectores Técnicos e Plugins)
+  const configuracao: NavItem[] = [];
+  if (can("branding:manage")) {
+    configuracao.push({ href: "/configuracao", label: "Identidade visual", icon: Palette });
+  }
+  if (can("modules:manage")) {
+    configuracao.push({ href: "/configuracao/modulos", label: "Módulos", icon: Sliders });
+  }
+  if (can("canais:manage") && enabled("canais")) {
+    configuracao.push({ href: "/configuracao/canais", label: "Canais de aviso", icon: Bell });
+  }
+  if (can("integracoes:manage") && enabled("integracoes")) {
+    configuracao.push({ href: "/integracoes", label: "Integrações (GLPI)", icon: Repeat });
+  }
+  if (can("keycloak:manage")) {
+    configuracao.push({ href: "/configuracao/keycloak", label: "Keycloak (IAM)", icon: Key });
+  }
+  if (can("ia:manage")) {
+    configuracao.push({ href: "/configuracao/ia", label: "Inteligência artificial", icon: Bot });
+  }
+  if (can("egress:manage") && enabled("egress")) {
+    configuracao.push({ href: "/configuracao/egress", label: "Egress & Webhooks", icon: Share2 });
+  }
+  if (can("monitoring:read") || can("monitoring:manage")) {
+    configuracao.push({ href: "/monitoramento", label: "Monitoramento", icon: Activity });
+  }
+
+  return { assistencia, ativos, modules: mods, admin, configuracao };
 }
 
 export function Sidebar({
@@ -269,6 +378,17 @@ export function Sidebar({
           </div>
         )}
 
+        {nav.ativos.length > 0 && (
+          <div className="mt-3">
+            <p
+              className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}
+            >
+              Ativos
+            </p>
+            <ul className="flex flex-col gap-0.5 px-2">{nav.ativos.map(renderGroup)}</ul>
+          </div>
+        )}
+
         {nav.modules.length > 0 && (
           <div className="mt-3">
             <p
@@ -287,7 +407,20 @@ export function Sidebar({
             >
               Administração
             </p>
-            <ul className="flex flex-col gap-0.5 px-2 pb-3">{nav.admin.map(renderGroup)}</ul>
+            <ul className="flex flex-col gap-0.5 px-2">{nav.admin.map(renderGroup)}</ul>
+          </div>
+        )}
+
+        {nav.configuracao.length > 0 && (
+          <div className="mt-3">
+            <p
+              className={`px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? "md:sr-only" : ""}`}
+            >
+              Configuração
+            </p>
+            <ul className="flex flex-col gap-0.5 px-2 pb-3">
+              {nav.configuracao.map(renderGroup)}
+            </ul>
           </div>
         )}
 
