@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ME, fail, identityRoutes, mockBackend, page, renderApp } from "@/test/backend";
 import { resetNavigation, router } from "@/test/navigation";
+import { setActiveEntity } from "@/lib/plataforma/activeEntityStore";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
 
@@ -717,5 +718,79 @@ describe("Atendimento — solicitação", () => {
     });
     renderApp(<SolicitacaoPage />);
     expect(await screen.findByText("registro de atendimento não encontrado")).toBeInTheDocument();
+  });
+  it("o seletor global de entidade ativa (GLPI) filtra o catálogo estritamente para a entidade selecionada (SMS, SEMECEL ou Prefeitura)", async () => {
+    resetNavigation({}, "/atendimento", "ver=problema&categoria=c1");
+    setActiveEntity("ent-sms");
+
+    mockBackend({
+      ...identityRoutes(perms("atendimento:abrir")),
+      "GET v1/iam/org-tree": {
+        data: [
+          {
+            id: "ent-pref",
+            nome: "PREFEITURA",
+            sigla: "PREFEITURA",
+            unidades: [{ id: "u-pref", nome: "PREFEITURA", sigla: "PREFEITURA", departamentos: [] }],
+          },
+          {
+            id: "ent-sms",
+            nome: "SMS",
+            sigla: "SMS",
+            unidades: [{ id: "u-sms", nome: "SMS", sigla: "SMS", departamentos: [] }],
+          },
+          {
+            id: "ent-semecel",
+            nome: "SEMECEL",
+            sigla: "SEMECEL",
+            unidades: [{ id: "u-semecel", nome: "SEMECEL", sigla: "SEMECEL", departamentos: [] }],
+          },
+        ],
+      },
+      "GET v1/atendimento/catalogo": {
+        data: [
+          {
+            ...oferta,
+            id: "o-pref",
+            nome: "Impressora da Prefeitura",
+            categoria_id: "c1",
+            unidade_id: "u-pref",
+          },
+          {
+            ...oferta,
+            id: "o-sms",
+            nome: "Computador do Posto de Saúde SMS",
+            categoria_id: "c1",
+            unidade_id: "u-sms",
+          },
+          {
+            ...oferta,
+            id: "o-semecel",
+            nome: "Internet da Escola SEMECEL",
+            categoria_id: "c1",
+            unidade_id: "u-semecel",
+          },
+        ],
+      },
+      "GET v1/atendimento/catalogo/categorias": { data: [categoria] },
+    });
+
+    const tela = renderApp(<AtendimentoPortalPage />);
+
+    // Com ent-sms ativa, apenas o chamado da SMS aparece
+    const ofertas = await screen.findByRole("list", { name: "Atendimentos" });
+    expect(within(ofertas).getAllByRole("link")).toHaveLength(1);
+    expect(
+      within(ofertas).getByRole("link", { name: /Computador do Posto de Saúde SMS/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Impressora da Prefeitura/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Internet da Escola SEMECEL/),
+    ).not.toBeInTheDocument();
+
+    tela.unmount();
+    setActiveEntity("");
   });
 });

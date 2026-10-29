@@ -13,10 +13,36 @@ import { useApiQuery } from "@/lib/api/swr";
 import type { OrgTree } from "@/lib/plataforma/types";
 
 /**
+ * Filtro oficial de entidades do município:
+ * Apenas as 3 instituições oficiais configuradas:
+ * 1. Prefeitura Municipal
+ * 2. SMS (Secretaria Municipal de Saúde)
+ * 3. SEMECEL (Secretaria Municipal de Educação, Cultura, Esporte e Lazer)
+ */
+function ehEntidadeOficial(nomeOuSigla: string): boolean {
+  const s = nomeOuSigla.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return s.includes("prefeitura") || s.includes("sms") || s.includes("saude") || s.includes("semecel") || s.includes("educacao");
+}
+
+function formatarRotuloEntidade(nome: string, sigla?: string): { nome: string; sigla: string } {
+  const norm = (sigla || nome).toUpperCase();
+  if (norm.includes("PREFEITURA")) {
+    return { nome: "Prefeitura Municipal", sigla: "Prefeitura" };
+  }
+  if (norm.includes("SMS") || norm.includes("SAUDE")) {
+    return { nome: "Secretaria Municipal de Saúde", sigla: "SMS" };
+  }
+  if (norm.includes("SEMECEL") || norm.includes("EDUCACAO")) {
+    return { nome: "Secretaria de Educação, Cultura, Esporte e Lazer", sigla: "SEMECEL" };
+  }
+  return { nome, sigla: sigla || nome };
+}
+
+/**
  * Seletor de Entidade Ativa no cabeçalho (Conceito de Active Entity do GLPI).
  * Permite que administradores gerais e servidores com acesso a múltiplas secretarias
  * alternem o contexto institucional da aplicação inteira em 1 clique.
- * Para usuários com apenas uma secretaria de lotação, não ocupa espaço na interface.
+ * Restringe-se estritamente às 3 entidades oficiais: Prefeitura, SMS e SEMECEL.
  */
 export function EntitySelector() {
   const { me, canGlobal } = usePlataforma();
@@ -31,37 +57,40 @@ export function EntitySelector() {
 
   const isGlobal = Boolean(canGlobal("*") || canGlobal("atendimento:atender"));
 
-  // Lista as entidades e secretarias alcançáveis pelo usuário
+  // Lista estritamente as entidades oficiais alcançáveis pelo usuário (sem unidades filhas)
   const opcoes = useMemo(() => {
     const list: { id: string; nome: string; sigla: string }[] = [];
 
     for (const ent of tree.data ?? []) {
-      const temEscopoNaEntidadeRaiz =
-        isGlobal || (me?.scopes ?? []).some((s) => s.entidade_id === ent.id);
+      // Filtra apenas entidades oficiais necessárias
+      if (!ehEntidadeOficial(ent.nome) && !ehEntidadeOficial(ent.sigla || "")) {
+        continue;
+      }
 
-      if (temEscopoNaEntidadeRaiz) {
+      const temAcessoAEntidade =
+        isGlobal ||
+        (me?.scopes ?? []).some(
+          (s) =>
+            s.entidade_id === ent.id ||
+            ent.unidades.some((u) => u.id === s.unidade_id),
+        );
+
+      if (temAcessoAEntidade && !list.some((item) => item.id === ent.id)) {
+        const fmt = formatarRotuloEntidade(ent.nome, ent.sigla);
         list.push({
           id: ent.id,
-          nome: ent.nome,
-          sigla: ent.sigla || ent.nome,
+          nome: fmt.nome,
+          sigla: fmt.sigla,
         });
       }
-
-      // Inclui secretarias/unidades diretas da entidade
-      for (const u of ent.unidades) {
-        const temEscopoNaUnidade =
-          isGlobal ||
-          (me?.scopes ?? []).some((s) => s.entidade_id === ent.id || s.unidade_id === u.id);
-        if (temEscopoNaUnidade && !list.some((item) => item.id === u.id)) {
-          list.push({
-            id: u.id,
-            nome: u.nome,
-            sigla: u.sigla || u.nome,
-          });
-        }
-      }
     }
-    return list;
+
+    // Ordenação fixa de governança: Prefeitura primeiro, depois SMS e SEMECEL
+    return list.sort((a, b) => {
+      if (a.sigla === "Prefeitura") return -1;
+      if (b.sigla === "Prefeitura") return 1;
+      return a.sigla.localeCompare(b.sigla, "pt-BR");
+    });
   }, [tree.data, me?.scopes, isGlobal]);
 
   // Fecha ao clicar fora ou pressionar Escape
@@ -87,11 +116,7 @@ export function EntitySelector() {
   }
 
   const selecionada = opcoes.find((o) => o.id === activeEntity);
-  const rotuloAtual = selecionada
-    ? selecionada.sigla && selecionada.sigla !== selecionada.nome
-      ? selecionada.sigla
-      : selecionada.nome
-    : "Todas as instituições";
+  const rotuloAtual = selecionada ? selecionada.sigla : "Todas as instituições";
 
   return (
     <div ref={ref} className="relative">
@@ -117,7 +142,7 @@ export function EntitySelector() {
         >
           <div className="border-b border-surface-border px-3 py-2">
             <p className="text-xs font-semibold text-foreground">Entidade / Secretaria Ativa</p>
-            <p className="text-[11px] text-muted">Filtra catálogo, chamados e ativos no escopo selecionado.</p>
+            <p className="text-[11px] text-muted">Filtra catálogo, chamados e ativos na entidade selecionada.</p>
           </div>
 
           <div className="max-h-64 overflow-y-auto py-1">
@@ -152,10 +177,8 @@ export function EntitySelector() {
                   }`}
                 >
                   <div className="min-w-0 pr-2">
-                    <p className="truncate">{opc.nome}</p>
-                    {opc.sigla && opc.sigla !== opc.nome && (
-                      <p className="text-[10px] text-muted">{opc.sigla}</p>
-                    )}
+                    <p className="truncate font-medium">{opc.nome}</p>
+                    <p className="text-[10px] text-muted">{opc.sigla}</p>
                   </div>
                   {ativa && <Check size={14} className="shrink-0 text-primary" aria-hidden="true" />}
                 </button>

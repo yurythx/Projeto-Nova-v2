@@ -19,12 +19,30 @@ vi.mock("@/lib/api/swr", () => ({
 const mockTree = [
   {
     id: "ent-pref",
-    nome: "Prefeitura Municipal",
-    sigla: "PREF",
+    nome: "PREFEITURA",
+    sigla: "PREFEITURA",
     unidades: [
-      { id: "u-saude", nome: "Secretaria de Saúde", sigla: "SMS", departamentos: [] },
-      { id: "u-educacao", nome: "Secretaria de Educação", sigla: "SEMED", departamentos: [] },
+      { id: "u-sinfra", nome: "SINFRA", sigla: "SINFRA", departamentos: [] },
+      { id: "u-ti", nome: "TI", sigla: "TI", departamentos: [] },
     ],
+  },
+  {
+    id: "ent-sms",
+    nome: "SMS",
+    sigla: "SMS",
+    unidades: [{ id: "u-sms", nome: "SMS", sigla: "SMS", departamentos: [] }],
+  },
+  {
+    id: "ent-semecel",
+    nome: "SEMECEL",
+    sigla: "SEMECEL",
+    unidades: [{ id: "u-semecel", nome: "SEMECEL", sigla: "SEMECEL", departamentos: [] }],
+  },
+  {
+    id: "ent-obsoleta",
+    nome: "Root Entity GLPI Descartavel",
+    sigla: "ROOT",
+    unidades: [],
   },
 ];
 
@@ -38,7 +56,7 @@ describe("EntitySelector — Seletor de Entidade Ativa (GLPI)", () => {
     mockUsePlataforma.mockReturnValue({
       me: {
         permissions: ["atendimento:abrir"],
-        scopes: [{ perfil: "servidor", unidade_id: "u-saude", permissions: ["atendimento:abrir"] }],
+        scopes: [{ perfil: "servidor", unidade_id: "u-sms", permissions: ["atendimento:abrir"] }],
       },
       canGlobal: () => false,
     });
@@ -48,7 +66,7 @@ describe("EntitySelector — Seletor de Entidade Ativa (GLPI)", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renderiza para administrador global e permite selecionar uma secretaria", async () => {
+  it("renderiza para administrador e filtra estritamente as 3 entidades oficiais (Prefeitura, SMS, SEMECEL)", async () => {
     const user = userEvent.setup();
     mockUsePlataforma.mockReturnValue({
       me: {
@@ -67,18 +85,26 @@ describe("EntitySelector — Seletor de Entidade Ativa (GLPI)", () => {
     await user.click(botao);
     expect(screen.getByRole("menu", { name: "Instituições disponíveis" })).toBeInTheDocument();
     expect(screen.getByText("Todas as instituições (visão global)")).toBeInTheDocument();
-    expect(screen.getByText("Secretaria de Saúde")).toBeInTheDocument();
-    expect(screen.getByText("Secretaria de Educação")).toBeInTheDocument();
+    expect(screen.getByText("Prefeitura Municipal")).toBeInTheDocument();
+    expect(screen.getByText("Secretaria Municipal de Saúde")).toBeInTheDocument();
+    expect(
+      screen.getByText("Secretaria de Educação, Cultura, Esporte e Lazer"),
+    ).toBeInTheDocument();
 
-    // Seleciona a Secretaria de Educação
-    await user.click(screen.getByText("Secretaria de Educação"));
-    expect(getActiveEntitySnapshot()).toBe("u-educacao");
+    // Entidades obsoletas ou unidades filhas operacionais NÃO aparecem
+    expect(screen.queryByText("Root Entity GLPI Descartavel")).not.toBeInTheDocument();
+    expect(screen.queryByText("SINFRA")).not.toBeInTheDocument();
+    expect(screen.queryByText("TI")).not.toBeInTheDocument();
+
+    // Seleciona SMS
+    await user.click(screen.getByText("Secretaria Municipal de Saúde"));
+    expect(getActiveEntitySnapshot()).toBe("ent-sms");
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
-  it("permite voltar para visão global de todas as instituições", async () => {
+  it("permite comutar para SEMECEL e voltar para visão global", async () => {
     const user = userEvent.setup();
-    setActiveEntity("u-saude");
+    setActiveEntity("ent-semecel");
 
     mockUsePlataforma.mockReturnValue({
       me: {
@@ -91,7 +117,9 @@ describe("EntitySelector — Seletor de Entidade Ativa (GLPI)", () => {
 
     render(<EntitySelector />);
 
-    expect(screen.getByRole("button", { name: /Selecionar instituição ativa/i })).toHaveTextContent("SMS");
+    expect(screen.getByRole("button", { name: /Selecionar instituição ativa/i })).toHaveTextContent(
+      "SEMECEL",
+    );
 
     await user.click(screen.getByRole("button", { name: /Selecionar instituição ativa/i }));
     await user.click(screen.getByText("Todas as instituições (visão global)"));

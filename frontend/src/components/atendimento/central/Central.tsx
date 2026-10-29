@@ -236,6 +236,17 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
   const [secretariaFiltro, setSecretariaFiltro] = useState<string>("");
   const activeEntity = useSyncExternalStore(subscribeActiveEntity, getActiveEntitySnapshot, () => "");
 
+  const unidadeParaEntidade = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const ent of tree.data ?? []) {
+      mapa.set(ent.id, ent.id);
+      for (const u of ent.unidades) {
+        mapa.set(u.id, ent.id);
+      }
+    }
+    return mapa;
+  }, [tree.data]);
+
   const secretarias = useMemo(() => {
     const mapa = new Map<string, { id: string; nome: string; sigla: string }>();
     const unidadesNaArvore = new Map<string, { id: string; nome: string; sigla: string }>();
@@ -292,14 +303,15 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
 
   const secretariaAtiva =
     secretariaFiltro ||
-    (activeEntity && secretarias.some((s) => s.id === activeEntity) ? activeEntity : secretariaPadrao);
+    (activeEntity ? activeEntity : secretariaPadrao);
 
   const ofertas = useMemo(() => {
     const raw = (catalogo.data ?? []).filter((o) => {
       if (o.tipo !== p.tipo) return false;
       if (secretarias.length <= 1 || secretariaAtiva === "todas") return true;
       const secId = o.secretaria_id || o.unidade_id;
-      return secId === secretariaAtiva;
+      const entId = unidadeParaEntidade.get(secId || "");
+      return secId === secretariaAtiva || entId === secretariaAtiva;
     });
 
     const vistos = new Set<string>();
@@ -312,7 +324,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
       }
     }
     return ordenar(unicos);
-  }, [catalogo.data, p.tipo, secretarias.length, secretariaAtiva]);
+  }, [catalogo.data, p.tipo, secretarias.length, secretariaAtiva, unidadeParaEntidade]);
 
   const conhecidas = useMemo(
     () => new Set((categorias.data ?? []).map((c) => c.id)),
