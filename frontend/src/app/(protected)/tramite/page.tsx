@@ -26,13 +26,15 @@ import {
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { OrgTree, Processo, TramiteTipo } from "@/lib/plataforma/types";
 
 function useUnidadeOptions() {
+  const { activeEntity } = useEntityFilter();
   const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   return (tree.data ?? [])
-    .filter((e) => e.ativo)
+    .filter((e) => e.ativo && (!activeEntity || e.id === activeEntity))
     .flatMap((e) =>
       e.unidades
         .filter((u) => u.ativo)

@@ -31,9 +31,8 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
-import { useActiveEntity } from "@/lib/plataforma/activeEntityStore";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
-import type { OrgTree } from "@/lib/plataforma/types";
 import {
   ESTADO_PROJETO,
   PRIORIDADE_PROJETO,
@@ -219,29 +218,13 @@ function ProjetosConteudo() {
     if (ok) void projetos.mutate();
   }
 
-  const activeEntity = useActiveEntity();
-  const arvore = useApiQuery<OrgTree[]>(le ? "v1/iam/org-tree" : null);
-  const unidadeParaEntidade = useMemo(() => {
-    const mapa = new Map<string, string>();
-    for (const ent of arvore.data ?? []) {
-      for (const uni of ent.unidades ?? []) {
-        mapa.set(uni.id, ent.id);
-      }
-    }
-    return mapa;
-  }, [arvore.data]);
+  const { filtrarPorEntidade } = useEntityFilter();
+  const todosProjetos = useMemo(
+    () => filtrarPorEntidade(projetos.data ?? []),
+    [filtrarPorEntidade, projetos.data],
+  );
 
-  const projetosFiltrados = useMemo(() => {
-    const list = projetos.data ?? [];
-    if (!activeEntity) return list;
-    return list.filter((p) => {
-      if (!p.unidade_id) return true;
-      const entId = unidadeParaEntidade.get(p.unidade_id);
-      return entId === activeEntity;
-    });
-  }, [projetos.data, activeEntity, unidadeParaEntidade]);
-
-  const lista = filtrarPorUnidade(projetosFiltrados, unidadeFiltro);
+  const lista = filtrarPorUnidade(todosProjetos, unidadeFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
 
   return (
@@ -293,7 +276,7 @@ function ProjetosConteudo() {
 
       <FiltroPorUnidade
         rotulo="Filtrar projetos por unidade"
-        itens={projetosFiltrados}
+        itens={todosProjetos}
         value={unidadeFiltro}
         onChange={setUnidadeFiltro}
       />

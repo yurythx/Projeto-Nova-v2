@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useState } from "react";
+import { type FormEvent, Suspense, useMemo, useState } from "react";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 import { Congelamentos } from "@/components/servicos/Congelamentos";
 import { MudancaForm, type MudancaCorpo } from "@/components/servicos/MudancaForm";
@@ -81,6 +82,12 @@ function MudancasConteudo() {
     para: EstadoMudanca;
   } | null>(null);
   const [textoDecisao, setTextoDecisao] = useState("");
+
+  const { filtrarPorEntidade } = useEntityFilter();
+  const todasMudancas = useMemo(
+    () => filtrarPorEntidade(mudancas.data ?? []),
+    [filtrarPorEntidade, mudancas.data],
+  );
 
   if (!ve) {
     return (
@@ -163,7 +170,6 @@ function MudancasConteudo() {
     if (ok) void mudancas.mutate();
   }
 
-  const todasMudancas = mudancas.data ?? [];
   const lista = filtrarPorUnidade(todasMudancas, unidadeFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (m) => faixaDaMudanca(m.estado));
   const quadrosMudanca = (

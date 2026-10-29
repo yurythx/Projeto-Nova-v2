@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useState } from "react";
+import { type FormEvent, Suspense, useMemo, useState } from "react";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
@@ -106,6 +107,12 @@ function ProblemasConteudo() {
     rotulo: string;
   } | null>(null);
   const [textoModal, setTextoModal] = useState("");
+
+  const { filtrarPorEntidade } = useEntityFilter();
+  const todosProblemas = useMemo(
+    () => filtrarPorEntidade(problemas.data ?? []),
+    [filtrarPorEntidade, problemas.data],
+  );
 
   if (!le) {
     return (
@@ -234,7 +241,6 @@ function ProblemasConteudo() {
     if (okPost) void problemas.mutate();
   }
 
-  const todosProblemas = problemas.data ?? [];
   const lista = filtrarPorUnidade(todosProblemas, unidadeFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
   const quadros = ordenarColunas(catalogo.colunas.filter((coluna) => coluna.ativa !== false)).map(

@@ -30,7 +30,7 @@ import {
   rotuloEstado,
   type Solicitacao,
 } from "@/lib/atendimento/atendimento";
-import { useActiveEntity } from "@/lib/plataforma/activeEntityStore";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { OrgTree } from "@/lib/plataforma/types";
 
@@ -74,36 +74,22 @@ function FilaDaEquipe() {
   const categorias = useApiQuery<Categoria[]>(
     atende ? "v1/atendimento/catalogo/categorias" : null,
   );
-  const activeEntity = useActiveEntity();
+  const { activeEntity, filtrarPorEntidade } = useEntityFilter();
   const unidades = useMemo(() => {
     const entidades = (arvore.data ?? []).filter((e) => !activeEntity || e.id === activeEntity);
     return entidades.flatMap((e) =>
       e.unidades.map((u) => ({ value: u.id, label: `${e.nome} — ${u.nome}` })),
     );
   }, [arvore.data, activeEntity]);
-  const unidadeParaEntidade = useMemo(() => {
-    const mapa = new Map<string, string>();
-    for (const ent of arvore.data ?? []) {
-      for (const uni of ent.unidades ?? []) {
-        mapa.set(uni.id, ent.id);
-      }
-    }
-    return mapa;
-  }, [arvore.data]);
   const topicos = useApiQuery<{ topicos: string[] }>(atende ? "v1/atendimento/fila/topicos" : null);
   const conexao = useRealtimeState();
   useTopics(topicos.data?.topicos ?? [], () => void fila.mutate());
   const { run, pending } = useAction();
 
-  const itens = useMemo(() => {
-    const list = fila.data?.items ?? [];
-    if (!activeEntity) return list;
-    return list.filter((s) => {
-      if (!s.unidade_id) return true;
-      const entId = unidadeParaEntidade.get(s.unidade_id);
-      return entId === activeEntity;
-    });
-  }, [fila.data?.items, activeEntity, unidadeParaEntidade]);
+  const itens = useMemo(
+    () => filtrarPorEntidade(fila.data?.items ?? []),
+    [filtrarPorEntidade, fila.data?.items],
+  );
 
   if (!atende) {
     return (

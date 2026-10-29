@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, ChevronRight, ClipboardList, SlidersHorizontal } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useMemo, useState } from "react";
-import { useActiveEntity } from "@/lib/plataforma/activeEntityStore";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 import { PedidoDeContato } from "@/components/canais/ContatoParaAvisos";
@@ -166,7 +166,12 @@ function ListaDeChamados({ itens }: { itens: Solicitacao[] }) {
 /** Início da central: as quatro portas e o que está em andamento. */
 export function CentralInicio() {
   const minhas = useMinhas("abertas", 1, 5);
-  const abertas = minhas.data?.meta?.total_items ?? minhas.data?.items.length ?? 0;
+  const { filtrarPorEntidade } = useEntityFilter();
+  const itensEmAndamento = useMemo(
+    () => filtrarPorEntidade(minhas.data?.items ?? []),
+    [filtrarPorEntidade, minhas.data?.items],
+  );
+  const abertas = itensEmAndamento.length;
   return (
     <div className="flex flex-col gap-8">
       <PedidoDeContato />
@@ -203,11 +208,11 @@ export function CentralInicio() {
           loading={minhas.isLoading}
           error={minhas.error}
           onRetry={() => void minhas.mutate()}
-          empty={(minhas.data?.items ?? []).length === 0}
+          empty={itensEmAndamento.length === 0}
           emptyTitle="Nada em andamento"
           emptyDescription="Quando você abrir um chamado, ele aparece aqui."
         >
-          <ListaDeChamados itens={minhas.data?.items ?? []} />
+          <ListaDeChamados itens={itensEmAndamento} />
           {abertas > 5 && (
             <Link href={`${BASE}?ver=chamados`} className="text-sm text-primary hover:underline">
               Ver todos os chamados
@@ -234,18 +239,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
   const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const [busca, setBusca] = useState("");
   const [secretariaFiltro, setSecretariaFiltro] = useState<string>("");
-  const activeEntity = useActiveEntity();
-
-  const unidadeParaEntidade = useMemo(() => {
-    const mapa = new Map<string, string>();
-    for (const ent of tree.data ?? []) {
-      mapa.set(ent.id, ent.id);
-      for (const u of ent.unidades) {
-        mapa.set(u.id, ent.id);
-      }
-    }
-    return mapa;
-  }, [tree.data]);
+  const { activeEntity, unidadeParaEntidade } = useEntityFilter();
 
   const secretarias = useMemo(() => {
     const mapa = new Map<string, { id: string; nome: string; sigla: string }>();
@@ -308,6 +302,13 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
   const ofertas = useMemo(() => {
     const raw = (catalogo.data ?? []).filter((o) => {
       if (o.tipo !== p.tipo) return false;
+      // Quando há uma entidade selecionada (Prefeitura, SMS ou SEMECEL), o filtro é absoluto!
+      if (activeEntity) {
+        const secId = o.secretaria_id || o.unidade_id;
+        if (!secId) return false;
+        const entId = unidadeParaEntidade.get(secId);
+        return secId === activeEntity || entId === activeEntity;
+      }
       if (secretarias.length <= 1 || secretariaAtiva === "todas") return true;
       const secId = o.secretaria_id || o.unidade_id;
       const entId = unidadeParaEntidade.get(secId || "");
@@ -324,7 +325,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
       }
     }
     return ordenar(unicos);
-  }, [catalogo.data, p.tipo, secretarias.length, secretariaAtiva, unidadeParaEntidade]);
+  }, [catalogo.data, p.tipo, secretarias.length, secretariaAtiva, unidadeParaEntidade, activeEntity]);
 
   const conhecidas = useMemo(
     () => new Set((categorias.data ?? []).map((c) => c.id)),
@@ -651,6 +652,11 @@ export function MeusChamados() {
   const [situacao, setSituacao] = useState<"abertas" | "todas">("abertas");
   const [pagina, setPagina] = useState(1);
   const minhas = useMinhas(situacao, pagina);
+  const { filtrarPorEntidade } = useEntityFilter();
+  const itensChamados = useMemo(
+    () => filtrarPorEntidade(minhas.data?.items ?? []),
+    [filtrarPorEntidade, minhas.data?.items],
+  );
   return (
     <div className="flex flex-col gap-4">
       <Trilha passos={[{ rotulo: "Central", href: BASE }, { rotulo: "Meus chamados" }]} />
@@ -670,10 +676,10 @@ export function MeusChamados() {
         loading={minhas.isLoading}
         error={minhas.error}
         onRetry={() => void minhas.mutate()}
-        empty={(minhas.data?.items ?? []).length === 0}
+        empty={itensChamados.length === 0}
         emptyTitle={situacao === "abertas" ? "Nada em andamento" : "Você ainda não abriu chamados"}
       >
-        <ListaDeChamados itens={minhas.data?.items ?? []} />
+        <ListaDeChamados itens={itensChamados} />
         <Pagination meta={minhas.data?.meta} onPage={setPagina} />
       </DataState>
     </div>

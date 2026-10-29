@@ -37,9 +37,8 @@ import {
   type InventarioMaquina,
   type TipoAtivo,
 } from "@/lib/servicos/servicos";
-import { useActiveEntity } from "@/lib/plataforma/activeEntityStore";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
-import type { OrgTree } from "@/lib/plataforma/types";
 
 interface Produto {
   id: string;
@@ -132,27 +131,11 @@ function Ativos() {
   const catalogo = useQuadro("ativos", fabricaAtivo);
   const controles = { oficial: catalogo.oficial };
 
-  const activeEntity = useActiveEntity();
-  const arvore = useApiQuery<OrgTree[]>(le ? "v1/iam/org-tree" : null);
-  const unidadeParaEntidade = useMemo(() => {
-    const mapa = new Map<string, string>();
-    for (const ent of arvore.data ?? []) {
-      for (const uni of ent.unidades ?? []) {
-        mapa.set(uni.id, ent.id);
-      }
-    }
-    return mapa;
-  }, [arvore.data]);
-
-  const ativosFiltrados = useMemo(() => {
-    const list = ativos.data ?? [];
-    if (!activeEntity) return list;
-    return list.filter((a) => {
-      if (!a.unidade_id) return true;
-      const entId = unidadeParaEntidade.get(a.unidade_id);
-      return entId === activeEntity;
-    });
-  }, [ativos.data, activeEntity, unidadeParaEntidade]);
+  const { filtrarPorEntidade } = useEntityFilter();
+  const todosAtivos = useMemo(
+    () => filtrarPorEntidade(ativos.data ?? []),
+    [filtrarPorEntidade, ativos.data],
+  );
 
   if (!le) {
     return (
@@ -211,7 +194,7 @@ function Ativos() {
     if (ok) void ativos.mutate();
   }
 
-  const lista = filtrarPorUnidade(ativosFiltrados, unidadeFiltro);
+  const lista = filtrarPorUnidade(todosAtivos, unidadeFiltro);
   const colunasAtivo = colunasVisiveis(catalogo.colunas, lista, (a) => a.estado);
   return (
     <div className="flex flex-col gap-6">
@@ -249,7 +232,7 @@ function Ativos() {
 
       <FiltroPorUnidade
         rotulo="Filtrar ativos por unidade"
-        itens={ativosFiltrados}
+        itens={todosAtivos}
         value={unidadeFiltro}
         onChange={setUnidadeFiltro}
       />
