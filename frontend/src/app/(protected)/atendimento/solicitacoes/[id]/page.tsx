@@ -206,8 +206,15 @@ export function SolicitacaoDetalhe() {
                 <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Campo rotulo="Aberta por">{s.solicitante_nome}</Campo>
                   <Campo rotulo="Aberta em">{fmtDateTime(s.created_at)}</Campo>
-                  <Campo rotulo="Responsável">
-                    {s.responsavel_nome || "Ainda sem responsável"}
+                  <Campo rotulo="Técnico responsável">
+                    {s.responsavel_nome ? (
+                      <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                        <Badge tone="info">Técnico</Badge>
+                        {s.responsavel_nome}
+                      </span>
+                    ) : (
+                      <Badge tone="warning">Na fila da equipe (sem técnico)</Badge>
+                    )}
                   </Campo>
                   {s.resolvida_em && (
                     <Campo rotulo="Concluída em">{fmtDateTime(s.resolvida_em)}</Campo>

@@ -68,13 +68,53 @@ const PORNOME: Record<string, Icone> = Object.fromEntries(
   ICONES_DO_CATALOGO.map((i) => [i.valor, i.Icone]),
 );
 
-/** Ícone do bloco: o escolhido ou, sem ele, o padrão. */
+/**
+ * Inferência automática de ícone por nome/palavra-chave da categoria ou oferta.
+ * Evita repetição indevida de ícones genéricos quando o campo vem vazio do banco.
+ */
+export function inferirIconePorTexto(texto?: string): string | null {
+  if (!texto) return null;
+  const n = texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (/computador|desktop|maquina|pc|estacao|hardware/.test(n)) return "monitor";
+  if (/notebook|laptop/.test(n)) return "laptop";
+  if (/impressora|impressao|toner|scanner|cartucho/.test(n)) return "printer";
+  if (/wifi|wi-fi|sem fio|wireless/.test(n)) return "wifi";
+  if (/rede|internet|conexao|switch|roteador|cabo|fibra|ip/.test(n)) return "network";
+  if (/servidor|banco de dados|storage|hospedagem|datacenter/.test(n)) return "server";
+  if (/nuvem|cloud|drive/.test(n)) return "cloud";
+  if (/disco|armazenamento|hd|ssd/.test(n)) return "hard-drive";
+  if (/telefone|ramal|telefonia|voip|ligacao/.test(n)) return "phone";
+  if (/celular|smartphone|tablet|movel/.test(n)) return "smartphone";
+  if (/senha|acesso|login|credencial|usuario|permissao|reset|perfil/.test(n)) return "key-round";
+  if (/sistema|software|programa|aplicativo|portal|erp|app|site|web/.test(n)) return "app-window";
+  if (/email|e-mail|correio|mensagem|outlook/.test(n)) return "mail";
+  if (/seguranca|antivirus|firewall|lgpd|vazamento/.test(n)) return "shield-alert";
+  if (/camera|cftv|videomonitoramento/.test(n)) return "camera";
+  if (/documento|certidao|declaracao|oficio|formulario|relatorio/.test(n)) return "file-text";
+  if (/manutencao|reparo|conserto|oficina|tecnico|ajuste/.test(n)) return "wrench";
+  if (/predial|eletrica|hidraulica|sala|ar-condicionado|ar condicionado|estrutura/.test(n))
+    return "building-2";
+  if (/pessoa|rh|recursos humanos|servidor|colaborador|equipe/.test(n)) return "users";
+  if (/entrega|transporte|veiculo|logistica/.test(n)) return "truck";
+  if (/compra|aquisicao|suprimento|licitacao/.test(n)) return "shopping-cart";
+  if (/duvida|informacao|orientacao|ajuda|tutorial/.test(n)) return "circle-help";
+  return null;
+}
+
+/** Ícone do bloco: o escolhido, o inferido pelo nome ou, sem eles, o padrão. */
 export function IconeDoCatalogo({
   nome,
-  padrao = "circle-help",
+  contextoNome,
+  padrao = "headset",
   ...props
-}: { nome?: string; padrao?: string } & LucideProps) {
-  const Escolhido = PORNOME[nome ?? ""] ?? PORNOME[padrao] ?? CircleHelp;
+}: { nome?: string; contextoNome?: string; padrao?: string } & LucideProps) {
+  const inferido = !nome && contextoNome ? inferirIconePorTexto(contextoNome) : null;
+  const iconeAlvo = nome || inferido || padrao;
+  const Escolhido = PORNOME[iconeAlvo] ?? PORNOME[padrao] ?? CircleHelp;
   return <Escolhido aria-hidden="true" {...props} />;
 }
 

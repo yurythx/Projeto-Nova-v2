@@ -12,6 +12,7 @@ import { GovHeader } from "@/components/layout/GovHeader";
 import { LGPDConsentModal } from "@/components/layout/LGPDConsentModal";
 import { ModuleGate } from "@/components/layout/ModuleGate";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { EntitySelector } from "@/components/layout/EntitySelector";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
@@ -99,6 +100,7 @@ function ShellBody({
             </Link>
             <ConnectionIndicator />
             <ThemeToggle initialTheme={initialTheme} />
+            <EntitySelector />
             <NotificationBell />
             <UserMenu userLabel={userLabel} />
           </>

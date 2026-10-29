@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, ChevronRight, ClipboardList, SlidersHorizontal } from "lucide-react";
-import { type FormEvent, type ReactNode, useCallback, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { getActiveEntitySnapshot, subscribeActiveEntity } from "@/lib/plataforma/activeEntityStore";
 
 import { DeflexaoConhecimento } from "@/components/atendimento/DeflexaoConhecimento";
 import { PedidoDeContato } from "@/components/canais/ContatoParaAvisos";
@@ -40,7 +41,7 @@ export const PORTAS = {
     tipo: "requisicao" as TipoSolicitacao,
     titulo: "Abrir um chamado",
     descricao: "Acesso, equipamento, instalação, cadastro: algo que você precisa.",
-    icone: "shopping-cart",
+    icone: "headset",
   },
   problema: {
     tipo: "incidente" as TipoSolicitacao,
@@ -233,6 +234,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
   const tree = useApiQuery<OrgTree[]>("v1/iam/org-tree");
   const [busca, setBusca] = useState("");
   const [secretariaFiltro, setSecretariaFiltro] = useState<string>("");
+  const activeEntity = useSyncExternalStore(subscribeActiveEntity, getActiveEntitySnapshot, () => "");
 
   const secretarias = useMemo(() => {
     const mapa = new Map<string, { id: string; nome: string; sigla: string }>();
@@ -288,7 +290,9 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
     return secretarias[0]?.id ?? "todas";
   }, [me?.scopes, secretarias, tree.data]);
 
-  const secretariaAtiva = secretariaFiltro || secretariaPadrao;
+  const secretariaAtiva =
+    secretariaFiltro ||
+    (activeEntity && secretarias.some((s) => s.id === activeEntity) ? activeEntity : secretariaPadrao);
 
   const ofertas = useMemo(() => {
     const raw = (catalogo.data ?? []).filter((o) => {
@@ -412,7 +416,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
                     href={`${BASE}?oferta=${o.id}`}
                     titulo={o.nome}
                     descricao={o.descricao}
-                    icone={<IconeDoCatalogo nome={o.icone} padrao={p.icone} size={24} />}
+                    icone={<IconeDoCatalogo nome={o.icone} contextoNome={o.nome} padrao={p.icone} size={24} />}
                     selo={
                       secretarias.length > 1 && rotuloSec ? (
                         <Badge tone="neutral">{rotuloSec}</Badge>
@@ -431,7 +435,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
                 href={`${BASE}?ver=${porta}&categoria=${g.id}`}
                 titulo={g.nome}
                 descricao={g.descricao}
-                icone={<IconeDoCatalogo nome={g.icone} padrao={p.icone} size={24} />}
+                icone={<IconeDoCatalogo nome={g.icone} contextoNome={g.nome} padrao={p.icone} size={24} />}
               />
             ))}
           </Blocos>

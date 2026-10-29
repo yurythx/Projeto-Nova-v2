@@ -994,3 +994,30 @@ subunidades sem mãe em silêncio — ver a seção 2.4.
    - Cada plugin técnico é passível de ativação ou desativação em tempo real por administradores em `/configuracao/modulos`.
    - Se um módulo for desativado (ex.: `mudancas`), ele é removido instantaneamente da barra lateral e das fichas de detalhes de outros módulos sem necessidade de recarregar a aplicação.
    - Caso todos os módulos de uma seção estejam desativados ou fora do alcance do perfil do usuário, **o cabeçalho da seção inteira colapsa**, mantendo a interface sempre organizada e contextualizada.
+
+---
+
+### 11. Governança de Perfis Técnicos, Atribuição de Chamados e Catálogo de Serviços (Alinhamento GLPI)
+
+1. **Segregação de Papéis: Perfil Técnico vs. Usuário Solicitante (Self-Service):**
+   - **Solicitante / Servidor Comum (`atendimento:abrir`):** Opera na interface de autosserviço (central do solicitante). Pode apenas submeter pedidos (requisições) ou falhas (incidentes), responder a questionamentos da equipe e avaliar o serviço concluído. **Nunca** pode ser atribuído a chamados, não aparece na listagem de responsáveis e não visualiza opções de transição interna de estados ou notas internas.
+   - **Técnico de Atendimento (`atendimento:atender`):** Possui acesso à fila de atendimento da unidade e ferramentas de resolução. Para ser elegível como responsável por um chamado ou para poder assumir um chamado, o usuário **deve** possuir o papel técnico ativo e estar vinculado como membro ativo a uma equipe de atendimento (`atendimento_equipes` e `atendimento_equipe_membros`) no escopo daquela unidade.
+   - **Assunção de Chamado (*Take Ownership*):** O técnico clica em "Assumir" para vincular o chamado a si mesmo, transicionando o chamado da fila geral para sua carga individual.
+   - **Reatribuição (*Reassign / Escalar*):** A reatribuição de chamados para outro técnico ou equipe é restrita a usuários com perfil de liderança técnica ou supervisão dentro do escopo da secretaria ou unidade provedora.
+
+2. **Entidade Ativa e Multi-tenancy (Gestão de Múltiplas Secretarias):**
+   - No modelo de excelência do GLPI, a comutação de secretarias ou órgãos subordinados ocorre preferencialmente via **Seletor de Entidade Ativa** na barra superior para gestores e administradores multi-lotação, garantindo que toda a navegação (catálogo, filas, ativos e relatórios) reflita coerentemente o contexto escolhido.
+   - No catálogo de autoatendimento, a seleção de instituições provedoras (ex.: SECITI, SMS, SEMED) deve evitar a sobrecarga de múltiplas abas horizontais que quebram o layout quando há várias secretarias, priorizando seleção contextualizada, intuitiva e acessível.
+
+3. **Padronização e Semântica Visual dos Ícones do Catálogo de Atendimento:**
+   - As ofertas e categorias de serviços municipais utilizam semântica visual estritamente associada a serviços e tecnologia da informação (ITSM), repudiando o uso de ícones comerciais de e-commerce (como carrinhos de compras `shopping-cart`).
+   - Categorias e ofertas contam com mecanismo de **resolução heurística inteligente**: caso o ícone não seja expressamente selecionado no cadastro, o sistema deduz automaticamente o ícone mais representativo a partir do nome/área de atendimento:
+     - Hardware e Estações $\rightarrow$ `monitor` ou `laptop`.
+     - Impressão e Imagens $\rightarrow$ `printer` ou `camera`.
+     - Redes e Conectividade $\rightarrow$ `network` ou `wifi`.
+     - Sistemas, Softwares e Portais $\rightarrow$ `app-window`.
+     - Acessos, Senhas e Perfis $\rightarrow$ `key-round` ou `lock`.
+     - E-mail e Comunicações $\rightarrow$ `mail` ou `phone`.
+     - Manutenção e Serviços Gerais $\rightarrow$ `wrench` ou `building-2`.
+     - Dúvidas e Conhecimento $\rightarrow$ `circle-help` ou `headset`.
+   - O ícone padrão para pedidos gerais de atendimento é `headset` (Suporte ITSM).
