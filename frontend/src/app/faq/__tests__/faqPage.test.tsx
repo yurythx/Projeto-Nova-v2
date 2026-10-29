@@ -10,7 +10,7 @@ vi.mock("@/components/layout/PublicShell", () => ({
 import FaqPage from "../page";
 
 describe("FaqPage", () => {
-  it("renderiza o cabeçalho, categorias e perguntas frequentes", () => {
+  it("renderiza o cabeçalho, categorias e perguntas frequentes incluindo chamados, SSO/AD e cofre", () => {
     render(<FaqPage />);
 
     expect(
@@ -18,7 +18,14 @@ describe("FaqPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("O projeto")).toBeInTheDocument();
     expect(screen.getByText("O que é o Projeto Nova?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Como funciona o login corporativo com o Active Directory (AD)?"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Incidente e requisição")).toBeInTheDocument();
+    expect(screen.getByText("Como abro e acompanho um chamado?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Quem tem acesso ao Cofre de Senhas e como ele é protegido?"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText(/^Base: /).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /sobre o projeto nova/i })).toHaveAttribute(
       "href",

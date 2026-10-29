@@ -65,7 +65,12 @@ export const REGRAS_PUBLICAS: Pilar[] = [
   {
     nome: "Quem vê o quê",
     descricao:
-      "A permissão vale na unidade e nas unidades abaixo dela. Fora do alcance, o registro não aparece. Quem abre acompanha o próprio pedido. Quem atende trabalha a fila da sua unidade.",
+      "A permissão vale na unidade e no perfil atribuído (incluindo grupos corporativos do Active Directory/SSO). Fora do alcance, o registro não aparece. Quem abre acompanha o próprio pedido. Quem atende trabalha a fila da sua unidade, e administradores gerenciam configurações e auditoria.",
+  },
+  {
+    nome: "Cofre e segredos",
+    descricao:
+      "O cofre de senhas protege credenciais organizadas em pastas com controle de acesso granular. Qualquer revelação ou edição de segredo gera registro imediato na trilha de auditoria.",
   },
   {
     nome: "O que cada prática não faz",
@@ -135,6 +140,11 @@ export const FAQ: SecaoFAQ[] = [
         fonte: "ITIL (Version 5), aplicado ao produto",
       },
       {
+        q: "Como funciona o login corporativo com o Active Directory (AD)?",
+        a: "O acesso utiliza Single Sign-On (SSO) corporativo. Ao entrar, o sistema autentica contra o serviço de diretório e lê os grupos do usuário no Active Directory, mapeando-os de forma automática aos perfis e permissões da sua lotação.",
+        fonte: "Autenticação corporativa e Mapeamento de Grupos AD",
+      },
+      {
         q: "O que fica ligado desde a instalação?",
         a: "Identidade e acesso (IAM) e a trilha de auditoria. O restante dos módulos nasce desativado e entra em Configurações → Módulos.",
         fonte: "Configurações → Módulos",
@@ -164,6 +174,11 @@ export const FAQ: SecaoFAQ[] = [
   {
     categoria: "Incidente e requisição",
     itens: [
+      {
+        q: "Como abro e acompanho um chamado?",
+        a: "No menu Assistência, você pode registrar um pedido previsto em 'Abrir um chamado' (requisição) ou relatar uma falha em 'Relatar um problema' (incidente). O chamado é direcionado à equipe responsável e você acompanha o andamento em tempo real em 'Minhas solicitações'.",
+        fonte: "Assistência → Chamados e Minhas solicitações",
+      },
       {
         q: "Qual a diferença entre incidente e requisição?",
         a: "Incidente: algo quebrou ou piorou e precisa voltar ao normal. Requisição: um pedido previsto, como um acesso ou uma informação. O tipo nasce da oferta do catálogo. Os dois compartilham a fila, os estados e o prazo.",
@@ -203,6 +218,11 @@ export const FAQ: SecaoFAQ[] = [
         q: "Quem pode ver um registro?",
         a: "Quem tem a permissão na unidade dona, ou numa unidade acima dela. Fora do alcance, a consulta responde como se o registro não existisse. Criar fora do alcance é recusado.",
         fonte: "Escopo por unidade",
+      },
+      {
+        q: "Quem tem acesso ao Cofre de Senhas e como ele é protegido?",
+        a: "O acesso ao cofre é estritamente controlado por pastas e perfis de permissão concedidos pela gestão. Usuários autorizados visualizam apenas os segredos liberados para seu trabalho, e cada revelação de credencial fica registrada na auditoria.",
+        fonte: "Módulos → Cofre de Senhas e Trilha de Auditoria",
       },
       {
         q: "O que a auditoria não guarda?",
