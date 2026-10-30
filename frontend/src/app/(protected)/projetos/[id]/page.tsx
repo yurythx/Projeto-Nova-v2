@@ -30,6 +30,7 @@ import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import type { Solicitacao } from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import type { Ativo, Mudanca, Problema } from "@/lib/servicos/servicos";
 import {
   ESTADO_PROJETO,
@@ -60,6 +61,7 @@ export function ProjetoDetalheConteudo() {
   const { can } = usePlataforma();
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
+  const { filtrarPorEntidade } = useEntityFilter();
 
   const { run, pending } = useAction();
   const lookTarefas = useAparencia(id ? `nova-faixas:tarefas:${id}` : "nova-faixas:tarefas:sem");
@@ -133,21 +135,21 @@ export function ProjetoDetalheConteudo() {
   );
   const opcoesCatalogoVinculo = (
     vinculoTipo === "mudanca"
-      ? (mudancasOpcoes.data ?? []).map((m) => ({
+      ? filtrarPorEntidade(mudancasOpcoes.data ?? []).map((m) => ({
           value: m.id,
           label: `Mudança #${m.numero} · ${m.titulo}`,
         }))
       : vinculoTipo === "problema"
-        ? (problemasOpcoes.data ?? []).map((pr) => ({
+        ? filtrarPorEntidade(problemasOpcoes.data ?? []).map((pr) => ({
             value: pr.id,
             label: `Problema #${pr.numero} · ${pr.titulo}`,
           }))
         : vinculoTipo === "ativo"
-          ? (ativosOpcoes.data ?? []).map((a) => ({
+          ? filtrarPorEntidade(ativosOpcoes.data ?? []).map((a) => ({
               value: a.id,
               label: `Ativo · ${a.nome}`,
             }))
-          : (solicitacoesOpcoes.data?.items ?? []).map((s) => ({
+          : filtrarPorEntidade(solicitacoesOpcoes.data?.items ?? []).map((s) => ({
               value: s.id,
               label: `Solicitação #${s.numero} · ${s.titulo}`,
             }))

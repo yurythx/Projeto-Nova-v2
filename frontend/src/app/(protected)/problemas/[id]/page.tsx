@@ -26,6 +26,7 @@ import {
 } from "@/lib/servicos/servicos";
 import { ESTADO_PROJETO, type Projeto } from "@/lib/projetos/projetos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 export function ProblemaDetalhe() {
   const id = useIdDaRota();
@@ -53,6 +54,7 @@ export function ProblemaDetalhe() {
       : null,
   );
   const [incidente, setIncidente] = useState("");
+  const { filtrarPorEntidade } = useEntityFilter();
   const [ativo, setAtivo] = useState("");
   const { run, pending } = useAction();
 
@@ -258,7 +260,7 @@ export function ProblemaDetalhe() {
                         value={incidente}
                         onChange={(e) => setIncidente(e.target.value)}
                         placeholder="Escolha um incidente"
-                        options={incidentes.data.items
+                        options={filtrarPorEntidade(incidentes.data.items)
                           .filter((s) => !ligados.has(s.id))
                           .map((s) => ({ value: s.id, label: `#${s.numero} · ${s.titulo}` }))}
                       />

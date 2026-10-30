@@ -21,6 +21,7 @@ import type { Solicitacao } from "@/lib/atendimento/atendimento";
 import { ESTADO_PROJETO, PRIORIDADE_PROJETO, type Projeto } from "@/lib/projetos/projetos";
 import { ESTADO_MUDANCA, RISCO, TIPO_MUDANCA, type Mudanca } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 export type TipoEvento = "mudanca" | "projeto" | "sla";
 
@@ -63,6 +64,7 @@ export default function AssistenciaCalendarioPage() {
   const [apenasConflitos, setApenasConflitos] = useState(false);
   const [modoVisao, setModoVisao] = useState<"grade" | "lista">("grade");
   const [eventoSelecionado, setEventoSelecionado] = useState<EventoCalendario | null>(null);
+  const { filtrarPorEntidade } = useEntityFilter();
 
   // Consultas de dados
   const atende = can("atendimento:atender");
@@ -83,7 +85,7 @@ export default function AssistenciaCalendarioPage() {
     const eventos: EventoCalendario[] = [];
 
     // 1. Mudanças do CAB
-    for (const m of mudancas.data ?? []) {
+    for (const m of filtrarPorEntidade(mudancas.data ?? [])) {
       const dataStr = m.inicio_planejado || m.created_at;
       if (!dataStr) continue;
       const d = new Date(dataStr);
@@ -113,7 +115,7 @@ export default function AssistenciaCalendarioPage() {
     }
 
     // 2. Marcos de Projetos
-    for (const p of projetos.data ?? []) {
+    for (const p of filtrarPorEntidade(projetos.data ?? [])) {
       const dataStr = p.data_fim_planejada || p.data_inicio_planejada || p.created_at;
       if (!dataStr) continue;
       const d = new Date(dataStr);
@@ -144,7 +146,7 @@ export default function AssistenciaCalendarioPage() {
     }
 
     // 3. Prazos de SLA de Atendimento
-    for (const s of fila.data?.items ?? []) {
+    for (const s of filtrarPorEntidade(fila.data?.items ?? [])) {
       const venceEm = s.prazo?.solucao.vence_em || s.prazo?.resposta.vence_em || s.created_at;
       if (!venceEm) continue;
       const d = new Date(venceEm);
@@ -194,7 +196,7 @@ export default function AssistenciaCalendarioPage() {
     }
 
     return eventos;
-  }, [mudancas.data, projetos.data, fila.data?.items]);
+  }, [mudancas.data, projetos.data, fila.data?.items, filtrarPorEntidade]);
 
   // Filtragem de eventos conforme toggles
   const eventosFiltrados = useMemo(() => {

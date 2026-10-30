@@ -21,6 +21,7 @@ import type { Projeto } from "@/lib/projetos/projetos";
 import { estiloGraficoDe, type EstiloGrafico } from "@/lib/servicos/painelAssistencia";
 import type { Mudanca, Problema } from "@/lib/servicos/servicos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { gravarArmazenado, useArmazenado } from "@/lib/prefs/armazenado";
 
 const ESTILO_MEMORIA = "nova-assistencia:estilo";
@@ -32,6 +33,7 @@ export default function AssistenciaDashboardPage() {
   const [editar, setEditar] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosAssistencia>(filtrosIniciais);
   const estilo = estiloGraficoDe(useArmazenado(ESTILO_MEMORIA));
+  const { filtrarPorEntidade } = useEntityFilter();
 
   function escolherEstilo(proximo: EstiloGrafico) {
     gravarArmazenado(ESTILO_MEMORIA, proximo);
@@ -69,17 +71,18 @@ export default function AssistenciaDashboardPage() {
   const leProjetos = gereProjetos || can("projetos:read");
   const projetos = useApiQuery<Projeto[]>(enabled("projetos") && leProjetos ? "v1/projetos" : null);
 
-  const solicitacoes = fila.data?.items ?? [];
+  const solicitacoesBrutas = fila.data?.items ?? [];
+  const solicitacoes = filtrarPorEntidade(solicitacoesBrutas);
   const totalFila = fila.data?.meta?.total_items ?? solicitacoes.length;
-  const listaProblemas = (problemas.data ?? []).filter(
+  const listaProblemas = filtrarPorEntidade((problemas.data ?? []).filter(
     (item) => !filtros.estadoProblema || item.estado === filtros.estadoProblema,
-  );
-  const listaMudancas = (mudancas.data ?? []).filter(
+  ));
+  const listaMudancas = filtrarPorEntidade((mudancas.data ?? []).filter(
     (item) => !filtros.estadoMudanca || item.estado === filtros.estadoMudanca,
-  );
-  const listaProjetos = (projetos.data ?? []).filter(
+  ));
+  const listaProjetos = filtrarPorEntidade((projetos.data ?? []).filter(
     (item) => !filtros.estadoProjeto || item.estado === filtros.estadoProjeto,
-  );
+  ));
   const incidentes = solicitacoes.filter((s) => s.tipo === "incidente").length;
   const requisicoes = solicitacoes.filter((s) => s.tipo === "requisicao").length;
   const notaFila =

@@ -30,6 +30,7 @@ import {
 } from "@/lib/servicos/servicos";
 import { ESTADO_PROJETO, type Projeto } from "@/lib/projetos/projetos";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 type TipoVinculo = "problema" | "incidente" | "ativo";
 
@@ -82,6 +83,7 @@ export function MudancaDetalhe() {
       : null,
   );
   const { run, pending } = useAction();
+  const { filtrarPorEntidade } = useEntityFilter();
 
   async function agir(fn: () => Promise<unknown>, ok: string) {
     const feito = await run(fn, ok);
@@ -122,13 +124,13 @@ export function MudancaDetalhe() {
   const ligados = new Set(m?.vinculos.filter((v) => v.tipo === tipo).map((v) => v.alvo_id));
   const opcoes =
     tipo === "problema"
-      ? (problemas.data ?? []).map((p) => ({ value: p.id, label: `#${p.numero} · ${p.titulo}` }))
+      ? filtrarPorEntidade(problemas.data ?? []).map((p) => ({ value: p.id, label: `#${p.numero} · ${p.titulo}` }))
       : tipo === "incidente"
-        ? (incidentes.data?.items ?? []).map((s) => ({
+        ? filtrarPorEntidade(incidentes.data?.items ?? []).map((s) => ({
             value: s.id,
             label: `#${s.numero} · ${s.titulo}`,
           }))
-        : (ativos.data ?? []).map((a) => ({ value: a.id, label: a.nome }));
+        : filtrarPorEntidade(ativos.data ?? []).map((a) => ({ value: a.id, label: a.nome }));
   const textoDe = pedindo ? TEXTO_DA_PASSAGEM[pedindo] : undefined;
 
   return (
