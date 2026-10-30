@@ -70,7 +70,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     };
   } catch {
     // Nunca logar o erro bruto (pode ecoar o refresh_token).
-    console.error("Falha ao renovar o access token do Keycloak");
+    console.warn("Keycloak SSO: sessão expirada ou refresh token recusado");
     return { ...token, error: "RefreshAccessTokenError" };
   }
 }

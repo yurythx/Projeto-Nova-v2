@@ -131,10 +131,17 @@ export function BrandingProvider({
   return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;
 }
 
+const DEFAULT_BRANDING_CONTEXT: BrandingContextType = {
+  branding: DEFAULT_BRANDING,
+  updateBranding: () => {},
+  resetBranding: () => {},
+  toggleHighContrast: () => {},
+  increaseFontSize: () => {},
+  decreaseFontSize: () => {},
+  resetFontSize: () => {},
+};
+
 export function useBranding() {
   const context = useContext(BrandingContext);
-  if (!context) {
-    throw new Error("useBranding deve ser utilizado dentro de um BrandingProvider");
-  }
-  return context;
+  return context ?? DEFAULT_BRANDING_CONTEXT;
 }
