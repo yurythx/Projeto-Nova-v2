@@ -30,7 +30,8 @@ function downloadHref(endpoint: string, format: string): string {
 }
 
 export default async function TransparenciaPage() {
-  const datasets = await publicGetOr<Dataset[]>("transparencia/datasets", [], 300);
+  const raw = await publicGetOr<Dataset[]>("transparencia/datasets", [], 300);
+  const datasets = Array.isArray(raw) ? raw : [];
 
   return (
     <PublicShell>

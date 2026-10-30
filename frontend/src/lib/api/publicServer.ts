@@ -18,8 +18,9 @@ export class PublicApiError extends Error {
 }
 
 interface Envelope<T> {
-  data: T | null;
-  error: { code: string; message: string } | null;
+  data?: T | null;
+  registros?: T | null;
+  error?: { code: string; message: string } | null;
   meta?: unknown;
 }
 
@@ -47,14 +48,17 @@ export async function publicGet<T>(
   } catch {
     throw new PublicApiError(res.status, "INVALID_RESPONSE", "resposta ilegível do servidor");
   }
-  if (!res.ok || json.error || json.data === null) {
+  const hasData = json.data !== undefined && json.data !== null;
+  const hasRegistros = json.registros !== undefined && json.registros !== null;
+  if (!res.ok || json.error || (!hasData && !hasRegistros)) {
     throw new PublicApiError(
       res.status,
       json.error?.code ?? "UNKNOWN_ERROR",
       json.error?.message ?? "erro inesperado",
     );
   }
-  return { data: json.data, meta: json.meta };
+  const payload = (hasData ? json.data : json.registros) as T;
+  return { data: payload, meta: json.meta };
 }
 
 /** Variante tolerante: devolve fallback quando o módulo está desativado
@@ -67,7 +71,8 @@ export async function publicGetOr<T>(
   tags?: string[],
 ): Promise<T> {
   try {
-    return (await publicGet<T>(path, revalidateSeconds, tags)).data;
+    const res = await publicGet<T>(path, revalidateSeconds, tags);
+    return res.data ?? fallback;
   } catch {
     return fallback;
   }

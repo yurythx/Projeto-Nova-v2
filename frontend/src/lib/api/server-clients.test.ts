@@ -75,6 +75,14 @@ describe("publicGet / publicGetOr (site institucional)", () => {
     expect(init.headers).toBeUndefined();
   });
 
+  it("desempacota tanto data quanto registros (transparência ativa)", async () => {
+    f.mockResolvedValueOnce(json({ dataset: "lai", registros: [{ id: 1 }], meta: { total: 1 } }));
+    expect(await publicGet("/transparencia/datasets", 30)).toEqual({
+      data: [{ id: 1 }],
+      meta: { total: 1 },
+    });
+  });
+
   it("erros viram PublicApiError; publicGetOr cai no fallback", async () => {
     f.mockRejectedValueOnce(new Error("down"));
     await expect(publicGet("x")).rejects.toMatchObject({
