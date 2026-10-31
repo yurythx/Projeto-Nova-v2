@@ -14,12 +14,14 @@ import { Select } from "@/components/ui/Select";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
+import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 
 interface Fornecedor {
   id: string;
   nome: string;
   email: string;
   telefone: string;
+  unidade_id?: string | null;
 }
 
 interface Contrato {
@@ -32,6 +34,7 @@ interface Contrato {
   valor_centavos: number;
   /** Prazo de atendimento do fornecedor, em horas (ADR 071). */
   prazo_horas?: number;
+  unidade_id?: string | null;
 }
 
 /** O prazo que o fornecedor assume: o atendimento mede contra ele o
@@ -77,6 +80,7 @@ interface Licenca {
   programa?: string;
   uso?: { instalados: number; com_inventario: number; parcial: boolean };
   fim?: string;
+  unidade_id?: string | null;
 }
 
 function dia(valor: string) {
@@ -97,6 +101,7 @@ function textoUso(licenca: Licenca) {
 export default function ContratosPage() {
   const { can } = usePlataforma();
   const gere = can("contratos:manage");
+  const { filtrarPorEntidade } = useEntityFilter();
   const fornecedores = useApiQuery<Fornecedor[]>(gere ? "v1/contratos/fornecedores" : null);
   const contratos = useApiQuery<Contrato[]>(gere ? "v1/contratos/contratos" : null);
   const licencas = useApiQuery<Licenca[]>(gere ? "v1/contratos/licencas" : null);
@@ -115,7 +120,10 @@ export default function ContratosPage() {
     );
   }
 
-  const opcoes = (fornecedores.data ?? []).map((f) => ({ value: f.id, label: f.nome }));
+  const itensFornecedores = filtrarPorEntidade(fornecedores.data ?? []);
+  const itensContratos = filtrarPorEntidade(contratos.data ?? []);
+  const itensLicencas = filtrarPorEntidade(licencas.data ?? []);
+  const opcoes = itensFornecedores.map((f) => ({ value: f.id, label: f.nome }));
 
   async function salvarFornecedor(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -240,11 +248,11 @@ export default function ContratosPage() {
             loading={fornecedores.isLoading}
             error={fornecedores.error}
             onRetry={() => void fornecedores.mutate()}
-            empty={(fornecedores.data ?? []).length === 0}
+            empty={itensFornecedores.length === 0}
             emptyTitle="Nenhum fornecedor"
           >
             <ul className="divide-y divide-surface-border text-sm">
-              {(fornecedores.data ?? []).map((f) => (
+              {itensFornecedores.map((f) => (
                 <li key={f.id} className="flex items-center justify-between gap-2 py-2">
                   <span>
                     {f.nome}
@@ -312,11 +320,11 @@ export default function ContratosPage() {
             loading={contratos.isLoading}
             error={contratos.error}
             onRetry={() => void contratos.mutate()}
-            empty={(contratos.data ?? []).length === 0}
+            empty={itensContratos.length === 0}
             emptyTitle="Nenhum contrato"
           >
             <ul className="divide-y divide-surface-border text-sm">
-              {(contratos.data ?? []).map((c) => (
+              {itensContratos.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span>
                     {c.numero} · {c.titulo} · {c.fornecedor_nome} · até {c.fim.slice(0, 10)}
@@ -394,11 +402,11 @@ export default function ContratosPage() {
             loading={licencas.isLoading}
             error={licencas.error}
             onRetry={() => void licencas.mutate()}
-            empty={(licencas.data ?? []).length === 0}
+            empty={itensLicencas.length === 0}
             emptyTitle="Nenhuma licença"
           >
             <ul className="divide-y divide-surface-border text-sm">
-              {(licencas.data ?? []).map((l) => (
+              {itensLicencas.map((l) => (
                 <li key={l.id} className="flex items-center justify-between gap-2 py-2">
                   <span>
                     {l.nome} · {l.quantidade} assentos · {l.fornecedor_nome}
