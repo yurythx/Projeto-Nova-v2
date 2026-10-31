@@ -193,6 +193,53 @@ describe("Atendimento — prazos da unidade", () => {
     await waitFor(() => expect(api.to("GET v1/atendimento/politica").length).toBeGreaterThan(1));
     await waitFor(() => expect(api.to("GET v1/atendimento/feriados").length).toBeGreaterThan(1));
   });
+
+  it("lista SLAs cadastradas e amarra com categoria do catalogo", async () => {
+    const user = userEvent.setup();
+    const slasMock = [
+      {
+        id: "sla-1",
+        nome: "SLA Crítica N1",
+        descricao: "Chamados urgentes",
+        tempo_resposta_minutos: 30,
+        tempo_solucao_minutos: 240,
+        calendario_tipo: "expediente",
+        pausar_em_espera: true,
+        ativa: true,
+      },
+    ];
+    const categoriasMock = [
+      {
+        id: "cat-1",
+        nome: "Rede e Conectividade",
+        descricao: "Problemas de internet",
+        icone: "wifi",
+        ordem: 1,
+        ativa: true,
+        sla_id: null,
+      },
+    ];
+    const api = mockBackend({
+      ...identityRoutes(),
+      "GET v1/iam/org-tree": { data: ORG },
+      "GET v1/atendimento/politica": { data: null },
+      "GET v1/atendimento/feriados": { data: [] },
+      "GET v1/atendimento/slas": { data: slasMock },
+      "GET v1/atendimento/categorias": { data: categoriasMock },
+      "PUT v1/atendimento/categorias/cat-1/sla": { data: { status: "ok" } },
+    });
+    renderApp(<AtendimentoPrazosPage />);
+
+    expect(await screen.findByText("SLA Crítica N1")).toBeInTheDocument();
+    expect(screen.getByText("Rede e Conectividade")).toBeInTheDocument();
+    expect(screen.getByText("Catálogo de SLAs Oficiais")).toBeInTheDocument();
+
+    const select = screen.getByLabelText("SLA da categoria Rede e Conectividade");
+    await user.selectOptions(select, "sla-1");
+
+    await waitFor(() => expect(api.to("PUT v1/atendimento/categorias/cat-1/sla")).toHaveLength(1));
+    expect(api.to("PUT v1/atendimento/categorias/cat-1/sla")[0]!.body).toEqual({ sla_id: "sla-1" });
+  });
 });
 
 describe("Atendimento — prazo na tela", () => {

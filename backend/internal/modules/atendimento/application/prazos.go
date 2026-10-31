@@ -170,6 +170,13 @@ func (s *Service) Classificar(ctx context.Context, identity auth.Identity, id uu
 		if err != nil || !mudou {
 			return nil, err
 		}
+		if of, err := s.repo.GetOferta(ctx, tx, sol.OfertaID); err == nil && of.CategoriaID != nil {
+			if cat, err := s.repo.GetCategoria(ctx, tx, *of.CategoriaID); err == nil && cat.SLAID != nil {
+				if sla, err := s.repo.GetSLA(ctx, tx, *cat.SLAID); err == nil {
+					next = next.AplicarSLA(&sla)
+				}
+			}
+		}
 		if err := s.repo.UpdateSolicitacao(ctx, tx, next); err != nil {
 			return nil, err
 		}

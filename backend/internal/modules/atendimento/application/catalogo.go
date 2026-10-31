@@ -25,6 +25,7 @@ type CategoriaEntrada struct {
 	Nome, Descricao, Icone string
 	Ordem                  int
 	Ativa                  *bool
+	SLAID                  *uuid.UUID
 }
 
 // gereCatalogo: a categoria é da instituição, então só quem gere o
@@ -60,6 +61,7 @@ func (s *Service) CriarCategoria(ctx context.Context, identity auth.Identity, in
 	if err != nil {
 		return domain.Categoria{}, MapError(err)
 	}
+	c = c.ComSLA(in.SLAID)
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		if c, err = s.repo.InsertCategoria(ctx, tx, c); err != nil {
 			return err
@@ -82,6 +84,7 @@ func (s *Service) AtualizarCategoria(ctx context.Context, identity auth.Identity
 	if err != nil {
 		return domain.Categoria{}, MapError(err)
 	}
+	next = next.ComSLA(in.SLAID)
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		if next, err = s.repo.UpdateCategoria(ctx, tx, next); err != nil {
 			return err

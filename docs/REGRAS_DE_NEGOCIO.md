@@ -674,6 +674,15 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   No relatório por secretaria (`GET /api/v1/atendimento/relatorio/secretarias`),
   cada linha de `Equipes (OLA)` inclui o `unidade_id` da secretaria de topo para
   acompanhar o filtro por entidade (`SECITI`, `SMS`, `SEMED`).
+- **Gestão de SLAs Independentes e Amarrações por Categoria (ADR 082):**
+  `atendimento:manage` gerencia Acordos de Nível de Serviço independentes (`atendimento_slas`),
+  definindo tempos de Primeira Resposta (TTO) e Solução (TTR) em minutos/horas, calendário
+  operacional (`expediente` vs. `corrido_24x7`) e pausa automática em estados de espera.
+  Cada categoria do catálogo (`atendimento_categorias`) pode ser amarrada diretamente a uma SLA
+  específica (`PUT /api/v1/atendimento/categorias/{id}/sla`), determinando automaticamente os
+  prazos de atendimento na abertura e reclassificação de chamados, em paridade com o modelo do GLPI.
+  Caso a categoria não possua SLA vinculada, o chamado herda os prazos calculados pela matriz de
+  Urgência × Impacto da política da unidade.
 
 ### Ativos
 - `ativos:read` consulta os itens e relações no escopo da unidade (concedido

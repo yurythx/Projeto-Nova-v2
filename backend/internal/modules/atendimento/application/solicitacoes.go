@@ -245,6 +245,13 @@ func (s *Service) abrirNa(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao
 		}
 	}
 	sol = sol.AplicarPolitica(p)
+	if of, err := s.repo.GetOferta(ctx, tx, sol.OfertaID); err == nil && of.CategoriaID != nil {
+		if cat, err := s.repo.GetCategoria(ctx, tx, *of.CategoriaID); err == nil && cat.SLAID != nil {
+			if sla, err := s.repo.GetSLA(ctx, tx, *cat.SLAID); err == nil {
+				sol = sol.AplicarSLA(&sla)
+			}
+		}
+	}
 	if sol, err = s.repo.InsertSolicitacao(ctx, tx, sol); err != nil {
 		return domain.Solicitacao{}, nil, err
 	}

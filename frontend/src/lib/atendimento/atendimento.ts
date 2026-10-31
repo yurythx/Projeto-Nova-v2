@@ -52,6 +52,21 @@ export interface Categoria {
   icone: string;
   ordem: number;
   ativa: boolean;
+  sla_id?: string | null;
+}
+
+export interface SLA {
+  id: string;
+  nome: string;
+  descricao: string;
+  tempo_resposta_minutos: number;
+  tempo_solucao_minutos: number;
+  pausar_em_espera: boolean;
+  calendario_tipo: 'expediente' | 'corrido_24x7';
+  unidade_id?: string | null;
+  ativa: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Solicitacao {

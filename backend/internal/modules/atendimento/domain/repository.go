@@ -220,6 +220,14 @@ type IARepository interface {
 // PrazoRepository persiste a política de prazo e os feriados, e lê o que
 // o relógio precisa.
 type PrazoRepository interface {
+	// SLAs independentes (ITIL v5 / GLPI)
+	ListSLAs(ctx context.Context, db database.DBTX, unidadeID *uuid.UUID) ([]SLA, error)
+	GetSLA(ctx context.Context, db database.DBTX, id uuid.UUID) (SLA, error)
+	InsertSLA(ctx context.Context, db database.DBTX, s SLA) (SLA, error)
+	UpdateSLA(ctx context.Context, db database.DBTX, s SLA) (SLA, error)
+	DeleteSLA(ctx context.Context, db database.DBTX, id uuid.UUID) error
+	VincularCategoriaSLA(ctx context.Context, db database.DBTX, categoriaID uuid.UUID, slaID *uuid.UUID) error
+
 	// GetPolitica busca a política da própria unidade (nil = institucional).
 	GetPolitica(ctx context.Context, db database.DBTX, unidade *uuid.UUID) (Politica, error)
 	// ResolverPolitica busca a da unidade ou da mais próxima acima; no
