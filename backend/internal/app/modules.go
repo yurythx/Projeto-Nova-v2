@@ -32,6 +32,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/quadros"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/riscos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/signum"
 	signumApp "github.com/yurythx/projeto-nova-v2/internal/modules/signum/application"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/tramite"
@@ -138,6 +139,7 @@ func registerPlugins(d *Dependencies) {
 		contratosModule,
 		cofreModule,
 		integracoesModule,
+		riscos.New(deps),
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

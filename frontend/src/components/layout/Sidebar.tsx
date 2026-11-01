@@ -15,6 +15,7 @@ import {
   Palette,
   Repeat,
   Share2,
+  ShieldAlert,
   ShieldCheck,
   Sliders,
   Users,
@@ -58,8 +59,8 @@ const HIDDEN_FROM_MENU = new Set([
 ]);
 
 // Módulos agrupados sob a seção dedicada de Assistência (estilo ITIL/GLPI).
-const ASSISTENCIA_KEYS = new Set(["atendimento", "problemas", "mudancas", "projetos"]);
-const ASSISTENCIA_ORDER = ["atendimento", "problemas", "mudancas", "projetos"];
+const ASSISTENCIA_KEYS = new Set(["atendimento", "problemas", "mudancas", "projetos", "riscos"]);
+const ASSISTENCIA_ORDER = ["atendimento", "problemas", "mudancas", "projetos", "riscos"];
 
 // Módulos agrupados sob a seção dedicada de Ativos (CMDB estilo GLPI).
 const ATIVOS_KEYS = new Set(["ativos", "produtos"]);
@@ -136,6 +137,8 @@ export function buildNav(
         visivel = can("mudancas:manage") || can("mudancas:aprovar");
       } else if (m.key === "projetos") {
         visivel = can("projetos:read") || can("projetos:manage");
+      } else if (m.key === "riscos") {
+        visivel = can("riscos:read") || can("riscos:manage");
       }
       if (visivel) {
         assistenciaMods.push({ key: m.key, item });

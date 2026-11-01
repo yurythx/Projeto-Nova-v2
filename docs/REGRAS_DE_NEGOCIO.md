@@ -1037,3 +1037,24 @@ subunidades sem mãe em silêncio — ver a seção 2.4.
      - Manutenção e Serviços Gerais $\rightarrow$ `wrench` ou `building-2`.
      - Dúvidas e Conhecimento $\rightarrow$ `circle-help` ou `headset`.
    - O ícone padrão para pedidos gerais de atendimento é `headset` (Suporte ITSM).
+
+### Gestão de Riscos de TI conforme a ISO/IEC 27001 (GRC) e Agrupamento de Incidentes (AIOps)
+
+1. **Matriz de Riscos e Heatmap 5x5 (ISO/IEC 27005):**
+   - **Cálculo de Severidade:** A severidade é o produto estrito da Probabilidade ($1$ a $5$) pelo Impacto ($1$ a $5$), resultando em um score de $1$ a $25$.
+     - **Baixo ($1$ a $6$):** Riscos rotineiros com tolerância operacional.
+     - **Médio ($7$ a $12$):** Requer plano de mitigação monitorado.
+     - **Alto ($13$ a $19$):** Requer intervenção prioritária e plano preventivo ativo.
+     - **Crítico ($20$ a $25$):** Risco de parada de serviços essenciais, violação de dados (LGPD) ou perda de integridade; ação corretiva imediata exigida.
+   - **Categorias Formais de Risco:**
+     - `seguranca_informacao`: Incidentes cibernéticos, vazamento de credenciais, controle de acessos.
+     - `infraestrutura`: Links de telecom, fornecimento elétrico, falha de hardware em Data Centers.
+     - `continuidade`: DRP, indisponibilidade prolongada de sistemas municipais, planos de contingência.
+     - `operacional`: Erros de procedimentos, suporte e capacitação.
+     - `conformidade_lgpd`: Tratamento indevido de dados pessoais e requisitos regulatórios.
+   - **Vínculo com Controles do Anexo A da ISO/IEC 27001:** Todo risco deve preferencialmente ser associado a um controle normativo formal (ex.: `A.12.3` - Backup e Retenção, `A.9.2` - Gestão de Acessos).
+   - **Estratégias de Tratamento:** `mitigar` (reduzir), `aceitar` (risco residual acordado), `transferir` (terceirizar/seguro), `evitar` (eliminar o processo gerador do risco).
+
+2. **Agrupamento de Incidentes Correlatos (AIOps):**
+   - Em cenários de crise ou falha sistêmica, chamados gerados pela mesma causa raiz podem ser vinculados a um **Incidente Pai** (`incidente_pai_id`).
+   - O encerramento ou solução técnica do Incidente Pai propaga notificações e atualizações de status sincronizadas para a esteira de chamados correlatos dependentes.

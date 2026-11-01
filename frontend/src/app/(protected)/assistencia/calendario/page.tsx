@@ -207,11 +207,14 @@ export default function AssistenciaCalendarioPage() {
     });
   }, [todosEventos, tiposAtivos, apenasConflitos]);
 
-  // Contagem de eventos no mês atual
-  const mesAtualStr = mesAtual.toISOString().slice(0, 7);
+  // Contagem de eventos no mês atual (comparação local imune a divergência de timezone UTC)
   const eventosNoMes = useMemo(() => {
-    return eventosFiltrados.filter((e) => e.data.toISOString().slice(0, 7) === mesAtualStr);
-  }, [eventosFiltrados, mesAtualStr]);
+    const anoAlvo = mesAtual.getFullYear();
+    const mesAlvo = mesAtual.getMonth();
+    return eventosFiltrados.filter(
+      (e) => e.data.getFullYear() === anoAlvo && e.data.getMonth() === mesAlvo,
+    );
+  }, [eventosFiltrados, mesAtual]);
 
   const totalConflitosNoMes = useMemo(() => {
     const datasConflito = new Set<string>();

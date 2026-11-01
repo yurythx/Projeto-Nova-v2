@@ -19,7 +19,7 @@ describe("Calendário Unificado da Assistência", () => {
   it("renderiza eventos de mudanças, projetos e SLA e detecta conflitos operacionais", async () => {
     const user = userEvent.setup();
     const hoje = new Date();
-    const isoHoje = hoje.toISOString();
+    const isoHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 12, 0, 0).toISOString();
 
     mockBackend({
       ...identityRoutes(perms("atendimento:atender", "mudancas:manage", "projetos:read"), [
