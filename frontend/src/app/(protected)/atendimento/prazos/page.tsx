@@ -214,7 +214,8 @@ export default function AtendimentoPrazosPage() {
                   às categorias do catálogo.
                 </p>
               </div>
-              <Button onClick={() => setModalSLA(true)} icon={<Plus size={16} />}>
+              <Button onClick={() => setModalSLA(true)}>
+                <Plus size={16} className="mr-1 inline-block" />
                 Nova SLA
               </Button>
             </CardHeader>
