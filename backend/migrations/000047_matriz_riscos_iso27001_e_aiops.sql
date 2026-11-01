@@ -35,6 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_riscos_categoria ON riscos(categoria);
 CREATE INDEX IF NOT EXISTS idx_riscos_status ON riscos(status);
 
 -- 3. Carga inicial de riscos municipais oficiais (Prefeitura, SMS e SEMECEL)
+-- +goose StatementBegin
 DO $$
 DECLARE
     v_pref_id UUID;
@@ -65,8 +66,8 @@ BEGIN
     SET titulo = EXCLUDED.titulo, descricao = EXCLUDED.descricao, plano_mitigacao = EXCLUDED.plano_mitigacao;
 
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP TABLE IF EXISTS riscos;
 ALTER TABLE atendimento_solicitacoes DROP COLUMN IF EXISTS incidente_pai_id;
-
