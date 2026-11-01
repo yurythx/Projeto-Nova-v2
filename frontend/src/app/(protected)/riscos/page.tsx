@@ -4,13 +4,10 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
-  Filter,
   Flame,
   Plus,
   RefreshCw,
-  Shield,
   ShieldAlert,
-  ShieldCheck,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/plataforma/PageHeader";
@@ -68,35 +65,35 @@ function badgeSeveridade(nivel: NivelSeveridade, score?: number) {
   const label = score ? `${score} • ${nivel.toUpperCase()}` : nivel.toUpperCase();
   switch (nivel) {
     case "critico":
-      return <Badge variant="danger" className="bg-red-600 text-white font-semibold">{label}</Badge>;
+      return <Badge tone="danger" className="font-semibold">{label}</Badge>;
     case "alto":
-      return <Badge variant="warning" className="bg-orange-500 text-white font-semibold">{label}</Badge>;
+      return <Badge tone="warning" className="font-semibold">{label}</Badge>;
     case "medio":
-      return <Badge variant="warning" className="bg-amber-400 text-gray-950 font-semibold">{label}</Badge>;
+      return <Badge tone="warning" className="font-semibold">{label}</Badge>;
     case "baixo":
-      return <Badge variant="success" className="bg-emerald-600 text-white font-semibold">{label}</Badge>;
+      return <Badge tone="success" className="font-semibold">{label}</Badge>;
   }
 }
 
 function badgeStatus(status: StatusRisco) {
   switch (status) {
     case "identificado":
-      return <Badge variant="neutral">{ROTULOS_STATUS[status]}</Badge>;
+      return <Badge tone="neutral">{ROTULOS_STATUS[status]}</Badge>;
     case "em_tratamento":
-      return <Badge variant="info">{ROTULOS_STATUS[status]}</Badge>;
+      return <Badge tone="info">{ROTULOS_STATUS[status]}</Badge>;
     case "mitigado":
-      return <Badge variant="success">{ROTULOS_STATUS[status]}</Badge>;
+      return <Badge tone="success">{ROTULOS_STATUS[status]}</Badge>;
     case "monitorado":
-      return <Badge variant="warning">{ROTULOS_STATUS[status]}</Badge>;
+      return <Badge tone="warning">{ROTULOS_STATUS[status]}</Badge>;
     case "aceito":
-      return <Badge variant="danger">{ROTULOS_STATUS[status]}</Badge>;
+      return <Badge tone="danger">{ROTULOS_STATUS[status]}</Badge>;
   }
 }
 
 export default function RiscosPage() {
   const { can } = usePlataforma();
   const podeGerenciar = can("riscos:manage");
-  const { currentEntity } = useEntityFilter();
+  const { activeEntity } = useEntityFilter();
 
   const [filtroCategoria, setFiltroCategoria] = useState<string>("");
   const [filtroStatus, setFiltroStatus] = useState<string>("");
@@ -118,7 +115,7 @@ export default function RiscosPage() {
   const [impacto, setImpacto] = useState<number>(3);
   const [estrategia, setEstrategia] = useState<EstrategiaRisco>("mitigar");
   const [planoMitigacao, setPlanoMitigacao] = useState("");
-  const [controleISO, setControleISO] = useState("");
+  const [controleISO, setControleISO] = useState<string>(CONTROLES_ISO27001_SUGESTOES[0] ?? "");
   const [status, setStatus] = useState<StatusRisco>("identificado");
   const [responsavelNome, setResponsavelNome] = useState("");
 
@@ -165,7 +162,7 @@ export default function RiscosPage() {
     setImpacto(3);
     setEstrategia("mitigar");
     setPlanoMitigacao("");
-    setControleISO(CONTROLES_ISO27001_SUGESTOES[0]);
+    setControleISO(CONTROLES_ISO27001_SUGESTOES[0] ?? "");
     setStatus("identificado");
     setResponsavelNome("");
     setErroForm(null);
@@ -218,7 +215,7 @@ export default function RiscosPage() {
           plano_mitigacao: planoMitigacao,
           controle_iso27001: controleISO,
           responsavel_nome: responsavelNome,
-          unidade_id: currentEntity?.id,
+          unidade_id: activeEntity && activeEntity !== "all" ? activeEntity : undefined,
         };
         await riscosApi.criar(payload);
       }
@@ -285,7 +282,7 @@ export default function RiscosPage() {
     () =>
       [1, 2, 3, 4, 5].map((val) => ({
         value: val.toString(),
-        label: PROBABILIDADE_ROTULOS[val],
+        label: PROBABILIDADE_ROTULOS[val] ?? String(val),
       })),
     [],
   );
@@ -294,7 +291,7 @@ export default function RiscosPage() {
     () =>
       [1, 2, 3, 4, 5].map((val) => ({
         value: val.toString(),
-        label: IMPACTO_ROTULOS[val],
+        label: IMPACTO_ROTULOS[val] ?? String(val),
       })),
     [],
   );
@@ -387,7 +384,7 @@ export default function RiscosPage() {
             </div>
             {celulaFiltro && (
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => setCelulaFiltro(null)}
                 className="text-xs"
@@ -509,9 +506,9 @@ export default function RiscosPage() {
 
       {/* Tabela de Riscos */}
       <DataState
-        isLoading={isLoading}
+        loading={isLoading}
         error={error}
-        isEmpty={riscosFiltrados.length === 0}
+        empty={riscosFiltrados.length === 0}
         emptyTitle="Nenhum risco encontrado"
         emptyDescription="Nenhum risco corresponde aos filtros selecionados ou ainda não há riscos cadastrados para esta unidade."
       >
@@ -543,7 +540,7 @@ export default function RiscosPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge tone="neutral" className="text-xs">
                         {ROTULOS_CATEGORIA[r.categoria]}
                       </Badge>
                     </td>
@@ -592,7 +589,7 @@ export default function RiscosPage() {
       {/* Modal de Criação / Edição de Risco */}
       <Dialog
         open={modalAberto}
-        onOpenChange={setModalAberto}
+        onClose={() => setModalAberto(false)}
         title={riscoEmEdicao ? `Gerenciar Risco ${riscoEmEdicao.codigo}` : "Cadastrar Novo Risco (ISO 27001)"}
       >
         <form onSubmit={salvarRisco} className="space-y-4">
@@ -747,7 +744,7 @@ export default function RiscosPage() {
           <div className="flex justify-end gap-2 pt-3 border-t">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => setModalAberto(false)}
             >
               Cancelar
