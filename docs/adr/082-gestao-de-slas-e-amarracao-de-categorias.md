@@ -32,3 +32,4 @@ Para garantir paridade operacional com o GLPI e permitir governança granular po
 - **Positivas**: Flexibilidade total para definir prazos específicos por tipo de serviço (ex.: falha de link crítico com SLA de 2 horas vs. solicitação de toner com SLA de 24 horas) sem distorcer a matriz genérica de impacto/urgência.
 - **Interoperabilidade**: Compatibilidade nativa com as importações e sincronizações contínuas do GLPI.
 - **Auditoria**: Todas as alterações de SLA e amarrações geram eventos de domínio auditáveis (`atendimento.sla.criada`, `atendimento.sla.atualizada`, `atendimento.categoria.sla_vinculada`).
+
