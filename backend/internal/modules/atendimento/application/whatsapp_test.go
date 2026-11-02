@@ -16,7 +16,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
-// waFalho é o repositório real com falhas nas leituras da entrada.
+// waFalho Ã© o repositÃ³rio real com falhas nas leituras da entrada.
 type waFalho struct {
 	domain.Repository
 	numero, lista, reserva bool
@@ -68,46 +68,46 @@ func TestRespostaPeloWhatsApp(t *testing.T) {
 	id := func() string { return "wamid." + uuid.NewString() }
 
 	// Sem chamado em andamento, a pessoa sabe como abrir.
-	if r, err := c.base.ReceberWhatsApp(ctx, quem, "oi", id()); err != nil || !strings.Contains(r, "não tem chamado") {
+	if r, err := c.base.ReceberWhatsApp(ctx, quem, "oi", id()); err != nil || !strings.Contains(r, "nÃ£o tem chamado") {
 		t.Fatalf("sem chamado: %q %v", r, err)
 	}
 
-	// Um só em andamento: a mensagem entra nele, uma vez.
+	// Um sÃ³ em andamento: a mensagem entra nele, uma vez.
 	sol := c.abrir(t)
 	mensagem := id()
 	r, err := c.base.ReceberWhatsApp(ctx, quem, "  voltou a funcionar  ", mensagem)
 	if err != nil || r != fmt.Sprintf("Recebemos a sua mensagem no chamado #%d. A equipe responde por aqui e na Central de Atendimento.", sol.Numero) {
-		t.Fatalf("único: %q %v", r, err)
+		t.Fatalf("Ãºnico: %q %v", r, err)
 	}
 	if r, err := c.base.ReceberWhatsApp(ctx, quem, "voltou a funcionar", mensagem); err != nil || r != "" {
 		t.Fatalf("reentrega: %q %v", r, err)
 	}
 	if got := comentarios(t, c, sol.ID); len(got) != 1 || got[0] != "Resposta pelo WhatsApp:\nvoltou a funcionar" {
-		t.Fatalf("comentário: %v", got)
+		t.Fatalf("comentÃ¡rio: %v", got)
 	}
 
-	// Dois em andamento: sem número, pede o número; com ele, entra no certo.
+	// Dois em andamento: sem nÃºmero, pede o nÃºmero; com ele, entra no certo.
 	outro := c.abrir(t)
 	if r, err := c.base.ReceberWhatsApp(ctx, quem, "e agora?", id()); err != nil || !strings.Contains(r, "mais de um chamado") {
-		t.Fatalf("vários: %q %v", r, err)
+		t.Fatalf("vÃ¡rios: %q %v", r, err)
 	}
 	if r, err := c.base.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d obrigado", outro.Numero), id()); err != nil ||
 		!strings.Contains(r, fmt.Sprintf("#%d", outro.Numero)) || len(comentarios(t, c, outro.ID)) != 1 {
-		t.Fatalf("pelo número: %q %v", r, err)
+		t.Fatalf("pelo nÃºmero: %q %v", r, err)
 	}
 
-	// Quem atende responde pela central; quem não participa, não responde.
+	// Quem atende responde pela central; quem nÃ£o participa, nÃ£o responde.
 	if _, err := c.base.Atribuir(ctx, c.tecnico, sol.ID, c.tecnico.UserID); err != nil {
 		t.Fatal(err)
 	}
-	if r, err := c.base.ReceberWhatsApp(ctx, c.tecnico.UserID, fmt.Sprintf("#%d já resolvo", sol.Numero), id()); err != nil || !strings.Contains(r, "responda pela Central") {
-		t.Fatalf("responsável: %q %v", r, err)
+	if r, err := c.base.ReceberWhatsApp(ctx, c.tecnico.UserID, fmt.Sprintf("#%d jÃ¡ resolvo", sol.Numero), id()); err != nil || !strings.Contains(r, "responda pela Central") {
+		t.Fatalf("responsÃ¡vel: %q %v", r, err)
 	}
 	estranho := dbtest.User(t, c.pool)
-	if r, err := c.base.ReceberWhatsApp(ctx, estranho, fmt.Sprintf("#%d", sol.Numero), id()); err != nil || !strings.Contains(r, "não é seu") {
+	if r, err := c.base.ReceberWhatsApp(ctx, estranho, fmt.Sprintf("#%d", sol.Numero), id()); err != nil || !strings.Contains(r, "nÃ£o Ã© seu") {
 		t.Fatalf("estranho: %q %v", r, err)
 	}
-	if r, err := c.base.ReceberWhatsApp(ctx, quem, "#999999999 oi", id()); err != nil || !strings.Contains(r, "Não encontramos o chamado #999999999") {
+	if r, err := c.base.ReceberWhatsApp(ctx, quem, "#999999999 oi", id()); err != nil || !strings.Contains(r, "NÃ£o encontramos o chamado #999999999") {
 		t.Fatalf("inexistente: %q %v", r, err)
 	}
 
@@ -115,7 +115,7 @@ func TestRespostaPeloWhatsApp(t *testing.T) {
 	if _, err := c.pool.Exec(ctx, `UPDATE atendimento_solicitacoes SET estado = 'encerrado' WHERE id = $1`, outro.ID); err != nil {
 		t.Fatal(err)
 	}
-	if r, err := c.base.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d e isso?", outro.Numero), id()); err != nil || !strings.Contains(r, "já foi encerrado") {
+	if r, err := c.base.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d e isso?", outro.Numero), id()); err != nil || !strings.Contains(r, "jÃ¡ foi encerrado") {
 		t.Fatalf("encerrado: %q %v", r, err)
 	}
 	for _, caso := range []struct{ texto, id string }{
@@ -128,6 +128,33 @@ func TestRespostaPeloWhatsApp(t *testing.T) {
 	}
 }
 
+func TestRespostaPeloWhatsAppCSAT(t *testing.T) {
+	ctx := context.Background()
+	c := novoCenario(t)
+	sol := c.abrir(t)
+	quem := c.servidor.UserID
+	id := func() string { return "wamid." + uuid.NewString() }
+
+	if _, err := c.pool.Exec(ctx, "UPDATE atendimento_solicitacoes SET estado = 'resolvido' WHERE id = $1", sol.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	r, err := c.base.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d ainda falta algo?", sol.Numero), id())
+	if err != nil || !strings.Contains(r, "foi concluído. Para avaliá-lo, envie uma nota de 1 a 5") {
+		t.Fatalf("orientacao CSAT: %q %v", r, err)
+	}
+
+	r, err = c.base.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d 5 excelente atendimento", sol.Numero), id())
+	if err != nil || !strings.Contains(r, "Agradecemos a sua avaliação (nota 5)") {
+		t.Fatalf("avaliacao CSAT: %q %v", r, err)
+	}
+
+	r, err = c.base.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d nota 4", sol.Numero), id())
+	if err != nil || !strings.Contains(r, "já foi avaliado anteriormente") {
+		t.Fatalf("avaliacao duplicada: %q %v", r, err)
+	}
+}
+
 func TestRespostaPeloWhatsAppComFalhas(t *testing.T) {
 	ctx := context.Background()
 	c := novoCenario(t)
@@ -135,20 +162,20 @@ func TestRespostaPeloWhatsAppComFalhas(t *testing.T) {
 	quem := c.servidor.UserID
 	real := infrastructure.NewRepository()
 	for nome, repo := range map[string]domain.Repository{
-		"número":  waFalho{Repository: real, numero: true},
+		"nÃºmero":  waFalho{Repository: real, numero: true},
 		"lista":   waFalho{Repository: real, lista: true},
 		"reserva": waFalho{Repository: real, reserva: true},
 	} {
 		s := application.NewService(c.pool, repo, eventosFalham{}, nil)
 		texto := "oi"
-		if nome == "número" {
+		if nome == "nÃºmero" {
 			texto = fmt.Sprintf("#%d oi", sol.Numero)
 		}
 		if _, err := s.ReceberWhatsApp(ctx, quem, texto, "wamid."+uuid.NewString()); !errors.Is(err, errFalha) {
 			t.Errorf("%s: %v", nome, err)
 		}
 	}
-	// O comentário que falha libera a reserva: a reentrega do provedor grava.
+	// O comentÃ¡rio que falha libera a reserva: a reentrega do provedor grava.
 	mensagem := "wamid." + uuid.NewString()
 	falho := application.NewService(c.pool, real, eventosFalham{tipo: application.EventoSolicitacaoComentada}, nil)
 	if _, err := falho.ReceberWhatsApp(ctx, quem, "oi", mensagem); err == nil {

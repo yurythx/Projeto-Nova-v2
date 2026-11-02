@@ -19,6 +19,15 @@ const classificacao = {
   created_at: "2026-10-27T10:00:00Z",
 };
 
+const resolucao = {
+  id: "sug-3",
+  solicitacao_id: "sol-1",
+  tipo: "resolucao",
+  conexao: "IA local",
+  resolucao: "1. Verificar cabo de rede.\n2. Reiniciar o switch do setor.",
+  created_at: "2026-10-27T10:02:00Z",
+};
+
 const resumo = {
   id: "sug-2",
   solicitacao_id: "sol-1",
@@ -120,6 +129,33 @@ describe("AssistenteIA (ADR 065)", () => {
     expect(await screen.findByText(/Falta testar o certificado/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ajudou" }));
     expect(await screen.findByText("Obrigado: o resumo ajudou.")).toBeInTheDocument();
+  });
+
+  it("sugere resolução técnica e avalia roteiro", async () => {
+    const user = userEvent.setup();
+    const backend = mockBackend({
+      ...base,
+      "GET v1/atendimento/ia": { data: { disponivel: true } },
+      "POST v1/atendimento/solicitacoes/sol-1/ia/resolucao": {
+        status: 201,
+        data: resolucao,
+      },
+      "POST v1/atendimento/ia/sugestoes/sug-3/decisao": {
+        data: { ...resolucao, decisao: "aceita" },
+      },
+    });
+    renderApp(<AssistenteIA solicitacaoId="sol-1" editavel onAplicarClassificacao={vi.fn()} />);
+
+    await user.click(await screen.findByRole("button", { name: "Sugerir resolução técnica" }));
+    expect(await screen.findByText(/Verificar cabo de rede/)).toBeInTheDocument();
+    expect(screen.getByText("Roteiro técnico sugerido")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copiar roteiro" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ajudou" }));
+    expect(await screen.findByText("Obrigado: a resolução ajudou.")).toBeInTheDocument();
+    expect(backend.to("POST v1/atendimento/ia/sugestoes/sug-3/decisao")[0]?.body).toEqual({
+      aceita: true,
+    });
   });
 
   it("em chamado encerrado só oferece o resumo, e a falha da IA vira aviso", async () => {

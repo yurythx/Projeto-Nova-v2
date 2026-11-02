@@ -42,6 +42,10 @@ const sistemaResumo = `Você resume chamados de uma central de serviços de TI p
 Em até 5 linhas curtas, em português: o problema, o que já foi feito e o que falta.
 Não invente fatos, nomes ou datas que não estejam no texto. Se faltar informação, diga o que falta.`
 
+const sistemaResolucao = `Você é um especialista em suporte técnico de TI para uma central de serviços municipal (ITSM / ITIL).
+Com base no título, descrição e histórico do chamado, sugira um roteiro de resolução técnica claro, objetivo e passo a passo em português para o técnico executar.
+Se houver procedimentos de diagnóstico padrão ou causas comuns para esse tipo de falha, liste-os de forma direta.`
+
 // EstadoIA diz se a IA do atendimento pode ser usada agora.
 type EstadoIA struct {
 	Disponivel bool `json:"disponivel"`
@@ -116,6 +120,42 @@ func (s *Service) Resumir(ctx context.Context, identity auth.Identity, id uuid.U
 	}
 	return s.gravarSugestao(ctx, identity, domain.Sugestao{
 		SolicitacaoID: id, Tipo: domain.SugestaoResumo, Conexao: conexao, Resumo: resumo,
+	})
+}
+
+// SugerirResolucao pede uma recomendação de solução técnica passo a passo
+// para auxiliar o técnico a resolver o chamado com celeridade e aderência às boas práticas.
+func (s *Service) SugerirResolucao(ctx context.Context, identity auth.Identity, id uuid.UUID) (domain.Sugestao, error) {
+	sol, err := s.paraIA(ctx, identity, id)
+	if err != nil {
+		return domain.Sugestao{}, err
+	}
+	comentarios, err := s.repo.ListComentarios(ctx, s.pool, id, true)
+	if err != nil {
+		return domain.Sugestao{}, MapError(err)
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "Oferta: %s\nEstado: %s\nTítulo: %s\nDescrição: %s\n", sol.OfertaNome, sol.Estado, sol.Titulo, sol.Descricao)
+	for _, c := range comentarios {
+		quem := "Resposta"
+		switch {
+		case c.Interno:
+			quem = "Nota interna"
+		case c.AutorID != nil && *c.AutorID == sol.SolicitanteID:
+			quem = "Solicitante"
+		}
+		fmt.Fprintf(&b, "\n%s (%s): %s", quem, c.CreatedAt.Format("02/01 15:04"), c.Texto)
+	}
+	texto, conexao, err := s.assistente.Perguntar(ctx, sistemaResolucao, b.String(), 600)
+	if err != nil {
+		return domain.Sugestao{}, MapError(erroDaIA(err))
+	}
+	resolucao, err := domain.LerResolucao(texto)
+	if err != nil {
+		return domain.Sugestao{}, MapError(err)
+	}
+	return s.gravarSugestao(ctx, identity, domain.Sugestao{
+		SolicitacaoID: id, Tipo: domain.SugestaoResolucao, Conexao: conexao, Resolucao: resolucao,
 	})
 }
 

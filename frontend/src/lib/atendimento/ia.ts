@@ -10,7 +10,7 @@ export interface ClassificacaoSugerida {
   motivo: string;
 }
 
-export type TarefaIA = "classificacao" | "resumo";
+export type TarefaIA = "classificacao" | "resumo" | "resolucao";
 export type DecisaoIA = "aceita" | "recusada";
 
 export interface SugestaoIA {
@@ -20,6 +20,7 @@ export interface SugestaoIA {
   conexao: string;
   classificacao?: ClassificacaoSugerida;
   resumo?: string;
+  resolucao?: string;
   decisao?: DecisaoIA;
   created_at: string;
 }
@@ -35,6 +36,7 @@ export interface IndicadorIA {
 export const TAREFA_IA: Record<TarefaIA, string> = {
   classificacao: "Classificação",
   resumo: "Resumo",
+  resolucao: "Resolução Técnica",
 };
 
 /** Parte das sugestões decididas que foi aceita, de 0 a 100. Sem nenhuma

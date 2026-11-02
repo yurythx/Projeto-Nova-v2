@@ -50,6 +50,18 @@ func TestLerResumo(t *testing.T) {
 	}
 }
 
+func TestLerResolucao(t *testing.T) {
+	if r, err := LerResolucao("\n  1. Verificar cabo de rede.\n2. Reiniciar switch.  \n"); err != nil || r != "1. Verificar cabo de rede.\n2. Reiniciar switch." {
+		t.Fatalf("resolucao: %q %v", r, err)
+	}
+	if _, err := LerResolucao("   \n "); !errors.Is(err, ErrRespostaDaIA) {
+		t.Fatalf("em branco: %v", err)
+	}
+	if r, _ := LerResolucao(strings.Repeat("a", maxResumo*2+10)); utf8.RuneCountInString(r) != maxResumo*2+1 {
+		t.Fatalf("resolucao longa é cortada: %d", utf8.RuneCountInString(r))
+	}
+}
+
 func TestDecidirSugestaoUmaVez(t *testing.T) {
 	quem, agora := uuid.New(), time.Date(2026, 10, 27, 9, 0, 0, 0, time.UTC)
 	s := Sugestao{ID: uuid.New()}

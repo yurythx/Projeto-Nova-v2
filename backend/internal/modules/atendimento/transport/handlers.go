@@ -1,4 +1,4 @@
-// Package transport expõe o atendimento: cadastro, abertura e fila.
+﻿// Package transport expÃµe o atendimento: cadastro, abertura e fila.
 package transport
 
 import (
@@ -15,7 +15,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
-// OfertaRequest é o corpo de criação e edição de uma oferta.
+// OfertaRequest Ã© o corpo de criaÃ§Ã£o e ediÃ§Ã£o de uma oferta.
 type OfertaRequest struct {
 	Nome      string          `json:"nome" validate:"required,max=160"`
 	Descricao string          `json:"descricao" validate:"max=4000"`
@@ -31,7 +31,7 @@ type OfertaRequest struct {
 	Ordem       *int    `json:"ordem" validate:"omitempty,min=0,max=999"`
 }
 
-// CategoriaRequest é o corpo de criação e edição de uma categoria.
+// CategoriaRequest Ã© o corpo de criaÃ§Ã£o e ediÃ§Ã£o de uma categoria.
 type CategoriaRequest struct {
 	Nome      string `json:"nome" validate:"required,max=80"`
 	Descricao string `json:"descricao" validate:"max=300"`
@@ -40,12 +40,12 @@ type CategoriaRequest struct {
 	Ativa     *bool  `json:"ativa"`
 }
 
-// EquipeRequest é o corpo de criação e edição de uma equipe.
+// EquipeRequest Ã© o corpo de criaÃ§Ã£o e ediÃ§Ã£o de uma equipe.
 type EquipeRequest struct {
 	Nome      string      `json:"nome" validate:"required,max=160"`
 	UnidadeID *uuid.UUID  `json:"unidade_id"`
 	Membros   []uuid.UUID `json:"membros" validate:"max=100"`
-	// OLAHoras é o prazo da equipe para as suas tarefas, em horas corridas.
+	// OLAHoras Ã© o prazo da equipe para as suas tarefas, em horas corridas.
 	OLAHoras *int `json:"ola_horas" validate:"omitempty,min=1,max=8760"`
 }
 
@@ -63,10 +63,10 @@ func NewHandlers(svc *application.Service, logger *slog.Logger) *Handlers {
 }
 
 // RegisterRoutes monta o cadastro (atendimento:manage), a abertura
-// (atendimento:abrir) e a fila (atendimento:atender). O serviço ainda
-// restringe pela unidade. Ver, mudar o estado e comentar servem às duas
-// pontas: o serviço decide pelo papel de quem pede (quem abriu ou quem
-// atende a unidade) e devolve não encontrado a quem não é nenhum dos dois.
+// (atendimento:abrir) e a fila (atendimento:atender). O serviÃ§o ainda
+// restringe pela unidade. Ver, mudar o estado e comentar servem Ã s duas
+// pontas: o serviÃ§o decide pelo papel de quem pede (quem abriu ou quem
+// atende a unidade) e devolve nÃ£o encontrado a quem nÃ£o Ã© nenhum dos dois.
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtendimentoAbrir))
@@ -94,6 +94,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/atendimento/ia/indicadores", h.IndicadoresIA)
 		r.Post("/atendimento/solicitacoes/{id}/ia/classificacao", h.SugerirClassificacao)
 		r.Post("/atendimento/solicitacoes/{id}/ia/resumo", h.Resumir)
+		r.Post("/atendimento/solicitacoes/{id}/ia/resolucao", h.SugerirResolucao)
 		r.Post("/atendimento/ia/sugestoes/{id}/decisao", h.DecidirSugestao)
 		r.Put("/atendimento/solicitacoes/{id}/segredo", h.VincularSegredo)
 		r.Put("/atendimento/solicitacoes/{id}/ativo", h.VincularAtivo)
@@ -109,8 +110,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Delete("/atendimento/solicitacoes/{id}/apontamentos/{apontamentoId}", h.ExcluirApontamento)
 		r.Post("/atendimento/solicitacoes/{id}/tarefas/{tarefaId}", h.FazerTarefa)
 	})
-	// Aprovação em etapas (ADR 068): quem aprova pode não ter permissão
-	// de atendimento; o domínio confere se a pessoa aprova a etapa.
+	// AprovaÃ§Ã£o em etapas (ADR 068): quem aprova pode nÃ£o ter permissÃ£o
+	// de atendimento; o domÃ­nio confere se a pessoa aprova a etapa.
 	r.Get("/atendimento/aprovacoes", h.AguardandoMinhaAprovacao)
 	r.Post("/atendimento/solicitacoes/{id}/aprovacao", h.DecidirAprovacao)
 	r.Get("/atendimento/solicitacoes/{id}", h.ObterSolicitacao)
@@ -177,7 +178,7 @@ func (req OfertaRequest) entrada() (application.OfertaEntrada, error) {
 		if *req.CategoriaID != "" {
 			var err error
 			if id, err = uuid.Parse(*req.CategoriaID); err != nil {
-				return in, apperrors.Validation("categoria_id não é um identificador válido")
+				return in, apperrors.Validation("categoria_id nÃ£o Ã© um identificador vÃ¡lido")
 			}
 		}
 		in.CategoriaID = &id
@@ -342,8 +343,8 @@ func (h *Handlers) Candidatos(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, lista)
 }
 
-// RegisterPublicRoutes monta a entrada de eventos (ADR 067): sem sessão
-// de pessoa, autenticada pelo token da máquina.
+// RegisterPublicRoutes monta a entrada de eventos (ADR 067): sem sessÃ£o
+// de pessoa, autenticada pelo token da mÃ¡quina.
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Post("/atendimento/eventos/alertmanager", h.ReceberAlertas)
 }

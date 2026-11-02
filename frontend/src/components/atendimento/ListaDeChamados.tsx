@@ -385,13 +385,20 @@ export function TabelaDeChamados({
               <TableRow key={s.id}>
                 <TableCell className="tabular-nums text-muted">#{s.numero}</TableCell>
                 <TableCell>
-                  <button
-                    type="button"
-                    className="text-left font-medium text-primary hover:underline"
-                    onClick={() => aoAbrir(s)}
-                  >
-                    {s.titulo}
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      className="text-left font-medium text-primary hover:underline"
+                      onClick={() => aoAbrir(s)}
+                    >
+                      {s.titulo}
+                    </button>
+                    {s.incidente_pai_id && (
+                      <Badge tone="info" className="text-[10px] py-0 px-1.5">
+                        Filho
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-muted">
                     {rotuloTipo(s.tipo)} · {s.oferta_nome}
                   </p>

@@ -15,6 +15,7 @@ import (
 const (
 	SugestaoClassificacao = "classificacao"
 	SugestaoResumo        = "resumo"
+	SugestaoResolucao     = "resolucao"
 
 	DecisaoAceita   = "aceita"
 	DecisaoRecusada = "recusada"
@@ -48,6 +49,7 @@ type Sugestao struct {
 	Conexao       string                 `json:"conexao"`
 	Classificacao *ClassificacaoSugerida `json:"classificacao,omitempty"`
 	Resumo        string                 `json:"resumo,omitempty"`
+	Resolucao     string                 `json:"resolucao,omitempty"`
 	PedidaPor     *uuid.UUID             `json:"pedida_por,omitempty"`
 	Decisao       *string                `json:"decisao,omitempty"`
 	DecididaPor   *uuid.UUID             `json:"decidida_por,omitempty"`
@@ -81,6 +83,15 @@ func LerResumo(texto string) (string, error) {
 		return "", ErrRespostaDaIA
 	}
 	return cortar(t, maxResumo), nil
+}
+
+// LerResolucao aceita o roteiro de resolução técnica sugerido pela IA.
+func LerResolucao(texto string) (string, error) {
+	t := strings.TrimSpace(texto)
+	if t == "" {
+		return "", ErrRespostaDaIA
+	}
+	return cortar(t, maxResumo*2), nil
 }
 
 // Decidir registra se quem atende aceitou ou recusou. Uma vez só.

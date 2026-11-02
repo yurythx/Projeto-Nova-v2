@@ -15,6 +15,7 @@ import (
 type conteudoIA struct {
 	Classificacao *domain.ClassificacaoSugerida `json:"classificacao,omitempty"`
 	Resumo        string                        `json:"resumo,omitempty"`
+	Resolucao     string                        `json:"resolucao,omitempty"`
 }
 
 const sugestaoCols = `id, solicitacao_id, tipo, conexao, conteudo, pedida_por, decisao, decidida_por, decidida_em, created_at`
@@ -29,14 +30,14 @@ func scanSugestao(row interface{ Scan(...any) error }) (domain.Sugestao, error) 
 	if err := json.Unmarshal(raw, &c); err != nil {
 		return domain.Sugestao{}, err
 	}
-	s.Classificacao, s.Resumo = c.Classificacao, c.Resumo
+	s.Classificacao, s.Resumo, s.Resolucao = c.Classificacao, c.Resumo, c.Resolucao
 	return s, nil
 }
 
 // InsertSugestao grava a sugestão ainda sem decisão.
 func (r *Repository) InsertSugestao(ctx context.Context, db database.DBTX, s domain.Sugestao) error {
 	// Só inteiros e textos: o Marshal não tem como falhar.
-	conteudo, _ := json.Marshal(conteudoIA{Classificacao: s.Classificacao, Resumo: s.Resumo})
+	conteudo, _ := json.Marshal(conteudoIA{Classificacao: s.Classificacao, Resumo: s.Resumo, Resolucao: s.Resolucao})
 	_, err := db.Exec(ctx, `INSERT INTO atendimento_ia_sugestoes
 		(id, solicitacao_id, tipo, conexao, conteudo, pedida_por, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -68,14 +69,14 @@ func (r *Repository) DecidirSugestao(ctx context.Context, db database.DBTX, s do
 }
 
 // IndicadoresIA conta as sugestões de cada tarefa desde a data, no
-// escopo das unidades dos chamados. As duas tarefas sempre aparecem.
+// escopo das unidades dos chamados. As tarefas sempre aparecem.
 func (r *Repository) IndicadoresIA(ctx context.Context, db database.DBTX, desde time.Time, restrito bool, unidades []uuid.UUID) ([]domain.IndicadorIA, error) {
 	rows, err := db.Query(ctx, `SELECT t.tipo,
 			count(g.id),
 			count(g.id) FILTER (WHERE g.decisao = 'aceita'),
 			count(g.id) FILTER (WHERE g.decisao = 'recusada'),
 			count(g.id) FILTER (WHERE g.id IS NOT NULL AND g.decisao IS NULL)
-		FROM (VALUES ('classificacao'), ('resumo')) AS t(tipo)
+		FROM (VALUES ('classificacao'), ('resumo'), ('resolucao')) AS t(tipo)
 		LEFT JOIN (
 			SELECT g.id, g.tipo, g.decisao
 			FROM atendimento_ia_sugestoes g

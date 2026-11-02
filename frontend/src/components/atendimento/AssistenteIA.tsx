@@ -38,11 +38,12 @@ export function AssistenteIA({
   const { run, pending } = useAction();
   const [classificacao, setClassificacao] = useState<SugestaoIA | null>(null);
   const [resumo, setResumo] = useState<SugestaoIA | null>(null);
-  const [pedindo, setPedindo] = useState<"classificacao" | "resumo" | null>(null);
+  const [resolucao, setResolucao] = useState<SugestaoIA | null>(null);
+  const [pedindo, setPedindo] = useState<"classificacao" | "resumo" | "resolucao" | null>(null);
 
   if (!estado.data?.disponivel) return null;
 
-  async function pedir(tarefa: "classificacao" | "resumo") {
+  async function pedir(tarefa: "classificacao" | "resumo" | "resolucao") {
     setPedindo(tarefa);
     const res = await run(() =>
       apiClient.post<SugestaoIA>(`v1/atendimento/solicitacoes/${solicitacaoId}/ia/${tarefa}`, {}),
@@ -50,7 +51,8 @@ export function AssistenteIA({
     setPedindo(null);
     if (!res) return;
     if (tarefa === "classificacao") setClassificacao(res.data);
-    else setResumo(res.data);
+    else if (tarefa === "resumo") setResumo(res.data);
+    else setResolucao(res.data);
   }
 
   async function decidir(sugestao: SugestaoIA, aceita: boolean, sucesso?: string) {
@@ -63,7 +65,8 @@ export function AssistenteIA({
     );
     if (!res) return;
     if (sugestao.tipo === "classificacao") setClassificacao(res.data);
-    else setResumo(res.data);
+    else if (sugestao.tipo === "resumo") setResumo(res.data);
+    else setResolucao(res.data);
   }
 
   async function aplicar(sugestao: SugestaoIA) {
@@ -109,6 +112,18 @@ export function AssistenteIA({
           >
             Resumir o chamado
           </Button>
+          {editavel && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              loading={pedindo === "resolucao"}
+              disabled={pending}
+              onClick={() => void pedir("resolucao")}
+            >
+              Sugerir resolução técnica
+            </Button>
+          )}
         </div>
 
         <div aria-live="polite" className="flex flex-col gap-4">
@@ -187,6 +202,59 @@ export function AssistenteIA({
               )}
               <p className="text-xs text-muted">
                 Gerado por: {resumo.conexao}. Confira antes de repassar.
+              </p>
+            </section>
+          )}
+
+          {resolucao?.resolucao && (
+            <section
+              aria-label="Resolução técnica sugerida"
+              className="flex flex-col gap-2 rounded-md border border-surface-border p-3 text-sm"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-foreground">Roteiro técnico sugerido</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(resolucao.resolucao || "");
+                  }}
+                >
+                  Copiar roteiro
+                </Button>
+              </div>
+              <p className="whitespace-pre-line text-muted">{resolucao.resolucao}</p>
+              {resolucao.decisao ? (
+                <p role="status" className="text-xs text-muted">
+                  {resolucao.decisao === "aceita"
+                    ? "Obrigado: a resolução ajudou."
+                    : "Obrigado: a resolução não ajudou."}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={pending}
+                    onClick={() => void decidir(resolucao, true, "Roteiro marcado como útil")}
+                  >
+                    Ajudou
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={() => void decidir(resolucao, false, "Sugestão descartada")}
+                  >
+                    Não ajudou
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-muted">
+                Gerado por: {resolucao.conexao}. Valide tecnicamente antes de aplicar em produção.
               </p>
             </section>
           )}

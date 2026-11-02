@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -13,6 +14,29 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
+
+var padraoNotaCSAT = regexp.MustCompile(`(?i)^(?:nota\s*[:=]?\s*)?([1-5])\b(?:\s*(?:/\s*5|\*+|estrelas?))?(?:(?:\s*[-–—:]\s*|\s+)(.*))?$`)
+
+func extrairNotaCSAT(texto string) (int, string, bool) {
+	t := strings.TrimSpace(numeroCorreio.ReplaceAllString(texto, ""))
+	t = strings.TrimSpace(t)
+	if t == "" {
+		return 0, "", false
+	}
+	m := padraoNotaCSAT.FindStringSubmatch(t)
+	if m == nil {
+		return 0, "", false
+	}
+	nota, err := strconv.Atoi(m[1])
+	if err != nil || nota < 1 || nota > 5 {
+		return 0, "", false
+	}
+	comentario := ""
+	if len(m) > 2 {
+		comentario = strings.TrimSpace(m[2])
+	}
+	return nota, comentario, true
+}
 
 // Respostas da entrada pelo WhatsApp: a pessoa sabe o que aconteceu com a
 // mensagem que mandou.
@@ -41,9 +65,24 @@ func (s *Service) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto,
 		// Repetida: o provedor reentregou, e a confirmação já foi.
 		return "", err
 	}
+	if sol.Estado == domain.EstadoResolvido || sol.Estado == domain.EstadoAtendido {
+		if nota, comentario, ok := extrairNotaCSAT(texto); ok {
+			if _, err := s.Avaliar(ctx, auth.Identity{UserID: usuario}, sol.ID, nota, comentario); err != nil {
+				if errors.Is(err, domain.ErrAvaliacaoExistente) {
+					return fmt.Sprintf("O chamado #%d já foi avaliado anteriormente. Agradecemos sua colaboração!", sol.Numero), nil
+				}
+				_ = s.repo.LiberarCorreio(ctx, s.pool, chave)
+				return "", err
+			}
+			return fmt.Sprintf("Agradecemos a sua avaliação (nota %d) para o chamado #%d! Sua opinião ajuda a aprimorar nossos serviços de TI.", nota, sol.Numero), nil
+		}
+	}
 	if _, err := s.Comentar(ctx, auth.Identity{UserID: usuario}, sol.ID, "Resposta pelo WhatsApp:\n"+texto, false); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSolicitacaoFinalizada):
+			if sol.Estado == domain.EstadoResolvido || sol.Estado == domain.EstadoAtendido {
+				return fmt.Sprintf("O chamado #%d foi concluído. Para avaliá-lo, envie uma nota de 1 a 5 (ex: #%d 5 Excelente). Para outro assunto, abra um novo chamado na Central de Atendimento.", sol.Numero, sol.Numero), nil
+			}
 			return fmt.Sprintf("O chamado #%d já foi encerrado. Para outro assunto, abra um novo chamado na Central de Atendimento.", sol.Numero), nil
 		case errors.Is(err, domain.ErrComentarioInvalido):
 			return "", nil

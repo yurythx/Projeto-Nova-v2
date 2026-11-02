@@ -53,6 +53,21 @@ func (h *Handlers) Resumir(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteCreated(w, s)
 }
 
+func (h *Handlers) SugerirResolucao(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	s, err := h.svc.SugerirResolucao(r.Context(), identity, id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteCreated(w, s)
+}
+
 func (h *Handlers) DecidirSugestao(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.UUIDParam(r, "id")
 	if err != nil {

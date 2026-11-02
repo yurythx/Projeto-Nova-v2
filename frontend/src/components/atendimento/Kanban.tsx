@@ -136,7 +136,14 @@ export function Kanban({
           <>
             <div className="flex items-center justify-between gap-2 text-xs text-muted">
               <span className="tabular-nums">#{s.numero}</span>
-              <Badge>{rotuloTipo(s.tipo)}</Badge>
+              <div className="flex items-center gap-1">
+                {s.incidente_pai_id && (
+                  <Badge tone="info" className="text-[10px] py-0 px-1">
+                    Filho
+                  </Badge>
+                )}
+                <Badge>{rotuloTipo(s.tipo)}</Badge>
+              </div>
             </div>
             <NomeClicavel
               nome={vista.titulo || s.titulo}
