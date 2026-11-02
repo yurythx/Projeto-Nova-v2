@@ -54,8 +54,8 @@ func (m *Module) Manifest() kernel.Manifest {
 		Route:          "/tramite",
 		Permissions: []kernel.PermissionInfo{
 			{Key: "tramite:create", Description: "Abrir processos"},
-			{Key: "tramite:route", Description: "Tramitar processos entre unidades"},
-			{Key: "tramite:manage", Description: "Reabrir processos e atuar em processos restritos de qualquer unidade"},
+			{Key: "tramite:route", Description: "Tramitar e reabrir processos na unidade"},
+			{Key: "tramite:manage", Description: "Atuar em processos restritos das unidades cobertas e reabrir"},
 		},
 	}
 }

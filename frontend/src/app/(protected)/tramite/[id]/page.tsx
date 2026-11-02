@@ -34,7 +34,6 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { Documento, OrgTree, ProcessoView, UploadTicket } from "@/lib/plataforma/types";
 import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 
@@ -339,7 +338,6 @@ function DocumentoView({ id }: { id: string }) {
 
 export default function ProcessoPage() {
   const { id } = useParams<{ id: string }>();
-  const { can } = usePlataforma();
   const proc = useApiQuery<ProcessoView>(`v1/tramite/processos/${id}`);
   const { run, pending } = useAction();
   const [acao, setAcao] = useState<Acao | null>(null);
@@ -417,7 +415,7 @@ export default function ProcessoPage() {
                   <Archive size={16} aria-hidden="true" className="mr-1" /> Arquivar
                 </Button>
               )}
-              {!aberto && can("tramite:manage") && (
+              {!aberto && p.can_route && (
                 <Button variant="secondary" onClick={() => setAcao("reabrir")}>
                   <RotateCcw size={16} aria-hidden="true" className="mr-1" /> Reabrir
                 </Button>

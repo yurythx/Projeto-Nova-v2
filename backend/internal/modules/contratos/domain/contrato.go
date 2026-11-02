@@ -41,7 +41,8 @@ type Contrato struct {
 	ValorCentavos  int64      `json:"valor_centavos"`
 	UnidadeID      *uuid.UUID `json:"unidade_id,omitempty"`
 	// PrazoHoras é o prazo de atendimento do fornecedor, em horas
-	// corridas: o contrato de apoio que o chamado mede (ADR 071).
+	// úteis do expediente da unidade do chamado (ADR 071). Sem
+	// política de prazo, a medição cai para hora corrida.
 	PrazoHoras *int      `json:"prazo_horas,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`

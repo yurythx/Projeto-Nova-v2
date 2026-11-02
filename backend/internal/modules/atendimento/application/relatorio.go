@@ -140,7 +140,18 @@ func (s *Service) RelatorioPorSecretaria(ctx context.Context, identity auth.Iden
 		if err != nil {
 			return Relatorio{}, MapError(err)
 		}
-		out.Contratos = domain.ResumirContratos(comContrato, ps, agora)
+		cache := map[string]*domain.Calendario{}
+		relogios := map[uuid.UUID]func(time.Time, time.Time) time.Duration{}
+		for _, sol := range comContrato {
+			cal, err := s.calendarioDe(ctx, cache, sol.UnidadeID, desde, agora)
+			if err != nil {
+				return Relatorio{}, MapError(err)
+			}
+			if cal != nil {
+				relogios[sol.ID] = cal.Util
+			}
+		}
+		out.Contratos = domain.ResumirContratos(comContrato, ps, agora, relogios)
 	}
 	return out, nil
 }

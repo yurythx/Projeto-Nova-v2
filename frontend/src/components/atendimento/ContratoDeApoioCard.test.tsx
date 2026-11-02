@@ -79,7 +79,7 @@ describe("ContratoDeApoioCard", () => {
         onMudou={() => {}}
       />,
     );
-    expect(await screen.findByText("Link · o fornecedor tem 8 h")).toBeInTheDocument();
+    expect(await screen.findByText("Link · o fornecedor tem 8 h úteis")).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Contrato"), "");
     await user.click(screen.getByRole("button", { name: "Salvar contrato" }));
     await waitFor(() =>

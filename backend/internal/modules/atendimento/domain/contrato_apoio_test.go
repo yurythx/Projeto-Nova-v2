@@ -63,7 +63,7 @@ func TestResumirContratos(t *testing.T) {
 		d: ida(9, -1), // com o fornecedor há 1 h
 		f: ida(0, 2),
 	}
-	linhas := ResumirContratos(lista, passagens, h(10))
+	linhas := ResumirContratos(lista, passagens, h(10), nil)
 	if len(linhas) != 2 || linhas[0].Rotulo != "Energia" {
 		t.Fatalf("por rótulo: %+v", linhas)
 	}
@@ -73,5 +73,34 @@ func TestResumirContratos(t *testing.T) {
 	}
 	if s := linhas[0]; s.NoPrazoPercentual != nil || *s.MedianaHoras != 2 || s.Medidos != 1 {
 		t.Fatalf("sem prazo não há percentual: %+v", s)
+	}
+}
+
+// Sexta 16h até segunda 10h são 4 h de expediente (sexta 16–18 e segunda
+// 8–10) e dezenas de horas corridas. O prazo de 4 h só cabe no relógio útil.
+func TestResumirContratosNoExpediente(t *testing.T) {
+	cal, err := NovoCalendario(politicaPadrao(t), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, contrato := uuid.New(), uuid.New()
+	prazo := 4
+	sol := Solicitacao{
+		ID: id, Estado: EstadoAguardandoTerceiro,
+		ContratoApoioID: &contrato, ContratoApoio: "Link", ContratoPrazoHoras: &prazo,
+	}
+	passagens := map[uuid.UUID][]Passagem{
+		id: {{Para: EstadoAguardandoTerceiro, Em: em("2026-10-02", "16:00")}},
+	}
+	agora := em("2026-10-05", "10:00")
+	uteis := ResumirContratos([]Solicitacao{sol}, passagens, agora, map[uuid.UUID]func(time.Time, time.Time) time.Duration{
+		id: cal.Util,
+	})
+	if len(uteis) != 1 || uteis[0].ComFornecedor != 1 || uteis[0].Atrasados != 0 {
+		t.Fatalf("4 h úteis cabem no prazo: %+v", uteis)
+	}
+	corridas := ResumirContratos([]Solicitacao{sol}, passagens, agora, nil)
+	if corridas[0].Atrasados != 1 {
+		t.Fatalf("hora corrida estoura as 4 h: %+v", corridas[0])
 	}
 }

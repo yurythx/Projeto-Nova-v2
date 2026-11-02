@@ -65,5 +65,4 @@ Depende de quem opera:
 
 Melhorias registradas nos ADRs, sem pressa:
 
-- Prazo do fornecedor em horas úteis. Hoje é corrido ([ADR 071](adr/071-contrato-de-apoio.md)).
-- Anexos do GLPI na importação ([ADR 072](adr/072-importador-do-glpi.md)).
+- Anexos do GLPI na importação ([ADR 072](adr/072-importador-do-glpi.md)). Fica com a virada do GLPI, sem data.

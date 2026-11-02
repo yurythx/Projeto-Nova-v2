@@ -35,7 +35,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.With(auth.RequirePermission(h.logger, auth.PermTramiteRoute)).Post("/tramite/processos/{id}/tramitar", h.Tramitar)
 	r.Post("/tramite/processos/{id}/concluir", h.Concluir)
 	r.Post("/tramite/processos/{id}/arquivar", h.Arquivar)
-	r.With(auth.RequirePermission(h.logger, auth.PermTramiteManage)).Post("/tramite/processos/{id}/reabrir", h.Reabrir)
+	// Quem tramita na unidade (tramite:route) reabre; manage continua valendo.
+	// O serviço confere a unidade, como em concluir e arquivar.
+	r.Post("/tramite/processos/{id}/reabrir", h.Reabrir)
 	r.Post("/tramite/processos/{id}/acessos", h.ConcederAcesso)
 	r.Delete("/tramite/processos/{id}/acessos/{userID}", h.RevogarAcesso)
 	r.Post("/tramite/processos/{id}/uploads", h.Upload)

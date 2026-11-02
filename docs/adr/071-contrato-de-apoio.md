@@ -10,10 +10,10 @@ Quando o chamado depende de um fornecedor (link, energia, garantia de equipament
 
 ## Decisão
 
-1. **O contrato tem prazo de atendimento.** Campo opcional em horas corridas (1 a 8760), definido por quem gere contratos (`PUT /contratos/contratos/{id}/prazo`).
+1. **O contrato tem prazo de atendimento.** Campo opcional em horas (1 a 8760), definido por quem gere contratos (`PUT /contratos/contratos/{id}/prazo`). Na medição, cada hora é hora útil do expediente da unidade do chamado: os turnos e os feriados da política de prazo, o mesmo relógio do SLA. Sem política, a conta volta a ser corrida.
 2. **O chamado aponta o contrato de apoio.** Quem atende escolhe, entre os contratos vigentes que servem às unidades que atende (e os institucionais), o contrato que o chamado espera (`PUT /atendimento/solicitacoes/{id}/contrato`). Nulo limpa.
 3. **O chamado guarda uma cópia** do rótulo (número, título e fornecedor) e do prazo de quando o contrato foi apontado. A medição usa o combinado na hora em que o chamado foi ao fornecedor. Ela não muda se o contrato for editado ou apagado depois, e não depende do plug-in Contratos estar ligado. Não há chave estrangeira entre os plug-ins.
-4. **A medição sai das passagens.** Soma-se o tempo em "aguardando terceiro", em todas as idas. O relatório por secretaria ganha a seção "Contratos de apoio": chamados, quantos voltaram do fornecedor, a % desses dentro do prazo, a mediana, quantos estão com o fornecedor agora e quantos desses já passaram do prazo.
+4. **A medição sai das passagens.** Soma-se o tempo em "aguardando terceiro", em todas as idas, no expediente vigente da unidade. O número de horas fica copiado no chamado; o calendário é o da política atual. O relatório por secretaria ganha a seção "Contratos de apoio": chamados, quantos voltaram do fornecedor, a % desses dentro do prazo, a mediana, quantos estão com o fornecedor agora e quantos desses já passaram do prazo.
 5. **A porta fica no `app`.** O atendimento pede a lista e a confirmação por uma interface, e o `app` a liga ao serviço do plug-in Contratos. Com o plug-in desligado, a lista responde 503 e o vínculo é recusado. Os chamados já vinculados continuam medidos.
 6. Quem pediu não vê o contrato: é assunto da equipe com o fornecedor.
 
@@ -21,4 +21,4 @@ Quando o chamado depende de um fornecedor (link, energia, garantia de equipament
 
 A central passa a ter números para a reunião com o fornecedor, e a gestão de contratos ganha o argumento para glosa ou renovação. Com o OLA (ADR 070) e o SLA da política de prazo, a cadeia de acordos do ITIL fica completa: o que a central promete, o que cada equipe promete e o que cada fornecedor promete.
 
-O tempo é corrido. Contrato com prazo em horas úteis precisaria do calendário do fornecedor, e isso fica para quando aparecer o primeiro caso.
+O relógio é o expediente da unidade, não um calendário próprio do fornecedor. Quem atende fora do horário da prefeitura só conta o trecho que cai no turno. Unidade sem política de prazo continua em hora corrida.

@@ -60,13 +60,14 @@ export function ContratoDeApoioCard({
           <p className="text-sm">
             {solicitacao.contrato_apoio}
             {solicitacao.contrato_prazo_horas
-              ? ` · o fornecedor tem ${solicitacao.contrato_prazo_horas} h`
+              ? ` · o fornecedor tem ${solicitacao.contrato_prazo_horas} h úteis`
               : " · sem prazo no contrato"}
           </p>
         ) : (
           <p className="text-sm text-muted">
             Quando o chamado depender de um fornecedor, aponte o contrato: o tempo em
-            &quot;aguardando terceiro&quot; passa a contar contra o prazo dele.
+            &quot;aguardando terceiro&quot; passa a contar, em horas úteis do expediente da
+            unidade, contra o prazo dele.
           </p>
         )}
         {ligado && !finalizada && (

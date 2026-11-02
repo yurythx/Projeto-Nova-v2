@@ -346,7 +346,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   desativado não abre processo novo.
 - **Numeração:** `NNNNNN/AAAA`, sequencial por ano.
 - **Estados:** `aberto` → `em_tramitacao` → `concluido` → `arquivado`.
-  Reabrir (`tramite:manage` na unidade atual) volta para `em_tramitacao`. Só se arquiva o
+  Reabrir (`tramite:route` ou `tramite:manage` na unidade atual) volta para `em_tramitacao`. O perfil Protocolo reabre. Quem só está lotado, sem uma dessas permissões na unidade, não reabre. Só se arquiva o
   que está **concluído**.
 - **Abrir:** exige `tramite:create` e lotação na unidade de origem, que
   precisa estar ativa (e a entidade dela também).
@@ -519,6 +519,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   conclusão, confirma (encerra) ou reabre. Quando a equipe aguarda o
   servidor, a resposta dele devolve a solicitação ao atendimento.
   Encerrada ou cancelada não muda mais nem recebe comentário.
+- **Contrato de apoio:** o chamado aponta um contrato vigente e guarda a cópia do prazo. O tempo em `aguardando_terceiro` conta em horas úteis do expediente da unidade (a política de prazo, com feriados). Sem política, a conta é corrida. O número de horas não muda se o contrato for editado depois.
 - **Conversa:** a resposta é vista pelas duas pontas; a **nota interna**
   é só da equipe e não chega a quem abriu, nem no aviso.
 - Cada passagem de estado fica registrada com horário e autor (base do
@@ -787,6 +788,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   gravada. A conta de instalações lê ativos em uso ou manutenção. Sem
   inventário, a tela diz que nenhum ativo informou programas. Se o
   agente cortou a lista em 100, a conta fica marcada como parcial.
+- O prazo de atendimento do fornecedor, quando informado, vai de 1 a 8760 horas. No chamado, essas horas são úteis: seguem o expediente da unidade que atende.
 - O sino avisa uma vez em cada marco: 30 dias, 7 dias, no dia e depois
   do vencimento. O aviso vai para quem administra ou tem
   `contratos:manage` no alcance da unidade.
@@ -867,6 +869,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   - **Problemas:** catálogo de erros conhecidos, causas-raiz e contornos.
   - **Mudanças:** planejamento de janelas, avaliação do CAB e reversões.
   - **Projetos:** planos de ação, cronogramas, marcos e entregas.
+  - **Riscos:** matriz e tratamento dos riscos de TI. Aparece para quem tem `riscos:read` ou `riscos:manage`.
 
 ### Contato (ouvidoria)
 - Formulário público sem login.
@@ -953,17 +956,17 @@ Comportamentos do código hoje que merecem decisão de quem administra:
 2. **Processo sigiloso não é visto nem por `tramite:manage`.** É
    intencional (só autor e credenciados), mas quem administra precisa
    saber.
-3. **Reabrir processo exige `tramite:manage`** (na unidade atual),
-   que nenhum perfil de sistema tem além do administrador. O Protocolo conclui e arquiva, mas
-   não reabre.
-4. **Sem isolamento entre entidades** (seção 6): uma implantação serve a
+3. **Sem isolamento entre entidades** (seção 6): uma implantação serve a
    uma organização (que pode ter várias entidades), não a várias
    organizações independentes.
 
 Corrigidos (antes eram pontos de atenção): perfis de gestão com escopo
 valiam para a plataforma toda (ADR 013); estrutura desativada seguia
 dando acesso e recebendo processos, e excluir uma unidade-mãe deixava as
-subunidades sem mãe em silêncio — ver a seção 2.4.
+subunidades sem mãe em silêncio — ver a seção 2.4. Reabrir processo
+passou a valer para `tramite:route` na unidade atual, que é o que o
+perfil Protocolo já tem; `tramite:manage` continua reabrindo e segue
+necessário para processo restrito fora da lotação.
 
 ### 9. Catálogo de Atendimento e Alinhamento Kanban vs. Lista (Pós-Migração GLPI)
 
@@ -984,7 +987,7 @@ subunidades sem mãe em silêncio — ver a seção 2.4.
 
 1. **Estrutura de Menus em 5 Seções Especializadas:**
    - Inspirada no GLPI e nas práticas ITIL v5, a barra lateral é particionada em grupos funcionais de alto nível:
-     - **Assistência (ITSM / ITIL v5):** Dashboard de Governança, Calendário Operacional, Atendimento (Chamados/Requisições), Problemas, Mudanças (RFC) e Projetos.
+     - **Assistência (ITSM / ITIL v5):** Dashboard de Governança, Calendário Operacional, Atendimento (Chamados/Requisições), Problemas, Mudanças (RFC), Projetos e Riscos.
      - **Ativos (CMDB / Gerenciamento de Configuração):** Ativos de TI (Hardware, Software, Redes) e Catálogo de Produtos Digitais.
      - **Módulos (Ferramentas de Apoio & Trâmites):** Processos Administrativos (Trâmite/Protocolo), Ocorrências Graves de TI, Wiki (Base de Conhecimento), Mercúrio (Chat) e Cofre de Senhas.
      - **Administração (Pessoas, Estrutura & Governança - Core Imutável):** Gestão de Usuários, Estrutura Organizacional, Perfis de Acesso, Mapeamento AD e Trilha de Auditoria (WORM).

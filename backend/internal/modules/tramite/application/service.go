@@ -322,11 +322,11 @@ func (s *Service) Arquivar(ctx context.Context, identity auth.Identity, id uuid.
 	})
 }
 
-// Reabrir reabre um processo concluído/arquivado (tramite:manage na rota).
+// Reabrir reabre um processo concluído/arquivado. Vale para quem tramita
+// na unidade atual (tramite:route) ou para quem tem tramite:manage ali.
 func (s *Service) Reabrir(ctx context.Context, identity auth.Identity, id uuid.UUID, despacho string) (domain.Processo, error) {
 	return s.transition(ctx, identity, id, "reabertura", "", despacho, func(_ context.Context, _ pgx.Tx, p *domain.Processo) error {
-		// tramite:manage cobrindo a unidade em que o processo está (ADR 013).
-		if !auth.Can(identity, auth.PermTramiteManage, auth.InUnidade(p.UnidadeAtualID)) {
+		if !domain.PodeTramitar(identity, p.UnidadeAtualID) {
 			return domain.ErrForbidden
 		}
 		if !domain.Encerrado(p.Status) {

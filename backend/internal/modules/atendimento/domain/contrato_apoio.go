@@ -43,16 +43,22 @@ type LinhaContrato struct {
 }
 
 // TempoComTerceiro soma o tempo que o chamado passou em "aguardando
-// terceiro", na ordem das passagens. Se ainda está lá, conta até agora e
-// diz que segue com o fornecedor.
+// terceiro", na ordem das passagens, em hora corrida. Se ainda está lá,
+// conta até agora e diz que segue com o fornecedor.
 func TempoComTerceiro(s Solicitacao, passagens []Passagem, agora time.Time) (time.Duration, bool) {
+	return tempoNoRelogio(s, passagens, agora, nil)
+}
+
+// tempoNoRelogio é a mesma soma. Com relógio, cada trecho usa o expediente
+// da unidade (o calendário da política de prazo). Sem ele, a hora é corrida.
+func tempoNoRelogio(s Solicitacao, passagens []Passagem, agora time.Time, relogio func(time.Time, time.Time) time.Duration) (time.Duration, bool) {
 	ps := slices.Clone(passagens)
 	slices.SortStableFunc(ps, func(a, b Passagem) int { return a.Em.Compare(b.Em) })
 	var total time.Duration
 	var desde *time.Time
 	for _, p := range ps {
 		if desde != nil {
-			total += p.Em.Sub(*desde)
+			total += entre(*desde, p.Em, relogio)
 			desde = nil
 		}
 		if p.Para == EstadoAguardandoTerceiro {
@@ -62,14 +68,26 @@ func TempoComTerceiro(s Solicitacao, passagens []Passagem, agora time.Time) (tim
 	}
 	aberto := desde != nil && s.Estado == EstadoAguardandoTerceiro
 	if aberto {
-		total += agora.Sub(*desde)
+		total += entre(*desde, agora, relogio)
 	}
 	return total, aberto
 }
 
+func entre(a, b time.Time, relogio func(time.Time, time.Time) time.Duration) time.Duration {
+	if relogio != nil {
+		return relogio(a, b)
+	}
+	if !b.After(a) {
+		return 0
+	}
+	return b.Sub(a)
+}
+
 // ResumirContratos mede cada contrato de apoio pelos chamados que apontam
-// para ele. O prazo é o copiado no chamado quando foi vinculado.
-func ResumirContratos(lista []Solicitacao, passagens map[uuid.UUID][]Passagem, agora time.Time) []LinhaContrato {
+// para ele. O prazo é o copiado no chamado quando foi vinculado. relogios,
+// quando traz o expediente da unidade daquele chamado, conta hora útil;
+// chamado ausente no mapa conta hora corrida.
+func ResumirContratos(lista []Solicitacao, passagens map[uuid.UUID][]Passagem, agora time.Time, relogios map[uuid.UUID]func(time.Time, time.Time) time.Duration) []LinhaContrato {
 	idx := map[uuid.UUID]int{}
 	out := []LinhaContrato{}
 	horas := map[uuid.UUID][]float64{}
@@ -86,7 +104,11 @@ func ResumirContratos(lista []Solicitacao, passagens map[uuid.UUID][]Passagem, a
 		}
 		l := &out[i]
 		l.Pedidos++
-		tempo, aberto := TempoComTerceiro(s, passagens[s.ID], agora)
+		var relogio func(time.Time, time.Time) time.Duration
+		if relogios != nil {
+			relogio = relogios[s.ID]
+		}
+		tempo, aberto := tempoNoRelogio(s, passagens[s.ID], agora, relogio)
 		fora := s.ContratoPrazoHoras != nil && tempo > time.Duration(*s.ContratoPrazoHoras)*time.Hour
 		switch {
 		case aberto:

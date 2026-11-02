@@ -260,6 +260,20 @@ describe("Trâmite — processo", () => {
     expect(screen.queryByText(/Novo documento/)).not.toBeNull();
   });
 
+  it("protocolo reabre na unidade sem tramite:manage", async () => {
+    mockBackend({
+      ...identityRoutes({
+        permissions: ["tramite:route"],
+        scopes: [{ perfil: "protocolo", origem: "manual", permissions: ["tramite:route"] }],
+      }),
+      "GET v1/tramite/processos/p1": {
+        data: processo({ status: "arquivado", can_act: true, can_route: true }),
+      },
+    });
+    renderApp(<ProcessoPage />);
+    expect(await screen.findByRole("button", { name: /Reabrir/ })).toBeInTheDocument();
+  });
+
   it("sem atuação: nada de ações nem documentos novos", async () => {
     mockBackend({
       ...identityRoutes({ permissions: ["tramite:read"] }),
