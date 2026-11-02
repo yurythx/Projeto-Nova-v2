@@ -61,6 +61,10 @@ type SolicitacaoRepository interface {
 	SetContratoApoio(ctx context.Context, db database.DBTX, id uuid.UUID, c *ContratoDeApoio, agora time.Time) error
 	// SetAtivo grava ou limpa (nil) o item de configuração (CMDB) vinculado.
 	SetAtivo(ctx context.Context, db database.DBTX, id uuid.UUID, ativo *uuid.UUID, nome string, agora time.Time) error
+	// SetIncidentePai grava ou limpa (nil) o incidente pai agrupado (AIOps).
+	SetIncidentePai(ctx context.Context, db database.DBTX, id uuid.UUID, paiID *uuid.UUID, agora time.Time) error
+	// ListarFilhosDoIncidente lista os chamados agrupados sob um incidente pai.
+	ListarFilhosDoIncidente(ctx context.Context, db database.DBTX, paiID uuid.UUID) ([]Solicitacao, error)
 	// AbrirAtribuicao abre o trecho do responsável, com a equipe dele na
 	// unidade; FecharAtribuicao fecha o trecho aberto, se houver (ADR 073).
 	AbrirAtribuicao(ctx context.Context, db database.DBTX, solicitacao, responsavel uuid.UUID, unidade *uuid.UUID, em time.Time) error

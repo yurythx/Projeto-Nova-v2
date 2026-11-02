@@ -262,6 +262,8 @@ func MapError(err error) error {
 		return causa(err, apperrors.Conflict("assuma a solicitação ou escolha um responsável antes de atender"))
 	case errors.Is(err, domain.ErrResponsavelInvalido):
 		return causa(err, apperrors.Validation("o responsável precisa ser membro ativo de uma equipe da unidade"))
+	case errors.Is(err, domain.ErrIncidentePaiInvalido):
+		return causa(err, apperrors.Validation("incidente pai inválido: não é permitido auto-vínculo ou encadeamento"))
 	case errors.Is(err, domain.ErrSolicitacaoFinalizada):
 		return causa(err, apperrors.Conflict("a solicitação já foi encerrada ou cancelada"))
 	case errors.Is(err, domain.ErrCofreDesligado):

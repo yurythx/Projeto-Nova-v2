@@ -70,6 +70,8 @@ type Solicitacao struct {
 	// nome copiado quando foi vinculado.
 	AtivoID   *uuid.UUID `json:"ativo_id,omitempty"`
 	AtivoNome string     `json:"ativo_nome,omitempty"`
+	// IncidentePaiID aponta para o incidente pai correlato (AIOps).
+	IncidentePaiID *uuid.UUID `json:"incidente_pai_id,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
 

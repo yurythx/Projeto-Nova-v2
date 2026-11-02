@@ -855,3 +855,53 @@ func payloadDe(sol domain.Solicitacao) map[string]any {
 	}
 	return p
 }
+
+
+// VincularIncidentePai associa um chamado filho a um incidente pai (AIOps), ou limpa o vínculo (nil).
+func (s *Service) VincularIncidentePai(ctx context.Context, identity auth.Identity, id uuid.UUID, paiID *uuid.UUID) (Detalhe, error) {
+	err := s.alterar(ctx, identity, id, func(ctx context.Context, tx pgx.Tx, sol domain.Solicitacao, ps []string) ([]notificacoes.Enviada, error) {
+		if !slices.Contains(ps, domain.PapelTecnico) {
+			return nil, domain.ErrForaDoEscopo
+		}
+		if sol.Finalizada() {
+			return nil, domain.ErrSolicitacaoFinalizada
+		}
+		if paiID != nil {
+			if *paiID == sol.ID {
+				return nil, domain.ErrIncidentePaiInvalido
+			}
+			pai, err := s.repo.GetSolicitacao(ctx, tx, *paiID)
+			if err != nil {
+				return nil, err
+			}
+			if pai.IncidentePaiID != nil {
+				return nil, domain.ErrIncidentePaiInvalido
+			}
+		}
+		if err := s.repo.SetIncidentePai(ctx, tx, sol.ID, paiID, s.agora().UTC()); err != nil {
+			return nil, err
+		}
+		payload := payloadDe(sol)
+		if paiID != nil {
+			payload["incidente_pai_id"] = paiID.String()
+		}
+		return nil, s.registrar(ctx, tx, "atendimento.solicitacao.incidente_pai", "solicitacao", sol.ID, payload, payload, nil)
+	})
+	if err != nil {
+		return Detalhe{}, err
+	}
+	return s.Obter(ctx, identity, id)
+}
+
+// ListarFilhosDoIncidente lista os chamados agrupados sob um incidente pai.
+func (s *Service) ListarFilhosDoIncidente(ctx context.Context, identity auth.Identity, paiID uuid.UUID) ([]domain.Solicitacao, error) {
+	sol, err := s.repo.GetSolicitacao(ctx, s.pool, paiID)
+	if err != nil {
+		return nil, err
+	}
+	ps := papeis(identity, sol)
+	if !slices.Contains(ps, domain.PapelTecnico) && !slices.Contains(ps, domain.PapelSolicitante) {
+		return nil, domain.ErrForaDoEscopo
+	}
+	return s.repo.ListarFilhosDoIncidente(ctx, s.pool, paiID)
+}

@@ -9,6 +9,7 @@ import { AprovacoesCard } from "@/components/atendimento/AprovacoesCard";
 import { ApontamentosCard } from "@/components/atendimento/ApontamentosCard";
 import { AssistenteIA } from "@/components/atendimento/AssistenteIA";
 import { AtivoVinculadoCard } from "@/components/atendimento/AtivoVinculadoCard";
+import { IncidentePaiCard } from "@/components/atendimento/IncidentePaiCard";
 import { TarefasCard } from "@/components/atendimento/TarefasCard";
 import { SegredoVinculadoCard } from "@/components/atendimento/SegredoVinculadoCard";
 import { ContratoDeApoioCard } from "@/components/atendimento/ContratoDeApoioCard";
@@ -325,6 +326,11 @@ export function SolicitacaoDetalhe() {
               />
             )}
 
+            <IncidentePaiCard
+              solicitacao={s}
+              podeEditar={tecnico && !finalizada}
+              onAtualizado={recarregar}
+            />
             {tecnico && s.tipo === "incidente" && <ProblemasDoIncidente solicitacaoId={s.id} />}
             {tecnico && <MudancasDaSolicitacao solicitacaoId={s.id} />}
             {tecnico && <ProjetosDaSolicitacao solicitacaoId={s.id} />}

@@ -1,3 +1,4 @@
+import { apiClient } from "@/lib/api/client";
 // Atendimento: tipos da API e o vocabulário da tela. O servidor vê a
 // oferta e o estado em linguagem simples; "incidente" e "requisição"
 // aparecem só para a equipe.
@@ -84,6 +85,8 @@ export interface Solicitacao {
   responsavel_id?: string;
   responsavel_nome?: string;
   unidade_nome?: string;
+  /** Incidente Pai correlato no agrupamento AIOps (ITIL v5). */
+  incidente_pai_id?: string | null;
   /** Categoria do catálogo da oferta (ADR 078). */
   categoria_nome?: string;
   resolvida_em?: string;
@@ -604,3 +607,13 @@ export interface ResumoApontamentosAtendimento {
   total_horas: number;
   apontamentos: ApontamentoAtendimento[];
 }
+
+
+export const incidentePaiApi = {
+  vincular: (solicitacaoId: string, paiId: string | null) =>
+    apiClient.put<Detalhe>(`v1/atendimento/solicitacoes/${solicitacaoId}/incidente-pai`, {
+      incidente_pai_id: paiId,
+    }),
+  listarFilhos: (paiId: string) =>
+    apiClient.get<Solicitacao[]>(`v1/atendimento/solicitacoes/${paiId}/filhos`),
+};

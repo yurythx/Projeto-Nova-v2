@@ -40,6 +40,7 @@ var (
 	ErrSemResponsavel        = errors.New("atendimento: a solicitação precisa de um responsável")
 	ErrResponsavelInvalido   = errors.New("atendimento: o responsável precisa ser de uma equipe da unidade")
 	ErrSolicitacaoFinalizada = errors.New("atendimento: solicitação encerrada ou cancelada")
+	ErrIncidentePaiInvalido  = errors.New("atendimento: incidente pai inválido")
 	// ErrEspelho: o chamado veio do GLPI e a sincronização está ligada; ele
 	// muda lá até a virada (ADR 081).
 	ErrEspelho             = errors.New("atendimento: chamado atendido no GLPI até a virada")

@@ -320,3 +320,43 @@ func (h *Handlers) Governanca(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteOK(w, g)
 }
+
+
+type IncidentePaiRequest struct {
+	IncidentePaiID *uuid.UUID `json:"incidente_pai_id"`
+}
+
+func (h *Handlers) VincularIncidentePai(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req IncidentePaiRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	detalhe, err := h.svc.VincularIncidentePai(r.Context(), identity, id, req.IncidentePaiID)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, detalhe)
+}
+
+func (h *Handlers) ListarFilhosDoIncidente(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	filhos, err := h.svc.ListarFilhosDoIncidente(r.Context(), identity, id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, filhos)
+}

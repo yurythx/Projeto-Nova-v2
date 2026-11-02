@@ -35,3 +35,4 @@ Para atender aos mais altos padrões de conformidade corporativa e governamental
 - **Conformidade Legal & GRC**: Preparação total para auditorias ISO 27001, LGPD e Tribunal de Contas.
 - **Redução do Tempo de Resposta (MTTR)**: Visão consolidada da criticidade dos serviços essenciais municipais.
 - **Integração Completa**: O módulo de Riscos trabalha em conjunto com a Gestão de Mudanças (CAB), Problemas (Causa Raiz) e CMDB (Ativos).
+

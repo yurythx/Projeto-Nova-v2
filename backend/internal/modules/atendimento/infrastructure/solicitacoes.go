@@ -20,7 +20,7 @@ func nomeDe(alias string) string {
 var solicitacaoSelect = `SELECT s.id, s.numero, s.tipo, s.estado, s.titulo, s.descricao, s.oferta_id, s.produto_id,
 	s.unidade_id, s.solicitante_id, s.responsavel_id, s.resolvida_em, s.encerrada_em, s.created_at, s.updated_at,
 	s.impacto, s.urgencia, s.prioridade, s.meta_resposta_min, s.meta_solucao_min, s.respostas, s.cofre_segredo_id, s.etapa_atual,
-	s.contrato_apoio_id, s.contrato_apoio, s.contrato_prazo_horas, s.ativo_id, s.ativo_nome,
+	s.contrato_apoio_id, s.contrato_apoio, s.contrato_prazo_horas, s.ativo_id, s.ativo_nome, s.incidente_pai_id,
 	o.nome, ` + nomeDe("us") + `, COALESCE(` + nomeDe("ur") + `, ''), COALESCE(un.nome, ''), COALESCE(ca.nome, '')
 	FROM atendimento_solicitacoes s
 	JOIN atendimento_ofertas o ON o.id = s.oferta_id
@@ -94,7 +94,7 @@ func scanSolicitacao(row interface{ Scan(...any) error }) (domain.Solicitacao, e
 	err := row.Scan(&s.ID, &s.Numero, &s.Tipo, &s.Estado, &s.Titulo, &s.Descricao, &s.OfertaID, &s.ProdutoID,
 		&s.UnidadeID, &s.SolicitanteID, &s.ResponsavelID, &s.ResolvidaEm, &s.EncerradaEm, &s.CreatedAt, &s.UpdatedAt,
 		&s.Impacto, &s.Urgencia, &s.Prioridade, &s.MetaRespostaMin, &s.MetaSolucaoMin, &raw, &s.CofreSegredoID, &s.EtapaAtual,
-		&s.ContratoApoioID, &s.ContratoApoio, &s.ContratoPrazoHoras, &s.AtivoID, &s.AtivoNome,
+		&s.ContratoApoioID, &s.ContratoApoio, &s.ContratoPrazoHoras, &s.AtivoID, &s.AtivoNome, &s.IncidentePaiID,
 		&s.OfertaNome, &s.SolicitanteNome, &s.ResponsavelNome, &s.UnidadeNome, &s.CategoriaNome)
 	if err != nil {
 		return domain.Solicitacao{}, err
@@ -407,4 +407,33 @@ func (r *Repository) ReservarCorreio(ctx context.Context, db database.DBTX, mess
 func (r *Repository) LiberarCorreio(ctx context.Context, db database.DBTX, messageID string) error {
 	_, err := db.Exec(ctx, `DELETE FROM correio_recebidos WHERE message_id = $1`, messageID)
 	return mapDB(err)
+}
+
+
+func (r *Repository) SetIncidentePai(ctx context.Context, db database.DBTX, id uuid.UUID, paiID *uuid.UUID, agora time.Time) error {
+	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes SET incidente_pai_id = $2, updated_at = $3 WHERE id = $1`, id, paiID, agora)
+	if err != nil {
+		return mapDB(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
+	}
+	return nil
+}
+
+func (r *Repository) ListarFilhosDoIncidente(ctx context.Context, db database.DBTX, paiID uuid.UUID) ([]domain.Solicitacao, error) {
+	rows, err := db.Query(ctx, solicitacaoSelect+` WHERE s.incidente_pai_id = $1 ORDER BY s.numero ASC`, paiID)
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	defer rows.Close()
+	var out []domain.Solicitacao
+	for rows.Next() {
+		s, err := scanSolicitacao(rows)
+		if err != nil {
+			return nil, mapDB(err)
+		}
+		out = append(out, s)
+	}
+	return out, mapDB(rows.Err())
 }
