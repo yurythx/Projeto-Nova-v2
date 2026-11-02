@@ -23,8 +23,8 @@ const colunasProjeto = `id, numero, titulo, descricao, objetivo, estado, priorid
 	data_inicio_planejada, data_fim_planejada, data_inicio_real, data_fim_real,
 	orcamento, unidade_id, produto_id, gerente_id, gerente_nome, created_at, updated_at`
 
-const colunasTarefa = `id, projeto_id, titulo, descricao, responsavel_nome, estado, ordem,
-	data_limite, created_at, updated_at`
+const colunasTarefa = `id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem,
+	data_limite, created_at, updated_at, origem`
 
 func scanProjeto(row interface{ Scan(...any) error }) (domain.Projeto, error) {
 	var p domain.Projeto
@@ -42,8 +42,8 @@ func scanProjeto(row interface{ Scan(...any) error }) (domain.Projeto, error) {
 func scanTarefa(row interface{ Scan(...any) error }) (domain.Tarefa, error) {
 	var t domain.Tarefa
 	err := row.Scan(
-		&t.ID, &t.ProjetoID, &t.Titulo, &t.Descricao, &t.ResponsavelNome, &t.Estado, &t.Ordem,
-		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt,
+		&t.ID, &t.ProjetoID, &t.Titulo, &t.Descricao, &t.ResponsavelID, &t.ResponsavelNome, &t.Estado, &t.Ordem,
+		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem,
 	)
 	return t, err
 }
@@ -198,6 +198,123 @@ func (r *Repository) Atualizar(ctx context.Context, db database.DBTX, id uuid.UU
 	return &p, nil
 }
 
+func (r *Repository) PosicaoUnidade(ctx context.Context, db database.DBTX, unidade uuid.UUID) (*uuid.UUID, []uuid.UUID, error) {
+	var entidade *uuid.UUID
+	err := db.QueryRow(ctx, `SELECT entidade_id FROM unidades WHERE id = $1`, unidade).Scan(&entidade)
+	if err != nil {
+		if database.IsNoRows(err) {
+			return nil, nil, nil
+		}
+		return nil, nil, mapDB(err)
+	}
+	rows, err := db.Query(ctx, `
+		WITH RECURSIVE acima AS (
+			SELECT parent_id AS id FROM unidades WHERE id = $1
+			UNION ALL
+			SELECT u.parent_id FROM unidades u
+			JOIN acima a ON u.id = a.id
+			WHERE u.parent_id IS NOT NULL
+		)
+		SELECT id FROM acima WHERE id IS NOT NULL`, unidade)
+	if err != nil {
+		return nil, nil, mapDB(err)
+	}
+	defer rows.Close()
+	var acima []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, nil, mapDB(err)
+		}
+		acima = append(acima, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, mapDB(err)
+	}
+	return entidade, acima, nil
+}
+
+// Aprovadores são quem pode reabrir: administrador, gestão global de
+// projetos, gestão da entidade da unidade ou de uma unidade acima.
+func (r *Repository) Aprovadores(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]uuid.UUID, error) {
+	const q = `SELECT DISTINCT u.id
+		FROM users u
+		WHERE u.active AND (
+			'nova-admin' = ANY(u.roles)
+			OR EXISTS (
+				SELECT 1 FROM user_scopes s
+				JOIN perfis pf ON pf.id = s.perfil_id AND pf.ativo
+				WHERE s.user_id = u.id
+					AND pf.permissoes && ARRAY['*', 'projetos:*', 'projetos:manage']::text[]
+					AND (
+						(s.entidade_id IS NULL AND s.unidade_id IS NULL AND s.departamento_id IS NULL)
+						OR (
+							$1::uuid IS NOT NULL AND (
+								s.unidade_id IN (
+									WITH RECURSIVE acima AS (
+										SELECT parent_id AS id FROM unidades WHERE id = $1
+										UNION ALL
+										SELECT un.parent_id FROM unidades un
+										JOIN acima a ON un.id = a.id
+										WHERE un.parent_id IS NOT NULL
+									)
+									SELECT id FROM acima WHERE id IS NOT NULL
+								)
+								OR (
+									s.unidade_id IS NULL AND s.departamento_id IS NULL
+									AND s.entidade_id IS NOT NULL
+									AND s.entidade_id = (SELECT entidade_id FROM unidades WHERE id = $1)
+								)
+							)
+						)
+					)
+			)
+		)`
+	rows, err := db.Query(ctx, q, unidade)
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	defer rows.Close()
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, mapDB(err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, mapDB(err)
+	}
+	return ids, nil
+}
+
+func (r *Repository) SalvarReabertura(ctx context.Context, db database.DBTX, reab *domain.Reabertura) error {
+	reab.CreatedAt = time.Now().UTC()
+	const q = `INSERT INTO projetos_reaberturas
+		(id, projeto_id, motivo, aprovador_id, aprovador_nome, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err := db.Exec(ctx, q, reab.ID, reab.ProjetoID, reab.Motivo, reab.AprovadorID, reab.AprovadorNome, reab.CreatedAt)
+	return mapDB(err)
+}
+
+func (r *Repository) UltimaReabertura(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (domain.Reabertura, bool, error) {
+	const q = `SELECT id, projeto_id, motivo, aprovador_id, aprovador_nome, created_at
+		FROM projetos_reaberturas WHERE projeto_id = $1
+		ORDER BY created_at DESC LIMIT 1`
+	var reab domain.Reabertura
+	err := db.QueryRow(ctx, q, projetoID).Scan(
+		&reab.ID, &reab.ProjetoID, &reab.Motivo, &reab.AprovadorID, &reab.AprovadorNome, &reab.CreatedAt,
+	)
+	if err != nil {
+		if database.IsNoRows(err) {
+			return domain.Reabertura{}, false, nil
+		}
+		return domain.Reabertura{}, false, mapDB(err)
+	}
+	return reab, true, nil
+}
+
 func (r *Repository) Transicionar(ctx context.Context, db database.DBTX, id uuid.UUID, novoEstado string) (*domain.Projeto, error) {
 	now := time.Now().UTC()
 	q := fmt.Sprintf(`UPDATE projetos SET estado = $2, updated_at = $3 WHERE id = $1 RETURNING %s`, colunasProjeto)
@@ -226,25 +343,62 @@ func (r *Repository) CriarTarefa(ctx context.Context, db database.DBTX, t *domai
 	}
 
 	const q = `INSERT INTO projetos_tarefas (
-		id, projeto_id, titulo, descricao, responsavel_nome, estado, ordem, data_limite, created_at, updated_at
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem, data_limite, created_at, updated_at, origem
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	RETURNING created_at, updated_at`
 
 	err := db.QueryRow(ctx, q,
-		t.ID, t.ProjetoID, t.Titulo, t.Descricao, t.ResponsavelNome, t.Estado, t.Ordem, t.DataLimite, t.CreatedAt, t.UpdatedAt,
+		t.ID, t.ProjetoID, t.Titulo, t.Descricao, t.ResponsavelID, t.ResponsavelNome, t.Estado, t.Ordem, t.DataLimite, t.CreatedAt, t.UpdatedAt, t.Origem,
 	).Scan(&t.CreatedAt, &t.UpdatedAt)
 
 	return mapDB(err)
 }
 
-func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
+func (r *Repository) ObterTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (*domain.Tarefa, error) {
+	q := fmt.Sprintf(`SELECT %s FROM projetos_tarefas WHERE id = $1`, colunasTarefa)
+	t, err := scanTarefa(db.QueryRow(ctx, q, id))
+	if err != nil {
+		if database.IsNoRows(err) {
+			return nil, domain.ErrTarefaNaoEncontrada
+		}
+		return nil, mapDB(err)
+	}
+	return &t, nil
+}
+
+// NomeDaPessoa devolve o nome canônico de um usuário ativo. Com unidade,
+// a lotação exibida (perfil do diretório ou escopo principal) precisa ser essa.
+func (r *Repository) NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error) {
+	const q = `SELECT COALESCE(NULLIF(u.display_name, ''), u.username)
+		FROM users u
+		LEFT JOIN directory_profiles dp ON dp.user_id = u.id
+		LEFT JOIN LATERAL (
+			SELECT s.unidade_id FROM user_scopes s
+			WHERE s.user_id = u.id
+			ORDER BY s.principal DESC, s.created_at
+			LIMIT 1
+		) ls ON true
+		WHERE u.id = $1 AND u.active
+		  AND ($2::uuid IS NULL OR COALESCE(dp.unidade_id, ls.unidade_id) = $2)`
+	var nome string
+	err := db.QueryRow(ctx, q, pessoa, unidade).Scan(&nome)
+	if err != nil {
+		if database.IsNoRows(err) {
+			return "", domain.ErrPessoaInvalida
+		}
+		return "", mapDB(err)
+	}
+	return nome, nil
+}
+
+func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
 	now := time.Now().UTC()
 	q := fmt.Sprintf(`UPDATE projetos_tarefas SET
-		titulo = $2, descricao = $3, responsavel_nome = $4, estado = $5, ordem = $6, data_limite = COALESCE($7, data_limite), updated_at = $8
+		titulo = $2, descricao = $3, responsavel_id = $4, responsavel_nome = $5, estado = $6, ordem = $7, data_limite = COALESCE($8, data_limite), updated_at = $9
 		WHERE id = $1
 		RETURNING %s`, colunasTarefa)
 
-	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavel, estado, ordem, dataLimite, now))
+	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavelID, responsavel, estado, ordem, dataLimite, now))
 	if err != nil {
 		return nil, mapDB(err)
 	}
@@ -377,4 +531,80 @@ func (r *Repository) ExcluirApontamento(ctx context.Context, db database.DBTX, i
 	const q = `DELETE FROM projetos_apontamentos WHERE id = $1`
 	_, err := db.Exec(ctx, q, id)
 	return mapDB(err)
+}
+
+func (r *Repository) ObterCarta(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (domain.Carta, bool, error) {
+	const q = `SELECT projeto_id, onde, patrocinador, metodologia, centro_custo, created_at, updated_at
+		FROM projetos_carta WHERE projeto_id = $1`
+	var c domain.Carta
+	err := db.QueryRow(ctx, q, projetoID).Scan(
+		&c.ProjetoID, &c.Onde, &c.Patrocinador, &c.Metodologia, &c.CentroCusto, &c.CreatedAt, &c.UpdatedAt,
+	)
+	if database.IsNoRows(err) {
+		return domain.Carta{}, false, nil
+	}
+	if err != nil {
+		return domain.Carta{}, false, mapDB(err)
+	}
+	return c, true, nil
+}
+
+func (r *Repository) SalvarCarta(ctx context.Context, db database.DBTX, projetoID uuid.UUID, e domain.EntradaCarta) (domain.Carta, error) {
+	now := time.Now().UTC()
+	const q = `INSERT INTO projetos_carta (
+		projeto_id, onde, patrocinador, metodologia, centro_custo, created_at, updated_at
+	) VALUES ($1, $2, $3, $4, $5, $6, $6)
+	ON CONFLICT (projeto_id) DO UPDATE SET
+		onde = EXCLUDED.onde,
+		patrocinador = EXCLUDED.patrocinador,
+		metodologia = EXCLUDED.metodologia,
+		centro_custo = EXCLUDED.centro_custo,
+		updated_at = EXCLUDED.updated_at
+	RETURNING projeto_id, onde, patrocinador, metodologia, centro_custo, created_at, updated_at`
+	var c domain.Carta
+	err := db.QueryRow(ctx, q, projetoID, e.Onde, e.Patrocinador, e.Metodologia, e.CentroCusto, now).Scan(
+		&c.ProjetoID, &c.Onde, &c.Patrocinador, &c.Metodologia, &c.CentroCusto, &c.CreatedAt, &c.UpdatedAt,
+	)
+	if err != nil {
+		return domain.Carta{}, mapDB(err)
+	}
+	return c, nil
+}
+
+func (r *Repository) AtualizarPlano(ctx context.Context, db database.DBTX, id uuid.UUID, p domain.Plano5W2H) (*domain.Projeto, error) {
+	now := time.Now().UTC()
+	q := fmt.Sprintf(`UPDATE projetos SET
+		titulo = $2, descricao = $3, objetivo = $4,
+		data_inicio_planejada = $5, data_fim_planejada = $6,
+		orcamento = $7, gerente_id = $8, gerente_nome = $9, updated_at = $10
+		WHERE id = $1
+		RETURNING %s`, colunasProjeto)
+	item, err := scanProjeto(db.QueryRow(ctx, q,
+		id, p.Titulo, p.Descricao, p.Objetivo, p.Inicio, p.Fim, p.Orcamento, p.GerenteID, p.GerenteNome, now,
+	))
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	return &item, nil
+}
+
+func (r *Repository) ContarEtapasHow(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (int, int, error) {
+	const q = `SELECT
+		COUNT(*) FILTER (WHERE origem = 'how'),
+		COUNT(*) FILTER (WHERE origem = 'how' AND estado = 'concluida')
+		FROM projetos_tarefas WHERE projeto_id = $1`
+	var total, concluidas int
+	if err := db.QueryRow(ctx, q, projetoID).Scan(&total, &concluidas); err != nil {
+		return 0, 0, mapDB(err)
+	}
+	return total, concluidas, nil
+}
+
+func (r *Repository) SomarCusto(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (float64, error) {
+	const q = `SELECT COALESCE(SUM(horas * custo_hora), 0) FROM projetos_apontamentos WHERE projeto_id = $1`
+	var custo float64
+	if err := db.QueryRow(ctx, q, projetoID).Scan(&custo); err != nil {
+		return 0, mapDB(err)
+	}
+	return custo, nil
 }

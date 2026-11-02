@@ -24,8 +24,8 @@ export function ProjetosCronograma({ projetos }: Props) {
     return d;
   });
 
-  // Janela visível de 90 dias a partir da dataBase
-  const diasVisiveis = 90;
+  // Janela visível a partir da dataBase. 90 é o padrão; 180 e 365 cabem um projeto longo.
+  const [diasVisiveis, setDiasVisiveis] = useState(90);
   const dataFim = useMemo(() => {
     const d = new Date(dataBase);
     d.setDate(d.getDate() + diasVisiveis);
@@ -109,11 +109,28 @@ export function ProjetosCronograma({ projetos }: Props) {
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">
-            Cronograma & Linha do Tempo (90 dias)
+            Cronograma & Linha do Tempo ({diasVisiveis} dias)
           </span>
         </div>
 
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-surface-border p-0.5 bg-black/[0.02] dark:bg-white/[0.02]">
+            {[30, 90, 180, 365].map((dias) => (
+              <button
+                key={dias}
+                type="button"
+                aria-pressed={diasVisiveis === dias}
+                onClick={() => setDiasVisiveis(dias)}
+                className={`rounded px-2 py-0.5 text-[11px] font-medium transition-all ${
+                  diasVisiveis === dias
+                    ? "bg-surface shadow-xs text-foreground font-semibold"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                {dias}d
+              </button>
+            ))}
+          </div>
           <Button size="sm" variant="secondary" onClick={mesAnterior} aria-label="Mês anterior">
             <ChevronLeft className="h-4 w-4" />
           </Button>

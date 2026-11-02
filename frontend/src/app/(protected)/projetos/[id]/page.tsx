@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Clock, Link2, Plus, Printer, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, Suspense, useState } from "react";
 
@@ -17,6 +18,9 @@ import {
 } from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
+import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { Painel5W2H } from "@/components/projetos/Painel5W2H";
+import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
 import { Badge } from "@/components/ui/Badge";
@@ -62,6 +66,10 @@ export function ProjetoDetalheConteudo() {
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const { filtrarPorEntidade } = useEntityFilter();
+  const params = useSearchParams();
+  const [aba, setAba] = useState<"ficha" | "5w2h">(
+    params.get("vista") === "5w2h" ? "5w2h" : "ficha",
+  );
 
   const { run, pending } = useAction();
   const lookTarefas = useAparencia(id ? `nova-faixas:tarefas:${id}` : "nova-faixas:tarefas:sem");
@@ -97,7 +105,9 @@ export function ProjetoDetalheConteudo() {
   const [modalTarefa, setModalTarefa] = useState(false);
   const [tarefaTitulo, setTarefaTitulo] = useState("");
   const [tarefaDescricao, setTarefaDescricao] = useState("");
-  const [tarefaResponsavel, setTarefaResponsavel] = useState("");
+  const [tarefaResp, setTarefaResp] = useState({ id: "", nome: "" });
+  const [reabrirAberto, setReabrirAberto] = useState(false);
+  const [motivoReabertura, setMotivoReabertura] = useState("");
   const [tarefaEstado, setTarefaEstado] = useState<EstadoTarefa>("a_fazer");
 
   // Estados para novo vínculo
@@ -196,6 +206,19 @@ export function ProjetoDetalheConteudo() {
     if (ok) void apontamentos.mutate();
   }
 
+  async function reabrir(e: FormEvent) {
+    e.preventDefault();
+    const ok = await run(
+      () => apiClient.post(`v1/projetos/${id}/reabertura`, { motivo: motivoReabertura.trim() }),
+      "Projeto reaberto",
+    );
+    if (ok) {
+      setReabrirAberto(false);
+      setMotivoReabertura("");
+      void projeto.mutate();
+    }
+  }
+
   async function mudarEstado(novoEstado: EstadoProjeto) {
     const ok = await run(
       () => apiClient.post(`v1/projetos/${id}/estado`, { estado: novoEstado }),
@@ -211,7 +234,8 @@ export function ProjetoDetalheConteudo() {
         apiClient.post(`v1/projetos/${id}/tarefas`, {
           titulo: tarefaTitulo,
           descricao: tarefaDescricao,
-          responsavel_nome: tarefaResponsavel,
+          responsavel_id: tarefaResp.id || undefined,
+          responsavel_nome: tarefaResp.id ? tarefaResp.nome : "",
           estado: tarefaEstado,
           ordem: listaTarefas.length + 1,
         }),
@@ -221,7 +245,7 @@ export function ProjetoDetalheConteudo() {
       setModalTarefa(false);
       setTarefaTitulo("");
       setTarefaDescricao("");
-      setTarefaResponsavel("");
+      setTarefaResp({ id: "", nome: "" });
       setTarefaEstado("a_fazer");
       void tarefas.mutate();
     }
@@ -379,6 +403,11 @@ export function ProjetoDetalheConteudo() {
                           Retomar
                         </Button>
                       )}
+                      {p.estado === "concluido" && p.pode_reabrir && (
+                        <Button size="sm" disabled={pending} onClick={() => setReabrirAberto(true)}>
+                          Reabrir projeto
+                        </Button>
+                      )}
                       {p.estado !== "concluido" && (
                         <Button
                           size="sm"
@@ -395,6 +424,67 @@ export function ProjetoDetalheConteudo() {
               }
             />
 
+            {p.estado === "concluido" && !p.pode_reabrir && (
+              <p className="text-sm text-muted">
+                A reabertura depende de um superior da unidade ou de um administrador, com o motivo descrito.
+              </p>
+            )}
+            {p.reabertura && (
+              <p className="text-sm text-muted">
+                Reaberto por {p.reabertura.aprovador_nome || "um aprovador"}
+                {p.reabertura.created_at
+                  ? ` em ${new Date(p.reabertura.created_at).toLocaleDateString("pt-BR", { timeZone: "UTC" })}`
+                  : ""}
+                . Motivo: {p.reabertura.motivo}
+              </p>
+            )}
+            <Dialog
+              open={reabrirAberto}
+              onClose={() => setReabrirAberto(false)}
+              title="Reabrir projeto"
+              description="Descreva por que o projeto concluído volta para em andamento."
+            >
+              <form id="reabrir-projeto" onSubmit={reabrir} className="grid gap-3">
+                <Textarea
+                  id="reabertura-motivo"
+                  label="Motivo"
+                  value={motivoReabertura}
+                  onChange={(e) => setMotivoReabertura(e.target.value)}
+                  rows={4}
+                  maxLength={2000}
+                  required
+                />
+              </form>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={() => setReabrirAberto(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" form="reabrir-projeto" loading={pending} disabled={!motivoReabertura.trim()}>
+                  Aprovar reabertura
+                </Button>
+              </div>
+            </Dialog>
+
+            <SectionTabsInline
+              label="Seções do projeto"
+              value={aba}
+              onChange={setAba}
+              tabs={[
+                { value: "ficha", label: "Ficha" },
+                { value: "5w2h", label: "5W2H" },
+              ]}
+            />
+
+            {aba === "5w2h" && id && (
+              <Painel5W2H
+                projetoId={id}
+                podeEditar={gere && p.estado !== "cancelado"}
+                onSalvo={() => void projeto.mutate()}
+              />
+            )}
+
+            {aba === "ficha" && (
+            <>
             {/* Informações e Escopo */}
             <div className="grid gap-4 md:grid-cols-3">
               <Card className="md:col-span-2">
@@ -625,12 +715,12 @@ export function ProjetoDetalheConteudo() {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input
+                  <PessoaDaUnidade
                     id="tarefa-resp"
                     label="Responsável"
-                    value={tarefaResponsavel}
-                    onChange={(e) => setTarefaResponsavel(e.target.value)}
-                    placeholder="Nome da pessoa responsável"
+                    unidadeId={p?.unidade_id}
+                    value={tarefaResp}
+                    onChange={setTarefaResp}
                   />
 
                   <Select
@@ -1048,6 +1138,8 @@ export function ProjetoDetalheConteudo() {
                 </div>
               </form>
             </Dialog>
+            </>
+            )}
           </>
         )}
       </DataState>

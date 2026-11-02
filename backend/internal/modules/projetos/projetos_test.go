@@ -23,6 +23,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
 )
 
@@ -163,7 +164,7 @@ func TestModuloCicloCompleto(t *testing.T) {
 	// Tarefas com data_limite.
 	prazo := time.Now().UTC().Add(48 * time.Hour).Format(time.RFC3339)
 	recTar := do(gestorA, http.MethodPost, "/projetos/"+projID.String()+"/tarefas",
-		`{"titulo":"Mapear filas","descricao":"3 entidades","responsavel_nome":"Yuri","estado":"a_fazer","ordem":1,"data_limite":"`+prazo+`"}`)
+		`{"titulo":"Mapear filas","descricao":"3 entidades","estado":"a_fazer","ordem":1,"data_limite":"`+prazo+`"}`)
 	if recTar.Code != http.StatusCreated {
 		t.Fatalf("criar tarefa: %d %s", recTar.Code, recTar.Body.String())
 	}
@@ -176,7 +177,7 @@ func TestModuloCicloCompleto(t *testing.T) {
 	}
 
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(),
-		`{"titulo":"Mapear filas GLPI","descricao":"Feito","responsavel_nome":"Yuri","estado":"concluida","ordem":1}`); rec.Code != http.StatusOK {
+		`{"titulo":"Mapear filas GLPI","descricao":"Feito","estado":"concluida","ordem":1}`); rec.Code != http.StatusOK {
 		t.Fatalf("atualizar tarefa: %d %s", rec.Code, rec.Body.String())
 	}
 
@@ -290,6 +291,9 @@ func TestModuloCicloCompleto(t *testing.T) {
 		{http.MethodPost, "/projetos/invalido/apontamentos", `{}`},
 		{http.MethodPost, "/projetos/" + projID.String() + "/apontamentos", `{`},
 		{http.MethodDelete, "/projetos/" + projID.String() + "/apontamentos/invalido", ""},
+		{http.MethodGet, "/projetos/invalido/carta", ""},
+		{http.MethodPut, "/projetos/invalido/carta", `{}`},
+		{http.MethodPut, "/projetos/" + projID.String() + "/carta", `{`},
 	} {
 		if rec := do(gestorA, m.metodo, m.rota, m.corpo); rec.Code < 400 {
 			t.Fatalf("esperava erro em %s %s, obteve %d", m.metodo, m.rota, rec.Code)
@@ -310,9 +314,15 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	_, _ = repo.Listar(ctx, dbtest.RowsErr{}, domain.FiltroProjetos{})
 	_, _ = repo.Atualizar(ctx, dbtest.Fail{}, id, domain.EntradaProjeto{Titulo: "X"})
 	_, _ = repo.Transicionar(ctx, dbtest.Fail{}, id, domain.EstadoEmAndamento)
+	_, _, _ = repo.PosicaoUnidade(ctx, dbtest.Fail{}, id)
+	_, _ = repo.Aprovadores(ctx, dbtest.Fail{}, &id)
+	_ = repo.SalvarReabertura(ctx, dbtest.Fail{}, &domain.Reabertura{ID: id, ProjetoID: id})
+	_, _, _ = repo.UltimaReabertura(ctx, dbtest.Fail{}, id)
 	_, _ = repo.EstadoDaTarefa(ctx, dbtest.Fail{}, id)
 	_ = repo.CriarTarefa(ctx, dbtest.Fail{}, &domain.Tarefa{ID: id, ProjetoID: id, Titulo: "T"})
-	_, _ = repo.AtualizarTarefa(ctx, dbtest.Fail{}, id, "T", "", "", "a_fazer", 1, nil)
+	_, _ = repo.ObterTarefa(ctx, dbtest.Fail{}, id)
+	_, _ = repo.NomeDaPessoa(ctx, dbtest.Fail{}, id, nil)
+	_, _ = repo.AtualizarTarefa(ctx, dbtest.Fail{}, id, "T", "", nil, "", "a_fazer", 1, nil)
 	_, _ = repo.ListarTarefas(ctx, dbtest.Fail{}, id)
 	_, _ = repo.ListarTarefas(ctx, dbtest.ScanFail{}, id)
 	_, _ = repo.ListarTarefas(ctx, dbtest.RowsErr{}, id)
@@ -357,10 +367,10 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.RegistrarApontamento(ctx, admin, uuid.New(), nil, "", 1, "Ativ", 0); err == nil {
 		t.Fatal("apontamento em projeto inexistente deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", "", "invalido", 1, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
 		t.Fatalf("estado de tarefa inválido: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", "", "a_fazer", 1, nil); err == nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", nil, "", "a_fazer", 1, nil); err == nil {
 		t.Fatal("atualizar tarefa inexistente deveria falhar")
 	}
 	if _, err := svc.Vincular(ctx, admin, p.ID, "invalido", uuid.New(), ""); !errors.Is(err, domain.ErrVinculoInvalido) {
@@ -379,8 +389,205 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err == nil {
 		t.Fatal("transicionar com erro de passagens deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", "", "a_fazer", 1, nil); err == nil {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil); err == nil {
 		t.Fatal("criar tarefa com erro de passagens deveria falhar")
 	}
 }
 
+func TestReaberturaSoPorSuperiorOuAdministrador(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	pai := dbtest.Unidade(t, pool)
+	var entidade, filha uuid.UUID
+	if err := pool.QueryRow(ctx, `SELECT entidade_id FROM unidades WHERE id = $1`, pai).Scan(&entidade); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO unidades (entidade_id, parent_id, nome, slug) VALUES ($1, $2, 'Filha', $3) RETURNING id`,
+		entidade, pai, "f-"+uuid.NewString()[:12]).Scan(&filha); err != nil {
+		t.Fatal(err)
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := application.NewService(pool, infrastructure.NewRepository(), outbox.NewWriter("test"), logger)
+	svc.ComPassagens(passagensFalsas{})
+
+	gestor := auth.Identity{
+		UserID: uuid.New(), Name: "Gestor da filha",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID: &filha, Unidades: []uuid.UUID{filha},
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	superior := auth.Identity{
+		UserID: uuid.New(), Name: "Chefia",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID: &pai, Unidades: []uuid.UUID{pai, filha},
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	daEntidade := auth.Identity{
+		UserID: uuid.New(), Name: "Secretaria",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			EntidadeID:  &entidade,
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	admin := auth.Identity{
+		UserID: uuid.New(), Name: "Administrador",
+		Roles: []string{auth.RoleAdmin}, Permissions: []string{"*"},
+	}
+
+	abrir := func(quem auth.Identity) *domain.Projeto {
+		t.Helper()
+		p, err := svc.Criar(ctx, quem, domain.EntradaProjeto{Titulo: "Portal", UnidadeID: &filha})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
+		if _, err := svc.Transicionar(ctx, quem, p.ID, domain.EstadoEmAndamento); err != nil {
+			t.Fatal(err)
+		}
+		fechado, err := svc.Transicionar(ctx, quem, p.ID, domain.EstadoConcluido)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return fechado
+	}
+
+	p := abrir(gestor)
+	if _, err := svc.Transicionar(ctx, gestor, p.ID, domain.EstadoEmAndamento); !errors.Is(err, domain.ErrReaberturaExigeAprovacao) {
+		t.Fatalf("passagem comum: %v", err)
+	}
+	if _, err := svc.Reabrir(ctx, gestor, p.ID, "quero voltar"); !errors.Is(err, domain.ErrReaberturaNaoAutorizada) {
+		t.Fatalf("gestor da própria unidade: %v", err)
+	}
+	if _, err := svc.Reabrir(ctx, superior, p.ID, "  "); !errors.Is(err, domain.ErrMotivoObrigatorio) {
+		t.Fatalf("motivo vazio: %v", err)
+	}
+	reaberto, err := svc.Reabrir(ctx, superior, p.ID, "  O escopo voltou  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reaberto.Estado != domain.EstadoEmAndamento || reaberto.Reabertura == nil || reaberto.Reabertura.Motivo != "O escopo voltou" || reaberto.Reabertura.AprovadorNome != "Chefia" {
+		t.Fatalf("reaberto: %+v", reaberto.Reabertura)
+	}
+
+	outro := abrir(gestor)
+	if _, err := svc.Reabrir(ctx, daEntidade, outro.ID, "Decisão da secretaria"); err != nil {
+		t.Fatal(err)
+	}
+	institucional, err := svc.Criar(ctx, admin, domain.EntradaProjeto{Titulo: "Institucional"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, institucional.ID) })
+	if _, err := svc.Transicionar(ctx, admin, institucional.ID, domain.EstadoEmAndamento); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, admin, institucional.ID, domain.EstadoConcluido); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Reabrir(ctx, superior, institucional.ID, "não é da unidade dele"); !errors.Is(err, domain.ErrReaberturaNaoAutorizada) {
+		t.Fatalf("superior de outra árvore no institucional: %v", err)
+	}
+	if _, err := svc.Reabrir(ctx, admin, institucional.ID, "Determinação da administração"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConclusaoAvisaQuemPodeReabrir(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	pai := dbtest.Unidade(t, pool)
+	var entidade, filha uuid.UUID
+	if err := pool.QueryRow(ctx, `SELECT entidade_id FROM unidades WHERE id = $1`, pai).Scan(&entidade); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO unidades (entidade_id, parent_id, nome, slug) VALUES ($1, $2, 'Filha aviso', $3) RETURNING id`,
+		entidade, pai, "fa-"+uuid.NewString()[:12]).Scan(&filha); err != nil {
+		t.Fatal(err)
+	}
+
+	conta := func(nome string, roles []string) uuid.UUID {
+		t.Helper()
+		slug := "av-" + uuid.NewString()[:10]
+		if roles == nil {
+			roles = []string{}
+		}
+		var id uuid.UUID
+		if err := pool.QueryRow(ctx, `INSERT INTO users (username, email, display_name, keycloak_subject, roles)
+			VALUES ($1, $1 || '@nova.test', $2, $1, $3) RETURNING id`, slug, nome, roles).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			_, _ = pool.Exec(context.Background(), `DELETE FROM notificacoes WHERE user_id = $1`, id)
+			_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, id)
+		})
+		return id
+	}
+	var perfil uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO perfis (slug, nome, permissoes) VALUES ($1, 'Gestão de projetos', '{projetos:manage}') RETURNING id`,
+		"prj-"+uuid.NewString()[:12]).Scan(&perfil); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM perfis WHERE id = $1`, perfil) })
+	escopo := func(user, unidade uuid.UUID, entidade *uuid.UUID) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `INSERT INTO user_scopes (user_id, perfil_id, entidade_id, unidade_id) VALUES ($1, $2, $3, $4)`,
+			user, perfil, entidade, unidade); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	superior := conta("Chefia", nil)
+	daUnidade := conta("Gestor", nil)
+	daEntidade := conta("Secretaria", nil)
+	admin := conta("Administrador", []string{auth.RoleAdmin})
+	escopo(superior, pai, nil)
+	escopo(daUnidade, filha, nil)
+	if _, err := pool.Exec(ctx, `INSERT INTO user_scopes (user_id, perfil_id, entidade_id) VALUES ($1, $2, $3)`, daEntidade, perfil, entidade); err != nil {
+		t.Fatal(err)
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := application.NewService(pool, infrastructure.NewRepository(), outbox.NewWriter("test"), logger)
+	svc.ComAvisos(notificacoes.NewService(pool, nil, logger))
+	gestor := auth.Identity{
+		UserID: daUnidade, Name: "Gestor",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID: &filha, Unidades: []uuid.UUID{filha},
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	p, err := svc.Criar(ctx, gestor, domain.EntradaProjeto{Titulo: "Portal da secretaria", UnidadeID: &filha})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
+	if _, err := svc.Transicionar(ctx, gestor, p.ID, domain.EstadoEmAndamento); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, gestor, p.ID, domain.EstadoConcluido); err != nil {
+		t.Fatal(err)
+	}
+
+	avisos := func(user uuid.UUID) int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM notificacoes WHERE user_id = $1 AND modulo = 'projetos' AND link = $2`,
+			user, "/projetos/"+p.ID.String()).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if avisos(superior) != 1 || avisos(daEntidade) != 1 || avisos(admin) != 1 {
+		t.Fatalf("quem reabre: superior %d entidade %d admin %d", avisos(superior), avisos(daEntidade), avisos(admin))
+	}
+	if avisos(daUnidade) != 0 {
+		t.Fatalf("gestor da própria unidade foi avisado")
+	}
+}

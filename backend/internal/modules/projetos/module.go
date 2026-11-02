@@ -7,6 +7,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/transport"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 )
 
 // Key é a chave do módulo no Kernel.
@@ -30,6 +31,13 @@ func (m *Module) ComPassagens(p application.Passagens) {
 func (m *Module) ComPortas(portas domain.Portas, produtos domain.Produtos) {
 	if m != nil && m.service != nil {
 		m.service.ComPortas(portas, produtos)
+	}
+}
+
+// ComAvisos liga a caixa de notificações.
+func (m *Module) ComAvisos(n *notificacoes.Service) {
+	if m != nil && m.service != nil {
+		m.service.ComAvisos(n)
 	}
 }
 

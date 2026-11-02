@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -16,6 +18,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/audit"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
 )
 
@@ -33,6 +36,7 @@ type Service struct {
 	passagens Passagens
 	portas    domain.Portas
 	produtos  domain.Produtos
+	avisos    *notificacoes.Service
 }
 
 // Passagens lê os caminhos acrescentados no quadro. Nil mantém só o fluxo de fábrica.
@@ -52,6 +56,9 @@ func (s *Service) ComPortas(portas domain.Portas, produtos domain.Produtos) {
 	s.portas = portas
 	s.produtos = produtos
 }
+
+// ComAvisos liga a caixa de notificações. Nil não avisa.
+func (s *Service) ComAvisos(n *notificacoes.Service) { s.avisos = n }
 
 func (s *Service) mapa(ctx context.Context, db database.DBTX, quadro string) (map[string][]string, error) {
 	if s.passagens == nil {
@@ -92,6 +99,22 @@ func MapError(err error) error {
 		return apperrors.Validation("o vínculo ou produto precisa ser compatível com a unidade do projeto")
 	case errors.Is(err, domain.ErrIntegracaoDesligada):
 		return apperrors.Validation("o módulo deste vínculo está desligado")
+	case errors.Is(err, domain.ErrPeriodoInvalido):
+		return apperrors.Validation("a data de término precisa ser igual ou posterior à de início")
+	case errors.Is(err, domain.ErrOrcamentoInvalido):
+		return apperrors.Validation("o orçamento não pode ser negativo")
+	case errors.Is(err, domain.ErrEtapaInvalida):
+		return apperrors.Validation("cada etapa tem até 200 caracteres, no máximo 30")
+	case errors.Is(err, domain.ErrCartaInvalida):
+		return apperrors.Validation("texto longo demais na carta do projeto")
+	case errors.Is(err, domain.ErrPessoaInvalida):
+		return apperrors.Validation("escolha uma pessoa ativa lotada na unidade do projeto")
+	case errors.Is(err, domain.ErrReaberturaExigeAprovacao):
+		return apperrors.Conflict("projeto concluído não muda por esta passagem; a reabertura pede um superior ou administrador e o motivo")
+	case errors.Is(err, domain.ErrReaberturaNaoAutorizada):
+		return apperrors.Forbidden("só um superior da unidade ou um administrador reabre um projeto concluído")
+	case errors.Is(err, domain.ErrMotivoObrigatorio):
+		return apperrors.Validation("descreva o motivo da reabertura, em até 2000 caracteres")
 	}
 	return err
 }
@@ -110,6 +133,30 @@ func (s *Service) conferirProduto(ctx context.Context, db database.DBTX, produto
 	return nil
 }
 
+// fixarPessoa troca o nome livre por uma pessoa ativa. Sem id e sem nome,
+// o campo fica vazio. O mesmo nome já gravado (sem id) é preservado.
+// Um id é conferido de novo e o nome gravado é o da conta.
+func (s *Service) fixarPessoa(ctx context.Context, db database.DBTX, unidade, id *uuid.UUID, nome, nomeGuardado string, idGuardado *uuid.UUID) (*uuid.UUID, string, error) {
+	nome = strings.TrimSpace(nome)
+	if id != nil && *id == uuid.Nil {
+		id = nil
+	}
+	if id != nil {
+		canon, err := s.repo.NomeDaPessoa(ctx, db, *id, unidade)
+		if err != nil {
+			return nil, "", err
+		}
+		return id, canon, nil
+	}
+	if nome == "" {
+		return nil, "", nil
+	}
+	if nome == strings.TrimSpace(nomeGuardado) {
+		return idGuardado, nomeGuardado, nil
+	}
+	return nil, "", domain.ErrPessoaInvalida
+}
+
 func alvoUnidade(u *uuid.UUID) auth.Target {
 	if u == nil {
 		return auth.Target{}
@@ -118,6 +165,19 @@ func alvoUnidade(u *uuid.UUID) auth.Target {
 }
 
 func (s *Service) Criar(ctx context.Context, idt auth.Identity, e domain.EntradaProjeto) (*domain.Projeto, error) {
+	return s.criar(ctx, idt, e, domain.EntradaCarta{}, nil, false)
+}
+
+// CriarGuiado grava o projeto, a carta e as tarefas do Como na mesma transação.
+func (s *Service) CriarGuiado(ctx context.Context, idt auth.Identity, e domain.EntradaProjeto, carta domain.EntradaCarta, etapas []string) (*domain.Projeto, error) {
+	carta, etapas, err := domain.ValidarAbertura(e, carta, etapas)
+	if err != nil {
+		return nil, err
+	}
+	return s.criar(ctx, idt, e, carta, etapas, true)
+}
+
+func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.EntradaProjeto, carta domain.EntradaCarta, etapas []string, guiado bool) (*domain.Projeto, error) {
 	if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(e.UnidadeID)) {
 		return nil, domain.ErrForaDoEscopo
 	}
@@ -147,8 +207,36 @@ func (s *Service) Criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 		if err := s.conferirProduto(ctx, tx, p.ProdutoID, p.UnidadeID); err != nil {
 			return err
 		}
+		gid, gnome, err := s.fixarPessoa(ctx, tx, e.UnidadeID, e.GerenteID, e.GerenteNome, "", nil)
+		if err != nil {
+			return err
+		}
+		p.GerenteID, p.GerenteNome = gid, gnome
 		if err := s.repo.Criar(ctx, tx, p); err != nil {
 			return err
+		}
+		if guiado {
+			if _, err := s.repo.SalvarCarta(ctx, tx, p.ID, carta); err != nil {
+				return err
+			}
+			for i, titulo := range etapas {
+				t := &domain.Tarefa{
+					ID: uuid.New(), ProjetoID: p.ID, Titulo: titulo,
+					Estado: domain.EstadoTarefaAFazer, Ordem: i + 1, Origem: domain.OrigemHow,
+				}
+				if err := s.repo.CriarTarefa(ctx, tx, t); err != nil {
+					return err
+				}
+			}
+			if s.outbox != nil {
+				payload := map[string]any{"id": p.ID, "etapas": len(etapas)}
+				if err := s.outbox.Write(ctx, tx, "projetos.carta.created", "projeto", p.ID.String(), uuid.Nil, payload); err != nil {
+					return err
+				}
+			}
+			if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.carta.created", "projeto", p.ID.String(), nil, carta)); err != nil {
+				return err
+			}
 		}
 		if s.outbox != nil {
 			payload := map[string]any{"id": p.ID, "numero": p.Numero, "titulo": p.Titulo}
@@ -164,6 +252,111 @@ func (s *Service) Criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 	return p, nil
 }
 
+func (s *Service) montarVisao(ctx context.Context, db database.DBTX, p *domain.Projeto, carta *domain.Carta) (*domain.VisaoCarta, error) {
+	total, concluidas, err := s.repo.ContarEtapasHow(ctx, db, p.ID)
+	if err != nil {
+		return nil, err
+	}
+	custo, err := s.repo.SomarCusto(ctx, db, p.ID)
+	if err != nil {
+		return nil, err
+	}
+	v := &domain.VisaoCarta{
+		ProjetoID:           p.ID,
+		Titulo:              p.Titulo,
+		Descricao:           p.Descricao,
+		Objetivo:            p.Objetivo,
+		DataInicioPlanejada: p.DataInicioPlanejada,
+		DataFimPlanejada:    p.DataFimPlanejada,
+		UnidadeID:           p.UnidadeID,
+		GerenteID:           p.GerenteID,
+		GerenteNome:         p.GerenteNome,
+		Orcamento:           p.Orcamento,
+		EtapasHow:           total,
+		EtapasHowConcluidas: concluidas,
+		CustoRealizado:      custo,
+	}
+	if carta != nil {
+		v.Existe = true
+		v.Onde = carta.Onde
+		v.Patrocinador = carta.Patrocinador
+		v.Metodologia = carta.Metodologia
+		v.CentroCusto = carta.CentroCusto
+		atualizado := carta.UpdatedAt
+		v.UpdatedAt = &atualizado
+	}
+	return v, nil
+}
+
+func (s *Service) ObterCarta(ctx context.Context, idt auth.Identity, id uuid.UUID) (*domain.VisaoCarta, error) {
+	p, err := s.repo.Obter(ctx, s.pool, id)
+	if err != nil {
+		return nil, err
+	}
+	if !auth.Can(idt, auth.PermProjetosRead, alvoUnidade(p.UnidadeID)) && !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
+		return nil, domain.ErrForaDoEscopo
+	}
+	carta, ok, err := s.repo.ObterCarta(ctx, s.pool, id)
+	if err != nil {
+		return nil, err
+	}
+	var cp *domain.Carta
+	if ok {
+		cp = &carta
+	}
+	return s.montarVisao(ctx, s.pool, p, cp)
+}
+
+// SalvarCarta grava o plano de novo. A segunda chamada com o mesmo corpo
+// não cria tarefa: as etapas do Como só nascem na abertura guiada.
+func (s *Service) SalvarCarta(ctx context.Context, idt auth.Identity, id uuid.UUID, plano domain.Plano5W2H) (*domain.VisaoCarta, error) {
+	plano, carta, err := plano.Normalizar()
+	if err != nil {
+		return nil, err
+	}
+	var visao *domain.VisaoCarta
+	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		p, err := s.repo.Obter(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
+			return domain.ErrForaDoEscopo
+		}
+		if p.Estado == domain.EstadoCancelado {
+			return domain.ErrProjetoEncerrado
+		}
+		gid, gnome, err := s.fixarPessoa(ctx, tx, p.UnidadeID, plano.GerenteID, plano.GerenteNome, p.GerenteNome, p.GerenteID)
+		if err != nil {
+			return err
+		}
+		plano.GerenteID, plano.GerenteNome = gid, gnome
+		atualizado, err := s.repo.AtualizarPlano(ctx, tx, id, plano)
+		if err != nil {
+			return err
+		}
+		salva, err := s.repo.SalvarCarta(ctx, tx, id, carta)
+		if err != nil {
+			return err
+		}
+		if s.outbox != nil {
+			payload := map[string]any{"id": id, "titulo": plano.Titulo}
+			if err := s.outbox.Write(ctx, tx, "projetos.carta.saved", "projeto", id.String(), uuid.Nil, payload); err != nil {
+				return err
+			}
+		}
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.carta.saved", "projeto", id.String(), p, atualizado)); err != nil {
+			return err
+		}
+		visao, err = s.montarVisao(ctx, tx, atualizado, &salva)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return visao, nil
+}
+
 func (s *Service) Obter(ctx context.Context, idt auth.Identity, id uuid.UUID) (*domain.Projeto, error) {
 	p, err := s.repo.Obter(ctx, s.pool, id)
 	if err != nil {
@@ -172,7 +365,11 @@ func (s *Service) Obter(ctx context.Context, idt auth.Identity, id uuid.UUID) (*
 	if !auth.Can(idt, auth.PermProjetosRead, alvoUnidade(p.UnidadeID)) && !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
 		return nil, domain.ErrForaDoEscopo
 	}
-	return s.comProximos(ctx, s.pool, p)
+	p, err = s.comProximos(ctx, s.pool, p)
+	if err != nil {
+		return nil, err
+	}
+	return s.comReabertura(ctx, s.pool, idt, p)
 }
 
 func (s *Service) Listar(ctx context.Context, idt auth.Identity, estado, busca string) ([]domain.Projeto, error) {
@@ -232,6 +429,11 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 		if err := s.conferirProduto(ctx, tx, e.ProdutoID, e.UnidadeID); err != nil {
 			return err
 		}
+		gid, gnome, err := s.fixarPessoa(ctx, tx, e.UnidadeID, e.GerenteID, e.GerenteNome, p.GerenteNome, p.GerenteID)
+		if err != nil {
+			return err
+		}
+		e.GerenteID, e.GerenteNome = gid, gnome
 
 		res, err := s.repo.Atualizar(ctx, tx, id, e)
 		if err != nil {
@@ -241,7 +443,9 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 
 		if s.outbox != nil {
 			payload := map[string]any{"id": id, "titulo": e.Titulo}
-			_ = s.outbox.Write(ctx, tx, EventProjetoUpdated, "projeto", id.String(), uuid.Nil, payload)
+			if err := s.outbox.Write(ctx, tx, EventProjetoUpdated, "projeto", id.String(), uuid.Nil, payload); err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoUpdated, "projeto", id.String(), p, atualizado))
 	})
@@ -253,6 +457,7 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 
 func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.UUID, novoEstado string) (*domain.Projeto, error) {
 	var atualizado *domain.Projeto
+	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		p, err := s.repo.Obter(ctx, tx, id)
 		if err != nil {
@@ -260,6 +465,9 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 		}
 		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
 			return domain.ErrForaDoEscopo
+		}
+		if p.Estado == domain.EstadoConcluido {
+			return domain.ErrReaberturaExigeAprovacao
 		}
 
 		mapa, err := s.mapa(ctx, tx, "projetos")
@@ -278,17 +486,157 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 
 		if s.outbox != nil {
 			payload := map[string]any{"id": id, "estado_anterior": p.Estado, "novo_estado": novoEstado}
-			_ = s.outbox.Write(ctx, tx, EventProjetoTransitioned, "projeto", id.String(), uuid.Nil, payload)
+			if err := s.outbox.Write(ctx, tx, EventProjetoTransitioned, "projeto", id.String(), uuid.Nil, payload); err != nil {
+				return err
+			}
+		}
+		if novoEstado == domain.EstadoConcluido {
+			var err error
+			enviadas, err = s.avisarAprovadores(ctx, tx, res, idt.UserID)
+			if err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoTransitioned, "projeto", id.String(), p, atualizado))
 	})
 	if err != nil {
 		return nil, err
 	}
+	if s.avisos != nil {
+		s.avisos.Entregar(ctx, enviadas)
+	}
 	return atualizado, nil
 }
 
-func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
+func (s *Service) avisarAprovadores(ctx context.Context, tx pgx.Tx, p *domain.Projeto, autor uuid.UUID) ([]notificacoes.Enviada, error) {
+	if s.avisos == nil || p == nil {
+		return nil, nil
+	}
+	ids, err := s.repo.Aprovadores(ctx, tx, p.UnidadeID)
+	if err != nil {
+		return nil, err
+	}
+	destinos := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		if id != autor && id != uuid.Nil {
+			destinos = append(destinos, id)
+		}
+	}
+	titulo := p.Titulo
+	if utf8.RuneCountInString(titulo) > 160 {
+		titulo = string([]rune(titulo)[:160])
+	}
+	return notificacoes.Registrar(ctx, tx, destinos, notificacoes.Nova{
+		Modulo:   "projetos",
+		Titulo:   "Projeto #" + strconv.FormatInt(p.Numero, 10) + " concluído",
+		Mensagem: titulo + ". A reabertura, se for necessária, pede o motivo na ficha.",
+		Link:     "/projetos/" + p.ID.String(),
+		Chave:    "projetos:" + p.ID.String() + ":concluido:" + strconv.FormatInt(p.UpdatedAt.UnixNano(), 10),
+	})
+}
+
+func (s *Service) comReabertura(ctx context.Context, db database.DBTX, idt auth.Identity, p *domain.Projeto) (*domain.Projeto, error) {
+	if p == nil {
+		return nil, nil
+	}
+	if p.Estado == domain.EstadoConcluido {
+		ok, err := s.podeReabrir(ctx, db, idt, p.UnidadeID)
+		if err != nil {
+			return nil, err
+		}
+		p.PodeReabrir = ok
+	}
+	reab, achou, err := s.repo.UltimaReabertura(ctx, db, p.ID)
+	if err != nil {
+		return nil, err
+	}
+	if achou {
+		p.Reabertura = &reab
+	}
+	return p, nil
+}
+
+func (s *Service) podeReabrir(ctx context.Context, db database.DBTX, idt auth.Identity, unidade *uuid.UUID) (bool, error) {
+	if unidade == nil {
+		return domain.PodeReabrir(idt, nil, nil, nil), nil
+	}
+	entidade, acima, err := s.repo.PosicaoUnidade(ctx, db, *unidade)
+	if err != nil {
+		return false, err
+	}
+	return domain.PodeReabrir(idt, unidade, entidade, acima), nil
+}
+
+func nomeDe(idt auth.Identity) string {
+	switch {
+	case idt.Name != "":
+		return idt.Name
+	case idt.Username != "":
+		return idt.Username
+	case idt.Email != "":
+		return idt.Email
+	default:
+		return "Usuário"
+	}
+}
+
+// Reabrir tira o projeto de concluído quando um superior ou administrador
+// descreve o motivo. A passagem comum de estado não faz isso.
+func (s *Service) Reabrir(ctx context.Context, idt auth.Identity, id uuid.UUID, motivo string) (*domain.Projeto, error) {
+	motivo, err := domain.NormalizarMotivo(motivo)
+	if err != nil {
+		return nil, err
+	}
+	var atualizado *domain.Projeto
+	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		p, err := s.repo.Obter(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if p.Estado != domain.EstadoConcluido {
+			return domain.ErrReaberturaExigeAprovacao
+		}
+		ok, err := s.podeReabrir(ctx, tx, idt, p.UnidadeID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return domain.ErrReaberturaNaoAutorizada
+		}
+		res, err := s.repo.Transicionar(ctx, tx, id, domain.EstadoEmAndamento)
+		if err != nil {
+			return err
+		}
+		aprovador := idt.UserID
+		if aprovador == uuid.Nil {
+			if parsed, parseErr := uuid.Parse(idt.Subject); parseErr == nil {
+				aprovador = parsed
+			}
+		}
+		reab := &domain.Reabertura{
+			ID: uuid.New(), ProjetoID: id, Motivo: motivo,
+			AprovadorID: aprovador, AprovadorNome: nomeDe(idt),
+		}
+		if err := s.repo.SalvarReabertura(ctx, tx, reab); err != nil {
+			return err
+		}
+		res.Reabertura = reab
+		atualizado = res
+		if s.outbox != nil {
+			payload := map[string]any{"id": id, "motivo": motivo, "aprovador_id": aprovador}
+			if err := s.outbox.Write(ctx, tx, "projetos.projeto.reopened", "projeto", id.String(), uuid.Nil, payload); err != nil {
+				return err
+			}
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.projeto.reopened", "projeto", id.String(), p, atualizado))
+	})
+	if err != nil {
+		return nil, err
+	}
+	return s.comProximos(ctx, s.pool, atualizado)
+}
+
+func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
 	mapa, err := s.mapa(ctx, s.pool, "tarefas")
 	if err != nil {
 		return nil, err
@@ -296,12 +644,21 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 	if !domain.EstadoDeTarefaAceito("", estado, mapa) {
 		return nil, domain.ErrEstadoInvalido
 	}
+	projeto, err := s.repo.Obter(ctx, s.pool, projetoID)
+	if err != nil {
+		return nil, err
+	}
+	gid, gnome, err := s.fixarPessoa(ctx, s.pool, projeto.UnidadeID, responsavelID, responsavel, "", nil)
+	if err != nil {
+		return nil, err
+	}
 	t := &domain.Tarefa{
 		ID:              uuid.New(),
 		ProjetoID:       projetoID,
 		Titulo:          titulo,
 		Descricao:       descricao,
-		ResponsavelNome: responsavel,
+		ResponsavelID:   gid,
+		ResponsavelNome: gnome,
 		Estado:          estado,
 		Ordem:           ordem,
 		DataLimite:      dataLimite,
@@ -312,8 +669,8 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 	return t, nil
 }
 
-func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
-	atual, err := s.repo.EstadoDaTarefa(ctx, s.pool, id)
+func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
+	atual, err := s.repo.ObterTarefa(ctx, s.pool, id)
 	if err != nil {
 		return nil, err
 	}
@@ -321,10 +678,18 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 	if err != nil {
 		return nil, err
 	}
-	if !domain.EstadoDeTarefaAceito(atual, estado, mapa) {
+	if !domain.EstadoDeTarefaAceito(atual.Estado, estado, mapa) {
 		return nil, domain.ErrEstadoInvalido
 	}
-	return s.repo.AtualizarTarefa(ctx, s.pool, id, titulo, descricao, responsavel, estado, ordem, dataLimite)
+	projeto, err := s.repo.Obter(ctx, s.pool, atual.ProjetoID)
+	if err != nil {
+		return nil, err
+	}
+	gid, gnome, err := s.fixarPessoa(ctx, s.pool, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.AtualizarTarefa(ctx, s.pool, id, titulo, descricao, gid, gnome, estado, ordem, dataLimite)
 }
 
 func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Tarefa, error) {
@@ -337,7 +702,9 @@ func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.
 			return err
 		}
 		if s.outbox != nil {
-			_ = s.outbox.Write(ctx, tx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), uuid.Nil, map[string]any{"id": id})
+			if err := s.outbox.Write(ctx, tx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), uuid.Nil, map[string]any{"id": id}); err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), nil, nil))
 	})
@@ -391,7 +758,9 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 		}
 		if s.outbox != nil {
 			payload := map[string]any{"projeto_id": projetoID, "tipo": tipo, "alvo_id": alvoID, "rotulo": v.Rotulo}
-			_ = s.outbox.Write(ctx, tx, "projetos.vinculo.created", "projeto", projetoID.String(), uuid.Nil, payload)
+			if err := s.outbox.Write(ctx, tx, "projetos.vinculo.created", "projeto", projetoID.String(), uuid.Nil, payload); err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.created", "projeto", projetoID.String(), nil, v))
 	})
@@ -407,7 +776,9 @@ func (s *Service) Desvincular(ctx context.Context, idt auth.Identity, vinculoID 
 			return err
 		}
 		if s.outbox != nil {
-			_ = s.outbox.Write(ctx, tx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), uuid.Nil, map[string]any{"id": vinculoID})
+			if err := s.outbox.Write(ctx, tx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), uuid.Nil, map[string]any{"id": vinculoID}); err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), nil, nil))
 	})
@@ -474,7 +845,9 @@ func (s *Service) RegistrarApontamento(
 				"horas":       horas,
 				"custo_total": a.CustoTotal,
 			}
-			_ = s.outbox.Write(ctx, tx, "projetos.apontamento.created", "projeto", projetoID.String(), uuid.Nil, payload)
+			if err := s.outbox.Write(ctx, tx, "projetos.apontamento.created", "projeto", projetoID.String(), uuid.Nil, payload); err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.created", "projeto", projetoID.String(), nil, a))
 	})
@@ -512,7 +885,9 @@ func (s *Service) ExcluirApontamento(ctx context.Context, idt auth.Identity, apo
 			return err
 		}
 		if s.outbox != nil {
-			_ = s.outbox.Write(ctx, tx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), uuid.Nil, map[string]any{"id": apontamentoID})
+			if err := s.outbox.Write(ctx, tx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), uuid.Nil, map[string]any{"id": apontamentoID}); err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), nil, nil))
 	})

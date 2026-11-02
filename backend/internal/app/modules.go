@@ -93,6 +93,7 @@ func registerPlugins(d *Dependencies) {
 	alvosProj, produtoDoProjeto := portasProjetos(produtosModule.Repositorio(), atendimentoModule.Repositorio(),
 		ativosModule.Repositorio(), problemasModule.Repositorio(), mudancasModule.Repositorio(), ligado)
 	projetosModule.ComPortas(alvosProj, produtoDoProjeto)
+	projetosModule.ComAvisos(deps.Notificacoes)
 	quadrosModule := quadros.New(deps)
 	problemasModule.ComPassagens(quadrosModule)
 	mudancasModule.ComPassagens(quadrosModule)

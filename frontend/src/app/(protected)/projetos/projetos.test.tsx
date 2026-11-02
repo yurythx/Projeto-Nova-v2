@@ -90,6 +90,38 @@ describe("Projetos — Lista e Criação", () => {
     });
   });
 
+  it("cria um projeto guiado pelo 5W2H com as etapas do Como", async () => {
+    const user = userEvent.setup();
+    const api = mockBackend({
+      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      "GET v1/iam/org-tree": { data: ORG },
+      "GET v1/projetos": { data: [] },
+      "POST v1/projetos": {
+        status: 201,
+        data: projeto({ id: "proj-5w2h", numero: 103, titulo: "Rede das escolas" }),
+      },
+    });
+
+    renderApp(<ProjetosPage />);
+    await user.click(await screen.findByTestId("novo-projeto-btn"));
+    await user.click(screen.getByTestId("modo-5w2h"));
+    await user.type(screen.getByLabelText(/Nome do projeto/i), "Rede das escolas");
+    for (let i = 0; i < 5; i += 1) {
+      await user.click(screen.getByTestId("wizard-proximo"));
+    }
+    await user.type(screen.getByLabelText(/Etapa macro/i), "Planejamento");
+    await user.click(screen.getByRole("button", { name: "Adicionar etapa" }));
+    await user.click(screen.getByTestId("wizard-proximo"));
+    await user.click(screen.getByTestId("wizard-criar"));
+
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/projetos/proj-5w2h?vista=5w2h"));
+    expect(api.to("POST v1/projetos")[0]!.body).toMatchObject({
+      titulo: "Rede das escolas",
+      etapas: ["Planejamento"],
+      carta: { onde: "", patrocinador: "", metodologia: "", centro_custo: "" },
+    });
+  });
+
   it("renderiza o quadro kanban e permite transicionar projeto", async () => {
     const user = userEvent.setup();
     resetNavigation({}, "/projetos", "vista=quadro");
@@ -168,7 +200,45 @@ describe("Projetos — Detalhes e Tarefas", () => {
     });
   });
 
+  it("mostra o painel 5W2H com progresso físico e financeiro", async () => {
+    const user = userEvent.setup();
+    resetNavigation({ id: "proj-1" }, "/projetos/proj-1");
+
+    mockBackend({
+      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      "GET v1/projetos/proj-1": { data: projeto() },
+      "GET v1/projetos/proj-1/tarefas": { data: [] },
+      "GET v1/projetos/proj-1/carta": {
+        data: {
+          projeto_id: "proj-1",
+          titulo: "Expansão da Fibra Óptica",
+          descricao: "Conectar escolas municipais",
+          objetivo: "100% das escolas conectadas",
+          onde: "Escolas da SEMED",
+          patrocinador: "Secretário",
+          metodologia: "Entregas mensais",
+          centro_custo: "CC-9",
+          gerente_nome: "Carlos Silva",
+          orcamento: 150000,
+          existe: true,
+          etapas_how: 2,
+          etapas_how_concluidas: 1,
+          custo_realizado: 30000,
+        },
+      },
+    });
+
+    renderApp(<ProjetoPage />);
+    await user.click(await screen.findByRole("tab", { name: "5W2H" }));
+
+    expect(await screen.findByTestId("painel-5w2h")).toBeInTheDocument();
+    expect(screen.getByTestId("progresso-fisico")).toHaveTextContent("1 de 2 etapas concluídas");
+    expect(screen.getByTestId("progresso-financeiro")).toHaveTextContent("20%");
+    expect(screen.getByText("Escolas da SEMED")).toBeInTheDocument();
+  });
+
   it("renderiza o cronograma gantt na vista cronograma", async () => {
+    const user = userEvent.setup();
     resetNavigation({}, "/projetos", "vista=cronograma");
 
     mockBackend({
@@ -182,6 +252,8 @@ describe("Projetos — Detalhes e Tarefas", () => {
 
     expect(await screen.findByTestId("projetos-cronograma")).toBeInTheDocument();
     expect(screen.getByText("Cronograma & Linha do Tempo (90 dias)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "365d" }));
+    expect(screen.getByText("Cronograma & Linha do Tempo (365 dias)")).toBeInTheDocument();
     expect(screen.getAllByText("Projeto Cronograma Alpha").length).toBeGreaterThanOrEqual(1);
   });
 
@@ -349,6 +421,31 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(api.to("POST v1/projetos/proj-1/apontamentos")[0]!.body).toMatchObject({
       horas: 3,
       descricao: "Configuração dos switches",
+    });
+  });
+
+  it("pede o motivo para o superior reabrir um projeto concluído", async () => {
+    const user = userEvent.setup();
+    resetNavigation({ id: "proj-1" }, "/projetos/proj-1");
+    const api = mockBackend({
+      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      "GET v1/projetos/proj-1": {
+        data: projeto({ estado: "concluido", pode_reabrir: true }),
+      },
+      "GET v1/projetos/proj-1/tarefas": { data: [] },
+      "POST v1/projetos/proj-1/reabertura": {
+        data: projeto({ estado: "em_andamento", pode_reabrir: false }),
+      },
+    });
+
+    renderApp(<ProjetoPage />);
+    await user.click(await screen.findByRole("button", { name: "Reabrir projeto" }));
+    await user.type(screen.getByLabelText("Motivo"), "O escopo voltou");
+    await user.click(screen.getByRole("button", { name: "Aprovar reabertura" }));
+
+    await waitFor(() => expect(api.to("POST v1/projetos/proj-1/reabertura")).toHaveLength(1));
+    expect(api.to("POST v1/projetos/proj-1/reabertura")[0]!.body).toEqual({
+      motivo: "O escopo voltou",
     });
   });
 });

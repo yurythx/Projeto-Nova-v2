@@ -20,8 +20,10 @@ import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
+import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
 import { ProjetosCronograma } from "@/components/projetos/ProjetosCronograma";
 import { COLUNAS_PROJETO, ProjetosKanban } from "@/components/projetos/ProjetosKanban";
+import { Wizard5W2H, type Corpo5W2H } from "@/components/projetos/Wizard5W2H";
 import { FiltroPorUnidade, filtrarPorUnidade } from "@/components/servicos/FiltroPorUnidade";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
@@ -96,11 +98,12 @@ function ProjetosConteudo() {
   );
 
   const [modalAberto, setModalAberto] = useState(false);
+  const [modo, setModo] = useState<"branco" | "5w2h">("branco");
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [objetivo, setObjetivo] = useState("");
   const [prioridade, setPrioridade] = useState<PrioridadeProjeto>("media");
-  const [gerenteNome, setGerenteNome] = useState("");
+  const [gerente, setGerente] = useState({ id: "", nome: "" });
   const [orcamento, setOrcamento] = useState("0");
   const [unidadeId, setUnidadeId] = useState("");
   const [produtoId, setProdutoId] = useState("");
@@ -154,37 +157,54 @@ function ProjetosConteudo() {
     URL.revokeObjectURL(url);
   }
 
-  async function criar(e: FormEvent) {
-    e.preventDefault();
-    const alvo = quadro;
+  function fecharModal() {
+    setModalAberto(false);
+    setModo("branco");
+  }
+
+  async function criarProjeto(corpo: Record<string, unknown>, alvo: EstadoProjeto, carta: boolean) {
     const criado = await run(async () => {
-      const res = await apiClient.post<Projeto>("v1/projetos", {
-        titulo,
-        descricao,
-        objetivo,
-        prioridade,
-        gerente_nome: gerenteNome,
-        orcamento: Number(orcamento) || 0,
-        unidade_id: unidadeId || undefined,
-        produto_id: produtoId || undefined,
-      });
+      const res = await apiClient.post<Projeto>("v1/projetos", corpo);
       for (const passo of passosDoProjeto(alvo)) {
         await apiClient.post(`v1/projetos/${res.data.id}/estado`, { estado: passo });
       }
       return res.data;
     }, "Projeto criado com sucesso");
     if (criado) {
-      setModalAberto(false);
+      fecharModal();
       setTitulo("");
       setDescricao("");
       setObjetivo("");
-      setGerenteNome("");
+      setGerente({ id: "", nome: "" });
       setOrcamento("0");
       setProdutoId("");
       setQuadro("planejado");
       void projetos.mutate();
-      router.push(`/projetos/${criado.id}`);
+      router.push(carta ? `/projetos/${criado.id}?vista=5w2h` : `/projetos/${criado.id}`);
     }
+  }
+
+  function criar(e: FormEvent) {
+    e.preventDefault();
+    void criarProjeto(
+      {
+        titulo,
+        descricao,
+        objetivo,
+        prioridade,
+        gerente_id: gerente.id || undefined,
+        gerente_nome: gerente.id ? gerente.nome : "",
+        orcamento: Number(orcamento) || 0,
+        unidade_id: unidadeId || undefined,
+        produto_id: produtoId || undefined,
+      },
+      quadro,
+      false,
+    );
+  }
+
+  function criarGuiado(corpo: Corpo5W2H, alvo: EstadoProjeto) {
+    void criarProjeto(corpo as unknown as Record<string, unknown>, alvo, true);
   }
 
   async function mover(p: Projeto, para: EstadoProjeto) {
@@ -409,11 +429,46 @@ function ProjetosConteudo() {
       {/* Modal de Criação de Projeto */}
       <Dialog
         open={modalAberto}
-        onClose={() => setModalAberto(false)}
+        onClose={fecharModal}
         title="Novo Projeto"
-        description="O projeto entra no quadro escolhido. O nome da coluna é só o rótulo; o sistema guarda o estado."
+        description={
+          modo === "5w2h"
+            ? "Sete passos para o plano diretor. Só o nome do projeto é obrigatório."
+            : "O projeto entra no quadro escolhido. O nome da coluna é só o rótulo; o sistema guarda o estado."
+        }
         size="full"
       >
+        <div className="mt-3 flex gap-2" role="group" aria-label="Tipo de criação">
+          <Button
+            type="button"
+            variant={modo === "branco" ? "primary" : "secondary"}
+            onClick={() => setModo("branco")}
+          >
+            Em branco
+          </Button>
+          <Button
+            type="button"
+            variant={modo === "5w2h" ? "primary" : "secondary"}
+            onClick={() => setModo("5w2h")}
+            data-testid="modo-5w2h"
+          >
+            5W2H
+          </Button>
+        </div>
+        {modo === "5w2h" ? (
+          <Wizard5W2H
+            produtos={produtos.data ?? []}
+            colunas={ordenarColunas(
+              catalogo.colunas.filter((coluna) => coluna.ativa !== false),
+            ).map((coluna) => ({
+              value: coluna.id,
+              label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
+            }))}
+            pending={pending}
+            onCancel={fecharModal}
+            onCriar={criarGuiado}
+          />
+        ) : (
         <form onSubmit={criar} className="mt-3 grid gap-3">
           <Input
             id="proj-titulo"
@@ -472,12 +527,12 @@ function ProjetosConteudo() {
               }))}
             />
 
-            <Input
+            <PessoaDaUnidade
               id="proj-gerente"
               label="Responsável / Gerente"
-              value={gerenteNome}
-              onChange={(e) => setGerenteNome(e.target.value)}
-              placeholder="Nome do gerente"
+              unidadeId={unidadeId}
+              value={gerente}
+              onChange={setGerente}
             />
           </div>
 
@@ -524,6 +579,7 @@ function ProjetosConteudo() {
             </Button>
           </div>
         </form>
+        )}
       </Dialog>
       <PainelDoQuadro
         aberto={painel.id !== null}

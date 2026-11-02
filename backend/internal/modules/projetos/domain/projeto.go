@@ -53,6 +53,20 @@ var (
 	ErrVinculoInexistente       = errors.New("projetos: item do vínculo não encontrado")
 	ErrDeOutraUnidade           = errors.New("projetos: o vínculo ou produto precisa ser da mesma unidade do projeto")
 	ErrIntegracaoDesligada      = errors.New("projetos: o módulo deste vínculo está desligado")
+	ErrPeriodoInvalido          = errors.New("projetos: término antes do início")
+	ErrOrcamentoInvalido        = errors.New("projetos: orçamento negativo")
+	ErrEtapaInvalida            = errors.New("projetos: etapa inválida")
+	ErrCartaInvalida            = errors.New("projetos: carta inválida")
+	ErrPessoaInvalida           = errors.New("projetos: pessoa inválida")
+	ErrReaberturaExigeAprovacao = errors.New("projetos: concluído só reabre com aprovação")
+	ErrReaberturaNaoAutorizada  = errors.New("projetos: reabertura não autorizada")
+	ErrMotivoObrigatorio        = errors.New("projetos: motivo obrigatório")
+)
+
+const (
+	// OrigemHow marca a tarefa nascida de uma etapa do passo Como.
+	// Vazio é tarefa lançada à mão. Salvar a carta não mexe nisso.
+	OrigemHow = "how"
 )
 
 // Alvo é o que o projeto precisa saber de um item de outro plug-in.
@@ -95,33 +109,35 @@ var transicoesProjeto = map[string][]string{
 	EstadoPlanejado:   {EstadoEmAndamento, EstadoCancelado},
 	EstadoEmAndamento: {EstadoSuspenso, EstadoConcluido, EstadoCancelado},
 	EstadoSuspenso:    {EstadoEmAndamento, EstadoCancelado},
-	EstadoConcluido:   {EstadoEmAndamento},
+	EstadoConcluido:   {},
 	EstadoCancelado:   {},
 }
 
 // Projeto representa um projeto ou iniciativa institucional.
 type Projeto struct {
-	ID                  uuid.UUID  `json:"id"`
-	Numero              int64      `json:"numero"`
-	Titulo              string     `json:"titulo"`
-	Descricao           string     `json:"descricao"`
-	Objetivo            string     `json:"objetivo"`
-	Estado              string     `json:"estado"`
-	Prioridade          string     `json:"prioridade"`
-	DataInicioPlanejada *time.Time `json:"data_inicio_planejada,omitempty"`
-	DataFimPlanejada    *time.Time `json:"data_fim_planejada,omitempty"`
-	DataInicioReal      *time.Time `json:"data_inicio_real,omitempty"`
-	DataFimReal         *time.Time `json:"data_fim_real,omitempty"`
-	Orcamento           float64    `json:"orcamento"`
-	UnidadeID           *uuid.UUID `json:"unidade_id,omitempty"`
-	ProdutoID           *uuid.UUID `json:"produto_id,omitempty"`
-	GerenteID           *uuid.UUID `json:"gerente_id,omitempty"`
-	GerenteNome         string     `json:"gerente_nome"`
-	CreatedAt           time.Time  `json:"created_at"`
-	UpdatedAt           time.Time  `json:"updated_at"`
-	Proximos            []string   `json:"proximos"`
-	Tarefas             []Tarefa   `json:"tarefas,omitempty"`
-	Vinculos            []Vinculo  `json:"vinculos,omitempty"`
+	ID                  uuid.UUID   `json:"id"`
+	Numero              int64       `json:"numero"`
+	Titulo              string      `json:"titulo"`
+	Descricao           string      `json:"descricao"`
+	Objetivo            string      `json:"objetivo"`
+	Estado              string      `json:"estado"`
+	Prioridade          string      `json:"prioridade"`
+	DataInicioPlanejada *time.Time  `json:"data_inicio_planejada,omitempty"`
+	DataFimPlanejada    *time.Time  `json:"data_fim_planejada,omitempty"`
+	DataInicioReal      *time.Time  `json:"data_inicio_real,omitempty"`
+	DataFimReal         *time.Time  `json:"data_fim_real,omitempty"`
+	Orcamento           float64     `json:"orcamento"`
+	UnidadeID           *uuid.UUID  `json:"unidade_id,omitempty"`
+	ProdutoID           *uuid.UUID  `json:"produto_id,omitempty"`
+	GerenteID           *uuid.UUID  `json:"gerente_id,omitempty"`
+	GerenteNome         string      `json:"gerente_nome"`
+	CreatedAt           time.Time   `json:"created_at"`
+	UpdatedAt           time.Time   `json:"updated_at"`
+	Proximos            []string    `json:"proximos"`
+	PodeReabrir         bool        `json:"pode_reabrir,omitempty"`
+	Reabertura          *Reabertura `json:"reabertura,omitempty"`
+	Tarefas             []Tarefa    `json:"tarefas,omitempty"`
+	Vinculos            []Vinculo   `json:"vinculos,omitempty"`
 }
 
 // Vinculo representa a ligação do projeto com uma mudança, problema, ativo ou chamado.
@@ -141,10 +157,12 @@ type Tarefa struct {
 	ProjetoID       uuid.UUID  `json:"projeto_id"`
 	Titulo          string     `json:"titulo"`
 	Descricao       string     `json:"descricao"`
+	ResponsavelID   *uuid.UUID `json:"responsavel_id,omitempty"`
 	ResponsavelNome string     `json:"responsavel_nome"`
 	Estado          string     `json:"estado"`
 	Ordem           int        `json:"ordem"`
 	DataLimite      *time.Time `json:"data_limite,omitempty"`
+	Origem          string     `json:"origem,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
@@ -213,7 +231,7 @@ func EstadoDeTarefaAceito(atual, novo string, mapa map[string][]string) bool {
 }
 
 func ProximosEstados(estado string, extras ...string) []string {
-	if estado == EstadoCancelado {
+	if estado == EstadoCancelado || estado == EstadoConcluido {
 		return nil
 	}
 	out := append([]string{}, transicoesProjeto[estado]...)
@@ -227,7 +245,7 @@ func ProximosEstados(estado string, extras ...string) []string {
 
 // ValidarTransicao verifica se a mudança de estado é permitida pela máquina de estados.
 func ValidarTransicao(atual, novo string, extras ...string) bool {
-	if atual == EstadoCancelado {
+	if atual == EstadoCancelado || atual == EstadoConcluido {
 		return false
 	}
 	for _, p := range ProximosEstados(atual, extras...) {

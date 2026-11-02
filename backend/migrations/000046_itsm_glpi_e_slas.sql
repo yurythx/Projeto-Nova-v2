@@ -33,6 +33,7 @@ SET nome = EXCLUDED.nome, tempo_resposta_minutos = EXCLUDED.tempo_resposta_minut
 UPDATE atendimento_categorias SET sla_id = 'a0000001-0000-0000-0000-000000000002'::uuid WHERE sla_id IS NULL;
 
 -- Variáveis auxiliares para IDs de unidades e usuários
+-- +goose StatementBegin
 DO $$
 DECLARE
     v_pref_id UUID;
@@ -116,6 +117,7 @@ BEGIN
     ON CONFLICT DO NOTHING;
 
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 -- Reversão da migration 46

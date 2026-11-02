@@ -26,10 +26,16 @@ type Repository interface {
 	Listar(ctx context.Context, db database.DBTX, filtro FiltroProjetos) ([]Projeto, error)
 	Atualizar(ctx context.Context, db database.DBTX, id uuid.UUID, e EntradaProjeto) (*Projeto, error)
 	Transicionar(ctx context.Context, db database.DBTX, id uuid.UUID, novoEstado string) (*Projeto, error)
+	PosicaoUnidade(ctx context.Context, db database.DBTX, unidade uuid.UUID) (entidade *uuid.UUID, acima []uuid.UUID, err error)
+	Aprovadores(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]uuid.UUID, error)
+	SalvarReabertura(ctx context.Context, db database.DBTX, r *Reabertura) error
+	UltimaReabertura(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Reabertura, bool, error)
 
 	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error
-	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, responsavel, estado string, ordem int, dataLimite *time.Time) (*Tarefa, error)
+	ObterTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (*Tarefa, error)
+	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*Tarefa, error)
+	NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)
 	ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error
 
@@ -40,4 +46,10 @@ type Repository interface {
 	CriarApontamento(ctx context.Context, db database.DBTX, a *Apontamento) error
 	ListarApontamentos(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Apontamento, error)
 	ExcluirApontamento(ctx context.Context, db database.DBTX, id uuid.UUID) error
+
+	ObterCarta(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Carta, bool, error)
+	SalvarCarta(ctx context.Context, db database.DBTX, projetoID uuid.UUID, c EntradaCarta) (Carta, error)
+	AtualizarPlano(ctx context.Context, db database.DBTX, id uuid.UUID, p Plano5W2H) (*Projeto, error)
+	ContarEtapasHow(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (total, concluidas int, err error)
+	SomarCusto(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (float64, error)
 }

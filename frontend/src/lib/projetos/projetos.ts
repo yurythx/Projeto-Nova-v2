@@ -25,8 +25,19 @@ export interface Projeto {
   gerente_nome: string;
   created_at: string;
   updated_at: string;
+  pode_reabrir?: boolean;
+  reabertura?: ReaberturaProjeto;
   tarefas?: Tarefa[];
   vinculos?: VinculoProjeto[];
+}
+
+export interface ReaberturaProjeto {
+  id: string;
+  projeto_id: string;
+  motivo: string;
+  aprovador_id: string;
+  aprovador_nome: string;
+  created_at: string;
 }
 
 export type TipoVinculoProjeto = "mudanca" | "problema" | "ativo" | "solicitacao";
@@ -55,10 +66,12 @@ export interface Tarefa {
   projeto_id: string;
   titulo: string;
   descricao: string;
+  responsavel_id?: string;
   responsavel_nome: string;
   estado: EstadoTarefa;
   ordem: number;
   data_limite?: string;
+  origem?: string;
   created_at: string;
   updated_at: string;
 }

@@ -16,8 +16,11 @@ func TestPassagemExtraDoProjetoEDaTarefa(t *testing.T) {
 	if ValidarTransicao(EstadoPlanejado, coluna) {
 		t.Fatal("sem extra o projeto não pula para a coluna nova")
 	}
-	if !ValidarTransicao(EstadoConcluido, EstadoEmAndamento) {
-		t.Fatal("concluído ainda volta para em andamento")
+	if ValidarTransicao(EstadoConcluido, EstadoEmAndamento) || ValidarTransicao(EstadoConcluido, EstadoEmAndamento, EstadoEmAndamento) {
+		t.Fatal("concluído não volta pela passagem comum")
+	}
+	if ProximosEstados(EstadoConcluido, EstadoEmAndamento) != nil {
+		t.Fatal("concluído não oferece próximo estado")
 	}
 
 	if !EstadoDeTarefaAceito("", "", nil) || !EstadoDeTarefaAceito(EstadoTarefaAFazer, EstadoTarefaConcluida, nil) {
