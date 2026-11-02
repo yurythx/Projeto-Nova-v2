@@ -296,6 +296,7 @@ export function ProjetoGanttChart({
               <button
                 key={dias}
                 type="button"
+                aria-pressed={janelaDias === dias}
                 onClick={() => setJanelaDias(dias)}
                 className={`rounded px-2 py-0.5 text-[11px] font-medium transition-all ${
                   janelaDias === dias

@@ -136,10 +136,13 @@ describe("ProjetoGanttChart (Cronograma Visual Interativo)", () => {
     const user = userEvent.setup();
     render(<ProjetoGanttChart projeto={projetoMock} tarefas={tarefasMock} />);
 
-    // Zoom 30d, 180d e 365d
+    expect(screen.getByRole("button", { name: "90d" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: "30d" }));
+    expect(screen.getByRole("button", { name: "30d" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "90d" })).toHaveAttribute("aria-pressed", "false");
     await user.click(screen.getByRole("button", { name: "180d" }));
     await user.click(screen.getByRole("button", { name: "365d" }));
+    expect(screen.getByRole("button", { name: "365d" })).toHaveAttribute("aria-pressed", "true");
     // Navegar duas semanas
     await user.click(screen.getByRole("button", { name: "Duas semanas depois" }));
     // Voltar para hoje

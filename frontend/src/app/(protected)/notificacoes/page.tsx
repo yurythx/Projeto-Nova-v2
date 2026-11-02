@@ -13,11 +13,30 @@ import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 
 /** Módulos que enviam avisos (as preferências valem por módulo). */
-const MODULOS: { chave: string; nome: string; descricao: string }[] = [
+const MODULOS: { chave: string; nome: string; descricao: string; rotulo: string }[] = [
   {
     chave: "tramite",
     nome: "Trâmite",
     descricao: "Mudança em um processo que você abriu. O módulo nasce desligado.",
+    rotulo: "Avisos do Trâmite",
+  },
+  {
+    chave: "atendimento",
+    nome: "Atendimento",
+    descricao: "Pedido, aprovação, prazo e avaliação de uma solicitação sua.",
+    rotulo: "Avisos do Atendimento",
+  },
+  {
+    chave: "projetos",
+    nome: "Projetos",
+    descricao: "Conclusão ou reabertura de um projeto em que você atua.",
+    rotulo: "Avisos de Projetos",
+  },
+  {
+    chave: "contratos",
+    nome: "Contratos",
+    descricao: "Vencimento de contrato ou licença no seu cadastro.",
+    rotulo: "Avisos de Contratos",
   },
 ];
 
@@ -129,7 +148,7 @@ export default function NotificacoesPage() {
                 <Toggle
                   checked={ativo(m.chave)}
                   onChange={(v) => void preferir(m.chave, v)}
-                  label={`Avisos do ${m.nome}`}
+                  label={m.rotulo}
                 />
               </div>
             ))}

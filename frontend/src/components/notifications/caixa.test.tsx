@@ -145,6 +145,18 @@ describe("página de notificações", () => {
       "aria-checked",
       "false",
     );
+    expect(screen.getByRole("switch", { name: "Avisos do Atendimento" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("switch", { name: "Avisos de Projetos" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("switch", { name: "Avisos de Contratos" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
     await userEvent.click(screen.getByRole("switch", { name: "Avisos do Trâmite" }));
     await waitFor(() =>
       expect(api.to("PUT v1/notificacoes/preferencias")[0]!.body).toEqual({
