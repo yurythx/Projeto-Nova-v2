@@ -40,8 +40,8 @@ export function ProjetoGanttChart({
 }: ProjetoGanttChartProps) {
   // Filtro por estado da tarefa
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
-  // Janela em dias (30, 60 ou 90 dias)
-  const [janelaDias, setJanelaDias] = useState<number>(60);
+  // Janela em dias. 90 é o padrão, no mesmo recorte da carteira.
+  const [janelaDias, setJanelaDias] = useState<number>(90);
 
   // Um só "agora" por montagem: linha de hoje e atraso concordam entre si
   // e com qualquer nova renderização.
@@ -292,7 +292,7 @@ export function ProjetoGanttChart({
         <div className="flex items-center gap-2">
           {/* Zoom temporal */}
           <div className="flex items-center rounded-lg border border-surface-border p-0.5 bg-black/[0.02] dark:bg-white/[0.02]">
-            {[30, 60, 90].map((dias) => (
+            {[30, 90, 180, 365].map((dias) => (
               <button
                 key={dias}
                 type="button"

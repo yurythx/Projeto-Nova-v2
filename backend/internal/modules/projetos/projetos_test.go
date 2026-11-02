@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -589,5 +591,220 @@ func TestConclusaoAvisaQuemPodeReabrir(t *testing.T) {
 	}
 	if avisos(daUnidade) != 0 {
 		t.Fatalf("gestor da própria unidade foi avisado")
+	}
+
+	gerente := conta("Gerente do portal", nil)
+	if _, err := pool.Exec(ctx, `INSERT INTO directory_profiles (user_id, unidade_id) VALUES ($1, $2), ($3, $2)`, gerente, filha, daUnidade); err != nil {
+		t.Fatal(err)
+	}
+	comGerente, err := svc.Criar(ctx, gestor, domain.EntradaProjeto{Titulo: "Com gerente", UnidadeID: &filha, GerenteID: &gerente})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, comGerente.ID) })
+	if _, err := svc.Transicionar(ctx, gestor, comGerente.ID, domain.EstadoEmAndamento); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, gestor, comGerente.ID, domain.EstadoConcluido); err != nil {
+		t.Fatal(err)
+	}
+	doGerente := func(user uuid.UUID) int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM notificacoes WHERE user_id = $1 AND modulo = 'projetos' AND link = $2`,
+			user, "/projetos/"+comGerente.ID.String()).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if doGerente(gerente) != 1 {
+		t.Fatalf("gerente na conclusão: %d", doGerente(gerente))
+	}
+	if doGerente(daUnidade) != 0 {
+		t.Fatalf("quem concluiu foi avisado no projeto do gerente")
+	}
+
+	proprio, err := svc.Criar(ctx, gestor, domain.EntradaProjeto{Titulo: "Gerente conclui", UnidadeID: &filha, GerenteID: &daUnidade})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, proprio.ID) })
+	if _, err := svc.Transicionar(ctx, gestor, proprio.ID, domain.EstadoEmAndamento); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, gestor, proprio.ID, domain.EstadoConcluido); err != nil {
+		t.Fatal(err)
+	}
+	var nProprio int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM notificacoes WHERE user_id = $1 AND link = $2`,
+		daUnidade, "/projetos/"+proprio.ID.String()).Scan(&nProprio); err != nil {
+		t.Fatal(err)
+	}
+	if nProprio != 0 {
+		t.Fatalf("gerente que conclui o próprio projeto foi avisado: %d", nProprio)
+	}
+}
+
+func TestEtapaHowNasceComOLider(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	unidade := dbtest.Unidade(t, pool)
+	slug := "ld-" + uuid.NewString()[:10]
+	var lider uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO users (username, email, display_name, keycloak_subject, roles)
+		VALUES ($1, $1 || '@nova.test', 'Líder da unidade', $1, '{}') RETURNING id`, slug).Scan(&lider); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, lider) })
+	if _, err := pool.Exec(ctx, `INSERT INTO directory_profiles (user_id, unidade_id) VALUES ($1, $2)`, lider, unidade); err != nil {
+		t.Fatal(err)
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := application.NewService(pool, infrastructure.NewRepository(), outbox.NewWriter("test"), logger)
+	gestor := auth.Identity{
+		UserID: uuid.New(), Name: "Gestor",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID: &unidade, Unidades: []uuid.UUID{unidade},
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	repo := infrastructure.NewRepository()
+	comLider, err := svc.CriarGuiado(ctx, gestor, domain.EntradaProjeto{
+		Titulo: "Portal", UnidadeID: &unidade, GerenteID: &lider,
+	}, domain.EntradaCarta{}, []string{"Planejar"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, comLider.ID) })
+	tarefas, err := repo.ListarTarefas(ctx, pool, comLider.ID)
+	if err != nil || len(tarefas) != 1 || tarefas[0].ResponsavelID == nil || *tarefas[0].ResponsavelID != lider || tarefas[0].ResponsavelNome != "Líder da unidade" {
+		t.Fatalf("etapa com líder: %+v %v", tarefas, err)
+	}
+
+	semLider, err := svc.CriarGuiado(ctx, gestor, domain.EntradaProjeto{
+		Titulo: "Sem líder", UnidadeID: &unidade,
+	}, domain.EntradaCarta{}, []string{"Solta"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, semLider.ID) })
+	livres, err := repo.ListarTarefas(ctx, pool, semLider.ID)
+	if err != nil || len(livres) != 1 || livres[0].ResponsavelID != nil || livres[0].ResponsavelNome != "" {
+		t.Fatalf("etapa sem líder: %+v %v", livres, err)
+	}
+}
+
+func TestReaberturaAvisaGerente(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	pai := dbtest.Unidade(t, pool)
+	var entidade, filha uuid.UUID
+	if err := pool.QueryRow(ctx, `SELECT entidade_id FROM unidades WHERE id = $1`, pai).Scan(&entidade); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO unidades (entidade_id, parent_id, nome, slug) VALUES ($1, $2, 'Filha reabre', $3) RETURNING id`,
+		entidade, pai, "fr-"+uuid.NewString()[:12]).Scan(&filha); err != nil {
+		t.Fatal(err)
+	}
+	conta := func(nome string) uuid.UUID {
+		t.Helper()
+		slug := "rb-" + uuid.NewString()[:10]
+		var id uuid.UUID
+		if err := pool.QueryRow(ctx, `INSERT INTO users (username, email, display_name, keycloak_subject, roles)
+			VALUES ($1, $1 || '@nova.test', $2, $1, '{}') RETURNING id`, slug, nome).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			_, _ = pool.Exec(context.Background(), `DELETE FROM notificacoes WHERE user_id = $1`, id)
+			_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, id)
+		})
+		return id
+	}
+	gerente := conta("Gerente do portal")
+	superior := conta("Chefia")
+	if _, err := pool.Exec(ctx, `INSERT INTO directory_profiles (user_id, unidade_id) VALUES ($1, $2), ($3, $2)`, gerente, filha, superior); err != nil {
+		t.Fatal(err)
+	}
+	var perfil uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO perfis (slug, nome, permissoes) VALUES ($1, 'Reabre projetos', '{projetos:manage}') RETURNING id`,
+		"rb-"+uuid.NewString()[:12]).Scan(&perfil); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM user_scopes WHERE perfil_id = $1`, perfil)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM perfis WHERE id = $1`, perfil)
+	})
+	if _, err := pool.Exec(ctx, `INSERT INTO user_scopes (user_id, perfil_id, unidade_id) VALUES ($1, $2, $3)`, superior, perfil, pai); err != nil {
+		t.Fatal(err)
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := application.NewService(pool, infrastructure.NewRepository(), outbox.NewWriter("test"), logger)
+	svc.ComAvisos(notificacoes.NewService(pool, nil, logger))
+	gestor := auth.Identity{
+		UserID: uuid.New(), Name: "Gestor",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID: &filha, Unidades: []uuid.UUID{filha},
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	quemReabre := auth.Identity{
+		UserID: superior, Name: "Chefia",
+		Permissions: []string{string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID: &pai, Unidades: []uuid.UUID{pai, filha},
+			Permissions: []string{string(auth.PermProjetosManage)},
+		}},
+	}
+	fechar := func(titulo string, lider *uuid.UUID) *domain.Projeto {
+		t.Helper()
+		p, err := svc.Criar(ctx, gestor, domain.EntradaProjeto{Titulo: titulo, UnidadeID: &filha, GerenteID: lider})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
+		if _, err := svc.Transicionar(ctx, gestor, p.ID, domain.EstadoEmAndamento); err != nil {
+			t.Fatal(err)
+		}
+		fechado, err := svc.Transicionar(ctx, gestor, p.ID, domain.EstadoConcluido)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return fechado
+	}
+	aviso := func(user uuid.UUID, titulo string) (int, string) {
+		t.Helper()
+		var n int
+		var mensagem string
+		err := pool.QueryRow(ctx, `SELECT count(*), COALESCE(max(mensagem), '') FROM notificacoes
+			WHERE user_id = $1 AND titulo = $2`, user, titulo).Scan(&n, &mensagem)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return n, mensagem
+	}
+
+	p := fechar("Portal", &gerente)
+	if _, err := svc.Reabrir(ctx, quemReabre, p.ID, "O escopo voltou"); err != nil {
+		t.Fatal(err)
+	}
+	titulo := "Projeto #" + strconv.FormatInt(p.Numero, 10) + " reaberto"
+	n, mensagem := aviso(gerente, titulo)
+	if n != 1 || !strings.Contains(mensagem, "O escopo voltou") || !strings.Contains(mensagem, "Chefia") {
+		t.Fatalf("aviso do gerente: %d %q", n, mensagem)
+	}
+	if n, _ := aviso(superior, titulo); n != 0 {
+		t.Fatalf("quem reabriu também foi avisado: %d", n)
+	}
+
+	proprio := fechar("Portal da chefia", &superior)
+	if _, err := svc.Reabrir(ctx, quemReabre, proprio.ID, "Eu mesmo reabro"); err != nil {
+		t.Fatal(err)
+	}
+	tituloProprio := "Projeto #" + strconv.FormatInt(proprio.Numero, 10) + " reaberto"
+	if n, _ := aviso(superior, tituloProprio); n != 0 {
+		t.Fatalf("gerente que reabre a si mesmo foi avisado: %d", n)
 	}
 }

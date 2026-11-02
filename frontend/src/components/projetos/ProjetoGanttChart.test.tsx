@@ -136,8 +136,10 @@ describe("ProjetoGanttChart (Cronograma Visual Interativo)", () => {
     const user = userEvent.setup();
     render(<ProjetoGanttChart projeto={projetoMock} tarefas={tarefasMock} />);
 
-    // Zoom 30d
+    // Zoom 30d, 180d e 365d
     await user.click(screen.getByRole("button", { name: "30d" }));
+    await user.click(screen.getByRole("button", { name: "180d" }));
+    await user.click(screen.getByRole("button", { name: "365d" }));
     // Navegar duas semanas
     await user.click(screen.getByRole("button", { name: "Duas semanas depois" }));
     // Voltar para hoje

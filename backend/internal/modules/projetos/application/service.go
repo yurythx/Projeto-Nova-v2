@@ -222,6 +222,7 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 			for i, titulo := range etapas {
 				t := &domain.Tarefa{
 					ID: uuid.New(), ProjetoID: p.ID, Titulo: titulo,
+					ResponsavelID: p.GerenteID, ResponsavelNome: p.GerenteNome,
 					Estado: domain.EstadoTarefaAFazer, Ordem: i + 1, Origem: domain.OrigemHow,
 				}
 				if err := s.repo.CriarTarefa(ctx, tx, t); err != nil {
@@ -516,10 +517,22 @@ func (s *Service) avisarAprovadores(ctx context.Context, tx pgx.Tx, p *domain.Pr
 	if err != nil {
 		return nil, err
 	}
-	destinos := make([]uuid.UUID, 0, len(ids))
+	destinos := make([]uuid.UUID, 0, len(ids)+1)
 	for _, id := range ids {
 		if id != autor && id != uuid.Nil {
 			destinos = append(destinos, id)
+		}
+	}
+	if p.GerenteID != nil && *p.GerenteID != uuid.Nil && *p.GerenteID != autor {
+		ja := false
+		for _, id := range destinos {
+			if id == *p.GerenteID {
+				ja = true
+				break
+			}
+		}
+		if !ja {
+			destinos = append(destinos, *p.GerenteID)
 		}
 	}
 	titulo := p.Titulo
@@ -588,6 +601,7 @@ func (s *Service) Reabrir(ctx context.Context, idt auth.Identity, id uuid.UUID, 
 		return nil, err
 	}
 	var atualizado *domain.Projeto
+	var enviadas []notificacoes.Enviada
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		p, err := s.repo.Obter(ctx, tx, id)
 		if err != nil {
@@ -622,6 +636,10 @@ func (s *Service) Reabrir(ctx context.Context, idt auth.Identity, id uuid.UUID, 
 		}
 		res.Reabertura = reab
 		atualizado = res
+		enviadas, err = s.avisarReabertura(ctx, tx, res, motivo, aprovador, reab.AprovadorNome)
+		if err != nil {
+			return err
+		}
 		if s.outbox != nil {
 			payload := map[string]any{"id": id, "motivo": motivo, "aprovador_id": aprovador}
 			if err := s.outbox.Write(ctx, tx, "projetos.projeto.reopened", "projeto", id.String(), uuid.Nil, payload); err != nil {
@@ -633,7 +651,35 @@ func (s *Service) Reabrir(ctx context.Context, idt auth.Identity, id uuid.UUID, 
 	if err != nil {
 		return nil, err
 	}
+	if s.avisos != nil {
+		s.avisos.Entregar(ctx, enviadas)
+	}
 	return s.comProximos(ctx, s.pool, atualizado)
+}
+
+func (s *Service) avisarReabertura(ctx context.Context, tx pgx.Tx, p *domain.Projeto, motivo string, autor uuid.UUID, autorNome string) ([]notificacoes.Enviada, error) {
+	if s.avisos == nil || p == nil || p.GerenteID == nil || *p.GerenteID == uuid.Nil || *p.GerenteID == autor {
+		return nil, nil
+	}
+	quem := autorNome
+	if quem == "" {
+		quem = "um superior"
+	}
+	mensagem := cortar("Reaberto por "+quem+". "+motivo, 1000)
+	return notificacoes.Registrar(ctx, tx, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
+		Modulo:   "projetos",
+		Titulo:   "Projeto #" + strconv.FormatInt(p.Numero, 10) + " reaberto",
+		Mensagem: mensagem,
+		Link:     "/projetos/" + p.ID.String(),
+		Chave:    "projetos:" + p.ID.String() + ":reaberto:" + strconv.FormatInt(p.UpdatedAt.UnixNano(), 10),
+	})
+}
+
+func cortar(s string, max int) string {
+	if utf8.RuneCountInString(s) <= max {
+		return s
+	}
+	return string([]rune(s)[:max])
 }
 
 func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {

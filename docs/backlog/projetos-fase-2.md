@@ -24,4 +24,6 @@ A carteira abre em 90 dias e oferece 30, 180 e 365.
 `concluido` não sai pela passagem comum. A reabertura é `POST /projetos/{id}/reabertura`
 com o motivo, feita por um superior da unidade ou por um administrador. O
 registro fica em `projetos_reaberturas`. Ao concluir, quem pode reabrir
-recebe o aviso na caixa, com o link da ficha.
+e o gerente recebem o aviso na caixa, com o link da ficha; quem concluiu
+não recebe o próprio aviso. Ao reabrir, o gerente recebe o motivo, salvo
+quando é ele quem reabre.

@@ -339,7 +339,7 @@ export function Wizard5W2H({
             </Button>
           </div>
           <p className="text-xs text-muted">
-            Cada etapa vira uma tarefa em &quot;A fazer&quot;. Editar a carta depois não cria tarefa de novo.
+            Cada etapa vira uma tarefa em &quot;A fazer&quot;, com o líder como responsável. Editar a carta depois não cria tarefa de novo.
           </p>
           {etapas.length > 0 && (
             <ol className="grid gap-1 text-sm">
