@@ -18,35 +18,24 @@ const RISCO_MOCK = {
   probabilidade: 4,
   impacto: 4,
   severidade: 16,
-  nivel_severidade: "alto",
   estrategia: "mitigar",
   plano_mitigacao: "Contratação de link redundante e BGP automático.",
   controle_iso27001: "A.17.1 - Continuidade da Segurança da Informação",
-  status: "em_tratamento",
+  status: "em_mitigacao",
   responsavel_nome: "Equipe de Redes",
   unidade_id: "u1",
   created_at: "2026-10-31T20:00:00Z",
   updated_at: "2026-10-31T20:00:00Z",
 };
 
-const HEATMAP_MOCK = [
-  {
-    probabilidade: 4,
-    impacto: 4,
-    severidade: 16,
-    nivel: "alto",
-    total_riscos: 1,
-    riscos: [
-      {
-        id: "r1",
-        codigo: "RSK-001",
-        titulo: "Falha de Link Primário de Internet",
-        categoria: "infraestrutura",
-        status: "em_tratamento",
-      },
-    ],
-  },
-];
+const HEATMAP_MOCK = {
+  matriz: [{ probabilidade: 4, impacto: 4, severidade: 16, quantidade: 1 }],
+  total_riscos: 1,
+  criticos: 0,
+  altos: 1,
+  medios: 0,
+  baixos: 0,
+};
 
 beforeEach(() => {
   resetNavigation({}, "/riscos");
@@ -66,6 +55,8 @@ describe("Matriz de Riscos (ISO/IEC 27001)", () => {
     expect(screen.getByText("RSK-001")).toBeInTheDocument();
     expect(screen.getByText("Falha de Link Primário de Internet")).toBeInTheDocument();
     expect(screen.getByText("A.17.1 - Continuidade da Segurança da Informação")).toBeInTheDocument();
+    expect(screen.getAllByText("Em mitigação").length).toBeGreaterThan(0);
+    expect(screen.getByText("16 • ALTO")).toBeInTheDocument();
   });
 
   it("permite abrir o modal de cadastro e cadastrar novo risco", async () => {
@@ -73,7 +64,9 @@ describe("Matriz de Riscos (ISO/IEC 27001)", () => {
 
     mockBackend({
       ...identityRoutes(),
-      "GET v1/riscos/heatmap": { data: [] },
+      "GET v1/riscos/heatmap": {
+        data: { matriz: [], total_riscos: 0, criticos: 0, altos: 0, medios: 0, baixos: 0 },
+      },
       "GET v1/riscos": { data: [] },
       "POST v1/riscos": (req: any) => {
         payloadCriado = req.body;

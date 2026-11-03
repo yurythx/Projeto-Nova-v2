@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api/client";
 export type CategoriaRisco =
   | "seguranca_informacao"
   | "infraestrutura"
+  | "fornecedores"
   | "continuidade"
   | "operacional"
   | "conformidade_lgpd";
@@ -11,10 +12,10 @@ export type EstrategiaRisco = "mitigar" | "aceitar" | "transferir" | "evitar";
 
 export type StatusRisco =
   | "identificado"
-  | "em_tratamento"
-  | "mitigado"
+  | "em_analise"
+  | "em_mitigacao"
   | "monitorado"
-  | "aceito";
+  | "resolvido";
 
 export type NivelSeveridade = "baixo" | "medio" | "alto" | "critico";
 
@@ -27,7 +28,6 @@ export interface Risco {
   probabilidade: number; // 1 a 5
   impacto: number; // 1 a 5
   severidade: number; // 1 a 25
-  nivel_severidade: NivelSeveridade;
   estrategia: EstrategiaRisco;
   plano_mitigacao: string;
   controle_iso27001?: string;
@@ -39,19 +39,20 @@ export interface Risco {
   updated_at: string;
 }
 
-export interface HeatmapItem {
+export interface CelulaHeatmap {
   probabilidade: number;
   impacto: number;
   severidade: number;
-  nivel: NivelSeveridade;
+  quantidade: number;
+}
+
+export interface ResumoHeatmap {
+  matriz: CelulaHeatmap[];
   total_riscos: number;
-  riscos: {
-    id: string;
-    codigo: string;
-    titulo: string;
-    categoria: CategoriaRisco;
-    status: StatusRisco;
-  }[];
+  criticos: number;
+  altos: number;
+  medios: number;
+  baixos: number;
 }
 
 export interface CriarRiscoInput {
@@ -85,6 +86,7 @@ export interface AtualizarRiscoInput {
 export const ROTULOS_CATEGORIA: Record<CategoriaRisco, string> = {
   seguranca_informacao: "Segurança da Informação",
   infraestrutura: "Infraestrutura & Redes",
+  fornecedores: "Fornecedores",
   continuidade: "Continuidade de Negócio",
   operacional: "Operacional & Suporte",
   conformidade_lgpd: "Conformidade LGPD & GRC",
@@ -92,10 +94,10 @@ export const ROTULOS_CATEGORIA: Record<CategoriaRisco, string> = {
 
 export const ROTULOS_STATUS: Record<StatusRisco, string> = {
   identificado: "Identificado",
-  em_tratamento: "Em Tratamento",
-  mitigado: "Mitigado",
+  em_analise: "Em análise",
+  em_mitigacao: "Em mitigação",
   monitorado: "Monitorado",
-  aceito: "Risco Aceito",
+  resolvido: "Resolvido",
 };
 
 export const ROTULOS_ESTRATEGIA: Record<EstrategiaRisco, string> = {
@@ -136,7 +138,7 @@ export const riscosApi = {
   },
 
   heatmap: async () => {
-    return apiClient.get<HeatmapItem[]>("v1/riscos/heatmap");
+    return apiClient.get<ResumoHeatmap>("v1/riscos/heatmap");
   },
 
   obter: async (id: string) => {

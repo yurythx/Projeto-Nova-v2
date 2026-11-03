@@ -27,8 +27,8 @@ import {
   type CategoriaRisco,
   type CriarRiscoInput,
   type EstrategiaRisco,
-  type HeatmapItem,
   type NivelSeveridade,
+  type ResumoHeatmap,
   type Risco,
   ROTULOS_CATEGORIA,
   ROTULOS_ESTRATEGIA,
@@ -61,9 +61,17 @@ function calcularNivel(prob: number, imp: number): { score: number; nivel: Nivel
   return { score, nivel: "baixo" };
 }
 
-function badgeSeveridade(nivel: NivelSeveridade, score?: number) {
-  const label = score ? `${score} • ${nivel.toUpperCase()}` : nivel.toUpperCase();
-  switch (nivel) {
+function nivelDe(score: number): NivelSeveridade {
+  if (score >= 20) return "critico";
+  if (score >= 13) return "alto";
+  if (score >= 7) return "medio";
+  return "baixo";
+}
+
+function badgeSeveridade(nivel: NivelSeveridade | undefined, score?: number) {
+  const n = nivel ?? nivelDe(score ?? 0);
+  const label = score ? `${score} • ${n.toUpperCase()}` : n.toUpperCase();
+  switch (n) {
     case "critico":
       return <Badge tone="danger" className="font-semibold">{label}</Badge>;
     case "alto":
@@ -79,14 +87,16 @@ function badgeStatus(status: StatusRisco) {
   switch (status) {
     case "identificado":
       return <Badge tone="neutral">{ROTULOS_STATUS[status]}</Badge>;
-    case "em_tratamento":
+    case "em_analise":
       return <Badge tone="info">{ROTULOS_STATUS[status]}</Badge>;
-    case "mitigado":
-      return <Badge tone="success">{ROTULOS_STATUS[status]}</Badge>;
+    case "em_mitigacao":
+      return <Badge tone="info">{ROTULOS_STATUS[status]}</Badge>;
     case "monitorado":
       return <Badge tone="warning">{ROTULOS_STATUS[status]}</Badge>;
-    case "aceito":
-      return <Badge tone="danger">{ROTULOS_STATUS[status]}</Badge>;
+    case "resolvido":
+      return <Badge tone="success">{ROTULOS_STATUS[status]}</Badge>;
+    default:
+      return <Badge tone="neutral">{status}</Badge>;
   }
 }
 
@@ -120,14 +130,14 @@ export default function RiscosPage() {
   const [responsavelNome, setResponsavelNome] = useState("");
 
   const { data: riscos, error, isLoading, mutate } = useApiQuery<Risco[]>("v1/riscos");
-  const { data: heatmap } = useApiQuery<HeatmapItem[]>("v1/riscos/heatmap");
+  const { data: heatmap } = useApiQuery<ResumoHeatmap>("v1/riscos/heatmap");
 
   const riscosFiltrados = useMemo(() => {
     if (!riscos) return [];
     return riscos.filter((r) => {
       if (filtroCategoria && r.categoria !== filtroCategoria) return false;
       if (filtroStatus && r.status !== filtroStatus) return false;
-      if (filtroSeveridade && r.nivel_severidade !== filtroSeveridade) return false;
+      if (filtroSeveridade && nivelDe(r.severidade) !== filtroSeveridade) return false;
       if (celulaFiltro && (r.probabilidade !== celulaFiltro.prob || r.impacto !== celulaFiltro.imp)) {
         return false;
       }
@@ -143,13 +153,13 @@ export default function RiscosPage() {
   }, [riscos, filtroCategoria, filtroStatus, filtroSeveridade, celulaFiltro, busca]);
 
   const kpis = useMemo(() => {
-    if (!riscos) return { total: 0, criticos: 0, altos: 0, emTratamento: 0, mitigados: 0 };
+    if (!riscos) return { total: 0, criticos: 0, altos: 0, emTratamento: 0, resolvidos: 0 };
     return {
       total: riscos.length,
-      criticos: riscos.filter((r) => r.nivel_severidade === "critico").length,
-      altos: riscos.filter((r) => r.nivel_severidade === "alto").length,
-      emTratamento: riscos.filter((r) => r.status === "em_tratamento").length,
-      mitigados: riscos.filter((r) => r.status === "mitigado").length,
+      criticos: riscos.filter((r) => nivelDe(r.severidade) === "critico").length,
+      altos: riscos.filter((r) => nivelDe(r.severidade) === "alto").length,
+      emTratamento: riscos.filter((r) => r.status === "em_analise" || r.status === "em_mitigacao").length,
+      resolvidos: riscos.filter((r) => r.status === "resolvido").length,
     };
   }, [riscos]);
 
@@ -233,10 +243,8 @@ export default function RiscosPage() {
   // Mapa de contagem do heatmap
   const mapaHeatmap = useMemo(() => {
     const mapa = new Map<string, number>();
-    if (heatmap) {
-      for (const item of heatmap) {
-        mapa.set(`${item.probabilidade}-${item.impacto}`, item.total_riscos);
-      }
+    for (const item of heatmap?.matriz ?? []) {
+      mapa.set(`${item.probabilidade}-${item.impacto}`, item.quantidade);
     }
     return mapa;
   }, [heatmap]);
@@ -349,7 +357,7 @@ export default function RiscosPage() {
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-1">
             <CardTitle className="text-xs uppercase tracking-wider text-blue-600 font-semibold flex items-center gap-1">
-              <RefreshCw size={14} /> Em Tratamento
+              <RefreshCw size={14} /> Em análise ou mitigação
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -360,11 +368,11 @@ export default function RiscosPage() {
         <Card className="border-l-4 border-l-emerald-600">
           <CardHeader className="pb-1">
             <CardTitle className="text-xs uppercase tracking-wider text-emerald-600 font-semibold flex items-center gap-1">
-              <CheckCircle2 size={14} /> Mitigados
+              <CheckCircle2 size={14} /> Resolvidos
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{kpis.mitigados}</div>
+            <div className="text-2xl font-bold text-emerald-600">{kpis.resolvidos}</div>
           </CardContent>
         </Card>
       </div>
@@ -545,7 +553,7 @@ export default function RiscosPage() {
                       </Badge>
                     </td>
                     <td className="py-3 px-4">
-                      {badgeSeveridade(r.nivel_severidade, r.severidade)}
+                      {badgeSeveridade(nivelDe(r.severidade), r.severidade)}
                       <div className="text-[11px] text-muted-foreground mt-0.5">
                         P: {r.probabilidade} × I: {r.impacto}
                       </div>
