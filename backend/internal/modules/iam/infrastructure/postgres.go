@@ -585,10 +585,26 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	var res domain.ResultadoSSO
 	var antes *bool
 	var depois bool
+	// Usuário ou e-mail já é de outra conta (local ou outro subject).
+	// A consulta evita o INSERT que violaria o índice e iria parar no
+	// log do Postgres; a conta não é vinculada sozinha (ADR 077).
+	var ocupado bool
+	err := db.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM users
+			WHERE keycloak_subject IS DISTINCT FROM $1
+			  AND (username = $2 OR email = $3)
+		)`, u.Subject, username, email).Scan(&ocupado)
+	if err != nil {
+		return res, wrap("upsert sso", err)
+	}
+	if ocupado {
+		return res, domain.ErrConflict
+	}
 	// Desativada no SSO: desativa e marca que foi ele. Ativa no SSO: só
 	// volta a conta que ele mesmo desativou; a que um administrador
 	// desativou continua desativada.
-	err := db.QueryRow(ctx, `
+	err = db.QueryRow(ctx, `
 		WITH antes AS (SELECT active FROM users WHERE keycloak_subject = $2)
 		INSERT INTO users (id, keycloak_subject, username, email, display_name, groups, active, desativada_pelo_sso,
 			created_at, updated_at, ad_synced_at)

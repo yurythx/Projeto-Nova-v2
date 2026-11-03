@@ -61,8 +61,8 @@ if [ "${1:-}" = "--install-cron" ]; then
 # Backup diário e verificação semanal do Projeto-nova-v2
 # (scripts/backup.sh --install-cron)
 SHELL=/bin/bash
-30 2 * * * root cd $ROOT && $vars ./scripts/backup.sh >>/var/log/nova-backup.log 2>&1
-30 4 * * 0 root cd $ROOT && BACKUP_DIR=$BACKUP_DIR ./scripts/backup.sh --verificar >>/var/log/nova-backup.log 2>&1
+30 2 * * * root cd $ROOT && $vars bash scripts/backup.sh >>/var/log/nova-backup.log 2>&1
+30 4 * * 0 root cd $ROOT && BACKUP_DIR=$BACKUP_DIR bash scripts/backup.sh --verificar >>/var/log/nova-backup.log 2>&1
 EOF
   chmod 644 /etc/cron.d/nova-backup
   echo "Agendado: /etc/cron.d/nova-backup (backup 02:30, verificação domingo 04:30, log em /var/log/nova-backup.log)"
@@ -75,7 +75,7 @@ if [ "${1:-}" = "--verificar" ]; then
   ultimo="$(find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -name '2*' | sort | tail -1)"
   [ -n "$ultimo" ] || { echo "$(date '+%F %T') verificação: nenhum backup em $BACKUP_DIR" >&2; exit 1; }
   echo "$(date '+%F %T') verificação de $ultimo"
-  ./scripts/restore.sh --verify "$ultimo"
+  bash scripts/restore.sh --verify "$ultimo"
   date +%s >"$BACKUP_DIR/.ultima-verificacao-ok"
   publicar_metricas
   exit 0

@@ -54,6 +54,10 @@ if [ "$PULL" = 1 ] && [ -d .git ]; then
   git pull --ff-only
 fi
 
+# O cron chama o backup direto. Sem o bit de execução, a cópia diária
+# falha com "Permission denied" e o log só registra isso.
+chmod 755 scripts/backup.sh scripts/restore.sh scripts/deploy.sh 2>/dev/null || true
+
 if [ ! -f .env ]; then
   log "Gerando .env para http://$PUBLIC_HOST (segredos aleatórios)"
   cp .env.example .env
