@@ -510,6 +510,25 @@ func TestListaComoOGLPI(t *testing.T) {
 		lista[0].UnidadeNome == "" {
 		t.Fatalf("mais nova primeiro, com a unidade: %+v", lista)
 	}
+	// O quadro reserva uma vaga por coluna: um concluído recém-mexido não
+	// esconde o aberto mais antigo quando a página cabe só um cartão.
+	if _, err := c.pool.Exec(ctx, `UPDATE atendimento_solicitacoes SET estado = 'resolvido', updated_at = now() WHERE id = $1`, segunda.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.pool.Exec(ctx, `UPDATE atendimento_solicitacoes SET updated_at = now() - interval '2 days' WHERE id = $1`, primeira.ID); err != nil {
+		t.Fatal(err)
+	}
+	quadro, total, err := c.base.ListarFila(ctx, c.tecnico, application.FiltroFila{Unidade: unidade, Ordem: domain.OrdemQuadro}, pagination.New(1, 1, 100))
+	if err != nil || total < 2 || len(quadro) != 2 {
+		t.Fatalf("quadro: %d de %d, %v", len(quadro), total, err)
+	}
+	viu := map[uuid.UUID]bool{}
+	for _, s := range quadro {
+		viu[s.ID] = true
+	}
+	if !viu[primeira.ID] || !viu[segunda.ID] {
+		t.Fatalf("coluna do aberto ficou de fora: %+v", quadro)
+	}
 	for _, f := range []application.FiltroFila{{Prioridade: "urgente"}, {Ordem: "cor"}, {Unidade: "x"}, {Categoria: "x"}, {De: "ontem"}, {Ate: "2026-01-01"}} {
 		if _, _, err := c.base.ListarFila(ctx, c.tecnico, f, pg); !errors.Is(err, domain.ErrEntradaInvalida) {
 			t.Errorf("%+v: %v", f, err)

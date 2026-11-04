@@ -354,10 +354,13 @@ describe("componentes menores", () => {
     expect(screen.getByText("sempre")).toBeInTheDocument();
   });
 
-  it("VLibras inicializa quando o script carrega; falha do widget não quebra", async () => {
+  it("VLibras só carrega quando a pessoa pede Libras; falha do widget não quebra", async () => {
     const Widget = vi.fn();
     window.VLibras = { Widget: Widget as unknown as new (url: string) => void };
     render(<VLibrasWidget />);
+    expect(Widget).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "script vlibras" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Traduzir para Libras" }));
     expect(Widget).toHaveBeenCalledWith("https://vlibras.gov.br/app");
     window.VLibras = {
       Widget: vi.fn(() => {

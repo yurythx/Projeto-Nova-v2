@@ -341,11 +341,21 @@ type FiltroSolicitacao struct {
 	De, Ate            *time.Time
 	// Ordem é uma de OrdensDaLista; vazia mantém a ordem da fila (mais
 	// antigas primeiro) ou a de quem abriu (mais novas primeiro).
-	Ordem  string
-	Desc   bool
+	Ordem string
+	Desc  bool
+	// Quadro devolve até CartasPorColuna cartões em cada coluna, com o
+	// que ainda pede ação antes da conclusão. A página da lista não vale
+	// aqui: um limite único escondia o atendimento atrás dos concluídos.
+	Quadro bool
 	Limit  int
 	Offset int
 }
+
+// OrdemQuadro pede a lista repartida por coluna. Não é coluna da tabela.
+const OrdemQuadro = "quadro"
+
+// CartasPorColuna é o teto de cartões que o quadro traz de cada faixa.
+const CartasPorColuna = 40
 
 // OrdensDaLista são as colunas pelas quais a lista ordena.
 var OrdensDaLista = []string{"numero", "titulo", "unidade", "estado", "prioridade", "atualizada", "aberta",

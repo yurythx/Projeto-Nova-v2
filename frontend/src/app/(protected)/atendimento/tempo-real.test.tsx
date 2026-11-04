@@ -86,7 +86,8 @@ describe("Atendimento — quadro", () => {
     expect(within(coluna("Concluídas")).getByText("Pedido s3")).toBeInTheDocument();
     expect(screen.queryByLabelText("Estado")).not.toBeInTheDocument();
     const q = api.to("GET v1/atendimento/fila").at(-1)!.query;
-    expect(q.get("page_size")).toBe("100");
+    expect(q.get("page_size")).toBe("40");
+    expect(q.get("ordem")).toBe("quadro");
     expect(q.get("estado")).toBeNull();
 
     // Sem passagens, o cartão não tem seletor nem arrasta.
@@ -154,7 +155,7 @@ describe("Atendimento — quadro", () => {
       ...identityRoutes(perms("atendimento:atender")),
       "GET v1/atendimento/fila": {
         ...page(QUADRO),
-        meta: { page: 1, page_size: 100, total_items: 140, total_pages: 2 },
+        meta: { page: 1, page_size: 40, total_items: 140, total_pages: 4 },
       },
       "GET v1/atendimento/fila/topicos": { data: { topicos: [] } },
       "POST v1/atendimento/solicitacoes/s1/estado": fail(
@@ -163,7 +164,7 @@ describe("Atendimento — quadro", () => {
       ),
     });
     renderApp(<AtendimentoFilaPage />);
-    expect(await screen.findByText(/O quadro mostra as 6 mais antigas de 140/)).toBeInTheDocument();
+    expect(await screen.findByText(/O quadro mostra 6 de 140/)).toBeInTheDocument();
     const antes = api.to("GET v1/atendimento/fila").length;
     await user.selectOptions(
       screen.getByLabelText("Mover a solicitação #1 para"),

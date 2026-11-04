@@ -78,6 +78,10 @@ func (f FiltroFila) recortes(filtro *domain.FiltroSolicitacao) error {
 		return domain.ErrEntradaInvalida
 	}
 	filtro.Prioridade = f.Prioridade
+	if f.Ordem == domain.OrdemQuadro {
+		filtro.Quadro = true
+		f.Ordem = ""
+	}
 	if f.Ordem != "" && !slices.Contains(domain.OrdensDaLista, f.Ordem) {
 		return domain.ErrEntradaInvalida
 	}
@@ -855,7 +859,6 @@ func payloadDe(sol domain.Solicitacao) map[string]any {
 	}
 	return p
 }
-
 
 // VincularIncidentePai associa um chamado filho a um incidente pai (AIOps), ou limpa o vínculo (nil).
 func (s *Service) VincularIncidentePai(ctx context.Context, identity auth.Identity, id uuid.UUID, paiID *uuid.UUID) (Detalhe, error) {

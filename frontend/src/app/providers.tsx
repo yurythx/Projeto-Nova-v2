@@ -12,7 +12,7 @@ import { AccessibilityShortcuts } from "@/components/layout/AccessibilityShortcu
 // - SessionProvider (NextAuth);
 // - BrandingProvider (white-label + Alto Contraste e escala de fonte e-MAG);
 // - AccessibilityShortcuts (Alt+1..4 em qualquer página);
-// - VLibrasWidget (widget oficial de Libras em toda página).
+// - VLibrasWidget (botão de Libras em toda página; o player só baixa quando pedem).
 export function Providers({
   children,
   initialBranding,

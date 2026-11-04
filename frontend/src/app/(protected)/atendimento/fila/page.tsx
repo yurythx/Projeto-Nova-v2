@@ -44,11 +44,12 @@ export default function AtendimentoFilaPage() {
   );
 }
 
-/** Fila da equipe: as solicitações das unidades que a pessoa atende, das
- * mais antigas para as mais novas, em lista ou em quadro. As duas vistas
- * leem a mesma consulta e mudam o estado pela mesma API. Quem está com a
- * fila aberta vê as mudanças dos colegas sem recarregar. A vista fica na
- * URL (?vista=lista ou ?vista=quadro). Sem parâmetro, abre o quadro. */
+/** Fila da equipe: as solicitações das unidades que a pessoa atende.
+ * A lista pagina na ordem pedida. O quadro traz até 40 cartões por
+ * coluna, com o que ainda pede ação em cada uma. As duas vistas mudam o
+ * estado pela mesma API. Quem está com a fila aberta vê as mudanças dos
+ * colegas sem recarregar. A vista fica na URL (?vista=lista ou
+ * ?vista=quadro). Sem parâmetro, abre o quadro. */
 function FilaDaEquipe() {
   const { can, me } = usePlataforma();
   const atende = can("atendimento:atender");
@@ -65,8 +66,9 @@ function FilaDaEquipe() {
   const consulta = kanban
     ? {
         ...consultaDaLista(filtros),
+        ordem: "quadro",
         page: 1,
-        page_size: 100,
+        page_size: 40,
       }
     : consultaDaLista(filtros);
   const fila = useApiPage<Solicitacao>(atende ? withQuery("v1/atendimento/fila", consulta) : null);
@@ -208,8 +210,8 @@ function FilaDaEquipe() {
             />
             {(fila.data?.meta?.total_items ?? 0) > itens.length && (
               <p className="text-sm text-muted">
-                O quadro mostra as {itens.length} mais antigas de {fila.data?.meta?.total_items}.
-                Use os filtros ou a lista para ver as demais.
+                O quadro mostra {itens.length} de {fila.data?.meta?.total_items}, até 40 por
+                coluna. O restante está na lista.
               </p>
             )}
           </>

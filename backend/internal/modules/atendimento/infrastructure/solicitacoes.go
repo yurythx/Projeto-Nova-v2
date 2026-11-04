@@ -161,9 +161,44 @@ func (r *Repository) ListSolicitacoes(ctx context.Context, db database.DBTX, f d
 	if err := db.QueryRow(ctx, `SELECT count(*) FROM atendimento_solicitacoes s`+solicitacaoWhere, args...).Scan(&total); err != nil {
 		return nil, 0, mapDB(err)
 	}
-	rows, err := db.Query(ctx, solicitacaoSelect+solicitacaoWhere+`
+	var rows interface {
+		Next() bool
+		Scan(...any) error
+		Err() error
+		Close()
+	}
+	var err error
+	if f.Quadro {
+		por := f.Limit
+		if por < 1 || por > domain.CartasPorColuna {
+			por = domain.CartasPorColuna
+		}
+		// Cada faixa (a conclusão junta resolvido e atendido) guarda os
+		// cartões mais recentemente mexidos, até o teto. Assim a coluna
+		// de concluídos não empurra para fora o que ainda pede ação.
+		rows, err = db.Query(ctx, `WITH recorte AS (
+			SELECT s.id,
+				row_number() OVER (
+					PARTITION BY CASE WHEN s.estado IN ('resolvido', 'atendido') THEN 'concluida' ELSE s.estado END
+					ORDER BY s.updated_at DESC, s.id
+				) AS n
+			FROM atendimento_solicitacoes s`+solicitacaoWhere+`
+		)
+		`+solicitacaoSelect+`
+		JOIN recorte r ON r.id = s.id AND r.n <= $16
+		ORDER BY CASE s.estado
+			WHEN 'aguardando_aprovacao' THEN 1
+			WHEN 'aberto' THEN 2
+			WHEN 'em_atendimento' THEN 3
+			WHEN 'aguardando_servidor' THEN 4
+			WHEN 'aguardando_terceiro' THEN 5
+			ELSE 6
+		END, s.updated_at DESC, s.id`, append(args, por)...)
+	} else {
+		rows, err = db.Query(ctx, solicitacaoSelect+solicitacaoWhere+`
 		ORDER BY `+ordenar(f)+`
 		LIMIT $16 OFFSET $17`, append(args, f.Limit, f.Offset)...)
+	}
 	if err != nil {
 		return nil, 0, mapDB(err)
 	}
@@ -408,7 +443,6 @@ func (r *Repository) LiberarCorreio(ctx context.Context, db database.DBTX, messa
 	_, err := db.Exec(ctx, `DELETE FROM correio_recebidos WHERE message_id = $1`, messageID)
 	return mapDB(err)
 }
-
 
 func (r *Repository) SetIncidentePai(ctx context.Context, db database.DBTX, id uuid.UUID, paiID *uuid.UUID, agora time.Time) error {
 	tag, err := db.Exec(ctx, `UPDATE atendimento_solicitacoes SET incidente_pai_id = $2, updated_at = $3 WHERE id = $1`, id, paiID, agora)

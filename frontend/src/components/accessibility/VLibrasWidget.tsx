@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type HTMLAttributes } from "react";
+import { useEffect, useState, type HTMLAttributes } from "react";
 import Script from "next/script";
 
 declare global {
@@ -32,13 +32,27 @@ function initVLibras() {
 }
 
 // Widget oficial VLibras (Governo Federal — https://vlibras.gov.br): tradução
-// automática de todo o conteúdo do portal para a Língua Brasileira de Sinais.
-// Montado uma vez, globalmente, em app/providers.tsx. O plugin é carregado do
-// domínio oficial vlibras.gov.br — ver as liberações de CSP em src/proxy.ts.
+// para a Língua Brasileira de Sinais. O botão fica em toda página. O player
+// (script e WebAssembly) só baixa quando a pessoa pede Libras — ver as
+// liberações de CSP em src/proxy.ts.
 export function VLibrasWidget() {
+  const [pedido, setPedido] = useState(false);
+
   useEffect(() => {
-    initVLibras();
-  }, []);
+    if (pedido) initVLibras();
+  }, [pedido]);
+
+  if (!pedido) {
+    return (
+      <button
+        type="button"
+        onClick={() => setPedido(true)}
+        className="fixed bottom-4 right-4 z-40 inline-flex h-11 items-center rounded-full bg-primary px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Traduzir para Libras
+      </button>
+    );
+  }
 
   return (
     <>

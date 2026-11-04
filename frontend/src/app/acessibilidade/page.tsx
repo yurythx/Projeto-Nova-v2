@@ -133,9 +133,8 @@ export default async function AccessibilityPage() {
               <h2>VLibras (Língua Brasileira de Sinais)</h2>
             </div>
             <p className="text-xs text-muted leading-relaxed">
-              Através do ícone na barra superior ou do botão abaixo, é possível utilizar a suíte do{" "}
-              <strong>VLibras</strong> para traduzir todo o conteúdo do site para a Língua
-              Brasileira de Sinais - LIBRAS.
+              O botão <strong>Traduzir para Libras</strong>, no canto da página, carrega a suíte do{" "}
+              <strong>VLibras</strong> e traduz o conteúdo para a Língua Brasileira de Sinais.
             </p>
             <div className="mt-auto pt-2">
               <a
