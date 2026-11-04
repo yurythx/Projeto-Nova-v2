@@ -51,6 +51,7 @@ O e-mail já existe ([ADR 049](049-correio-contratos-e-cadastros.md)), mas só s
   - o webhook público `/canais/whatsapp/webhook/{token}` só aceita o token secreto do endereço, conferido em tempo constante. Na Meta, também a assinatura `X-Hub-Signature-256` com o App Secret, e o desafio de cadastro usa o mesmo token;
   - a pessoa é achada pelo número que deixou, contando o celular brasileiro sem o nono dígito, como o WhatsApp às vezes manda. Número de dois donos não vale;
   - a mensagem de texto de **quem pediu** vira comentário no chamado do `#N` ou no único em andamento. Com mais de um, a resposta pede o número. Quem atende responde pela central, onde está a nota interna;
+  - sem chamado em andamento, ou respondendo `novo`, a mesma entrada abre um chamado: serviço, título, descrição e os campos obrigatórios da oferta, pelas regras de `Abrir`. O portal com login continua sendo a outra porta. Na Meta a lista vai como mensagem interativa; na Evolution, os mesmos itens vão numerados em texto livre. Número desconhecido não abre chamado;
   - a mesma mensagem entra uma vez só (a reserva do correio), e a confirmação volta em texto livre dentro da janela de 24 horas;
   - erro ao gravar volta 500, para o provedor tentar de novo.
 

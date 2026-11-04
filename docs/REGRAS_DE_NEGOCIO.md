@@ -496,6 +496,14 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 - **Abrir** (`atendimento:abrir`): o servidor escolhe uma oferta ativa e
   descreve o pedido. A solicitação herda da oferta o tipo, a unidade que
   atende e o produto, e ganha um número sequencial.
+- **Duas portas para o mesmo chamado.** Na Central, a pessoa entra com
+  login. No WhatsApp, quem já deixou o número: sem chamado em andamento,
+  ou respondendo `novo`, escolhe o serviço, o título, a descrição e os
+  campos obrigatórios da oferta. Os opcionais ficam para a Central. A
+  resposta num chamado que já existe continua virando comentário; com
+  mais de um, a mensagem cita o `#N`. Quem atende responde pela Central.
+  A lista sai como mensagem da API oficial; na Evolution, os mesmos itens
+  vão numerados. A Evolution segue fora dos termos da Meta.
 - **Triagem:** até 30 regras por unidade, em ordem. A primeira que casa
   (oferta, palavra no título, unidade de quem pede — o que estiver
   preenchido) define a prioridade pela matriz já gravada e avisa só a

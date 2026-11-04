@@ -107,7 +107,7 @@ func (m *Module) ComEspelho(ativo func(ctx context.Context) (bool, error)) { m.s
 func (m *Module) ComAssistente(a application.Assistente) { m.svc.WithAssistente(a) }
 
 // ReceberWhatsApp grava a resposta que chegou pelo WhatsApp (ADR 078).
-func (m *Module) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (string, error) {
+func (m *Module) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (domain.RespostaWhatsApp, error) {
 	return m.svc.ReceberWhatsApp(ctx, usuario, texto, mensagemID)
 }
 

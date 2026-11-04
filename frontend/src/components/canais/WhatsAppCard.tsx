@@ -256,7 +256,7 @@ export function WhatsAppCard({
                 label="Receber respostas pelo WhatsApp"
               />
               <span className="text-sm">
-                Receber respostas: a mensagem de quem pediu vira comentário no chamado
+                Receber mensagens: abre um chamado ou comenta no que já está em andamento. A Central, com login, continua disponível.
               </span>
             </div>
             {provedor === "meta" && (

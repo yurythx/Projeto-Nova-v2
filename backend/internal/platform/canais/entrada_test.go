@@ -26,9 +26,9 @@ type recebedorFalso struct {
 	err      error
 }
 
-func (r *recebedorFalso) ReceberWhatsApp(_ context.Context, usuario uuid.UUID, texto, id string) (string, error) {
+func (r *recebedorFalso) ReceberWhatsApp(_ context.Context, usuario uuid.UUID, texto, id string) (Resposta, error) {
 	r.chamadas = append(r.chamadas, usuario.String()+"|"+texto+"|"+id)
-	return r.resposta, r.err
+	return Resposta{Texto: r.resposta}, r.err
 }
 
 func assinar(segredo string, corpo []byte) string {
@@ -45,6 +45,13 @@ const corpoMeta = `{"object":"whatsapp_business_account","entry":[{"changes":[{"
 func TestFormatosDaEntrada(t *testing.T) {
 	if m := mensagensDaMeta([]byte(corpoMeta)); len(m) != 1 || m[0] != (Recebida{De: "556699991234", ID: "wamid.1", Texto: "#7 voltou a funcionar"}) {
 		t.Fatalf("Meta: %+v", m)
+	}
+	lista := []byte(`{"entry":[{"changes":[{"value":{"messages":[
+		{"from":"556699991234","id":"wamid.L","type":"interactive","interactive":{"type":"list_reply","list_reply":{"id":"abc"}}},
+		{"from":"556699991234","id":"wamid.B","type":"interactive","interactive":{"type":"button_reply","button_reply":{"id":"mais"}}}
+	]}}]}]}`)
+	if m := mensagensDaMeta(lista); len(m) != 2 || m[0].Texto != "abc" || m[1].Texto != "mais" {
+		t.Fatalf("lista da Meta: %+v", m)
 	}
 	if m := mensagensDaMeta([]byte(`{`)); len(m) != 0 {
 		t.Fatalf("Meta ilegível: %+v", m)
@@ -95,8 +102,8 @@ func TestEntradaPeloWhatsApp(t *testing.T) {
 	s := NovoServico(store, Email{}).WithAPIPublica("https://api.nova.gov.br/").WithRecebedor(rec)
 	var respostas []string
 	var falhaResposta error
-	s.responderWA = func(_ context.Context, _ WhatsApp, para, texto string) error {
-		respostas = append(respostas, para+"|"+texto)
+	s.responderWA = func(_ context.Context, _ WhatsApp, para string, r Resposta) error {
+		respostas = append(respostas, para+"|"+r.Texto)
 		return falhaResposta
 	}
 	ana := dbtest.User(t, pool)
@@ -282,13 +289,41 @@ func TestRespostaEmTextoLivre(t *testing.T) {
 	}
 }
 
+func TestRespostaComOpcoesNosDoisProvedores(t *testing.T) {
+	ctx := context.Background()
+	p := &provedorFalso{}
+	srv := p.servidor(t)
+	antes := MetaAPI
+	MetaAPI = srv.URL
+	t.Cleanup(func() { MetaAPI = antes })
+	r := Resposta{Texto: "Escolha o serviço.", Opcoes: []Opcao{
+		{ID: "a", Titulo: "E-mail"},
+		{ID: "b", Titulo: "Impressora"},
+		{ID: "c", Titulo: "Ramal"},
+		{ID: "mais", Titulo: "Ver mais"},
+	}}
+	if err := responder(ctx, WhatsApp{Provedor: ProvedorMeta, MetaNumeroID: "1", MetaToken: "tk"}, "+556699991234", r); err != nil {
+		t.Fatal(err)
+	}
+	if err := responder(ctx, WhatsApp{Provedor: ProvedorEvolution, EvolutionURL: srv.URL, EvolutionInstancia: "c", EvolutionChave: "ch"}, "556699991234", r); err != nil {
+		t.Fatal(err)
+	}
+	if p.corpos[0]["type"] != "interactive" || p.corpos[1]["text"] == nil || !strings.Contains(p.corpos[1]["text"].(string), "1. E-mail") || !strings.Contains(p.corpos[1]["text"].(string), "4. Ver mais") {
+		t.Fatalf("opções: %v", p.corpos)
+	}
+	interativo, _ := p.corpos[0]["interactive"].(map[string]any)
+	if interativo["type"] != "list" {
+		t.Fatalf("a Meta lista quando passa de três: %v", interativo)
+	}
+}
+
 func TestRotasDoWebhook(t *testing.T) {
 	limparWhatsApp(t)
 	pool := dbtest.Pool(t)
 	ctx := context.Background()
 	rec := &recebedorFalso{}
 	s := NovoServico(NewPostgresStore(pool, cifra(t, 'c')), Email{}).WithRecebedor(rec)
-	s.responderWA = func(context.Context, WhatsApp, string, string) error { return nil }
+	s.responderWA = func(context.Context, WhatsApp, string, Resposta) error { return nil }
 	if _, err := pool.Exec(ctx, `UPDATE users SET contato_whatsapp = '' WHERE contato_whatsapp IN ('+5566999991234', '+556699991234')`); err != nil {
 		t.Fatal(err)
 	}

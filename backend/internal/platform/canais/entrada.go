@@ -9,8 +9,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -24,10 +26,26 @@ var (
 	ErrAssinatura = errors.New("canais: assinatura do webhook inválida")
 )
 
-// Recebedor grava no atendimento a mensagem de quem respondeu e devolve o
-// texto da confirmação (vazio: não responde). A porta fica no app.
+// Opcao é uma escolha do roteiro de abertura. O mesmo id vai na lista da
+// Meta e no número que a pessoa digita na Evolution.
+type Opcao struct {
+	ID, Titulo, Descricao string
+}
+
+// Resposta é o que volta para quem escreveu. Sem opções, é texto.
+type Resposta struct {
+	Texto  string
+	Opcoes []Opcao
+}
+
+func (r Resposta) vazia() bool {
+	return strings.TrimSpace(r.Texto) == "" && len(r.Opcoes) == 0
+}
+
+// Recebedor grava no atendimento a mensagem de quem respondeu e devolve a
+// confirmação (vazia: não responde). A porta fica no app.
 type Recebedor interface {
-	ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (string, error)
+	ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (Resposta, error)
 }
 
 // WithRecebedor liga a entrada pelo WhatsApp ao atendimento.
@@ -137,6 +155,14 @@ func mensagensDaMeta(corpo []byte) []Recebida {
 						Text struct {
 							Body string `json:"body"`
 						} `json:"text"`
+						Interactive struct {
+							ListReply struct {
+								ID string `json:"id"`
+							} `json:"list_reply"`
+							ButtonReply struct {
+								ID string `json:"id"`
+							} `json:"button_reply"`
+						} `json:"interactive"`
 					} `json:"messages"`
 				} `json:"value"`
 			} `json:"changes"`
@@ -147,8 +173,19 @@ func mensagensDaMeta(corpo []byte) []Recebida {
 	for _, e := range p.Entry {
 		for _, c := range e.Changes {
 			for _, m := range c.Value.Messages {
-				if m.Type == "text" {
-					out = append(out, Recebida{De: m.From, ID: m.ID, Texto: m.Text.Body})
+				switch m.Type {
+				case "text":
+					if m.Text.Body != "" {
+						out = append(out, Recebida{De: m.From, ID: m.ID, Texto: m.Text.Body})
+					}
+				case "interactive":
+					id := m.Interactive.ListReply.ID
+					if id == "" {
+						id = m.Interactive.ButtonReply.ID
+					}
+					if id != "" {
+						out = append(out, Recebida{De: m.From, ID: m.ID, Texto: id})
+					}
 				}
 			}
 		}
@@ -222,13 +259,99 @@ func (s *Servico) receber(ctx context.Context, w WhatsApp, m Recebida) error {
 		return err
 	}
 	resposta, err := s.recebedor.ReceberWhatsApp(ctx, usuario, m.Texto, m.ID)
-	if err != nil || resposta == "" {
+	if err != nil || resposta.vazia() {
 		return err
 	}
-	// A confirmação vai dentro da janela de 24 horas que a mensagem abriu:
-	// texto livre, sem modelo. Se falhar, a resposta já está gravada.
+	// A confirmação vai dentro da janela de 24 horas que a mensagem abriu.
+	// Texto livre, ou lista na Meta; a Evolution numera as mesmas opções.
+	// Se falhar, a resposta já está gravada.
 	_ = s.responderWA(ctx, w, m.De, resposta)
 	return nil
+}
+
+// responder manda a confirmação. Sem opções, texto livre nos dois
+// provedores. Com opções, a Meta manda lista ou botões e a Evolution
+// numera o mesmo texto.
+func responder(ctx context.Context, w WhatsApp, para string, r Resposta) error {
+	if len(r.Opcoes) == 0 {
+		return responderTexto(ctx, w, para, r.Texto)
+	}
+	if w.Provedor == ProvedorMeta {
+		return responderInterativo(ctx, w, para, r)
+	}
+	return responderTexto(ctx, w, para, r.textoLivre())
+}
+
+func (r Resposta) textoLivre() string {
+	var b strings.Builder
+	b.WriteString(strings.TrimSpace(r.Texto))
+	for i, o := range r.Opcoes {
+		fmt.Fprintf(&b, "\n%d. %s", i+1, o.Titulo)
+		if o.Descricao != "" {
+			b.WriteString(" — ")
+			b.WriteString(o.Descricao)
+		}
+	}
+	b.WriteString("\n\nResponda com o número. Para desistir, responda cancelar.")
+	texto := b.String()
+	if utf8.RuneCountInString(texto) <= 4000 {
+		return texto
+	}
+	return limitar(texto, 4000)
+}
+
+func responderInterativo(ctx context.Context, w WhatsApp, para string, r Resposta) error {
+	numero := strings.TrimPrefix(para, "+")
+	corpo := strings.TrimSpace(r.Texto)
+	if corpo == "" {
+		corpo = "Escolha uma opção."
+	}
+	opcoes := r.Opcoes
+	if len(opcoes) > 10 {
+		opcoes = opcoes[:10]
+	}
+	var interactive map[string]any
+	if len(opcoes) <= 3 {
+		botoes := make([]map[string]any, 0, len(opcoes))
+		for _, o := range opcoes {
+			titulo := limitar(o.Titulo, 20)
+			if titulo == "" {
+				titulo = "Opção"
+			}
+			botoes = append(botoes, map[string]any{
+				"type": "reply", "reply": map[string]string{"id": limitar(o.ID, 200), "title": titulo},
+			})
+		}
+		interactive = map[string]any{
+			"type":   "button",
+			"body":   map[string]string{"text": limitar(corpo, 1024)},
+			"action": map[string]any{"buttons": botoes},
+		}
+	} else {
+		linhas := make([]map[string]any, 0, len(opcoes))
+		for _, o := range opcoes {
+			titulo := limitar(o.Titulo, 24)
+			if titulo == "" {
+				titulo = "Opção"
+			}
+			linha := map[string]any{"id": limitar(o.ID, 200), "title": titulo}
+			if d := limitar(o.Descricao, 72); d != "" {
+				linha["description"] = d
+			}
+			linhas = append(linhas, linha)
+		}
+		interactive = map[string]any{
+			"type": "list",
+			"body": map[string]string{"text": limitar(corpo, 1024)},
+			"action": map[string]any{
+				"button":   "Escolher",
+				"sections": []map[string]any{{"title": "Opções", "rows": linhas}},
+			},
+		}
+	}
+	return postar(ctx, MetaAPI+"/"+url.PathEscape(w.MetaNumeroID)+"/messages", map[string]any{
+		"messaging_product": "whatsapp", "to": numero, "type": "interactive", "interactive": interactive,
+	}, "Authorization", "Bearer "+w.MetaToken)
 }
 
 // responderTexto manda texto livre (dentro da janela de 24 horas).

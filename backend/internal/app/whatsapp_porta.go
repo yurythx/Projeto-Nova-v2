@@ -18,9 +18,14 @@ type portaWhatsApp struct {
 
 var _ canais.Recebedor = portaWhatsApp{}
 
-func (p portaWhatsApp) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (string, error) {
+func (p portaWhatsApp) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (canais.Resposta, error) {
 	if !p.ativo() {
-		return "", nil
+		return canais.Resposta{}, nil
 	}
-	return p.mod.ReceberWhatsApp(ctx, usuario, texto, mensagemID)
+	r, err := p.mod.ReceberWhatsApp(ctx, usuario, texto, mensagemID)
+	opcoes := make([]canais.Opcao, len(r.Opcoes))
+	for i, o := range r.Opcoes {
+		opcoes[i] = canais.Opcao{ID: o.ID, Titulo: o.Titulo, Descricao: o.Descricao}
+	}
+	return canais.Resposta{Texto: r.Texto, Opcoes: opcoes}, err
 }

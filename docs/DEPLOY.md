@@ -271,6 +271,8 @@ em `api.projetonova.cloud`:
 - **Meta:** cadastre o endereço como URL de callback, use o token do fim do endereço como token de verificação e assine o campo `messages`.
 - **Evolution:** cadastre o endereço como webhook com o evento `MESSAGES_UPSERT`.
 
+Com a entrada ligada, quem já deixou o número abre um chamado por ali (serviço, título, descrição e campos obrigatórios) ou comenta no que já está em andamento. A Central, com login, continua abrindo o mesmo chamado. Na API oficial a lista de serviços sai como mensagem interativa; na Evolution, os mesmos itens vão numerados.
+
 No plano gratuito, a Cloudflare limita o corpo de cada requisição a 100 MB.
 Um envio de arquivo maior que isso falha em `arquivos.projetonova.cloud`.
 

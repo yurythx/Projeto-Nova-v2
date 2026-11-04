@@ -25,12 +25,13 @@ func TestPortaWhatsApp(t *testing.T) {
 		t.Fatal("atendimento sem registro")
 	}
 	ctx := context.Background()
-	if r, err := (portaWhatsApp{mod: mod, ativo: func() bool { return false }}).ReceberWhatsApp(ctx, uuid.New(), "oi", "m1"); err != nil || r != "" {
-		t.Fatalf("desligado: %q %v", r, err)
+	quem, _ := h.user("nova-user")
+	if r, err := (portaWhatsApp{mod: mod, ativo: func() bool { return false }}).ReceberWhatsApp(ctx, quem, "oi", "m-"+uuid.NewString()); err != nil || r.Texto != "" {
+		t.Fatalf("desligado: %+v %v", r, err)
 	}
-	if r, err := (portaWhatsApp{mod: mod, ativo: func() bool { return true }}).ReceberWhatsApp(ctx, uuid.New(), "oi", "m2"); err != nil ||
-		!strings.Contains(r, "não tem chamado") {
-		t.Fatalf("ligado: %q %v", r, err)
+	if r, err := (portaWhatsApp{mod: mod, ativo: func() bool { return true }}).ReceberWhatsApp(ctx, quem, "novo", "m-"+uuid.NewString()); err != nil ||
+		!strings.Contains(r.Texto, "Central de Atendimento") {
+		t.Fatalf("ligado: %+v %v", r, err)
 	}
 	h.expect(http.StatusNotFound, http.MethodPost, "/api/v1/canais/whatsapp/webhook/"+uuid.NewString(), "", `{}`)
 
@@ -45,7 +46,6 @@ func TestPortaWhatsApp(t *testing.T) {
 	if !strings.HasPrefix(caminho, "/api/v1/canais/whatsapp/webhook/") {
 		t.Fatalf("endereço do webhook: %q", cfg.WebhookURL)
 	}
-	quem, _ := h.user("nova-user")
 	numero := "+55669" + strings.Repeat("7", 8)
 	if _, err := h.d.DB.Exec(ctx, `UPDATE users SET contato_whatsapp = CASE WHEN id = $1 THEN $2 ELSE '' END
 		WHERE id = $1 OR contato_whatsapp = $2`, quem, numero); err != nil {

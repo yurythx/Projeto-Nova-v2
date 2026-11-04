@@ -41,58 +41,83 @@ func extrairNotaCSAT(texto string) (int, string, bool) {
 // Respostas da entrada pelo WhatsApp: a pessoa sabe o que aconteceu com a
 // mensagem que mandou.
 const (
-	respostaSemChamado = "Você não tem chamado em andamento. Para abrir um, use a Central de Atendimento."
-	respostaVarios     = "Você tem mais de um chamado em andamento. Responda começando pelo número do chamado, por exemplo: #123 a impressora voltou."
+	respostaVarios = "Você tem mais de um chamado em andamento. Responda começando pelo número do chamado, por exemplo: #123 a impressora voltou."
 )
 
-// ReceberWhatsApp grava como comentário a mensagem de quem pediu e
-// respondeu pelo WhatsApp (ADR 078), e devolve a confirmação. Vale o
-// chamado do "#N" da mensagem, se foi ela quem abriu; sem número, o único em
-// andamento que ela abriu. Quem atende responde pela central, onde há a nota
-// interna. A mesma mensagem entra uma vez só (a reserva do correio).
-func (s *Service) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (string, error) {
+// ReceberWhatsApp grava a mensagem de quem pediu (ADR 078) e devolve a
+// confirmação. Com "#N", ou com um único chamado em andamento, vira
+// comentário. Sem chamado, ou respondendo "novo", abre um chamado pelo
+// mesmo caminho da Central. Quem atende responde pela central, onde há a
+// nota interna. A mesma mensagem entra uma vez só.
+func (s *Service) ReceberWhatsApp(ctx context.Context, usuario uuid.UUID, texto, mensagemID string) (domain.RespostaWhatsApp, error) {
 	texto = strings.TrimSpace(texto)
 	chave := "whatsapp:" + strings.TrimSpace(mensagemID)
 	if texto == "" || chave == "whatsapp:" || utf8.RuneCountInString(chave) > 200 {
-		return "", nil
+		return domain.RespostaWhatsApp{}, nil
 	}
+	if ja, err := s.repo.MensagemWhatsAppJaEntrou(ctx, s.pool, chave); err != nil || ja {
+		return domain.RespostaWhatsApp{}, err
+	}
+	if strings.HasPrefix(texto, "#") || strings.Contains(strings.ToLower(texto), "[#") {
+		return s.comentarWhatsApp(ctx, usuario, texto, chave)
+	}
+	aberta, tratada, err := s.abrirPeloWhatsApp(ctx, usuario, texto, chave)
+	if err != nil || tratada {
+		return aberta, err
+	}
+	sol, _, err := s.chamadoDaMensagem(ctx, usuario, texto)
+	if err != nil || sol == nil {
+		return domain.RespostaWhatsApp{}, err
+	}
+	return s.gravarComentarioWhatsApp(ctx, usuario, sol, texto, chave)
+}
+
+// comentarWhatsApp entra no chamado citado por "#N".
+func (s *Service) comentarWhatsApp(ctx context.Context, usuario uuid.UUID, texto, chave string) (domain.RespostaWhatsApp, error) {
 	sol, resposta, err := s.chamadoDaMensagem(ctx, usuario, texto)
 	if err != nil || sol == nil {
-		return resposta, err
+		return soTexto(resposta), err
 	}
+	return s.gravarComentarioWhatsApp(ctx, usuario, sol, texto, chave)
+}
+
+func (s *Service) gravarComentarioWhatsApp(ctx context.Context, usuario uuid.UUID, sol *domain.Solicitacao, texto, chave string) (domain.RespostaWhatsApp, error) {
 	reservou, err := s.repo.ReservarCorreio(ctx, s.pool, chave, sol.ID)
 	if err != nil || !reservou {
 		// Repetida: o provedor reentregou, e a confirmação já foi.
-		return "", err
+		return domain.RespostaWhatsApp{}, err
 	}
 	if sol.Estado == domain.EstadoResolvido || sol.Estado == domain.EstadoAtendido {
 		if nota, comentario, ok := extrairNotaCSAT(texto); ok {
 			if _, err := s.Avaliar(ctx, auth.Identity{UserID: usuario}, sol.ID, nota, comentario); err != nil {
 				if errors.Is(err, domain.ErrAvaliacaoExistente) {
-					return fmt.Sprintf("O chamado #%d já foi avaliado anteriormente. Agradecemos sua colaboração!", sol.Numero), nil
+					return soTexto(fmt.Sprintf("O chamado #%d já foi avaliado anteriormente. Agradecemos sua colaboração!", sol.Numero)), nil
 				}
 				_ = s.repo.LiberarCorreio(ctx, s.pool, chave)
-				return "", err
+				return domain.RespostaWhatsApp{}, err
 			}
-			return fmt.Sprintf("Agradecemos a sua avaliação (nota %d) para o chamado #%d! Sua opinião ajuda a aprimorar nossos serviços de TI.", nota, sol.Numero), nil
+			return soTexto(fmt.Sprintf("Agradecemos a sua avaliação (nota %d) para o chamado #%d! Sua opinião ajuda a aprimorar nossos serviços de TI.", nota, sol.Numero)), nil
 		}
+		// Concluído ainda não avaliado: a mensagem pede a nota, em vez de
+		// entrar como comentário. Outro assunto começa com "novo".
+		return soTexto(fmt.Sprintf("O chamado #%d foi concluído. Para avaliá-lo, envie uma nota de 1 a 5 (ex: #%d 5 Excelente). Para outro assunto, responda novo ou use a Central de Atendimento.", sol.Numero, sol.Numero)), nil
 	}
 	if _, err := s.Comentar(ctx, auth.Identity{UserID: usuario}, sol.ID, "Resposta pelo WhatsApp:\n"+texto, false); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrSolicitacaoFinalizada):
 			if sol.Estado == domain.EstadoResolvido || sol.Estado == domain.EstadoAtendido {
-				return fmt.Sprintf("O chamado #%d foi concluído. Para avaliá-lo, envie uma nota de 1 a 5 (ex: #%d 5 Excelente). Para outro assunto, abra um novo chamado na Central de Atendimento.", sol.Numero, sol.Numero), nil
+				return soTexto(fmt.Sprintf("O chamado #%d foi concluído. Para avaliá-lo, envie uma nota de 1 a 5 (ex: #%d 5 Excelente). Para outro assunto, responda novo ou use a Central de Atendimento.", sol.Numero, sol.Numero)), nil
 			}
-			return fmt.Sprintf("O chamado #%d já foi encerrado. Para outro assunto, abra um novo chamado na Central de Atendimento.", sol.Numero), nil
+			return soTexto(fmt.Sprintf("O chamado #%d já foi encerrado. Para outro assunto, responda novo ou use a Central de Atendimento.", sol.Numero)), nil
 		case errors.Is(err, domain.ErrComentarioInvalido):
-			return "", nil
+			return domain.RespostaWhatsApp{}, nil
 		case errors.Is(err, domain.ErrEspelho):
-			return fmt.Sprintf("O chamado #%d é atendido no GLPI até a mudança de sistema. Responda por lá.", sol.Numero), nil
+			return soTexto(fmt.Sprintf("O chamado #%d é atendido no GLPI até a mudança de sistema. Responda por lá.", sol.Numero)), nil
 		}
 		_ = s.repo.LiberarCorreio(ctx, s.pool, chave)
-		return "", err
+		return domain.RespostaWhatsApp{}, err
 	}
-	return fmt.Sprintf("Recebemos a sua mensagem no chamado #%d. A equipe responde por aqui e na Central de Atendimento.", sol.Numero), nil
+	return soTexto(fmt.Sprintf("Recebemos a sua mensagem no chamado #%d. A equipe responde por aqui e na Central de Atendimento.", sol.Numero)), nil
 }
 
 // chamadoDaMensagem acha o chamado; sem ele, devolve o que dizer à pessoa.
@@ -122,7 +147,7 @@ func (s *Service) chamadoDaMensagem(ctx context.Context, usuario uuid.UUID, text
 	case err != nil:
 		return nil, "", err
 	case len(abertos) == 0:
-		return nil, respostaSemChamado, nil
+		return nil, "Você não tem chamado em andamento. Escreva aqui para abrir um, ou use a Central de Atendimento.", nil
 	case len(abertos) > 1:
 		return nil, respostaVarios, nil
 	}

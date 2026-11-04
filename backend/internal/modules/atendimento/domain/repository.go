@@ -101,6 +101,15 @@ type SolicitacaoRepository interface {
 	// ReservarCorreio marca a mensagem. false significa que ela já entrou.
 	ReservarCorreio(ctx context.Context, db database.DBTX, messageID string, solicitacao uuid.UUID) (bool, error)
 	LiberarCorreio(ctx context.Context, db database.DBTX, messageID string) error
+	// RoteiroWhatsApp é a abertura em andamento; ErrNaoEncontrado se não há.
+	// ReservarMensagemWhatsApp marca a mensagem antes de existir chamado.
+	RoteiroWhatsApp(ctx context.Context, db database.DBTX, usuario uuid.UUID) (RoteiroWhatsApp, error)
+	SalvarRoteiroWhatsApp(ctx context.Context, db database.DBTX, r RoteiroWhatsApp) error
+	ApagarRoteiroWhatsApp(ctx context.Context, db database.DBTX, usuario uuid.UUID) error
+	ReservarMensagemWhatsApp(ctx context.Context, db database.DBTX, messageID string) (bool, error)
+	LiberarMensagemWhatsApp(ctx context.Context, db database.DBTX, messageID string) error
+	// MensagemWhatsAppJaEntrou diz se a reserva da abertura ainda vale.
+	MensagemWhatsAppJaEntrou(ctx context.Context, db database.DBTX, messageID string) (bool, error)
 
 	// Responsaveis lista os membros ativos das equipes da unidade (nil =
 	// equipes institucionais); ResponsavelValido confere um deles.

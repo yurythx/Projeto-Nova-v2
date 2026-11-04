@@ -64,7 +64,7 @@ func TestEspelhoDoGLPI(t *testing.T) {
 	// A resposta de quem pediu não entra; pelo WhatsApp, ela sabe por quê.
 	quem := c.servidor.UserID
 	r, err := svc.ReceberWhatsApp(ctx, quem, fmt.Sprintf("#%d e então?", sol.Numero), "wamid."+uuid.NewString())
-	if err != nil || !strings.Contains(r, "atendido no GLPI") {
+	if err != nil || !strings.Contains(r.Texto, "atendido no GLPI") {
 		t.Fatalf("WhatsApp no espelho: %q %v", r, err)
 	}
 	var email string

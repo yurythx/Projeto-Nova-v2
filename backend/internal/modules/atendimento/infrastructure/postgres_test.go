@@ -271,8 +271,16 @@ func TestSolicitacoesPropagamFalhas(t *testing.T) {
 		"EmailDe":              func(db database.DBTX) error { _, err := r.EmailDe(ctx, db, id); return err },
 		"ReservarCorreio":      func(db database.DBTX) error { _, err := r.ReservarCorreio(ctx, db, "m", id); return err },
 		"LiberarCorreio":       func(db database.DBTX) error { return r.LiberarCorreio(ctx, db, "m") },
-		"GetAvaliacao":         func(db database.DBTX) error { _, err := r.GetAvaliacao(ctx, db, id); return err },
-		"InsertAvaliacao":      func(db database.DBTX) error { _, err := r.InsertAvaliacao(ctx, db, domain.Avaliacao{}); return err },
+		"RoteiroWhatsApp":      func(db database.DBTX) error { _, err := r.RoteiroWhatsApp(ctx, db, id); return err },
+		"SalvarRoteiroWhatsApp": func(db database.DBTX) error {
+			return r.SalvarRoteiroWhatsApp(ctx, db, domain.RoteiroWhatsApp{UsuarioID: id, Etapa: domain.RoteiroOferta})
+		},
+		"ApagarRoteiroWhatsApp":    func(db database.DBTX) error { return r.ApagarRoteiroWhatsApp(ctx, db, id) },
+		"ReservarMensagemWhatsApp": func(db database.DBTX) error { _, err := r.ReservarMensagemWhatsApp(ctx, db, "m"); return err },
+		"LiberarMensagemWhatsApp":  func(db database.DBTX) error { return r.LiberarMensagemWhatsApp(ctx, db, "m") },
+		"MensagemWhatsAppJaEntrou": func(db database.DBTX) error { _, err := r.MensagemWhatsAppJaEntrou(ctx, db, "m"); return err },
+		"GetAvaliacao":             func(db database.DBTX) error { _, err := r.GetAvaliacao(ctx, db, id); return err },
+		"InsertAvaliacao":          func(db database.DBTX) error { _, err := r.InsertAvaliacao(ctx, db, domain.Avaliacao{}); return err },
 		"ResumoAvaliacoes": func(db database.DBTX) error {
 			_, err := r.ResumoAvaliacoes(ctx, db, false, nil, 5)
 			return err

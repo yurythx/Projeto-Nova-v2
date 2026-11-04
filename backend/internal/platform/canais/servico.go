@@ -21,8 +21,8 @@ type Servico struct {
 	ambiente Email
 	enviar   func(context.Context, mail.SMTP, mail.Mensagem) error
 	enviarWA func(context.Context, WhatsApp, Aviso) error
-	// responderWA manda a confirmação da mensagem recebida (texto livre).
-	responderWA func(context.Context, WhatsApp, string, string) error
+	// responderWA manda a confirmação da mensagem recebida, dentro da janela.
+	responderWA func(context.Context, WhatsApp, string, Resposta) error
 	recebedor   Recebedor
 	apiPublica  string
 
@@ -43,7 +43,7 @@ func NovoServico(store Store, ambiente Email) *Servico {
 	if !ambiente.Ativo {
 		ambiente = Email{Porta: 587, Origem: OrigemNenhuma}
 	}
-	return &Servico{store: store, ambiente: ambiente, enviarWA: enviarWhatsApp, responderWA: responderTexto, enviar: func(ctx context.Context, s mail.SMTP, m mail.Mensagem) error {
+	return &Servico{store: store, ambiente: ambiente, enviarWA: enviarWhatsApp, responderWA: responder, enviar: func(ctx context.Context, s mail.SMTP, m mail.Mensagem) error {
 		return s.Send(ctx, m)
 	}}
 }
