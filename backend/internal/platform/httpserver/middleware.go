@@ -75,13 +75,35 @@ func AccessLog(logger *slog.Logger) func(http.Handler) http.Handler {
 			ww := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 			next.ServeHTTP(ww, r)
 
-			logging.FromContext(r.Context(), logger).Info("http_request",
+			// Sonda (healthcheck e scrape) em 2xx fica em debug: em info ela
+			// era a maior parte do log e escondia o tráfego real. 5xx sobe
+			// para error, inclusive quando a sonda falha.
+			logging.FromContext(r.Context(), logger).Log(r.Context(), accessLogLevel(r.URL.Path, ww.status), "http_request",
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.Int("status", ww.status),
 				slog.Duration("duration", time.Since(start)),
 			)
 		})
+	}
+}
+
+func accessLogLevel(path string, status int) slog.Level {
+	if status >= http.StatusInternalServerError {
+		return slog.LevelError
+	}
+	if status < http.StatusBadRequest && isProbe(path) {
+		return slog.LevelDebug
+	}
+	return slog.LevelInfo
+}
+
+func isProbe(path string) bool {
+	switch path {
+	case "/health", "/healthz", "/livez", "/ready", "/readyz", "/metrics":
+		return true
+	default:
+		return false
 	}
 }
 

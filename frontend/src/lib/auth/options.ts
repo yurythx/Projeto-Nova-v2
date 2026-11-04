@@ -238,7 +238,12 @@ export const authOptions: NextAuthOptions = {
       if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
         return token;
       }
-      if (token.refreshToken) {
+      // Vencido. Renova só no update() do SessionKeepAlive: essa rota
+      // regrava o cookie. Renovar numa leitura (Server Component ou
+      // getSession) rotaciona o refresh token do Keycloak e a próxima
+      // chamada é recusada — o log enche de "refresh token recusado"
+      // e a pessoa cai da sessão com o token ainda válido.
+      if (trigger === "update" && !token.error && token.refreshToken && token.provider !== "local") {
         return refreshAccessToken(token);
       }
       return { ...token, error: "RefreshAccessTokenError" };

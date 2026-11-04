@@ -2,12 +2,14 @@ package httpserver
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/yurythx/projeto-nova-v2/internal/platform/logging"
@@ -308,6 +310,36 @@ func TestStatusRecorder_HijackErrorsWhenUnderlyingDoesNotSupportIt(t *testing.T)
 
 	if _, _, err := rec.Hijack(); err == nil {
 		t.Fatal("expected an error when the underlying ResponseWriter does not implement http.Hijacker")
+	}
+}
+
+func TestAccessLog_ProbeSuccessIsDebugAndServerErrorIsError(t *testing.T) {
+	var info, debug bytes.Buffer
+	infoLog := slog.New(slog.NewJSONHandler(&info, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	debugLog := slog.New(slog.NewJSONHandler(&debug, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fail := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	})
+
+	AccessLog(infoLog)(ok).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/health", nil))
+	AccessLog(infoLog)(ok).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	AccessLog(infoLog)(ok).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/v1/me", nil))
+	AccessLog(infoLog)(fail).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/ready", nil))
+	AccessLog(debugLog)(ok).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodHead, "/health", nil))
+
+	got := info.String()
+	if strings.Contains(got, "/health") || strings.Contains(got, "/metrics") {
+		t.Fatalf("sonda em 2xx não entra em info: %s", got)
+	}
+	if !strings.Contains(got, "/api/v1/me") {
+		t.Fatalf("tráfego real fica em info: %s", got)
+	}
+	if !strings.Contains(got, `"level":"ERROR"`) || !strings.Contains(got, "/ready") {
+		t.Fatalf("sonda em 5xx fica em error: %s", got)
+	}
+	if !strings.Contains(debug.String(), "/health") {
+		t.Fatalf("sonda em 2xx fica em debug: %s", debug.String())
 	}
 }
 

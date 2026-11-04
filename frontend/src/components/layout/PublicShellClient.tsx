@@ -30,8 +30,9 @@ const PUBLIC_LINKS: { href: string; label: string; module?: string }[] = [
  * initialEnabled vem do servidor (PublicShell) já no 1º HTML. Antes o
  * estado só chegava por fetch no navegador e, enquanto isso, TODOS os
  * links eram mostrados — a cada F5 os plugins desativados piscavam no
- * menu. Sem estado conhecido, links de plugin ficam escondidos; o fetch
- * aqui só atualiza um estado do servidor em cache (até 15s). */
+ * menu. Sem estado conhecido, links de plugin ficam escondidos até o
+ * fetch. Com o estado do servidor, o menu não rebusca: cada página
+ * pública disparava GET /system/public-modules de novo. */
 export function PublicShellClient({
   children,
   initialEnabled = null,
@@ -46,10 +47,11 @@ export function PublicShellClient({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (initialEnabled) return;
     publicFetch<PublicModule[]>("v1/system/public-modules")
       .then((mods) => setEnabled(Object.fromEntries(mods.map((m) => [m.key, m.enabled]))))
       .catch(() => setEnabled((prev) => prev ?? {}));
-  }, []);
+  }, [initialEnabled]);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;

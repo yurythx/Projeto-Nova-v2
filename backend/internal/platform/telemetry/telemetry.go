@@ -48,7 +48,7 @@ func Setup(ctx context.Context, serviceName, environment, endpoint string, logge
 	))
 
 	if endpoint == "" {
-		logger.Info("telemetry: OTEL_EXPORTER_OTLP_ENDPOINT not set, tracing is a no-op")
+		logger.Debug("telemetry: OTEL_EXPORTER_OTLP_ENDPOINT not set, tracing is a no-op")
 		return noop
 	}
 

@@ -350,7 +350,10 @@ func TestWorkerSSO(t *testing.T) {
 	limparSSO(t, e)
 	registro.Reset()
 	rodar(e.real().WithDiretorio(&diretorio{pessoas: []domain.UsuarioSSO{{Subject: "kc-" + uuid.NewString(), Ativo: true}}}, log))
-	if !strings.Contains(registro.String(), "usuários do SSO sincronizados") || !strings.Contains(registro.String(), "sincronizando com o SSO") {
-		t.Fatalf("andamento e sucesso no registro: %s", registro.String())
+	if !strings.Contains(registro.String(), "usuários do SSO sincronizados") {
+		t.Fatalf("sucesso no registro: %s", registro.String())
+	}
+	if strings.Contains(registro.String(), "sincronizando com o SSO") {
+		t.Fatalf("andamento por página não vai para info: %s", registro.String())
 	}
 }

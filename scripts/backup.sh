@@ -129,6 +129,8 @@ if [ -n "$REMOTE" ]; then
   tar -C "$BACKUP_DIR" -cf - "$(basename "$dest")" | age -r "$RECIPIENT" | rclone rcat "$REMOTE/$nome"
   rclone delete --min-age "${REMOTE_KEEP_DAYS}d" --include 'projeto-nova-*.tar.age' "$REMOTE"
   log "fora: ok"
+else
+  log "fora: sem BACKUP_REMOTE — a cópia fica só neste disco"
 fi
 
 date +%s >"$BACKUP_DIR/.ultimo-ok"

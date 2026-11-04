@@ -12,7 +12,7 @@ import {
 } from "@/components/branding/brandingConfig";
 import { THEME_COOKIE } from "@/lib/prefs/cookies";
 import { publicGetOr } from "@/lib/api/publicServer";
-import { BRANDING_TAG } from "@/lib/branding/tag";
+import { BRANDING_REVALIDATE_SECONDS, BRANDING_TAG } from "@/lib/branding/tag";
 import { APP_URL } from "@/lib/env";
 import type { Branding } from "@/lib/plataforma/types";
 import { Providers } from "./providers";
@@ -53,7 +53,7 @@ const geistMono = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const b = await publicGetOr<Branding | null>("branding", null, 60, [BRANDING_TAG]);
+  const b = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [BRANDING_TAG]);
   const name = b?.app_name || "Projeto Nova";
   const desc =
     b?.app_description ||
@@ -89,9 +89,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const theme = cookieStore.get(THEME_COOKIE)?.value;
   const dataTheme = theme === "dark" || theme === "light" ? theme : undefined;
 
-  // Identidade da organização (API, cache de 60s) + preferências e-MAG do
-  // visitante (cookie) — aplicadas em <html> ANTES do 1º paint.
-  const api = await publicGetOr<Branding | null>("branding", null, 60, [BRANDING_TAG]);
+  // Identidade da organização (API; salvar na tela expira o cache na hora)
+  // + preferências e-MAG do visitante (cookie) — aplicadas em <html> ANTES
+  // do 1º paint.
+  const api = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [BRANDING_TAG]);
   const branding = mergeServerBranding(
     api,
     parseBrandingCookie(cookieStore.get(BRANDING_COOKIE)?.value),

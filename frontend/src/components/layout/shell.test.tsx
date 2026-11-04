@@ -202,13 +202,10 @@ describe("PublicShell", () => {
     vi.unstubAllGlobals();
   });
 
-  it("com o estado vindo do servidor, plugin desativado nunca pisca no menu", async () => {
+  it("com o estado vindo do servidor, não rebusca no navegador", async () => {
     session.status = "unauthenticated";
-    let answer: (r: Response) => void = () => {};
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => new Promise<Response>((r) => (answer = r))),
-    );
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
     render(
       withBrand(
         <PublicShell
@@ -219,17 +216,11 @@ describe("PublicShell", () => {
       ),
     );
     const nav = screen.getByRole("navigation", { name: "Menu principal" });
-    // 1º render, antes de qualquer resposta do fetch do navegador
     expect(within(nav).queryByRole("link", { name: "Serviços" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Agenda" })).not.toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Contato" })).toBeInTheDocument();
-    // o fetch do navegador atualiza um estado em cache no servidor
-    await act(async () =>
-      answer(
-        new Response(JSON.stringify({ data: [{ key: "catalog", enabled: true }], error: null })),
-      ),
-    );
-    expect(await within(nav).findByRole("link", { name: "Serviços" })).toBeInTheDocument();
+    await act(async () => {});
+    expect(fetchMock).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

@@ -5,6 +5,7 @@ package infrastructure
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -568,6 +569,19 @@ func (r *Repository) Unlock(ctx context.Context, db database.DBTX, id uuid.UUID)
 	return wrap("unlock", err)
 }
 
+// lockIdentidadeSSO serializa quem grava o mesmo usuário ou e-mail.
+// A ordem das chaves evita deadlock entre duas contas.
+func lockIdentidadeSSO(ctx context.Context, db database.DBTX, username, email string) error {
+	chaves := []string{"email\x00" + email, "user\x00" + username}
+	sort.Strings(chaves)
+	for _, chave := range chaves {
+		if _, err := db.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('iam.sso'), hashtext($1))`, chave); err != nil {
+			return wrap("upsert sso", err)
+		}
+	}
+	return nil
+}
+
 // UpsertSSO grava a pessoa do SSO (ADR 077). O e-mail ou o usuário de uma
 // conta local volta como ErrConflict: nunca se vincula sozinho.
 func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.UsuarioSSO) (domain.ResultadoSSO, error) {
@@ -586,8 +600,13 @@ func (r *Repository) UpsertSSO(ctx context.Context, db database.DBTX, u domain.U
 	var antes *bool
 	var depois bool
 	// Usuário ou e-mail já é de outra conta (local ou outro subject).
-	// A consulta evita o INSERT que violaria o índice e iria parar no
-	// log do Postgres; a conta não é vinculada sozinha (ADR 077).
+	// A trava e a consulta acontecem na mesma transação do chamador
+	// (gravarPessoa): sem a trava, duas sincronizações passavam no EXISTS
+	// e o INSERT estourava idx_users_username no log do Postgres. A conta
+	// não é vinculada sozinha (ADR 077).
+	if err := lockIdentidadeSSO(ctx, db, username, email); err != nil {
+		return res, err
+	}
 	var ocupado bool
 	err := db.QueryRow(ctx, `
 		SELECT EXISTS (

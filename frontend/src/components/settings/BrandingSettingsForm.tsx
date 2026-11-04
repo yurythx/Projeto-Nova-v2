@@ -77,7 +77,7 @@ export function BrandingSettingsForm() {
       const { data } = await apiClient.put<Branding>("v1/admin/branding", toApi(config));
       const saved = mergeServerBranding(data, branding);
       // Expira o cache do servidor; se falhar, o valor novo aparece quando
-      // o cache de 60s vencer (a gravação em si já deu certo).
+      // o cache de 5 minutos vencer (a gravação em si já deu certo).
       await refreshBranding().catch(() => undefined);
       updateBranding(saved);
       setForm(saved);

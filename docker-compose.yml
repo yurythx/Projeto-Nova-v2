@@ -131,6 +131,9 @@ services:
     command:
     - --data-dir=/data
     - --api-key=${TYPESENSE_API_KEY:?TYPESENSE_API_KEY must be set}
+    # Nó único: o raft escreve "Peer refresh succeeded" a cada 10s em INFO.
+    # minloglevel=1 (glog) deixa warning e error; o healthcheck não lê o log.
+    - --minloglevel=1
     volumes:
     - typesense_data:/data
     networks:

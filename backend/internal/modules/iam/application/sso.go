@@ -140,7 +140,10 @@ func (s *Service) sincronizar(ctx context.Context, id uuid.UUID) (RelatorioSSO, 
 		if err := s.marcarSSO(ctx, id, rel, false, nil); err != nil {
 			return err
 		}
-		s.logger.Info("iam: sincronizando com o SSO", slog.Int("lidos", rel.Lidos), slog.Int("criados", rel.Criados))
+		// Uma linha por página (50 pessoas) enchia o log: 7 mil contas
+		// viravam ~150 INFO. O resumo sai em registrarSSO; o andamento
+		// fica em debug para quem subir o nível.
+		s.logger.Debug("iam: sincronizando com o SSO", slog.Int("lidos", rel.Lidos), slog.Int("criados", rel.Criados))
 		return nil
 	})
 	if err == nil {

@@ -243,11 +243,13 @@ describe("callback jwt", () => {
     vi.stubGlobal("fetch", f);
     const t = await jwt(o, {
       token: {
+        provider: "keycloak",
         accessToken: jwtOf({}),
         accessTokenExpires: Date.now() - 1000,
         refreshToken: "r1",
         idToken: "i1",
       },
+      trigger: "update",
     });
     expect(t.error).toBeUndefined();
     expect(t.refreshToken).toBe("r1");
@@ -269,7 +271,8 @@ describe("callback jwt", () => {
       ),
     );
     const t2 = await jwt(o, {
-      token: { accessToken: "x", accessTokenExpires: 1, refreshToken: "r1" },
+      token: { provider: "keycloak", accessToken: "x", accessTokenExpires: 1, refreshToken: "r1" },
+      trigger: "update",
     });
     expect(t2).toMatchObject({ accessToken: "novo", refreshToken: "r2", idToken: "i2" });
   });
@@ -287,7 +290,8 @@ describe("callback jwt", () => {
         vi.fn(async () => Response.json(body, { status: body.error ? 400 : 200 })),
       );
       const t = await jwt(o, {
-        token: { accessToken: "x", accessTokenExpires: 1, refreshToken: "r" },
+        token: { provider: "keycloak", accessToken: "x", accessTokenExpires: 1, refreshToken: "r" },
+        trigger: "update",
       });
       expect(t.error).toBe("RefreshAccessTokenError");
     }
@@ -298,8 +302,12 @@ describe("callback jwt", () => {
       }),
     );
     expect(
-      (await jwt(o, { token: { accessToken: "x", accessTokenExpires: 1, refreshToken: "r" } }))
-        .error,
+      (
+        await jwt(o, {
+          token: { provider: "keycloak", accessToken: "x", accessTokenExpires: 1, refreshToken: "r" },
+          trigger: "update",
+        })
+      ).error,
     ).toBe("RefreshAccessTokenError");
     // o erro bruto (que pode ecoar o refresh_token) nunca é logado
     expect(vi.mocked(console.error).mock.calls.every((c) => c.length === 1)).toBe(true);
@@ -380,6 +388,23 @@ describe("callback jwt", () => {
       expect(t).toMatchObject({ accessToken: "velho" });
       expect(t.error).toBeUndefined();
     }
+  });
+
+  it("leitura de Keycloak vencido não rotaciona o refresh token", async () => {
+    const o = await load(KC);
+    const f = vi.fn();
+    vi.stubGlobal("fetch", f);
+    const t = await jwt(o, {
+      token: {
+        provider: "keycloak",
+        accessToken: jwtOf({}),
+        accessTokenExpires: Date.now() - 1000,
+        refreshToken: "r1",
+      },
+    });
+    expect(f).not.toHaveBeenCalled();
+    expect(t.error).toBe("RefreshAccessTokenError");
+    expect(t.refreshToken).toBe("r1");
   });
 
   it("update() renova o Keycloak antes de vencer", async () => {
