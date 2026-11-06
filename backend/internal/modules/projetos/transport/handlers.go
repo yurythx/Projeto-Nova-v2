@@ -122,6 +122,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermProjetosRead))
 		r.Get("/projetos", h.Listar)
+		r.Get("/projetos/minhas", h.ListarMinhas)
+		r.Get("/projetos/carga", h.ListarCarga)
 		r.Get("/projetos/{id}", h.Obter)
 		r.Get("/projetos/{id}/tarefas", h.ListarTarefas)
 		r.Get("/projetos/{id}/tarefas/{tarefaId}/anexos", h.ListarAnexos)
@@ -180,6 +182,26 @@ func (h *Handlers) Listar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lista, err := h.svc.ListarPorFiltro(r.Context(), identity, f)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+func (h *Handlers) ListarMinhas(w http.ResponseWriter, r *http.Request) {
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarMinhas(r.Context(), identity)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+func (h *Handlers) ListarCarga(w http.ResponseWriter, r *http.Request) {
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarCarga(r.Context(), identity)
 	if err != nil {
 		h.fail(w, r, err)
 		return

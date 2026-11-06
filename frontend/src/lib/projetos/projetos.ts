@@ -78,6 +78,19 @@ export interface Tarefa {
   updated_at: string;
 }
 
+export interface TarefaMinha extends Tarefa {
+  projeto_numero: number;
+  projeto_titulo: string;
+  projeto_estado: string;
+}
+
+export interface CargaPessoa {
+  id: string;
+  nome: string;
+  abertas: number;
+  atrasadas: number;
+}
+
 export const ESTADO_PROJETO: Record<
   EstadoProjeto,
   { label: string; tone: Tone; acao: string; proximo?: EstadoProjeto }

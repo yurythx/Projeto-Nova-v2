@@ -18,6 +18,7 @@ import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataform
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { Painel5W2H } from "@/components/projetos/Painel5W2H";
+import { prazoDoDia } from "@/components/projetos/datas";
 import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
 import { TarefaPainel } from "@/components/projetos/TarefaPainel";
 import { TarefasDoProjeto } from "@/components/projetos/TarefasDoProjeto";
@@ -62,7 +63,7 @@ export default function ProjetoDetalhePage() {
 export function ProjetoDetalheConteudo() {
   const id = useIdDaRota();
   const embutido = usePainelEmbutido();
-  const { can } = usePlataforma();
+  const { can, me } = usePlataforma();
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const { filtrarPorEntidade } = useEntityFilter();
@@ -273,40 +274,47 @@ export function ProjetoDetalheConteudo() {
     }
   }
 
-  async function atualizarTarefaEstado(t: Tarefa, novoEstado: EstadoTarefa) {
+  function corpoDaTarefa(
+    t: Tarefa,
+    patch: {
+      titulo?: string;
+      estado?: string;
+      responsavel_id?: string | null;
+      responsavel_nome?: string;
+      data_limite?: string | null;
+    },
+  ) {
+    return {
+      titulo: patch.titulo ?? t.titulo,
+      descricao: t.descricao,
+      relato: t.relato ?? "",
+      responsavel_id: "responsavel_id" in patch ? patch.responsavel_id || null : t.responsavel_id ?? null,
+      responsavel_nome: "responsavel_nome" in patch ? patch.responsavel_nome ?? "" : t.responsavel_nome,
+      estado: patch.estado ?? t.estado,
+      ordem: t.ordem,
+      data_limite: "data_limite" in patch ? patch.data_limite : t.data_limite ?? null,
+      predecessora_id: t.predecessora_id ?? null,
+    };
+  }
+
+  async function gravarTarefa(t: Tarefa, patch: Parameters<typeof corpoDaTarefa>[1], aviso: string) {
     const ok = await run(
-      () =>
-        apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
-          titulo: t.titulo,
-          descricao: t.descricao,
-          relato: t.relato ?? "",
-          responsavel_id: t.responsavel_id,
-          responsavel_nome: t.responsavel_nome,
-          estado: novoEstado,
-          ordem: t.ordem,
-          predecessora_id: t.predecessora_id ?? null,
-        }),
-      `Tarefa ${t.titulo}: ${seloDoEstado(catalogoTarefas.colunas, novoEstado, ESTADO_TAREFA[novoEstado]).label.toLowerCase()}`,
+      () => apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, corpoDaTarefa(t, patch)),
+      aviso,
     );
     if (ok) void tarefas.mutate();
   }
 
-  async function renomearTarefa(t: Tarefa, nome: string) {
-    const ok = await run(
-      () =>
-        apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
-          titulo: nome.slice(0, 200),
-          descricao: t.descricao,
-          relato: t.relato ?? "",
-          responsavel_id: t.responsavel_id,
-          responsavel_nome: t.responsavel_nome,
-          estado: t.estado,
-          ordem: t.ordem,
-          predecessora_id: t.predecessora_id ?? null,
-        }),
-      "Nome atualizado",
+  async function atualizarTarefaEstado(t: Tarefa, novoEstado: EstadoTarefa) {
+    await gravarTarefa(
+      t,
+      { estado: novoEstado },
+      `Tarefa ${t.titulo}: ${seloDoEstado(catalogoTarefas.colunas, novoEstado, ESTADO_TAREFA[novoEstado]).label.toLowerCase()}`,
     );
-    if (ok) void tarefas.mutate();
+  }
+
+  async function renomearTarefa(t: Tarefa, nome: string) {
+    await gravarTarefa(t, { titulo: nome.slice(0, 200) }, "Nome atualizado");
   }
 
   async function excluirTarefa(t: Tarefa) {
@@ -642,6 +650,22 @@ export function ProjetoDetalheConteudo() {
                     onMover={(t, estado) => void atualizarTarefaEstado(t, estado)}
                     onRenomear={mutavel ? (t, nome) => void renomearTarefa(t, nome) : undefined}
                     onAbrir={(t) => setTarefaAberta(t.id)}
+                    usuarioId={me?.id}
+                    onAtribuir={
+                      mutavel
+                        ? (t, pessoa) =>
+                            void gravarTarefa(
+                              t,
+                              { responsavel_id: pessoa.id || null, responsavel_nome: pessoa.nome },
+                              pessoa.nome ? `Responsável: ${pessoa.nome}` : "Responsável removido",
+                            )
+                        : undefined
+                    }
+                    onPrazo={
+                      mutavel
+                        ? (t, dia) => void gravarTarefa(t, { data_limite: prazoDoDia(dia) }, "Prazo atualizado")
+                        : undefined
+                    }
                   />
                 </DataState>
               </CardContent>

@@ -430,6 +430,85 @@ func (r *Repository) ListarTarefas(ctx context.Context, db database.DBTX, projet
 	return lista, nil
 }
 
+const colunasTarefaAlias = `t.id, t.projeto_id, t.titulo, t.descricao, t.responsavel_id, t.responsavel_nome, t.estado, t.ordem,
+	t.data_limite, t.created_at, t.updated_at, t.origem, t.predecessora_id, t.relato`
+
+func clausulaUnidade(restrito bool, n int) string {
+	if !restrito {
+		return ""
+	}
+	return fmt.Sprintf(` AND (p.unidade_id = ANY($%d) OR p.unidade_id IS NULL)`, n)
+}
+
+func (r *Repository) ListarMinhas(ctx context.Context, db database.DBTX, pessoa uuid.UUID, restrito bool, unidades []uuid.UUID) ([]domain.TarefaMinha, error) {
+	if unidades == nil {
+		unidades = []uuid.UUID{}
+	}
+	q := `SELECT ` + colunasTarefaAlias + `, p.numero, p.titulo, p.estado
+		FROM projetos_tarefas t
+		JOIN projetos p ON p.id = t.projeto_id
+		WHERE t.responsavel_id = $1
+		  AND t.estado <> 'concluida'
+		  AND p.estado NOT IN ('concluido', 'cancelado')` + clausulaUnidade(restrito, 2) + `
+		ORDER BY t.data_limite NULLS LAST, p.numero, t.ordem`
+	args := []any{pessoa}
+	if restrito {
+		args = append(args, unidades)
+	}
+	rows, err := db.Query(ctx, q, args...)
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	defer rows.Close()
+	lista := []domain.TarefaMinha{}
+	for rows.Next() {
+		var item domain.TarefaMinha
+		if err := rows.Scan(
+			&item.ID, &item.ProjetoID, &item.Titulo, &item.Descricao, &item.ResponsavelID, &item.ResponsavelNome, &item.Estado, &item.Ordem,
+			&item.DataLimite, &item.CreatedAt, &item.UpdatedAt, &item.Origem, &item.PredecessoraID, &item.Relato,
+			&item.ProjetoNumero, &item.ProjetoTitulo, &item.ProjetoEstado,
+		); err != nil {
+			return nil, mapDB(err)
+		}
+		lista = append(lista, item)
+	}
+	return lista, mapDB(rows.Err())
+}
+
+func (r *Repository) ListarCarga(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID) ([]domain.CargaPessoa, error) {
+	if unidades == nil {
+		unidades = []uuid.UUID{}
+	}
+	q := `SELECT t.responsavel_id, max(t.responsavel_nome),
+			count(*) FILTER (WHERE t.estado <> 'concluida'),
+			count(*) FILTER (WHERE t.estado <> 'concluida' AND t.data_limite IS NOT NULL AND t.data_limite < now())
+		FROM projetos_tarefas t
+		JOIN projetos p ON p.id = t.projeto_id
+		WHERE t.responsavel_id IS NOT NULL
+		  AND p.estado NOT IN ('concluido', 'cancelado')` + clausulaUnidade(restrito, 1) + `
+		GROUP BY t.responsavel_id
+		HAVING count(*) FILTER (WHERE t.estado <> 'concluida') > 0
+		ORDER BY 3 DESC, 2`
+	args := []any{}
+	if restrito {
+		args = append(args, unidades)
+	}
+	rows, err := db.Query(ctx, q, args...)
+	if err != nil {
+		return nil, mapDB(err)
+	}
+	defer rows.Close()
+	lista := []domain.CargaPessoa{}
+	for rows.Next() {
+		var item domain.CargaPessoa
+		if err := rows.Scan(&item.ID, &item.Nome, &item.Abertas, &item.Atrasadas); err != nil {
+			return nil, mapDB(err)
+		}
+		lista = append(lista, item)
+	}
+	return lista, mapDB(rows.Err())
+}
+
 func (r *Repository) ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error {
 	const q = `DELETE FROM projetos_tarefas WHERE id = $1`
 	_, err := db.Exec(ctx, q, id)

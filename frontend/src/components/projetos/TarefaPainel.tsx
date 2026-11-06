@@ -124,6 +124,7 @@ export function TarefaPainel({
           responsavel_nome: resp.id ? resp.nome : "",
           estado: tarefa.estado,
           ordem: tarefa.ordem,
+          data_limite: tarefa.data_limite ?? null,
           predecessora_id: tarefa.predecessora_id ?? null,
         }),
       "Tarefa atualizada",

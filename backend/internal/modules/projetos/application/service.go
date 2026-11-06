@@ -819,6 +819,17 @@ func (s *Service) podeGerir(idt auth.Identity, unidade *uuid.UUID) bool {
 	return auth.Can(idt, auth.PermProjetosManage, alvoUnidade(unidade))
 }
 
+func coberturaDe(idt auth.Identity) (restrito bool, unidades []uuid.UUID) {
+	cob := auth.CoverageOf(idt, auth.PermProjetosRead)
+	if !cob.All && len(cob.Unidades) == 0 {
+		cob = auth.CoverageOf(idt, auth.PermProjetosManage)
+	}
+	if cob.Unidades == nil {
+		cob.Unidades = []uuid.UUID{}
+	}
+	return !cob.All, cob.Unidades
+}
+
 func (s *Service) podeLer(idt auth.Identity, unidade *uuid.UUID) bool {
 	alvo := alvoUnidade(unidade)
 	return auth.Can(idt, auth.PermProjetosRead, alvo) || auth.Can(idt, auth.PermProjetosManage, alvo)
@@ -997,6 +1008,13 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 			return err
 		}
 		enviadas = append(enviadas, parte...)
+		if atual.Estado != domain.EstadoTarefaConcluida && atualizada.Estado == domain.EstadoTarefaConcluida {
+			seguintes, err := s.avisarSucessoras(ctx, tx, idt.UserID, projeto, *atualizada)
+			if err != nil {
+				return err
+			}
+			enviadas = append(enviadas, seguintes...)
+		}
 		return nil
 	})
 	if err != nil {
@@ -1015,6 +1033,19 @@ func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoI
 		return nil, domain.ErrForaDoEscopo
 	}
 	return s.repo.ListarTarefas(ctx, s.pool, projetoID)
+}
+
+func (s *Service) ListarMinhas(ctx context.Context, idt auth.Identity) ([]domain.TarefaMinha, error) {
+	if idt.UserID == uuid.Nil {
+		return []domain.TarefaMinha{}, nil
+	}
+	restrito, unidades := coberturaDe(idt)
+	return s.repo.ListarMinhas(ctx, s.pool, idt.UserID, restrito, unidades)
+}
+
+func (s *Service) ListarCarga(ctx context.Context, idt auth.Identity) ([]domain.CargaPessoa, error) {
+	restrito, unidades := coberturaDe(idt)
+	return s.repo.ListarCarga(ctx, s.pool, restrito, unidades)
 }
 
 func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, confirmar string) error {

@@ -204,6 +204,35 @@ func (s *Service) avisarProjeto(ctx context.Context, tx pgx.Tx, autor uuid.UUID,
 	})
 }
 
+func (s *Service) avisarSucessoras(ctx context.Context, tx pgx.Tx, autor uuid.UUID, p *domain.Projeto, concluida domain.Tarefa) ([]notificacoes.Enviada, error) {
+	if p == nil || concluida.Estado != domain.EstadoTarefaConcluida {
+		return nil, nil
+	}
+	tarefas, err := s.repo.ListarTarefas(ctx, tx, p.ID)
+	if err != nil {
+		return nil, err
+	}
+	var enviadas []notificacoes.Enviada
+	for i := range tarefas {
+		seguinte := tarefas[i]
+		if seguinte.PredecessoraID == nil || *seguinte.PredecessoraID != concluida.ID || seguinte.ResponsavelID == nil {
+			continue
+		}
+		parte, err := s.registrar(ctx, tx, autor, []uuid.UUID{*seguinte.ResponsavelID}, notificacoes.Nova{
+			Modulo:   "projetos",
+			Titulo:   "A tarefa anterior terminou",
+			Mensagem: cortar(concluida.Titulo+" foi concluída. "+seguinte.Titulo+" já pode ser concluída.", 1000),
+			Link:     linkProjeto(p.ID),
+			Chave:    chaveAviso("tarefa", seguinte.ID.String(), "anterior"),
+		})
+		if err != nil {
+			return nil, err
+		}
+		enviadas = append(enviadas, parte...)
+	}
+	return enviadas, nil
+}
+
 func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, p *domain.Projeto, antes, depois domain.Tarefa) ([]notificacoes.Enviada, error) {
 	if p == nil {
 		return nil, nil

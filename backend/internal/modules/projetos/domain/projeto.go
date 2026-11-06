@@ -185,6 +185,22 @@ type Tarefa struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
+// TarefaMinha é uma tarefa aberta de quem está logado, com o projeto ao lado.
+type TarefaMinha struct {
+	Tarefa
+	ProjetoNumero int64  `json:"projeto_numero"`
+	ProjetoTitulo string `json:"projeto_titulo"`
+	ProjetoEstado string `json:"projeto_estado"`
+}
+
+// CargaPessoa conta as tarefas abertas e as atrasadas de um responsável.
+type CargaPessoa struct {
+	ID        uuid.UUID `json:"id"`
+	Nome      string    `json:"nome"`
+	Abertas   int       `json:"abertas"`
+	Atrasadas int       `json:"atrasadas"`
+}
+
 // PrazoTarefa é uma tarefa cujo limite já passou e o projeto ainda corre.
 type PrazoTarefa struct {
 	TarefaID      uuid.UUID

@@ -45,6 +45,8 @@ type Repository interface {
 	ListarResponsaveis(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Responsavel, error)
 	NomeDeResponsavel(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)
+	ListarMinhas(ctx context.Context, db database.DBTX, pessoa uuid.UUID, restrito bool, unidades []uuid.UUID) ([]TarefaMinha, error)
+	ListarCarga(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID) ([]CargaPessoa, error)
 	ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error
 
 	CriarVinculo(ctx context.Context, db database.DBTX, v *Vinculo) error

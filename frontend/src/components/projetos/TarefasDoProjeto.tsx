@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
 import {
   NomeClicavel,
   Quadro,
@@ -11,11 +13,13 @@ import {
 } from "@/components/plataforma/Faixas";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { rotuloQuadro } from "@/components/plataforma/useQuadro";
+import { Input } from "@/components/ui/Input";
 import { TableCell } from "@/components/ui/Table";
 import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
 
-import { diaBrasil } from "./datas";
+import { diaBrasil, diaISO, faixaDoPrazo } from "./datas";
 import { ListaTabela } from "./ListaTabela";
+import { ResponsavelDaTarefa, type ResponsavelOpcao } from "./ResponsavelDaTarefa";
 
 const CABECALHOS = [
   { id: "tarefa", rotulo: "Tarefa" },
@@ -41,6 +45,9 @@ export function TarefasDoProjeto({
   onMover,
   onRenomear,
   onAbrir,
+  onAtribuir,
+  onPrazo,
+  usuarioId,
 }: {
   projetoId: string;
   tarefas: Tarefa[];
@@ -53,8 +60,27 @@ export function TarefasDoProjeto({
   onMover: (tarefa: Tarefa, estado: EstadoTarefa) => void;
   onRenomear?: (tarefa: Tarefa, nome: string) => void;
   onAbrir: (tarefa: Tarefa) => void;
+  onAtribuir?: (tarefa: Tarefa, pessoa: ResponsavelOpcao) => void;
+  onPrazo?: (tarefa: Tarefa, dia: string) => void;
+  usuarioId?: string;
 }) {
   const look = useAparencia(`nova-faixas:tarefas:${projetoId}`);
+  const [busca, setBusca] = useState("");
+  const [minhas, setMinhas] = useState(false);
+  const [atrasadas, setAtrasadas] = useState(false);
+  const [semana, setSemana] = useState(false);
+  const [pessoaAberta, setPessoaAberta] = useState<string | null>(null);
+  const visiveis = useMemo(() => {
+    const termo = busca.trim().toLocaleLowerCase("pt-BR");
+    return tarefas.filter((t) => {
+      if (termo && !t.titulo.toLocaleLowerCase("pt-BR").includes(termo)) return false;
+      if (minhas && t.responsavel_id !== usuarioId) return false;
+      const faixa = faixaDoPrazo(t.data_limite);
+      if (atrasadas && faixa !== "atrasada") return false;
+      if (semana && faixa !== "semana") return false;
+      return true;
+    });
+  }, [atrasadas, busca, minhas, semana, tarefas, usuarioId]);
 
   function estadoDa(t: Tarefa) {
     const ativas = ordenarColunas(
@@ -89,6 +115,22 @@ export function TarefasDoProjeto({
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="min-w-48 flex-1">
+          <Input
+            id={`busca-tarefa-${projetoId}`}
+            label="Buscar tarefa"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Nome da tarefa"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 pb-1">
+          <Filtro ligado={minhas} onClick={() => setMinhas((v) => !v)} nome="Só as minhas" />
+          <Filtro ligado={atrasadas} onClick={() => setAtrasadas((v) => !v)} nome="Atrasadas" />
+          <Filtro ligado={semana} onClick={() => setSemana((v) => !v)} nome="Desta semana" />
+        </div>
+      </div>
       <SectionTabsInline
         label="Forma de ver as tarefas"
         value={vista}
@@ -98,6 +140,9 @@ export function TarefasDoProjeto({
           { value: "lista", label: "Lista" },
         ]}
       />
+      {tarefas.length > 0 && visiveis.length === 0 && (
+        <p className="text-sm text-muted">Nenhuma tarefa com esse filtro.</p>
+      )}
       {tarefas.length === 0 && (
         <p className="text-sm text-muted">
           Nenhuma tarefa criada. Adicione a primeira tarefa para estruturar as entregas deste
@@ -111,7 +156,7 @@ export function TarefasDoProjeto({
           aparencia={`nova-faixas:tarefas:${projetoId}`}
           colunas={colunas}
           oficial={oficial}
-          itens={tarefas}
+          itens={visiveis}
           colunaDe={(t) => t.estado}
           idDe={(t) => t.id}
           nomeDe={(t) => t.titulo}
@@ -131,7 +176,17 @@ export function TarefasDoProjeto({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm">{t.responsavel_nome || "Sem responsável"}</span>
+                  <CelulaPessoa
+                    tarefa={t}
+                    projetoId={projetoId}
+                    mutavel={mutavel}
+                    aberta={pessoaAberta === t.id}
+                    onAbrir={() => setPessoaAberta(t.id)}
+                    onAtribuir={(pessoa) => {
+                      setPessoaAberta(null);
+                      onAtribuir?.(t, pessoa);
+                    }}
+                  />
                 </TableCell>
                 <TableCell>
                   {mutavel ? (
@@ -143,7 +198,7 @@ export function TarefasDoProjeto({
                   )}
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm text-muted">{diaBrasil(t.data_limite) || "Sem prazo"}</span>
+                  <CelulaPrazo tarefa={t} mutavel={mutavel} onPrazo={(dia) => onPrazo?.(t, dia)} />
                 </TableCell>
               </>
             );
@@ -156,7 +211,7 @@ export function TarefasDoProjeto({
           aparencia={`nova-faixas:tarefas:${projetoId}`}
           colunas={colunas}
           oficial={oficial}
-          itens={tarefas}
+          itens={visiveis}
           colunaDe={(t) => t.estado}
           idDe={(t) => t.id}
           nomeDe={(t) => t.titulo}
@@ -194,5 +249,79 @@ export function TarefasDoProjeto({
         />
       )}
     </div>
+  );
+}
+
+function Filtro({ ligado, onClick, nome }: { ligado: boolean; onClick: () => void; nome: string }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={ligado}
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-xs ${
+        ligado
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-surface-border text-muted hover:bg-surface-hover"
+      }`}
+    >
+      {nome}
+    </button>
+  );
+}
+
+function CelulaPessoa({
+  tarefa,
+  projetoId,
+  mutavel,
+  aberta,
+  onAbrir,
+  onAtribuir,
+}: {
+  tarefa: Tarefa;
+  projetoId: string;
+  mutavel: boolean;
+  aberta: boolean;
+  onAbrir: () => void;
+  onAtribuir: (pessoa: ResponsavelOpcao) => void;
+}) {
+  if (!mutavel || !aberta) {
+    const nome = tarefa.responsavel_nome || "Sem responsável";
+    if (!mutavel) return <span className="text-sm">{nome}</span>;
+    return (
+      <button type="button" className="text-left text-sm hover:underline" onClick={onAbrir}>
+        {tarefa.responsavel_nome || "Atribuir"}
+      </button>
+    );
+  }
+  return (
+    <ResponsavelDaTarefa
+      id={`resp-${tarefa.id}`}
+      projetoId={projetoId}
+      value={{ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome }}
+      onChange={onAtribuir}
+    />
+  );
+}
+
+function CelulaPrazo({
+  tarefa,
+  mutavel,
+  onPrazo,
+}: {
+  tarefa: Tarefa;
+  mutavel: boolean;
+  onPrazo: (dia: string) => void;
+}) {
+  if (!mutavel) {
+    return <span className="text-sm text-muted">{diaBrasil(tarefa.data_limite) || "Sem prazo"}</span>;
+  }
+  return (
+    <input
+      type="date"
+      aria-label={`Prazo da tarefa ${tarefa.titulo}`}
+      value={diaISO(tarefa.data_limite)}
+      onChange={(e) => onPrazo(e.target.value)}
+      className="h-8 rounded-md border border-surface-border bg-surface px-2 text-xs text-foreground"
+    />
   );
 }

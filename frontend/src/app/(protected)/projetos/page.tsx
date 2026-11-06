@@ -19,6 +19,7 @@ import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
+import { CargaEquipe, MeuTrabalho } from "@/components/projetos/MeuTrabalho";
 import { ListaTabela } from "@/components/projetos/ListaTabela";
 import { diaBrasil } from "@/components/projetos/datas";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
@@ -42,10 +43,12 @@ import {
   PRIORIDADE_PROJETO,
   type EstadoProjeto,
   type PrioridadeProjeto,
+  type CargaPessoa,
   type Projeto,
+  type TarefaMinha,
 } from "@/lib/projetos/projetos";
 
-type Vista = "lista" | "kanban" | "cronograma";
+type Vista = "lista" | "kanban" | "cronograma" | "minhas" | "carga";
 
 /** Caminho legal a partir de planejado. O valor enviado é o id do estado. */
 function passosDoProjeto(alvo: EstadoProjeto): EstadoProjeto[] {
@@ -79,7 +82,15 @@ function ProjetosConteudo() {
   const paramVista = params.get("vista");
   const paramProduto = params.get("produto") ?? "";
   const vista: Vista =
-    paramVista === "lista" ? "lista" : paramVista === "cronograma" ? "cronograma" : "kanban";
+    paramVista === "lista"
+      ? "lista"
+      : paramVista === "cronograma"
+        ? "cronograma"
+        : paramVista === "minhas"
+          ? "minhas"
+          : paramVista === "carga"
+            ? "carga"
+            : "kanban";
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const [estado, setEstado] = useState("");
@@ -90,7 +101,7 @@ function ProjetosConteudo() {
   const { run, pending } = useAction();
 
   const projetos = useApiQuery<Projeto[]>(
-    le
+    le && vista !== "minhas" && vista !== "carga"
       ? withQuery("v1/projetos", {
           estado: somenteFiltroLista ? estado : undefined,
           q: busca || undefined,
@@ -98,6 +109,8 @@ function ProjetosConteudo() {
         })
       : null,
   );
+  const minhas = useApiQuery<TarefaMinha[]>(vista === "minhas" && le ? "v1/projetos/minhas" : null);
+  const carga = useApiQuery<CargaPessoa[]>(vista === "carga" && le ? "v1/projetos/carga" : null);
 
   const [modalAberto, setModalAberto] = useState(false);
   const [modo, setModo] = useState<"branco" | "5w2h">("branco");
@@ -119,7 +132,9 @@ function ProjetosConteudo() {
 
   function trocarVista(proxima: string) {
     const vista =
-      proxima === "lista" ? "lista" : proxima === "cronograma" ? "cronograma" : "quadro";
+      proxima === "lista" || proxima === "cronograma" || proxima === "minhas" || proxima === "carga"
+        ? proxima
+        : "quadro";
     router.replace(painel.href({ vista }));
   }
 
@@ -295,9 +310,13 @@ function ProjetosConteudo() {
           { value: "kanban", label: "Quadro" },
           { value: "lista", label: "Lista" },
           { value: "cronograma", label: "Cronograma" },
+          { value: "minhas", label: "Meu trabalho" },
+          { value: "carga", label: "Carga" },
         ]}
       />
 
+      {vista !== "minhas" && vista !== "carga" && (
+      <>
       <FiltroPorUnidade
         rotulo="Filtrar projetos por unidade"
         itens={todosProjetos}
@@ -328,7 +347,28 @@ function ProjetosConteudo() {
           onChange={(e) => setBusca(e.target.value)}
         />
       </div>
+      </>
+      )}
 
+      {vista === "minhas" ? (
+        <DataState
+          loading={minhas.isLoading || carregandoSessao}
+          error={minhas.error}
+          empty={false}
+          onRetry={() => void minhas.mutate()}
+        >
+          <MeuTrabalho tarefas={minhas.data ?? []} />
+        </DataState>
+      ) : vista === "carga" ? (
+        <DataState
+          loading={carga.isLoading || carregandoSessao}
+          error={carga.error}
+          empty={false}
+          onRetry={() => void carga.mutate()}
+        >
+          <CargaEquipe pessoas={carga.data ?? []} />
+        </DataState>
+      ) : (
       <DataState
         loading={projetos.isLoading || carregandoSessao}
         error={projetos.error}
@@ -414,6 +454,7 @@ function ProjetosConteudo() {
           />
         )}
       </DataState>
+      )}
 
       {/* Modal de Criação de Projeto */}
       <Dialog
