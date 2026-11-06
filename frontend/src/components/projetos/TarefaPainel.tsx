@@ -130,7 +130,7 @@ export function TarefaPainel({
     );
     if (ok) {
       onSaved();
-      void movimentos.mutate();
+      onClose();
     }
   }
 

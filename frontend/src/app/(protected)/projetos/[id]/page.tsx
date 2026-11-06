@@ -18,7 +18,7 @@ import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataform
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { Painel5W2H } from "@/components/projetos/Painel5W2H";
-import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
+import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
 import { TarefaPainel } from "@/components/projetos/TarefaPainel";
 import { TarefasDoProjeto } from "@/components/projetos/TarefasDoProjeto";
 import { useAction } from "@/components/plataforma/useAction";
@@ -687,10 +687,9 @@ export function ProjetoDetalheConteudo() {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <PessoaDaUnidade
+                  <ResponsavelDaTarefa
                     id="tarefa-resp"
-                    label="Responsável"
-                    unidadeId={p?.unidade_id}
+                    projetoId={id}
                     value={tarefaResp}
                     onChange={setTarefaResp}
                   />

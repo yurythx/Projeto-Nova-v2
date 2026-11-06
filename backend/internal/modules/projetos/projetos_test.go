@@ -676,7 +676,7 @@ func TestConclusaoAvisaQuemPodeReabrir(t *testing.T) {
 		}
 		return n
 	}
-	if doGerente(gerente) != 1 {
+	if doGerente(gerente) != 3 {
 		t.Fatalf("gerente na conclusão: %d", doGerente(gerente))
 	}
 	if doGerente(daUnidade) != 0 {

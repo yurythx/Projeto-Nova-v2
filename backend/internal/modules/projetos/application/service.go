@@ -229,6 +229,7 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 		return nil, err
 	}
 
+	var enviadas []notificacoes.Enviada
 	p := &domain.Projeto{
 		ID:                  uuid.New(),
 		Titulo:              e.Titulo,
@@ -259,6 +260,11 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 		if err := s.repo.Criar(ctx, tx, p); err != nil {
 			return err
 		}
+		parte, err := s.avisarGerenteNovo(ctx, tx, idt.UserID, p)
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
 		if guiado {
 			if _, err := s.repo.SalvarCarta(ctx, tx, p.ID, carta); err != nil {
 				return err
@@ -294,6 +300,7 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return p, nil
 }
 
@@ -365,6 +372,7 @@ func (s *Service) SalvarCarta(ctx context.Context, idt auth.Identity, id uuid.UU
 		return nil, err
 	}
 	var visao *domain.VisaoCarta
+	var enviadas []notificacoes.Enviada
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		p, err := s.repo.Obter(ctx, tx, id)
 		if err != nil {
@@ -399,11 +407,20 @@ func (s *Service) SalvarCarta(ctx context.Context, idt auth.Identity, id uuid.UU
 			return err
 		}
 		visao, err = s.montarVisao(ctx, tx, atualizado, &salva)
-		return err
+		if err != nil {
+			return err
+		}
+		parte, err := s.avisarTrocaDeGerente(ctx, tx, idt.UserID, p, atualizado, "Ficha do projeto #"+strconv.FormatInt(atualizado.Numero, 10)+" atualizada", atualizado.Titulo)
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return visao, nil
 }
 
@@ -465,6 +482,7 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 	}
 
 	var atualizado *domain.Projeto
+	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		p, err := s.repo.Obter(ctx, tx, id)
 		if err != nil {
@@ -497,11 +515,20 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoUpdated, "projeto", id.String(), p, atualizado))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoUpdated, "projeto", id.String(), p, atualizado)); err != nil {
+			return err
+		}
+		parte, err := s.avisarTrocaDeGerente(ctx, tx, idt.UserID, p, atualizado, "Projeto #"+strconv.FormatInt(atualizado.Numero, 10)+" atualizado", atualizado.Titulo)
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return atualizado, nil
 }
 
@@ -555,6 +582,14 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 			if err != nil {
 				return err
 			}
+		} else {
+			var err error
+			enviadas, err = s.avisarProjeto(ctx, tx, idt.UserID, res,
+				"Projeto #"+strconv.FormatInt(res.Numero, 10)+" "+rotuloEstadoProjeto(novoEstado),
+				res.Titulo, "estado")
+			if err != nil {
+				return err
+			}
 		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoTransitioned, "projeto", id.String(), p, atualizado))
 	})
@@ -591,6 +626,26 @@ func (s *Service) avisarAprovadores(ctx context.Context, tx pgx.Tx, p *domain.Pr
 		}
 		if !ja {
 			destinos = append(destinos, *p.GerenteID)
+		}
+	}
+	tarefas, err := s.repo.ListarTarefas(ctx, tx, p.ID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range tarefas {
+		id := tarefas[i].ResponsavelID
+		if id == nil || *id == uuid.Nil || *id == autor {
+			continue
+		}
+		ja := false
+		for _, destino := range destinos {
+			if destino == *id {
+				ja = true
+				break
+			}
+		}
+		if !ja {
+			destinos = append(destinos, *id)
 		}
 	}
 	titulo := p.Titulo
@@ -732,15 +787,19 @@ func (s *Service) Reabrir(ctx context.Context, idt auth.Identity, id uuid.UUID, 
 }
 
 func (s *Service) avisarReabertura(ctx context.Context, tx pgx.Tx, p *domain.Projeto, motivo string, autor uuid.UUID, autorNome string) ([]notificacoes.Enviada, error) {
-	if s.avisos == nil || p == nil || p.GerenteID == nil || *p.GerenteID == uuid.Nil || *p.GerenteID == autor {
+	if s.avisos == nil || p == nil {
 		return nil, nil
+	}
+	destinos, err := s.responsaveisDoProjeto(ctx, tx, p)
+	if err != nil {
+		return nil, err
 	}
 	quem := autorNome
 	if quem == "" {
 		quem = "um superior"
 	}
 	mensagem := cortar("Reaberto por "+quem+". "+motivo, 1000)
-	return notificacoes.Registrar(ctx, tx, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
+	return s.registrar(ctx, tx, autor, destinos, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   "Projeto #" + strconv.FormatInt(p.Numero, 10) + " reaberto",
 		Mensagem: mensagem,
@@ -824,6 +883,7 @@ func (s *Service) conferirPredecessora(ctx context.Context, db database.DBTX, pr
 
 func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
 	var criada *domain.Tarefa
+	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		projeto, err := s.repo.Obter(ctx, tx, projetoID)
 		if err != nil {
@@ -869,11 +929,20 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 			return err
 		}
 		criada = t
-		return s.anotarMovimento(ctx, tx, idt, domain.Tarefa{}, *t)
+		if err := s.anotarMovimento(ctx, tx, idt, domain.Tarefa{}, *t); err != nil {
+			return err
+		}
+		parte, err := s.avisarTarefa(ctx, tx, idt.UserID, projeto, domain.Tarefa{}, *t)
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return criada, nil
 }
 
@@ -882,6 +951,7 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		return nil, domain.ErrRelatoInvalido
 	}
 	var atualizada *domain.Tarefa
+	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		atual, err := s.repo.ObterTarefa(ctx, tx, id)
 		if err != nil {
@@ -919,11 +989,20 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		if err != nil {
 			return err
 		}
-		return s.anotarMovimento(ctx, tx, idt, *atual, *atualizada)
+		if err := s.anotarMovimento(ctx, tx, idt, *atual, *atualizada); err != nil {
+			return err
+		}
+		parte, err := s.avisarTarefa(ctx, tx, idt.UserID, projeto, *atual, *atualizada)
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return atualizada, nil
 }
 
@@ -939,7 +1018,8 @@ func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoI
 }
 
 func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, confirmar string) error {
-	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+	var enviadas []notificacoes.Enviada
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		atual, err := s.repo.ObterTarefa(ctx, tx, id)
 		if err != nil {
 			return err
@@ -965,8 +1045,29 @@ func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), atual, nil))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), atual, nil)); err != nil {
+			return err
+		}
+		destinos := idDe(projeto.GerenteID)
+		destinos = append(destinos, idDe(atual.ResponsavelID)...)
+		parte, err := s.registrar(ctx, tx, idt.UserID, destinos, notificacoes.Nova{
+			Modulo:   "projetos",
+			Titulo:   "Tarefa apagada no projeto #" + strconv.FormatInt(projeto.Numero, 10),
+			Mensagem: cortar(atual.Titulo, 1000),
+			Link:     linkProjeto(projeto.ID),
+			Chave:    chaveAviso("tarefa", atual.ID.String(), "apagada"),
+		})
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
+	if err != nil {
+		return err
+	}
+	s.entregar(ctx, enviadas)
+	return nil
 }
 
 func (s *Service) ListarResponsaveis(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Responsavel, error) {
@@ -1004,6 +1105,7 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 		VinculadoPor: idt.Email,
 	}
 
+	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		p, err := s.repo.Obter(ctx, tx, projetoID)
 		if err != nil {
@@ -1039,16 +1141,28 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.created", "projeto", projetoID.String(), nil, v))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.created", "projeto", projetoID.String(), nil, v)); err != nil {
+			return err
+		}
+		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
+			"Vínculo no projeto #"+strconv.FormatInt(p.Numero, 10),
+			v.Rotulo, "vinculo")
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return v, nil
 }
 
 func (s *Service) Desvincular(ctx context.Context, idt auth.Identity, vinculoID uuid.UUID) error {
-	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+	var enviadas []notificacoes.Enviada
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		projetoID, ok, err := s.repo.ProjetoDoVinculo(ctx, tx, vinculoID)
 		if err != nil {
 			return err
@@ -1074,8 +1188,23 @@ func (s *Service) Desvincular(ctx context.Context, idt auth.Identity, vinculoID 
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), nil, nil))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), nil, nil)); err != nil {
+			return err
+		}
+		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
+			"Vínculo removido do projeto #"+strconv.FormatInt(p.Numero, 10),
+			p.Titulo, "vinculo-removido")
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
+	if err != nil {
+		return err
+	}
+	s.entregar(ctx, enviadas)
+	return nil
 }
 
 func (s *Service) RegistrarApontamento(
@@ -1124,6 +1253,7 @@ func (s *Service) RegistrarApontamento(
 		return nil, MapError(err)
 	}
 
+	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		p, err := s.repo.Obter(ctx, tx, projetoID)
 		if err != nil {
@@ -1150,11 +1280,22 @@ func (s *Service) RegistrarApontamento(
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.created", "projeto", projetoID.String(), nil, a))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.created", "projeto", projetoID.String(), nil, a)); err != nil {
+			return err
+		}
+		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
+			"Horas no projeto #"+strconv.FormatInt(p.Numero, 10),
+			cortar(nomeUsuario+": "+descricao, 1000), "horas")
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, MapError(err)
 	}
+	s.entregar(ctx, enviadas)
 	return a, nil
 }
 
@@ -1188,7 +1329,8 @@ func (s *Service) ListarApontamentos(
 }
 
 func (s *Service) ExcluirApontamento(ctx context.Context, idt auth.Identity, apontamentoID uuid.UUID) error {
-	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+	var enviadas []notificacoes.Enviada
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		projetoID, ok, err := s.repo.ProjetoDoApontamento(ctx, tx, apontamentoID)
 		if err != nil {
 			return err
@@ -1214,6 +1356,21 @@ func (s *Service) ExcluirApontamento(ctx context.Context, idt auth.Identity, apo
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), nil, nil))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), nil, nil)); err != nil {
+			return err
+		}
+		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
+			"Horas removidas do projeto #"+strconv.FormatInt(p.Numero, 10),
+			p.Titulo, "horas-removidas")
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
+	if err != nil {
+		return err
+	}
+	s.entregar(ctx, enviadas)
+	return nil
 }

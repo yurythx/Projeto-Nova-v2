@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -15,6 +16,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/storage"
 )
 
@@ -94,8 +96,9 @@ func (s *Service) RegistrarAnexo(ctx context.Context, idt auth.Identity, projeto
 		return nil, err
 	}
 	var gravado *domain.Anexo
+	var enviadas []notificacoes.Enviada
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
-		_, projeto, err := s.tarefaNoProjeto(ctx, tx, projetoID, tarefaID)
+		tarefa, projeto, err := s.tarefaNoProjeto(ctx, tx, projetoID, tarefaID)
 		if err != nil {
 			return err
 		}
@@ -123,11 +126,27 @@ func (s *Service) RegistrarAnexo(ctx context.Context, idt auth.Identity, projeto
 		if err != nil {
 			return err
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.anexo", "projeto_tarefa", tarefaID.String(), nil, gravado))
+		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.anexo", "projeto_tarefa", tarefaID.String(), nil, gravado)); err != nil {
+			return err
+		}
+		destinos := append(idDe(projeto.GerenteID), idDe(tarefa.ResponsavelID)...)
+		parte, err := s.registrar(ctx, tx, idt.UserID, destinos, notificacoes.Nova{
+			Modulo:   "projetos",
+			Titulo:   "Arquivo na tarefa do projeto #" + strconv.FormatInt(projeto.Numero, 10),
+			Mensagem: cortar(tarefa.Titulo+" · "+nome, 1000),
+			Link:     linkProjeto(projeto.ID),
+			Chave:    chaveAviso("tarefa", tarefaID.String(), "anexo"),
+		})
+		if err != nil {
+			return err
+		}
+		enviadas = append(enviadas, parte...)
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	s.entregar(ctx, enviadas)
 	return gravado, nil
 }
 
