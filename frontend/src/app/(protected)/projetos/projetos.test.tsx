@@ -160,6 +160,27 @@ describe("Projetos — Lista e Criação", () => {
 });
 
 describe("Projetos — Detalhes e Tarefas", () => {
+  it("abre as tarefas do projeto na própria linha da lista", async () => {
+    const user = userEvent.setup();
+    mockBackend({
+      ...identityRoutes(perms("projetos:read")),
+      "GET v1/projetos": { data: [projeto()] },
+      "GET v1/projetos/proj-1/tarefas": {
+        data: [tarefa({ responsavel_id: "u-mariana", responsavel_nome: "Mariana Costa" })],
+      },
+    });
+
+    renderApp(<ProjetosPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Expandir tarefas de Expansão da Fibra Óptica" }),
+    );
+
+    expect(await screen.findByText("Comprar cabos de fibra")).toBeInTheDocument();
+    expect(screen.getByText("A fazer")).toBeInTheDocument();
+    expect(screen.getByText("Mariana Costa")).toBeInTheDocument();
+  });
+
   it("exibe informações do projeto e permite adicionar tarefas", async () => {
     const user = userEvent.setup();
     resetNavigation({ id: "proj-1" }, "/projetos/proj-1");

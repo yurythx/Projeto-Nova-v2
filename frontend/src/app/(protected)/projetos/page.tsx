@@ -22,6 +22,7 @@ import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { CargaEquipe, MeuTrabalho } from "@/components/projetos/MeuTrabalho";
 import { ListaTabela } from "@/components/projetos/ListaTabela";
+import { TarefasNaLista } from "@/components/projetos/TarefasNaLista";
 import { diaBrasil } from "@/components/projetos/datas";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
 import { ProjetosCronograma } from "@/components/projetos/ProjetosCronograma";
@@ -409,7 +410,7 @@ function ProjetosConteudo() {
             idDe={(p) => p.id}
             nomeDe={(p) => p.titulo}
             aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
-            aoAbrir={(p) => painel.abrir(p.id)}
+            detalhe={(p) => <TarefasNaLista projetoId={p.id} titulo={p.titulo} />}
             cabecalhos={[
               { id: "numero", rotulo: "#" },
               { id: "projeto", rotulo: "Projeto" },
