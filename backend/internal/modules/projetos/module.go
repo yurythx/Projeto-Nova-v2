@@ -34,6 +34,18 @@ func (m *Module) ComPortas(portas domain.Portas, produtos domain.Produtos) {
 	}
 }
 
+// ComHoras liga a soma das horas dos chamados vinculados.
+func (m *Module) ComHoras(h domain.HorasVinculadas) {
+	if m != nil && m.service != nil {
+		m.service.ComHoras(h)
+	}
+}
+
+// Workers avisa prazo de tarefa e fim planejado do projeto.
+func (m *Module) Workers() []kernel.Worker {
+	return []kernel.Worker{{Name: "prazos-de-projetos", Process: kernel.ProcessWorker, Run: m.service.RunPrazos}}
+}
+
 // ComAvisos liga a caixa de notificações.
 func (m *Module) ComAvisos(n *notificacoes.Service) {
 	if m != nil && m.service != nil {

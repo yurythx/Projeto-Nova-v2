@@ -78,6 +78,7 @@ type VisaoCarta struct {
 	EtapasHow           int        `json:"etapas_how"`
 	EtapasHowConcluidas int        `json:"etapas_how_concluidas"`
 	CustoRealizado      float64    `json:"custo_realizado"`
+	HorasChamados       float64    `json:"horas_chamados"`
 	UpdatedAt           *time.Time `json:"updated_at,omitempty"`
 }
 

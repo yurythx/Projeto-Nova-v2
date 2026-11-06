@@ -36,6 +36,7 @@ type Service struct {
 	passagens Passagens
 	portas    domain.Portas
 	produtos  domain.Produtos
+	horas     domain.HorasVinculadas
 	avisos    *notificacoes.Service
 }
 
@@ -50,6 +51,9 @@ func NewService(pool *pgxpool.Pool, repo domain.Repository, ob *outbox.Writer, l
 
 // ComPassagens liga os caminhos acrescentados nos quadros de projetos e de tarefas.
 func (s *Service) ComPassagens(p Passagens) { s.passagens = p }
+
+// ComHoras liga a soma das horas lançadas nos chamados vinculados.
+func (s *Service) ComHoras(h domain.HorasVinculadas) { s.horas = h }
 
 // ComPortas liga as portas de mudanças, problemas, ativos, solicitações e produtos.
 func (s *Service) ComPortas(portas domain.Portas, produtos domain.Produtos) {
@@ -83,6 +87,14 @@ func MapError(err error) error {
 		return apperrors.Validation("esse estado não está entre as colunas ativas da tarefa")
 	case errors.Is(err, domain.ErrProjetoEncerrado):
 		return apperrors.Conflict("projeto cancelado não aceita alterações")
+	case errors.Is(err, domain.ErrProjetoConcluido):
+		return apperrors.Conflict("projeto concluído só muda depois da reabertura")
+	case errors.Is(err, domain.ErrTarefasAbertas):
+		return apperrors.Conflict("conclua as tarefas em aberto antes de concluir o projeto")
+	case errors.Is(err, domain.ErrPredecessoraInvalida):
+		return apperrors.Validation("a tarefa anterior precisa ser outra tarefa deste projeto, sem ciclo")
+	case errors.Is(err, domain.ErrPredecessoraAberta):
+		return apperrors.Conflict("a tarefa anterior ainda não foi concluída")
 	case errors.Is(err, domain.ErrPrioridadeInvalida):
 		return apperrors.Validation("prioridade inválida")
 	case errors.Is(err, domain.ErrApontamentoInvalido):
@@ -262,6 +274,10 @@ func (s *Service) montarVisao(ctx context.Context, db database.DBTX, p *domain.P
 	if err != nil {
 		return nil, err
 	}
+	horasChamados, err := s.horasDosChamados(ctx, db, p.ID)
+	if err != nil {
+		return nil, err
+	}
 	v := &domain.VisaoCarta{
 		ProjetoID:           p.ID,
 		Titulo:              p.Titulo,
@@ -276,6 +292,7 @@ func (s *Service) montarVisao(ctx context.Context, db database.DBTX, p *domain.P
 		EtapasHow:           total,
 		EtapasHowConcluidas: concluidas,
 		CustoRealizado:      custo,
+		HorasChamados:       horasChamados,
 	}
 	if carta != nil {
 		v.Existe = true
@@ -324,8 +341,8 @@ func (s *Service) SalvarCarta(ctx context.Context, idt auth.Identity, id uuid.UU
 		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
 			return domain.ErrForaDoEscopo
 		}
-		if p.Estado == domain.EstadoCancelado {
-			return domain.ErrProjetoEncerrado
+		if err := domain.RecusarAlteracao(p.Estado); err != nil {
+			return err
 		}
 		gid, gnome, err := s.fixarPessoa(ctx, tx, p.UnidadeID, plano.GerenteID, plano.GerenteNome, p.GerenteNome, p.GerenteID)
 		if err != nil {
@@ -424,8 +441,8 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) || !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(e.UnidadeID)) {
 			return domain.ErrForaDoEscopo
 		}
-		if p.Estado == domain.EstadoCancelado {
-			return domain.ErrProjetoEncerrado
+		if err := domain.RecusarAlteracao(p.Estado); err != nil {
+			return err
 		}
 		if err := s.conferirProduto(ctx, tx, e.ProdutoID, e.UnidadeID); err != nil {
 			return err
@@ -477,6 +494,15 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 		}
 		if !domain.ValidarTransicao(p.Estado, novoEstado, mapa[p.Estado]...) {
 			return domain.ErrTransicaoInvalida
+		}
+		if novoEstado == domain.EstadoConcluido {
+			tarefas, err := s.repo.ListarTarefas(ctx, tx, id)
+			if err != nil {
+				return err
+			}
+			if domain.TarefasEmAberto(tarefas) > 0 {
+				return domain.ErrTarefasAbertas
+			}
 		}
 
 		res, err := s.repo.Transicionar(ctx, tx, id, novoEstado)
@@ -539,10 +565,26 @@ func (s *Service) avisarAprovadores(ctx context.Context, tx pgx.Tx, p *domain.Pr
 	if utf8.RuneCountInString(titulo) > 160 {
 		titulo = string([]rune(titulo)[:160])
 	}
+	mensagem := titulo + ". A reabertura, se for necessária, pede o motivo na ficha."
+	vinculos, err := s.repo.ListarVinculos(ctx, tx, p.ID)
+	if err != nil {
+		return nil, err
+	}
+	ligados := 0
+	for _, v := range vinculos {
+		if v.Tipo == domain.VinculoSolicitacao || v.Tipo == domain.VinculoProblema || v.Tipo == domain.VinculoMudanca {
+			ligados++
+		}
+	}
+	if ligados == 1 {
+		mensagem += " 1 registro ligado continua no fluxo dele."
+	} else if ligados > 1 {
+		mensagem += " " + strconv.Itoa(ligados) + " registros ligados continuam no fluxo deles."
+	}
 	return notificacoes.Registrar(ctx, tx, destinos, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   "Projeto #" + strconv.FormatInt(p.Numero, 10) + " concluído",
-		Mensagem: titulo + ". A reabertura, se for necessária, pede o motivo na ficha.",
+		Mensagem: mensagem,
 		Link:     "/projetos/" + p.ID.String(),
 		Chave:    "projetos:" + p.ID.String() + ":concluido:" + strconv.FormatInt(p.UpdatedAt.UnixNano(), 10),
 	})
@@ -682,68 +724,192 @@ func cortar(s string, max int) string {
 	return string([]rune(s)[:max])
 }
 
-func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
-	mapa, err := s.mapa(ctx, s.pool, "tarefas")
+func (s *Service) podeGerir(idt auth.Identity, unidade *uuid.UUID) bool {
+	return auth.Can(idt, auth.PermProjetosManage, alvoUnidade(unidade))
+}
+
+func (s *Service) podeLer(idt auth.Identity, unidade *uuid.UUID) bool {
+	alvo := alvoUnidade(unidade)
+	return auth.Can(idt, auth.PermProjetosRead, alvo) || auth.Can(idt, auth.PermProjetosManage, alvo)
+}
+
+func (s *Service) horasDosChamados(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (float64, error) {
+	if s.horas == nil {
+		return 0, nil
+	}
+	vinculos, err := s.repo.ListarVinculos(ctx, db, projetoID)
+	if err != nil {
+		return 0, err
+	}
+	ids := make([]uuid.UUID, 0, len(vinculos))
+	for _, v := range vinculos {
+		if v.Tipo == domain.VinculoSolicitacao {
+			ids = append(ids, v.AlvoID)
+		}
+	}
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	return s.horas.Somar(ctx, db, ids)
+}
+
+func normalizarPredecessora(id *uuid.UUID) *uuid.UUID {
+	if id != nil && *id == uuid.Nil {
+		return nil
+	}
+	return id
+}
+
+func estadoEfetivo(estado string) string {
+	if estado == "" {
+		return domain.EstadoTarefaAFazer
+	}
+	return estado
+}
+
+func (s *Service) conferirPredecessora(ctx context.Context, db database.DBTX, projetoID, tarefaID uuid.UUID, pred *uuid.UUID, estado string) error {
+	pred = normalizarPredecessora(pred)
+	tarefas, err := s.repo.ListarTarefas(ctx, db, projetoID)
+	if err != nil {
+		return err
+	}
+	if pred != nil {
+		if err := domain.ValidarCadeia(tarefaID, *pred, tarefas); err != nil {
+			return err
+		}
+	}
+	var anterior *domain.Tarefa
+	if pred != nil {
+		for i := range tarefas {
+			if tarefas[i].ID == *pred {
+				anterior = &tarefas[i]
+				break
+			}
+		}
+	}
+	return domain.ConferirPredecessora(estadoEfetivo(estado), anterior)
+}
+
+func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+	var criada *domain.Tarefa
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		projeto, err := s.repo.Obter(ctx, tx, projetoID)
+		if err != nil {
+			return err
+		}
+		if !s.podeGerir(idt, projeto.UnidadeID) {
+			return domain.ErrForaDoEscopo
+		}
+		if err := domain.RecusarAlteracao(projeto.Estado); err != nil {
+			return err
+		}
+		mapa, err := s.mapa(ctx, tx, "tarefas")
+		if err != nil {
+			return err
+		}
+		if !domain.EstadoDeTarefaAceito("", estado, mapa) {
+			return domain.ErrEstadoInvalido
+		}
+		predecessoraID = normalizarPredecessora(predecessoraID)
+		t := &domain.Tarefa{
+			ID:             uuid.New(),
+			ProjetoID:      projetoID,
+			PredecessoraID: predecessoraID,
+			Estado:         estadoEfetivo(estado),
+		}
+		if err := s.conferirPredecessora(ctx, tx, projetoID, t.ID, predecessoraID, t.Estado); err != nil {
+			return err
+		}
+		gid, gnome, err := s.fixarPessoa(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, "", nil)
+		if err != nil {
+			return err
+		}
+		t.Titulo = titulo
+		t.Descricao = descricao
+		t.ResponsavelID = gid
+		t.ResponsavelNome = gnome
+		t.Ordem = ordem
+		t.DataLimite = dataLimite
+		if err := s.repo.CriarTarefa(ctx, tx, t); err != nil {
+			return err
+		}
+		criada = t
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if !domain.EstadoDeTarefaAceito("", estado, mapa) {
-		return nil, domain.ErrEstadoInvalido
+	return criada, nil
+}
+
+func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+	var atualizada *domain.Tarefa
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		atual, err := s.repo.ObterTarefa(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		projeto, err := s.repo.Obter(ctx, tx, atual.ProjetoID)
+		if err != nil {
+			return err
+		}
+		if !s.podeGerir(idt, projeto.UnidadeID) {
+			return domain.ErrForaDoEscopo
+		}
+		if err := domain.RecusarAlteracao(projeto.Estado); err != nil {
+			return err
+		}
+		mapa, err := s.mapa(ctx, tx, "tarefas")
+		if err != nil {
+			return err
+		}
+		if !domain.EstadoDeTarefaAceito(atual.Estado, estado, mapa) {
+			return domain.ErrEstadoInvalido
+		}
+		predecessoraID = normalizarPredecessora(predecessoraID)
+		if err := s.conferirPredecessora(ctx, tx, atual.ProjetoID, id, predecessoraID, estadoEfetivo(estado)); err != nil {
+			return err
+		}
+		gid, gnome, err := s.fixarPessoa(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
+		if err != nil {
+			return err
+		}
+		atualizada, err = s.repo.AtualizarTarefa(ctx, tx, id, titulo, descricao, gid, gnome, estadoEfetivo(estado), ordem, dataLimite, predecessoraID)
+		return err
+	})
+	if err != nil {
+		return nil, err
 	}
+	return atualizada, nil
+}
+
+func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Tarefa, error) {
 	projeto, err := s.repo.Obter(ctx, s.pool, projetoID)
 	if err != nil {
 		return nil, err
 	}
-	gid, gnome, err := s.fixarPessoa(ctx, s.pool, projeto.UnidadeID, responsavelID, responsavel, "", nil)
-	if err != nil {
-		return nil, err
+	if !s.podeLer(idt, projeto.UnidadeID) {
+		return nil, domain.ErrForaDoEscopo
 	}
-	t := &domain.Tarefa{
-		ID:              uuid.New(),
-		ProjetoID:       projetoID,
-		Titulo:          titulo,
-		Descricao:       descricao,
-		ResponsavelID:   gid,
-		ResponsavelNome: gnome,
-		Estado:          estado,
-		Ordem:           ordem,
-		DataLimite:      dataLimite,
-	}
-	if err := s.repo.CriarTarefa(ctx, s.pool, t); err != nil {
-		return nil, err
-	}
-	return t, nil
-}
-
-func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
-	atual, err := s.repo.ObterTarefa(ctx, s.pool, id)
-	if err != nil {
-		return nil, err
-	}
-	mapa, err := s.mapa(ctx, s.pool, "tarefas")
-	if err != nil {
-		return nil, err
-	}
-	if !domain.EstadoDeTarefaAceito(atual.Estado, estado, mapa) {
-		return nil, domain.ErrEstadoInvalido
-	}
-	projeto, err := s.repo.Obter(ctx, s.pool, atual.ProjetoID)
-	if err != nil {
-		return nil, err
-	}
-	gid, gnome, err := s.fixarPessoa(ctx, s.pool, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
-	if err != nil {
-		return nil, err
-	}
-	return s.repo.AtualizarTarefa(ctx, s.pool, id, titulo, descricao, gid, gnome, estado, ordem, dataLimite)
-}
-
-func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Tarefa, error) {
 	return s.repo.ListarTarefas(ctx, s.pool, projetoID)
 }
 
 func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID) error {
 	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		atual, err := s.repo.ObterTarefa(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		projeto, err := s.repo.Obter(ctx, tx, atual.ProjetoID)
+		if err != nil {
+			return err
+		}
+		if !s.podeGerir(idt, projeto.UnidadeID) {
+			return domain.ErrForaDoEscopo
+		}
+		if err := domain.RecusarAlteracao(projeto.Estado); err != nil {
+			return err
+		}
 		if err := s.repo.ExcluirTarefa(ctx, tx, id); err != nil {
 			return err
 		}
@@ -757,6 +923,13 @@ func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.
 }
 
 func (s *Service) ListarVinculos(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Vinculo, error) {
+	projeto, err := s.repo.Obter(ctx, s.pool, projetoID)
+	if err != nil {
+		return nil, err
+	}
+	if !s.podeLer(idt, projeto.UnidadeID) {
+		return nil, domain.ErrForaDoEscopo
+	}
 	return s.repo.ListarVinculos(ctx, s.pool, projetoID)
 }
 
@@ -781,8 +954,8 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 		if !auth.Can(idt, auth.PermProjetosManage, alvoUnidade(p.UnidadeID)) {
 			return domain.ErrForaDoEscopo
 		}
-		if p.Estado == domain.EstadoCancelado {
-			return domain.ErrProjetoEncerrado
+		if err := domain.RecusarAlteracao(p.Estado); err != nil {
+			return err
 		}
 		if s.portas != nil {
 			if !s.portas.Disponivel(tipo) {
@@ -818,6 +991,23 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 
 func (s *Service) Desvincular(ctx context.Context, idt auth.Identity, vinculoID uuid.UUID) error {
 	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		projetoID, ok, err := s.repo.ProjetoDoVinculo(ctx, tx, vinculoID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+		p, err := s.repo.Obter(ctx, tx, projetoID)
+		if err != nil {
+			return err
+		}
+		if !s.podeGerir(idt, p.UnidadeID) {
+			return domain.ErrForaDoEscopo
+		}
+		if err := domain.RecusarAlteracao(p.Estado); err != nil {
+			return err
+		}
 		if err := s.repo.ExcluirVinculo(ctx, tx, vinculoID); err != nil {
 			return err
 		}
@@ -877,7 +1067,14 @@ func (s *Service) RegistrarApontamento(
 	}
 
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
-		if _, err := s.repo.Obter(ctx, tx, projetoID); err != nil {
+		p, err := s.repo.Obter(ctx, tx, projetoID)
+		if err != nil {
+			return err
+		}
+		if !s.podeGerir(idt, p.UnidadeID) {
+			return domain.ErrForaDoEscopo
+		}
+		if err := domain.RecusarAlteracao(p.Estado); err != nil {
 			return err
 		}
 		if err := s.repo.CriarApontamento(ctx, tx, a); err != nil {
@@ -908,6 +1105,13 @@ func (s *Service) ListarApontamentos(
 	idt auth.Identity,
 	projetoID uuid.UUID,
 ) ([]domain.Apontamento, domain.ResumoHorasProjeto, error) {
+	projeto, err := s.repo.Obter(ctx, s.pool, projetoID)
+	if err != nil {
+		return nil, domain.ResumoHorasProjeto{}, MapError(err)
+	}
+	if !s.podeLer(idt, projeto.UnidadeID) {
+		return nil, domain.ResumoHorasProjeto{}, MapError(domain.ErrForaDoEscopo)
+	}
 	lista, err := s.repo.ListarApontamentos(ctx, s.pool, projetoID)
 	if err != nil {
 		return nil, domain.ResumoHorasProjeto{}, MapError(err)
@@ -927,6 +1131,23 @@ func (s *Service) ListarApontamentos(
 
 func (s *Service) ExcluirApontamento(ctx context.Context, idt auth.Identity, apontamentoID uuid.UUID) error {
 	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		projetoID, ok, err := s.repo.ProjetoDoApontamento(ctx, tx, apontamentoID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+		p, err := s.repo.Obter(ctx, tx, projetoID)
+		if err != nil {
+			return err
+		}
+		if !s.podeGerir(idt, p.UnidadeID) {
+			return domain.ErrForaDoEscopo
+		}
+		if err := domain.RecusarAlteracao(p.Estado); err != nil {
+			return err
+		}
 		if err := s.repo.ExcluirApontamento(ctx, tx, apontamentoID); err != nil {
 			return err
 		}

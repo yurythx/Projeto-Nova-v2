@@ -72,6 +72,7 @@ export interface Tarefa {
   ordem: number;
   data_limite?: string;
   origem?: string;
+  predecessora_id?: string;
   created_at: string;
   updated_at: string;
 }

@@ -24,7 +24,7 @@ const colunasProjeto = `id, numero, titulo, descricao, objetivo, estado, priorid
 	orcamento, unidade_id, produto_id, gerente_id, gerente_nome, created_at, updated_at`
 
 const colunasTarefa = `id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem,
-	data_limite, created_at, updated_at, origem`
+	data_limite, created_at, updated_at, origem, predecessora_id`
 
 func scanProjeto(row interface{ Scan(...any) error }) (domain.Projeto, error) {
 	var p domain.Projeto
@@ -43,7 +43,7 @@ func scanTarefa(row interface{ Scan(...any) error }) (domain.Tarefa, error) {
 	var t domain.Tarefa
 	err := row.Scan(
 		&t.ID, &t.ProjetoID, &t.Titulo, &t.Descricao, &t.ResponsavelID, &t.ResponsavelNome, &t.Estado, &t.Ordem,
-		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem,
+		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem, &t.PredecessoraID,
 	)
 	return t, err
 }
@@ -343,12 +343,12 @@ func (r *Repository) CriarTarefa(ctx context.Context, db database.DBTX, t *domai
 	}
 
 	const q = `INSERT INTO projetos_tarefas (
-		id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem, data_limite, created_at, updated_at, origem
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem, data_limite, created_at, updated_at, origem, predecessora_id
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	RETURNING created_at, updated_at`
 
 	err := db.QueryRow(ctx, q,
-		t.ID, t.ProjetoID, t.Titulo, t.Descricao, t.ResponsavelID, t.ResponsavelNome, t.Estado, t.Ordem, t.DataLimite, t.CreatedAt, t.UpdatedAt, t.Origem,
+		t.ID, t.ProjetoID, t.Titulo, t.Descricao, t.ResponsavelID, t.ResponsavelNome, t.Estado, t.Ordem, t.DataLimite, t.CreatedAt, t.UpdatedAt, t.Origem, t.PredecessoraID,
 	).Scan(&t.CreatedAt, &t.UpdatedAt)
 
 	return mapDB(err)
@@ -391,14 +391,14 @@ func (r *Repository) NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa 
 	return nome, nil
 }
 
-func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*domain.Tarefa, error) {
+func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
 	now := time.Now().UTC()
 	q := fmt.Sprintf(`UPDATE projetos_tarefas SET
-		titulo = $2, descricao = $3, responsavel_id = $4, responsavel_nome = $5, estado = $6, ordem = $7, data_limite = COALESCE($8, data_limite), updated_at = $9
+		titulo = $2, descricao = $3, responsavel_id = $4, responsavel_nome = $5, estado = $6, ordem = $7, data_limite = COALESCE($8, data_limite), predecessora_id = $9, updated_at = $10
 		WHERE id = $1
 		RETURNING %s`, colunasTarefa)
 
-	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavelID, responsavel, estado, ordem, dataLimite, now))
+	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavelID, responsavel, estado, ordem, dataLimite, predecessoraID, now))
 	if err != nil {
 		return nil, mapDB(err)
 	}
@@ -474,6 +474,18 @@ func (r *Repository) ListarVinculos(ctx context.Context, db database.DBTX, proje
 	return lista, nil
 }
 
+func (r *Repository) ProjetoDoVinculo(ctx context.Context, db database.DBTX, id uuid.UUID) (uuid.UUID, bool, error) {
+	var projetoID uuid.UUID
+	err := db.QueryRow(ctx, `SELECT projeto_id FROM projetos_vinculos WHERE id = $1`, id).Scan(&projetoID)
+	if database.IsNoRows(err) {
+		return uuid.Nil, false, nil
+	}
+	if err != nil {
+		return uuid.Nil, false, mapDB(err)
+	}
+	return projetoID, true, nil
+}
+
 func (r *Repository) ExcluirVinculo(ctx context.Context, db database.DBTX, id uuid.UUID) error {
 	const q = `DELETE FROM projetos_vinculos WHERE id = $1`
 	_, err := db.Exec(ctx, q, id)
@@ -525,6 +537,18 @@ func (r *Repository) ListarApontamentos(ctx context.Context, db database.DBTX, p
 		lista = []domain.Apontamento{}
 	}
 	return lista, nil
+}
+
+func (r *Repository) ProjetoDoApontamento(ctx context.Context, db database.DBTX, id uuid.UUID) (uuid.UUID, bool, error) {
+	var projetoID uuid.UUID
+	err := db.QueryRow(ctx, `SELECT projeto_id FROM projetos_apontamentos WHERE id = $1`, id).Scan(&projetoID)
+	if database.IsNoRows(err) {
+		return uuid.Nil, false, nil
+	}
+	if err != nil {
+		return uuid.Nil, false, mapDB(err)
+	}
+	return projetoID, true, nil
 }
 
 func (r *Repository) ExcluirApontamento(ctx context.Context, db database.DBTX, id uuid.UUID) error {
@@ -598,6 +622,54 @@ func (r *Repository) ContarEtapasHow(ctx context.Context, db database.DBTX, proj
 		return 0, 0, mapDB(err)
 	}
 	return total, concluidas, nil
+}
+
+func (r *Repository) PrazosVencidos(ctx context.Context, db database.DBTX, agora time.Time) ([]domain.PrazoTarefa, []domain.PrazoProjeto, error) {
+	const tarefas = `SELECT t.id, t.titulo, t.data_limite, t.responsavel_id,
+		p.id, p.numero, p.titulo, p.gerente_id
+		FROM projetos_tarefas t
+		JOIN projetos p ON p.id = t.projeto_id
+		WHERE t.data_limite IS NOT NULL AND t.data_limite < $1
+		  AND t.estado <> 'concluida'
+		  AND p.estado NOT IN ('concluido', 'cancelado')`
+	rows, err := db.Query(ctx, tarefas, agora)
+	if err != nil {
+		return nil, nil, mapDB(err)
+	}
+	defer rows.Close()
+	var lista []domain.PrazoTarefa
+	for rows.Next() {
+		var item domain.PrazoTarefa
+		if err := rows.Scan(&item.TarefaID, &item.Titulo, &item.DataLimite, &item.ResponsavelID, &item.ProjetoID, &item.ProjetoNumero, &item.ProjetoTitulo, &item.GerenteID); err != nil {
+			return nil, nil, mapDB(err)
+		}
+		lista = append(lista, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, mapDB(err)
+	}
+
+	const projetosQ = `SELECT id, numero, titulo, data_fim_planejada, gerente_id
+		FROM projetos
+		WHERE data_fim_planejada IS NOT NULL AND data_fim_planejada < $1
+		  AND estado NOT IN ('concluido', 'cancelado')`
+	prows, err := db.Query(ctx, projetosQ, agora)
+	if err != nil {
+		return nil, nil, mapDB(err)
+	}
+	defer prows.Close()
+	var fins []domain.PrazoProjeto
+	for prows.Next() {
+		var item domain.PrazoProjeto
+		if err := prows.Scan(&item.ID, &item.Numero, &item.Titulo, &item.Fim, &item.GerenteID); err != nil {
+			return nil, nil, mapDB(err)
+		}
+		fins = append(fins, item)
+	}
+	if err := prows.Err(); err != nil {
+		return nil, nil, mapDB(err)
+	}
+	return lista, fins, nil
 }
 
 func (r *Repository) SomarCusto(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (float64, error) {

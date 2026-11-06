@@ -224,6 +224,7 @@ describe("Projetos — Detalhes e Tarefas", () => {
           etapas_how: 2,
           etapas_how_concluidas: 1,
           custo_realizado: 30000,
+          horas_chamados: 3.5,
         },
       },
     });
@@ -234,6 +235,7 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(await screen.findByTestId("painel-5w2h")).toBeInTheDocument();
     expect(screen.getByTestId("progresso-fisico")).toHaveTextContent("1 de 2 etapas concluídas");
     expect(screen.getByTestId("progresso-financeiro")).toHaveTextContent("20%");
+    expect(screen.getByTestId("horas-chamados")).toHaveTextContent("3,5 h");
     expect(screen.getByText("Escolas da SEMED")).toBeInTheDocument();
   });
 

@@ -34,17 +34,20 @@ type Repository interface {
 	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error
 	ObterTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (*Tarefa, error)
-	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time) (*Tarefa, error)
+	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*Tarefa, error)
+	PrazosVencidos(ctx context.Context, db database.DBTX, agora time.Time) ([]PrazoTarefa, []PrazoProjeto, error)
 	NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)
 	ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error
 
 	CriarVinculo(ctx context.Context, db database.DBTX, v *Vinculo) error
 	ListarVinculos(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Vinculo, error)
+	ProjetoDoVinculo(ctx context.Context, db database.DBTX, id uuid.UUID) (uuid.UUID, bool, error)
 	ExcluirVinculo(ctx context.Context, db database.DBTX, id uuid.UUID) error
 
 	CriarApontamento(ctx context.Context, db database.DBTX, a *Apontamento) error
 	ListarApontamentos(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Apontamento, error)
+	ProjetoDoApontamento(ctx context.Context, db database.DBTX, id uuid.UUID) (uuid.UUID, bool, error)
 	ExcluirApontamento(ctx context.Context, db database.DBTX, id uuid.UUID) error
 
 	ObterCarta(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Carta, bool, error)

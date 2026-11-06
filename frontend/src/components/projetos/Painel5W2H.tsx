@@ -32,6 +32,7 @@ export interface VisaoCarta {
   etapas_how: number;
   etapas_how_concluidas: number;
   custo_realizado: number;
+  horas_chamados?: number;
   updated_at?: string;
 }
 
@@ -157,6 +158,10 @@ export function Painel5W2H({
                 </p>
                 <p className="mt-1 text-sm text-muted">
                   Orçamento {moeda(Number(v.orcamento) || 0)}
+                </p>
+                <p className="mt-1 text-sm text-muted" data-testid="horas-chamados">
+                  Horas nos chamados vinculados:{" "}
+                  {(Number(v.horas_chamados) || 0).toLocaleString("pt-BR")} h
                 </p>
                 {financeiro == null ? (
                   <p className="mt-3 text-sm text-muted">Sem orçamento previsto.</p>

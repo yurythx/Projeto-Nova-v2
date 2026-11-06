@@ -255,6 +255,22 @@ func inexistenteProjeto(err, naoEncontrado error) error {
 	return err
 }
 
+// horasDeChamado lê o timesheet do atendimento sem o projeto importar o módulo.
+// Essas horas não têm custo: o painel mostra a quantidade, sem somar ao dinheiro.
+type horasDeChamado struct{}
+
+func (horasDeChamado) Somar(ctx context.Context, db database.DBTX, ids []uuid.UUID) (float64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	var total float64
+	err := db.QueryRow(ctx, `SELECT COALESCE(SUM(horas), 0) FROM atendimento_apontamentos WHERE solicitacao_id = ANY($1)`, ids).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
 func portasProjetos(prod produtos.Repository, atend atendimento.Repository, ativ ativos.Repository, prob problemas.Repository, mud mudancas.Repository, ligado func(string) bool) (projetos.Portas, projetos.Produtos) {
 	return alvosProjeto{mudancas: mud, problemas: prob, solicitacao: atend, ativos: ativ, ligado: ligado},
 		produtoUnidade{repo: prod, ativo: func() bool { return ligado("produtos") },

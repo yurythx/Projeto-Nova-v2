@@ -44,6 +44,10 @@ var (
 	ErrTituloObrigatorio        = errors.New("projetos: título obrigatório (até 160 caracteres)")
 	ErrTransicaoInvalida        = errors.New("projetos: passagem de estado inválida")
 	ErrProjetoEncerrado         = errors.New("projetos: projeto cancelado não aceita alterações")
+	ErrProjetoConcluido         = errors.New("projetos: projeto concluído só muda depois da reabertura")
+	ErrTarefasAbertas           = errors.New("projetos: há tarefas em aberto")
+	ErrPredecessoraInvalida     = errors.New("projetos: predecessora inválida")
+	ErrPredecessoraAberta       = errors.New("projetos: a tarefa anterior ainda não foi concluída")
 	ErrPrioridadeInvalida       = errors.New("projetos: prioridade inválida")
 	ErrEstadoInvalido           = errors.New("projetos: estado inválido")
 	ErrApontamentoInvalido      = errors.New("projetos: horas devem ser maiores que zero e até 24h, com descrição")
@@ -80,6 +84,13 @@ type Alvo struct {
 type Portas interface {
 	Consultar(ctx context.Context, db database.DBTX, tipo string, id uuid.UUID) (Alvo, error)
 	Disponivel(tipo string) bool
+}
+
+// HorasVinculadas soma as horas lançadas nos chamados ligados ao projeto.
+// Nil deixa o painel só com o timesheet daqui. O chamado não tem custo:
+// o número entra como hora, sem virar dinheiro.
+type HorasVinculadas interface {
+	Somar(ctx context.Context, db database.DBTX, solicitacoes []uuid.UUID) (float64, error)
 }
 
 // Produtos é a porta do plug-in de produtos.
@@ -163,8 +174,30 @@ type Tarefa struct {
 	Ordem           int        `json:"ordem"`
 	DataLimite      *time.Time `json:"data_limite,omitempty"`
 	Origem          string     `json:"origem,omitempty"`
+	PredecessoraID  *uuid.UUID `json:"predecessora_id,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+// PrazoTarefa é uma tarefa cujo limite já passou e o projeto ainda corre.
+type PrazoTarefa struct {
+	TarefaID      uuid.UUID
+	Titulo        string
+	DataLimite    time.Time
+	ResponsavelID *uuid.UUID
+	ProjetoID     uuid.UUID
+	ProjetoNumero int64
+	ProjetoTitulo string
+	GerenteID     *uuid.UUID
+}
+
+// PrazoProjeto é um projeto cujo fim planejado já passou.
+type PrazoProjeto struct {
+	ID        uuid.UUID
+	Numero    int64
+	Titulo    string
+	Fim       time.Time
+	GerenteID *uuid.UUID
 }
 
 // EntradaProjeto reúne os campos de criação e atualização.

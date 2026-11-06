@@ -42,6 +42,7 @@ const tarefasMock: Tarefa[] = [
     responsavel_nome: "Lucas Pereira",
     estado: "em_andamento",
     ordem: 2,
+    predecessora_id: "tar-1",
     data_limite: "2026-10-28T18:00:00Z",
     created_at: "2026-10-11T09:00:00Z",
     updated_at: "2026-10-15T11:00:00Z",
@@ -96,6 +97,7 @@ describe("ProjetoGanttChart (Cronograma Visual Interativo)", () => {
     expect(screen.getAllByText("Instalação dos novos switches core").length).toBeGreaterThanOrEqual(
       1,
     );
+    expect(screen.getByText(/Depois de Levantamento topológico dos racks/)).toBeInTheDocument();
     expect(
       screen.getAllByText("Migração dos servidores de produção").length,
     ).toBeGreaterThanOrEqual(1);

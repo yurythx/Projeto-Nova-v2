@@ -91,6 +91,7 @@ export function ProjetoDetalheConteudo() {
   );
 
   const p = projeto.data;
+  const mutavel = Boolean(p && gere && p.estado !== "cancelado" && p.estado !== "concluido");
   const listaTarefas = tarefas.data ?? [];
   const colunasTarefa = colunasVisiveis(catalogoTarefas.colunas, listaTarefas, (t) => t.estado);
   const listaVinculos = vinculos.data ?? [];
@@ -109,6 +110,7 @@ export function ProjetoDetalheConteudo() {
   const [reabrirAberto, setReabrirAberto] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState("");
   const [tarefaEstado, setTarefaEstado] = useState<EstadoTarefa>("a_fazer");
+  const [tarefaPred, setTarefaPred] = useState("");
 
   // Estados para novo vínculo
   const [modalVinculo, setModalVinculo] = useState(false);
@@ -238,6 +240,7 @@ export function ProjetoDetalheConteudo() {
           responsavel_nome: tarefaResp.id ? tarefaResp.nome : "",
           estado: tarefaEstado,
           ordem: listaTarefas.length + 1,
+          predecessora_id: tarefaPred || null,
         }),
       "Tarefa adicionada",
     );
@@ -247,6 +250,7 @@ export function ProjetoDetalheConteudo() {
       setTarefaDescricao("");
       setTarefaResp({ id: "", nome: "" });
       setTarefaEstado("a_fazer");
+      setTarefaPred("");
       void tarefas.mutate();
     }
   }
@@ -257,9 +261,11 @@ export function ProjetoDetalheConteudo() {
         apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
           titulo: t.titulo,
           descricao: t.descricao,
+          responsavel_id: t.responsavel_id,
           responsavel_nome: t.responsavel_nome,
           estado: novoEstado,
           ordem: t.ordem,
+          predecessora_id: t.predecessora_id ?? null,
         }),
       `Tarefa ${t.titulo}: ${seloDoEstado(catalogoTarefas.colunas, novoEstado, ESTADO_TAREFA[novoEstado]).label.toLowerCase()}`,
     );
@@ -272,9 +278,11 @@ export function ProjetoDetalheConteudo() {
         apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
           titulo: nome.slice(0, 200),
           descricao: t.descricao,
+          responsavel_id: t.responsavel_id,
           responsavel_nome: t.responsavel_nome,
           estado: t.estado,
           ordem: t.ordem,
+          predecessora_id: t.predecessora_id ?? null,
         }),
       "Nome atualizado",
     );
@@ -424,9 +432,11 @@ export function ProjetoDetalheConteudo() {
               }
             />
 
-            {p.estado === "concluido" && !p.pode_reabrir && (
+            {p.estado === "concluido" && (
               <p className="text-sm text-muted">
-                A reabertura depende de um superior da unidade ou de um administrador, com o motivo descrito.
+                Projeto concluído. Título, tarefas, carta, vínculos e horas só mudam depois da reabertura.
+                {!p.pode_reabrir &&
+                  " A reabertura depende de um superior da unidade ou de um administrador, com o motivo descrito."}
               </p>
             )}
             {p.reabertura && (
@@ -478,7 +488,7 @@ export function ProjetoDetalheConteudo() {
             {aba === "5w2h" && id && (
               <Painel5W2H
                 projetoId={id}
-                podeEditar={gere && p.estado !== "cancelado"}
+                podeEditar={mutavel}
                 onSalvo={() => void projeto.mutate()}
               />
             )}
@@ -556,7 +566,7 @@ export function ProjetoDetalheConteudo() {
               projeto={p}
               tarefas={listaTarefas}
               vinculos={listaVinculos}
-              podeEditar={gere && p.estado !== "cancelado"}
+              podeEditar={mutavel}
             />
 
             {/* Tarefas e Marcos */}
@@ -568,7 +578,7 @@ export function ProjetoDetalheConteudo() {
                     Acompanhamento operacional das entregas e atividades vinculadas.
                   </p>
                 </div>
-                {gere && p.estado !== "cancelado" && (
+                {mutavel && (
                   <div className="flex items-center gap-2">
                     <Link
                       href="/projetos/tarefas/colunas"
@@ -611,14 +621,14 @@ export function ProjetoDetalheConteudo() {
                     idDe={(t) => t.id}
                     nomeDe={(t) => t.titulo}
                     pending={pending}
-                    arrastavel={() => gere && p.estado !== "cancelado"}
+                    arrastavel={() => mutavel}
                     podeSoltar={(t, coluna) =>
                       t.estado !== coluna &&
                       catalogoTarefas.colunas.find((item) => item.id === coluna)?.ativa !== false
                     }
                     aoSoltar={(t, coluna) => void atualizarTarefaEstado(t, coluna as EstadoTarefa)}
                     aoRenomear={
-                      gere && p.estado !== "cancelado"
+                      mutavel
                         ? (t, nome) => void renomearTarefa(t, nome)
                         : undefined
                     }
@@ -644,7 +654,14 @@ export function ProjetoDetalheConteudo() {
                               Atribuído a: {t.responsavel_nome}
                             </span>
                           )}
-                          {gere && p.estado !== "cancelado" && (
+                          {t.predecessora_id && (
+                            <span className="text-[11px] text-muted">
+                              Depois de{" "}
+                              {listaTarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
+                                "outra tarefa"}
+                            </span>
+                          )}
+                          {mutavel && (
                             <div className="flex items-center gap-2">
                               <Select
                                 value={t.estado}
@@ -724,6 +741,15 @@ export function ProjetoDetalheConteudo() {
                   />
 
                   <Select
+                    id="tarefa-pred"
+                    label="Depois de"
+                    value={tarefaPred}
+                    onChange={(e) => setTarefaPred(e.target.value)}
+                    placeholder="Nenhuma"
+                    options={listaTarefas.map((t) => ({ value: t.id, label: t.titulo }))}
+                  />
+
+                  <Select
                     id="tarefa-estado"
                     label="Quadro"
                     value={tarefaEstado}
@@ -767,7 +793,7 @@ export function ProjetoDetalheConteudo() {
                     </p>
                   </div>
                 </div>
-                {gere && p.estado !== "cancelado" && (
+                {mutavel && (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -832,7 +858,7 @@ export function ProjetoDetalheConteudo() {
                             </span>
                           </div>
 
-                          {gere && p.estado !== "cancelado" && (
+                          {mutavel && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -940,7 +966,7 @@ export function ProjetoDetalheConteudo() {
                     </p>
                   </div>
                 </div>
-                {gere && p.estado !== "cancelado" && (
+                {mutavel && (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -1037,7 +1063,7 @@ export function ProjetoDetalheConteudo() {
                           )}
                         </div>
 
-                        {gere && p.estado !== "cancelado" && (
+                        {mutavel && (
                           <Button
                             size="sm"
                             variant="ghost"

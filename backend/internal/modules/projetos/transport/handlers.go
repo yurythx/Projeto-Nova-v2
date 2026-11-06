@@ -99,6 +99,7 @@ type TarefaRequest struct {
 	Estado          string     `json:"estado" validate:"omitempty,min=1,max=40"`
 	Ordem           int        `json:"ordem"`
 	DataLimite      *time.Time `json:"data_limite"`
+	PredecessoraID  *uuid.UUID `json:"predecessora_id"`
 }
 
 type VinculoRequest struct {
@@ -343,7 +344,7 @@ func (h *Handlers) CriarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite)
+	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -363,7 +364,7 @@ func (h *Handlers) AtualizarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite)
+	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID)
 	if err != nil {
 		h.fail(w, r, err)
 		return

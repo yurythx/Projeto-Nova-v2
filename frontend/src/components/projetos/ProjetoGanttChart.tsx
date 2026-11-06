@@ -411,6 +411,13 @@ export function ProjetoGanttChart({
                             <span>{t.responsavel_nome}</span>
                           </div>
                         )}
+                        {t.predecessora_id && (
+                          <p className="text-[11px] text-muted truncate">
+                            Depois de{" "}
+                            {tarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
+                              "outra tarefa"}
+                          </p>
+                        )}
                       </div>
                       <div className="shrink-0 flex items-center gap-1">
                         {barra.atrasada && (

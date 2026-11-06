@@ -66,8 +66,8 @@ func TestModuloCicloCompleto(t *testing.T) {
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	mod := New(modkit.Deps{Pool: pool, Outbox: outbox.NewWriter("test"), Logger: logger})
-	if mod.Manifest().Key != Key || mod.Service() == nil {
-		t.Fatal("manifesto ou serviço inválido")
+	if mod.Manifest().Key != Key || mod.Service() == nil || len(mod.Workers()) != 1 {
+		t.Fatal("manifesto, serviço ou worker inválido")
 	}
 	mod.ComPassagens(passagensFalsas{mapa: map[string][]string{}})
 	alvoID := uuid.New()
@@ -107,6 +107,17 @@ func TestModuloCicloCompleto(t *testing.T) {
 			UnidadeID:   &uB,
 			Unidades:    []uuid.UUID{uB},
 			Permissions: []string{string(auth.PermProjetosRead)},
+		}},
+	}
+	gestorB := auth.Identity{
+		UserID:      uuid.New(),
+		Subject:     uuid.NewString(),
+		Email:       "gestor@sms.test",
+		Permissions: []string{string(auth.PermProjetosRead), string(auth.PermProjetosManage)},
+		Scopes: []auth.Scope{{
+			UnidadeID:   &uB,
+			Unidades:    []uuid.UUID{uB},
+			Permissions: []string{string(auth.PermProjetosRead), string(auth.PermProjetosManage)},
 		}},
 	}
 
@@ -176,6 +187,26 @@ func TestModuloCicloCompleto(t *testing.T) {
 	_ = json.Unmarshal(recTar.Body.Bytes(), &envTar)
 	if envTar.Data.DataLimite == nil {
 		t.Fatal("data_limite deveria ser persistida")
+	}
+	if rec := do(gestorB, http.MethodPost, "/projetos/"+projID.String()+"/tarefas", `{"titulo":"De outra unidade","estado":"a_fazer"}`); rec.Code != http.StatusForbidden {
+		t.Fatalf("tarefa fora da unidade: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := do(gestorB, http.MethodGet, "/projetos/"+projID.String()+"/tarefas", ""); rec.Code != http.StatusForbidden {
+		t.Fatalf("listar tarefas fora da unidade: %d", rec.Code)
+	}
+
+	recSeg := do(gestorA, http.MethodPost, "/projetos/"+projID.String()+"/tarefas",
+		`{"titulo":"Depois do mapa","estado":"a_fazer","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`)
+	if recSeg.Code != http.StatusCreated {
+		t.Fatalf("criar tarefa dependente: %d %s", recSeg.Code, recSeg.Body.String())
+	}
+	var envSeg struct {
+		Data domain.Tarefa `json:"data"`
+	}
+	_ = json.Unmarshal(recSeg.Body.Bytes(), &envSeg)
+	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
+		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusConflict {
+		t.Fatalf("avançar com anterior aberta: %d %s", rec.Code, rec.Body.String())
 	}
 
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(),
@@ -266,6 +297,7 @@ func TestModuloCicloCompleto(t *testing.T) {
 		domain.ErrPrioridadeInvalida, domain.ErrApontamentoInvalido, domain.ErrApontamentoNaoEncontrado,
 		domain.ErrForaDoEscopo, domain.ErrVinculoInvalido, domain.ErrVinculoInexistente,
 		domain.ErrDeOutraUnidade, domain.ErrIntegracaoDesligada,
+		domain.ErrProjetoConcluido, domain.ErrTarefasAbertas, domain.ErrPredecessoraInvalida, domain.ErrPredecessoraAberta,
 		errors.New("outro"),
 	} {
 		_ = application.MapError(e)
@@ -324,7 +356,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	_ = repo.CriarTarefa(ctx, dbtest.Fail{}, &domain.Tarefa{ID: id, ProjetoID: id, Titulo: "T"})
 	_, _ = repo.ObterTarefa(ctx, dbtest.Fail{}, id)
 	_, _ = repo.NomeDaPessoa(ctx, dbtest.Fail{}, id, nil)
-	_, _ = repo.AtualizarTarefa(ctx, dbtest.Fail{}, id, "T", "", nil, "", "a_fazer", 1, nil)
+	_, _ = repo.AtualizarTarefa(ctx, dbtest.Fail{}, id, "T", "", nil, "", "a_fazer", 1, nil, nil)
 	_, _ = repo.ListarTarefas(ctx, dbtest.Fail{}, id)
 	_, _ = repo.ListarTarefas(ctx, dbtest.ScanFail{}, id)
 	_, _ = repo.ListarTarefas(ctx, dbtest.RowsErr{}, id)
@@ -355,9 +387,9 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 		_, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID)
 	})
 	for _, idt := range []auth.Identity{
-		{Username: "u1", Subject: uuid.NewString()},
-		{Email: "e1@test", Subject: "nao-uuid"},
-		{},
+		{Username: "u1", Subject: uuid.NewString(), Permissions: admin.Permissions, Scopes: admin.Scopes},
+		{Email: "e1@test", Subject: "nao-uuid", Permissions: admin.Permissions, Scopes: admin.Scopes},
+		{Permissions: admin.Permissions, Scopes: admin.Scopes},
 	} {
 		if _, err := svc.RegistrarApontamento(ctx, idt, p.ID, nil, "", 1, "Ativ", 10); err != nil {
 			t.Fatalf("apontamento com %+v: %v", idt, err)
@@ -369,10 +401,10 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.RegistrarApontamento(ctx, admin, uuid.New(), nil, "", 1, "Ativ", 0); err == nil {
 		t.Fatal("apontamento em projeto inexistente deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
 		t.Fatalf("estado de tarefa inválido: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", nil, "", "a_fazer", 1, nil); err == nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
 		t.Fatal("atualizar tarefa inexistente deveria falhar")
 	}
 	if _, err := svc.Vincular(ctx, admin, p.ID, "invalido", uuid.New(), ""); !errors.Is(err, domain.ErrVinculoInvalido) {
@@ -391,7 +423,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err == nil {
 		t.Fatal("transicionar com erro de passagens deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil); err == nil {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
 		t.Fatal("criar tarefa com erro de passagens deveria falhar")
 	}
 }
@@ -460,6 +492,9 @@ func TestReaberturaSoPorSuperiorOuAdministrador(t *testing.T) {
 	}
 
 	p := abrir(gestor)
+	if _, err := svc.Atualizar(ctx, superior, p.ID, domain.EntradaProjeto{Titulo: "Portal alterado", UnidadeID: &filha}); !errors.Is(err, domain.ErrProjetoConcluido) {
+		t.Fatalf("editar concluído: %v", err)
+	}
 	if _, err := svc.Transicionar(ctx, gestor, p.ID, domain.EstadoEmAndamento); !errors.Is(err, domain.ErrReaberturaExigeAprovacao) {
 		t.Fatalf("passagem comum: %v", err)
 	}
@@ -806,5 +841,116 @@ func TestReaberturaAvisaGerente(t *testing.T) {
 	tituloProprio := "Projeto #" + strconv.FormatInt(proprio.Numero, 10) + " reaberto"
 	if n, _ := aviso(superior, tituloProprio); n != 0 {
 		t.Fatalf("gerente que reabre a si mesmo foi avisado: %d", n)
+	}
+}
+
+type horasFalsas struct{ total float64 }
+
+func (h horasFalsas) Somar(context.Context, database.DBTX, []uuid.UUID) (float64, error) {
+	return h.total, nil
+}
+
+func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := application.NewService(pool, infrastructure.NewRepository(), outbox.NewWriter("test"), logger)
+	admin := auth.Identity{
+		UserID:      uuid.New(),
+		Name:        "Administrador",
+		Roles:       []string{auth.RoleAdmin},
+		Permissions: []string{"*"},
+	}
+	p, err := svc.Criar(ctx, admin, domain.EntradaProjeto{Titulo: "Com tarefas"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
+	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err != nil {
+		t.Fatal(err)
+	}
+	aberta, err := svc.CriarTarefa(ctx, admin, p.ID, "Aberta", "", nil, "", "a_fazer", 1, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); !errors.Is(err, domain.ErrTarefasAbertas) {
+		t.Fatalf("concluir com tarefa aberta: %v", err)
+	}
+	segunda, err := svc.CriarTarefa(ctx, admin, p.ID, "Segunda", "", nil, "", "a_fazer", 2, nil, &aberta.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", nil, "", "em_andamento", 2, nil, &aberta.ID); !errors.Is(err, domain.ErrPredecessoraAberta) {
+		t.Fatalf("anterior aberta: %v", err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", nil, "", "concluida", 1, nil, &segunda.ID); !errors.Is(err, domain.ErrPredecessoraInvalida) {
+		t.Fatalf("ciclo: %v", err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", nil, "", "concluida", 1, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", nil, "", "concluida", 2, nil, &aberta.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.RegistrarApontamento(ctx, admin, p.ID, nil, "", 1, "depois", 10); err == nil || !strings.Contains(err.Error(), "reabertura") {
+		t.Fatalf("hora em concluído: %v", err)
+	}
+
+	outro, err := svc.Criar(ctx, admin, domain.EntradaProjeto{Titulo: "Com chamado"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, outro.ID) })
+	alvo := uuid.New()
+	if err := infrastructure.NewRepository().CriarVinculo(ctx, pool, &domain.Vinculo{
+		ID: uuid.New(), ProjetoID: outro.ID, Tipo: domain.VinculoSolicitacao, AlvoID: alvo, Rotulo: "Chamado",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.CriarTarefa(ctx, admin, outro.ID, "Prazo", "", nil, "", "a_fazer", 1, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	svc.ComHoras(horasFalsas{total: 7.5})
+	visao, err := svc.ObterCarta(ctx, admin, outro.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if visao.HorasChamados != 7.5 {
+		t.Fatalf("horas dos chamados: %v", visao.HorasChamados)
+	}
+
+	slug := "pz-" + uuid.NewString()[:10]
+	var gerente uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO users (username, email, display_name, keycloak_subject, roles)
+		VALUES ($1, $1 || '@nova.test', 'Gerente', $1, $2) RETURNING id`, slug, []string{}).Scan(&gerente); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM notificacoes WHERE user_id = $1`, gerente)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, gerente)
+	})
+	limite := time.Now().UTC().Add(-time.Hour)
+	if _, err := pool.Exec(ctx, `UPDATE projetos SET gerente_id = $2, data_fim_planejada = $3, estado = 'em_andamento' WHERE id = $1`, outro.ID, gerente, limite); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE projetos_tarefas SET data_limite = $2, responsavel_id = $3 WHERE projeto_id = $1`, outro.ID, limite, gerente); err != nil {
+		t.Fatal(err)
+	}
+	svc.ComAvisos(notificacoes.NewService(pool, nil, logger))
+	if err := svc.VerificarPrazos(ctx, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.VerificarPrazos(ctx, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM notificacoes WHERE user_id = $1 AND modulo = 'projetos'`, gerente).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 2 {
+		t.Fatalf("avisos de prazo: %d", n)
 	}
 }
