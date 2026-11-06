@@ -94,6 +94,7 @@ type EstadoRequest struct {
 type TarefaRequest struct {
 	Titulo          string     `json:"titulo" validate:"required,max=200"`
 	Descricao       string     `json:"descricao" validate:"max=2000"`
+	Relato          string     `json:"relato" validate:"max=4000"`
 	ResponsavelID   *uuid.UUID `json:"responsavel_id"`
 	ResponsavelNome string     `json:"responsavel_nome" validate:"max=200"`
 	Estado          string     `json:"estado" validate:"omitempty,min=1,max=40"`
@@ -123,6 +124,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/projetos", h.Listar)
 		r.Get("/projetos/{id}", h.Obter)
 		r.Get("/projetos/{id}/tarefas", h.ListarTarefas)
+		r.Get("/projetos/{id}/tarefas/{tarefaId}/anexos", h.ListarAnexos)
+		r.Get("/projetos/{id}/tarefas/{tarefaId}/anexos/{anexoId}", h.URLAnexo)
 		r.Get("/projetos/{id}/vinculos", h.ListarVinculos)
 		r.Get("/projetos/{id}/apontamentos", h.ListarApontamentos)
 		r.Get("/projetos/{id}/carta", h.ObterCarta)
@@ -138,6 +141,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Post("/projetos/{id}/tarefas", h.CriarTarefa)
 		r.Put("/projetos/{id}/tarefas/{tarefaId}", h.AtualizarTarefa)
 		r.Delete("/projetos/{id}/tarefas/{tarefaId}", h.ExcluirTarefa)
+		r.Post("/projetos/{id}/tarefas/{tarefaId}/anexos/uploads", h.PedirAnexo)
+		r.Post("/projetos/{id}/tarefas/{tarefaId}/anexos", h.RegistrarAnexo)
 
 		r.Post("/projetos/{id}/vinculos", h.CriarVinculo)
 		r.Delete("/projetos/{id}/vinculos/{vinculoId}", h.ExcluirVinculo)
@@ -364,7 +369,7 @@ func (h *Handlers) AtualizarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID)
+	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.Relato, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID)
 	if err != nil {
 		h.fail(w, r, err)
 		return

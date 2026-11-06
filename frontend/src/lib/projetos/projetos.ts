@@ -73,6 +73,7 @@ export interface Tarefa {
   data_limite?: string;
   origem?: string;
   predecessora_id?: string;
+  relato?: string;
   created_at: string;
   updated_at: string;
 }

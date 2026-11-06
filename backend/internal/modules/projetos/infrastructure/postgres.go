@@ -24,7 +24,7 @@ const colunasProjeto = `id, numero, titulo, descricao, objetivo, estado, priorid
 	orcamento, unidade_id, produto_id, gerente_id, gerente_nome, created_at, updated_at`
 
 const colunasTarefa = `id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem,
-	data_limite, created_at, updated_at, origem, predecessora_id`
+	data_limite, created_at, updated_at, origem, predecessora_id, relato`
 
 func scanProjeto(row interface{ Scan(...any) error }) (domain.Projeto, error) {
 	var p domain.Projeto
@@ -43,7 +43,7 @@ func scanTarefa(row interface{ Scan(...any) error }) (domain.Tarefa, error) {
 	var t domain.Tarefa
 	err := row.Scan(
 		&t.ID, &t.ProjetoID, &t.Titulo, &t.Descricao, &t.ResponsavelID, &t.ResponsavelNome, &t.Estado, &t.Ordem,
-		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem, &t.PredecessoraID,
+		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem, &t.PredecessoraID, &t.Relato,
 	)
 	return t, err
 }
@@ -391,14 +391,14 @@ func (r *Repository) NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa 
 	return nome, nil
 }
 
-func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+func (r *Repository) AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, relato string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
 	now := time.Now().UTC()
 	q := fmt.Sprintf(`UPDATE projetos_tarefas SET
-		titulo = $2, descricao = $3, responsavel_id = $4, responsavel_nome = $5, estado = $6, ordem = $7, data_limite = COALESCE($8, data_limite), predecessora_id = $9, updated_at = $10
+		titulo = $2, descricao = $3, relato = $4, responsavel_id = $5, responsavel_nome = $6, estado = $7, ordem = $8, data_limite = COALESCE($9, data_limite), predecessora_id = $10, updated_at = $11
 		WHERE id = $1
 		RETURNING %s`, colunasTarefa)
 
-	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, responsavelID, responsavel, estado, ordem, dataLimite, predecessoraID, now))
+	t, err := scanTarefa(db.QueryRow(ctx, q, id, titulo, descricao, relato, responsavelID, responsavel, estado, ordem, dataLimite, predecessoraID, now))
 	if err != nil {
 		return nil, mapDB(err)
 	}

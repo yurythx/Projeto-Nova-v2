@@ -31,8 +31,11 @@ func TestCadeiaEConclusao(t *testing.T) {
 	}
 
 	aberta := &Tarefa{Estado: EstadoTarefaAFazer}
-	if err := ConferirPredecessora(EstadoTarefaEmAndamento, aberta); !errors.Is(err, ErrPredecessoraAberta) {
-		t.Fatalf("avançar com anterior aberta: %v", err)
+	if err := ConferirPredecessora(EstadoTarefaEmAndamento, aberta); err != nil {
+		t.Fatalf("andamento em paralelo: %v", err)
+	}
+	if err := ConferirPredecessora(EstadoTarefaConcluida, aberta); !errors.Is(err, ErrPredecessoraAberta) {
+		t.Fatalf("concluir com anterior aberta: %v", err)
 	}
 	if err := ConferirPredecessora(EstadoTarefaBloqueada, aberta); err != nil {
 		t.Fatalf("bloquear pode: %v", err)

@@ -38,6 +38,7 @@ type Service struct {
 	produtos  domain.Produtos
 	horas     domain.HorasVinculadas
 	avisos    *notificacoes.Service
+	arquivos  *Arquivos
 }
 
 // Passagens lê os caminhos acrescentados no quadro. Nil mantém só o fluxo de fábrica.
@@ -94,7 +95,11 @@ func MapError(err error) error {
 	case errors.Is(err, domain.ErrPredecessoraInvalida):
 		return apperrors.Validation("a tarefa anterior precisa ser outra tarefa deste projeto, sem ciclo")
 	case errors.Is(err, domain.ErrPredecessoraAberta):
-		return apperrors.Conflict("a tarefa anterior ainda não foi concluída")
+		return apperrors.Conflict("conclua a tarefa anterior antes de concluir esta")
+	case errors.Is(err, domain.ErrRelatoInvalido):
+		return apperrors.Validation("o relato da tarefa tem no máximo 4000 caracteres")
+	case errors.Is(err, domain.ErrAnexoNaoEncontrado):
+		return apperrors.NotFound("anexo não encontrado")
 	case errors.Is(err, domain.ErrPrioridadeInvalida):
 		return apperrors.Validation("prioridade inválida")
 	case errors.Is(err, domain.ErrApontamentoInvalido):
@@ -842,7 +847,10 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 	return criada, nil
 }
 
-func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, relato string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+	if utf8.RuneCountInString(relato) > domain.RelatoMax {
+		return nil, domain.ErrRelatoInvalido
+	}
 	var atualizada *domain.Tarefa
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		atual, err := s.repo.ObterTarefa(ctx, tx, id)
@@ -874,7 +882,7 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		if err != nil {
 			return err
 		}
-		atualizada, err = s.repo.AtualizarTarefa(ctx, tx, id, titulo, descricao, gid, gnome, estadoEfetivo(estado), ordem, dataLimite, predecessoraID)
+		atualizada, err = s.repo.AtualizarTarefa(ctx, tx, id, titulo, descricao, strings.TrimSpace(relato), gid, gnome, estadoEfetivo(estado), ordem, dataLimite, predecessoraID)
 		return err
 	})
 	if err != nil {

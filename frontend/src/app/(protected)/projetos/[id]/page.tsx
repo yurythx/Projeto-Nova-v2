@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { Painel5W2H } from "@/components/projetos/Painel5W2H";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
+import { TarefaPainel } from "@/components/projetos/TarefaPainel";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
 import { Badge } from "@/components/ui/Badge";
@@ -111,6 +112,7 @@ export function ProjetoDetalheConteudo() {
   const [motivoReabertura, setMotivoReabertura] = useState("");
   const [tarefaEstado, setTarefaEstado] = useState<EstadoTarefa>("a_fazer");
   const [tarefaPred, setTarefaPred] = useState("");
+  const [tarefaAberta, setTarefaAberta] = useState<string | null>(null);
 
   // Estados para novo vínculo
   const [modalVinculo, setModalVinculo] = useState(false);
@@ -261,6 +263,7 @@ export function ProjetoDetalheConteudo() {
         apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
           titulo: t.titulo,
           descricao: t.descricao,
+          relato: t.relato ?? "",
           responsavel_id: t.responsavel_id,
           responsavel_nome: t.responsavel_nome,
           estado: novoEstado,
@@ -278,6 +281,7 @@ export function ProjetoDetalheConteudo() {
         apiClient.put(`v1/projetos/${id}/tarefas/${t.id}`, {
           titulo: nome.slice(0, 200),
           descricao: t.descricao,
+          relato: t.relato ?? "",
           responsavel_id: t.responsavel_id,
           responsavel_nome: t.responsavel_nome,
           estado: t.estado,
@@ -659,8 +663,18 @@ export function ProjetoDetalheConteudo() {
                               Depois de{" "}
                               {listaTarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
                                 "outra tarefa"}
+                              . Pode andar junto; a conclusão espera a anterior.
                             </span>
                           )}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            type="button"
+                            onClick={() => setTarefaAberta(t.id)}
+                            aria-label={`Abrir tarefa ${t.titulo}`}
+                          >
+                            Abrir
+                          </Button>
                           {mutavel && (
                             <div className="flex items-center gap-2">
                               <Select
@@ -700,6 +714,15 @@ export function ProjetoDetalheConteudo() {
                 </DataState>
               </CardContent>
             </Card>
+
+            <TarefaPainel
+              tarefa={listaTarefas.find((item) => item.id === tarefaAberta) ?? null}
+              projetoId={id}
+              unidadeId={p?.unidade_id}
+              mutavel={mutavel}
+              onClose={() => setTarefaAberta(null)}
+              onSaved={() => void tarefas.mutate()}
+            />
 
             {/* Modal de Nova Tarefa */}
             <Dialog

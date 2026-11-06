@@ -205,8 +205,12 @@ func TestModuloCicloCompleto(t *testing.T) {
 	}
 	_ = json.Unmarshal(recSeg.Body.Bytes(), &envSeg)
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
-		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusConflict {
-		t.Fatalf("avançar com anterior aberta: %d %s", rec.Code, rec.Body.String())
+		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusOK {
+		t.Fatalf("andamento em paralelo: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
+		`{"titulo":"Depois do mapa","estado":"concluida","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusConflict {
+		t.Fatalf("concluir fora de ordem: %d %s", rec.Code, rec.Body.String())
 	}
 
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(),
@@ -356,7 +360,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	_ = repo.CriarTarefa(ctx, dbtest.Fail{}, &domain.Tarefa{ID: id, ProjetoID: id, Titulo: "T"})
 	_, _ = repo.ObterTarefa(ctx, dbtest.Fail{}, id)
 	_, _ = repo.NomeDaPessoa(ctx, dbtest.Fail{}, id, nil)
-	_, _ = repo.AtualizarTarefa(ctx, dbtest.Fail{}, id, "T", "", nil, "", "a_fazer", 1, nil, nil)
+	_, _ = repo.AtualizarTarefa(ctx, dbtest.Fail{}, id, "T", "", "", nil, "", "a_fazer", 1, nil, nil)
 	_, _ = repo.ListarTarefas(ctx, dbtest.Fail{}, id)
 	_, _ = repo.ListarTarefas(ctx, dbtest.ScanFail{}, id)
 	_, _ = repo.ListarTarefas(ctx, dbtest.RowsErr{}, id)
@@ -404,7 +408,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
 		t.Fatalf("estado de tarefa inválido: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
 		t.Fatal("atualizar tarefa inexistente deveria falhar")
 	}
 	if _, err := svc.Vincular(ctx, admin, p.ID, "invalido", uuid.New(), ""); !errors.Is(err, domain.ErrVinculoInvalido) {
@@ -880,16 +884,19 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", nil, "", "em_andamento", 2, nil, &aberta.ID); !errors.Is(err, domain.ErrPredecessoraAberta) {
-		t.Fatalf("anterior aberta: %v", err)
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", nil, "", "em_andamento", 2, nil, &aberta.ID); err != nil {
+		t.Fatalf("andamento em paralelo: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", nil, "", "concluida", 1, nil, &segunda.ID); !errors.Is(err, domain.ErrPredecessoraInvalida) {
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", nil, "", "concluida", 2, nil, &aberta.ID); !errors.Is(err, domain.ErrPredecessoraAberta) {
+		t.Fatalf("concluir fora de ordem: %v", err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", nil, "", "concluida", 1, nil, &segunda.ID); !errors.Is(err, domain.ErrPredecessoraInvalida) {
 		t.Fatalf("ciclo: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", nil, "", "concluida", 1, nil, nil); err != nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", nil, "", "concluida", 1, nil, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", nil, "", "concluida", 2, nil, &aberta.ID); err != nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", nil, "", "concluida", 2, nil, &aberta.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); err != nil {

@@ -58,10 +58,11 @@ func ValidarCadeia(tarefa, predecessora uuid.UUID, tarefas []Tarefa) error {
 	}
 }
 
-// ConferirPredecessora exige a anterior concluída para sair de "a fazer"
-// e de "bloqueada". Essas duas posições continuam livres.
+// ConferirPredecessora só trava a conclusão. Várias tarefas podem estar
+// em andamento ao mesmo tempo; a anterior precisa estar concluída para
+// esta ser concluída.
 func ConferirPredecessora(estado string, predecessora *Tarefa) error {
-	if estado == "" || estado == EstadoTarefaAFazer || estado == EstadoTarefaBloqueada || predecessora == nil {
+	if estado != EstadoTarefaConcluida || predecessora == nil {
 		return nil
 	}
 	if predecessora.Estado != EstadoTarefaConcluida {

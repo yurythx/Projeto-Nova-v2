@@ -34,7 +34,10 @@ type Repository interface {
 	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error
 	ObterTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (*Tarefa, error)
-	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*Tarefa, error)
+	AtualizarTarefa(ctx context.Context, db database.DBTX, id uuid.UUID, titulo, descricao, relato string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*Tarefa, error)
+	ListarAnexos(ctx context.Context, db database.DBTX, tarefaID uuid.UUID) ([]Anexo, error)
+	ObterAnexo(ctx context.Context, db database.DBTX, id uuid.UUID) (*Anexo, error)
+	CriarAnexo(ctx context.Context, db database.DBTX, a *Anexo) (*Anexo, error)
 	PrazosVencidos(ctx context.Context, db database.DBTX, agora time.Time) ([]PrazoTarefa, []PrazoProjeto, error)
 	NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)

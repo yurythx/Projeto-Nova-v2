@@ -57,6 +57,12 @@ func (m *Module) ComAvisos(n *notificacoes.Service) {
 func New(deps modkit.Deps) *Module {
 	repo := infrastructure.NewRepository()
 	svc := application.NewService(deps.Pool, repo, deps.Outbox, deps.Logger)
+	if deps.Storage != nil && deps.Config != nil {
+		svc.ComArquivos(application.Arquivos{
+			Store: deps.Storage, Bucket: deps.Config.MinIO.Bucket,
+			MaxBytes: deps.Config.Upload.MaxFileBytes, Expiry: deps.Config.Upload.URLExpiry,
+		})
+	}
 	handlers := transport.NewHandlers(svc, deps.Logger)
 	return &Module{
 		deps:     deps,
