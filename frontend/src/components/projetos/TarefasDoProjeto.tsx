@@ -13,6 +13,7 @@ import {
 } from "@/components/plataforma/Faixas";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { rotuloQuadro } from "@/components/plataforma/useQuadro";
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Input } from "@/components/ui/Input";
 import { TableCell } from "@/components/ui/Table";
 import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
@@ -235,7 +236,11 @@ export function TarefasDoProjeto({
                   "line-clamp-2 text-left text-sm font-medium text-foreground hover:underline",
                 )}
                 <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-                  <span className="truncate">{t.responsavel_nome || "Sem responsável"}</span>
+                  <PessoaComAvatar
+                    id={t.responsavel_id}
+                    nome={t.responsavel_nome}
+                    className="min-w-0"
+                  />
                   <span className="shrink-0">{diaBrasil(t.data_limite) || "Sem prazo"}</span>
                 </div>
                 {!t.responsavel_id && (
@@ -285,11 +290,11 @@ function CelulaPessoa({
   onAtribuir: (pessoa: ResponsavelOpcao) => void;
 }) {
   if (!mutavel || !aberta) {
-    const nome = tarefa.responsavel_nome || "Sem responsável";
-    if (!mutavel) return <span className="text-sm">{nome}</span>;
+    const nome = tarefa.responsavel_nome || "";
+    if (!mutavel) return <PessoaComAvatar id={tarefa.responsavel_id} nome={nome} className="text-sm" />;
     return (
       <button type="button" className="text-left text-sm hover:underline" onClick={onAbrir}>
-        {tarefa.responsavel_nome || "Atribuir"}
+        <PessoaComAvatar id={tarefa.responsavel_id} nome={nome} vazio="Atribuir" />
       </button>
     );
   }

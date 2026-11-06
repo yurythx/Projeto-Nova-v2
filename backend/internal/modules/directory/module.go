@@ -34,6 +34,9 @@ type Module struct {
 // New constrói o módulo.
 func New(deps modkit.Deps) *Module {
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository())
+	if deps.Storage != nil && deps.Config != nil && deps.Config.MinIO.Bucket != "" {
+		svc.ComArquivos(application.Arquivos{Store: deps.Storage, Bucket: deps.Config.MinIO.Bucket})
+	}
 	return &Module{deps: deps, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger, deps.Config.MaxPageSize)}
 }
 

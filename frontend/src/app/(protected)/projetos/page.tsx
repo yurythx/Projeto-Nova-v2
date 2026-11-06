@@ -7,6 +7,7 @@ import { type FormEvent, Suspense, useMemo, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { DataState } from "@/components/plataforma/DataState";
 import {
   NomeClicavel,
@@ -432,9 +433,11 @@ function ProjetosConteudo() {
                     />
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-foreground">
-                      {p.gerente_nome || "Sem responsável"}
-                    </span>
+                    <PessoaComAvatar
+                      id={p.gerente_id}
+                      nome={p.gerente_nome}
+                      className="text-sm text-foreground"
+                    />
                   </TableCell>
                   <TableCell>
                     {prioridadeMeta ? (

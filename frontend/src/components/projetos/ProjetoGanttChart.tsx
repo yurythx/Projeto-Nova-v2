@@ -9,10 +9,10 @@ import {
   Flag,
   Milestone,
   Plus,
-  User,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -406,9 +406,8 @@ export function ProjetoGanttChart({
                           </span>
                         </div>
                         {t.responsavel_nome && (
-                          <div className="flex items-center gap-1 text-[11px] text-muted truncate mt-0.5">
-                            <User className="h-3 w-3 shrink-0" />
-                            <span>{t.responsavel_nome}</span>
+                          <div className="mt-0.5 text-[11px] text-muted">
+                            <PessoaComAvatar id={t.responsavel_id} nome={t.responsavel_nome} />
                           </div>
                         )}
                         {t.predecessora_id && (

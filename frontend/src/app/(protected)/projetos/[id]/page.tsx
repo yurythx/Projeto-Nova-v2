@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, Suspense, useState } from "react";
 
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { DataState } from "@/components/plataforma/DataState";
 import {
   colunasEmOrdem,
@@ -560,7 +561,7 @@ export function ProjetoDetalheConteudo() {
                   <div>
                     <span className="text-muted">Responsável:</span>
                     <p className="font-medium text-foreground">
-                      {p.gerente_nome || "Não informado"}
+                      <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} vazio="Não informado" />
                     </p>
                   </div>
                   <div>

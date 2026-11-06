@@ -44,6 +44,10 @@ func (h *Handlers) RegisterAuthedRoutes(r chi.Router) {
 	r.Get("/directory/sectors", h.Sectors)
 	r.Get("/directory/me", h.Me)
 	r.Put("/directory/me", h.UpdateMe)
+	r.Post("/directory/me/avatar/uploads", h.PedirAvatar)
+	r.Put("/directory/me/avatar", h.SalvarAvatar)
+	r.Delete("/directory/me/avatar", h.RemoverAvatar)
+	r.Get("/directory/avatars/{id}", h.AbrirAvatar)
 	r.With(auth.RequirePermission(h.logger, auth.PermDirectoryManage)).Put("/directory/people/{id}", h.UpdatePerson)
 }
 

@@ -4,24 +4,15 @@ import { LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { AvatarPessoa } from "@/components/plataforma/AvatarPessoa";
 import { fullSignOut } from "@/lib/auth/logout";
-
-function initialsFrom(label: string): string {
-  const parts = label
-    .replace(/@.*/, "")
-    .split(/[.\s_-]+/)
-    .filter(Boolean);
-  const chars =
-    parts.length >= 2 ? [parts[0]?.[0] ?? "?", parts[1]?.[0] ?? "?"] : [label[0] ?? "?"];
-  return chars.join("").toUpperCase();
-}
 
 // Menu do usuário no canto superior direito (§ Redesenho de layout):
 // avatar com iniciais + dropdown com o rótulo do usuário e "Sair". O
 // mesmo popover hand-rolled (useState + useRef + click-fora/Escape) já
 // usado em NotificationBell — nenhuma biblioteca de UI-kit nova para
 // isto, consistente com o resto deste kit de componentes.
-export function UserMenu({ userLabel }: { userLabel: string }) {
+export function UserMenu({ userLabel, usuarioId }: { userLabel: string; usuarioId?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -49,9 +40,9 @@ export function UserMenu({ userLabel }: { userLabel: string }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Menu do usuário ${userLabel}`}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+        className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full"
       >
-        {initialsFrom(userLabel)}
+        <AvatarPessoa id={usuarioId} nome={userLabel} tamanho="md" />
       </button>
 
       {open && (

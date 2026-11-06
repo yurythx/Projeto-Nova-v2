@@ -1,9 +1,10 @@
 "use client";
 
 import { Download, ShieldCheck, UserX } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { FormularioDeContato } from "@/components/canais/ContatoParaAvisos";
+import { AvatarPessoa, avisarAvatar } from "@/components/plataforma/AvatarPessoa";
 import { ScopePicker } from "@/components/iam/ScopePicker";
 import { DataState } from "@/components/plataforma/DataState";
 import { ConfirmButton } from "@/components/plataforma/ConfirmButton";
@@ -15,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
+import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
+import type { UploadTicket } from "@/lib/plataforma/types";
 import { useApiQuery } from "@/lib/api/swr";
 import type { Contato } from "@/lib/plataforma/canais";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
@@ -27,6 +30,70 @@ interface DSR {
   detail: string;
   created_at: string;
   completed_at?: string | null;
+}
+
+function FotoDoPerfil() {
+  const { me } = usePlataforma();
+  const arquivo = useRef<HTMLInputElement>(null);
+  const { run, pending } = useAction();
+  const [erro, setErro] = useState("");
+
+  async function escolher(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !me?.id) return;
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      setErro("Use uma imagem de até 2 MB.");
+      return;
+    }
+    setErro("");
+    await run(async () => {
+      const ticket = await apiClient.post<UploadTicket>("v1/directory/me/avatar/uploads", {
+        filename: file.name || "foto.png",
+        content_type: mimeOf(file),
+      });
+      await putToTicket(ticket.data, file);
+      await apiClient.put("v1/directory/me/avatar", { object_key: ticket.data.object_key });
+      avisarAvatar(me.id);
+    }, "Foto do perfil atualizada");
+  }
+
+  async function remover() {
+    if (!me?.id) return;
+    setErro("");
+    await run(async () => {
+      await apiClient.delete("v1/directory/me/avatar");
+      avisarAvatar(me.id);
+    }, "Foto do perfil removida");
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <AvatarPessoa id={me?.id} nome={me?.name || me?.username} tamanho="md" />
+      <div className="flex flex-col gap-2">
+        <p className="text-sm text-muted">
+          Esta foto aparece nas listas e nos quadros. Sem foto, o círculo mostra as iniciais.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="secondary" loading={pending} onClick={() => arquivo.current?.click()}>
+            Alterar foto
+          </Button>
+          <Button type="button" variant="ghost" disabled={pending} onClick={() => void remover()}>
+            Remover
+          </Button>
+        </div>
+        {erro && <p className="text-xs text-danger">{erro}</p>}
+        <input
+          ref={arquivo}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="sr-only"
+          aria-label="Escolher foto do perfil"
+          onChange={(e) => void escolher(e)}
+        />
+      </div>
+    </div>
+  );
 }
 
 function DirectoryProfile() {
@@ -154,6 +221,15 @@ export default function PerfilPage() {
         title={me?.name || me?.username || "Meu perfil"}
         description={me?.email}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2">Foto</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-5 pt-3">
+          <FotoDoPerfil />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

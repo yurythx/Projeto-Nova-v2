@@ -19,8 +19,9 @@ import (
 
 // Service implementa os casos de uso.
 type Service struct {
-	pool *pgxpool.Pool
-	repo domain.Repository
+	pool     *pgxpool.Pool
+	repo     domain.Repository
+	arquivos *Arquivos
 }
 
 // NewService cria o serviço.
@@ -124,5 +125,18 @@ func (s *Service) ExportPersonalData(ctx context.Context, db database.DBTX, user
 
 // ErasePersonalData apaga o perfil do titular na transação da eliminação.
 func (s *Service) ErasePersonalData(ctx context.Context, tx database.DBTX, userID uuid.UUID) error {
-	return s.repo.DeleteProfile(ctx, tx, userID)
+	if err := s.repo.DeleteProfile(ctx, tx, userID); err != nil {
+		return err
+	}
+	var antiga string
+	if err := tx.QueryRow(ctx, `SELECT avatar_key FROM users WHERE id = $1`, userID).Scan(&antiga); err != nil && !database.IsNoRows(err) {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `UPDATE users SET avatar_key = '' WHERE id = $1`, userID); err != nil {
+		return err
+	}
+	if antiga != "" && s.arquivos != nil {
+		_ = s.arquivos.Store.Delete(ctx, s.arquivos.Bucket, antiga)
+	}
+	return nil
 }

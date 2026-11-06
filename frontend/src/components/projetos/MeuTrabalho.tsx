@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import type { CargaPessoa, TarefaMinha } from "@/lib/projetos/projetos";
 
@@ -80,7 +81,7 @@ export function CargaEquipe({ pessoas }: { pessoas: CargaPessoa[] }) {
         {pessoas.map((pessoa) => (
           <TableRow key={pessoa.id}>
             <TableCell>
-              <span className="text-sm">{pessoa.nome}</span>
+              <PessoaComAvatar id={pessoa.id} nome={pessoa.nome} className="text-sm" />
             </TableCell>
             <TableCell>
               <span className="text-sm">{pessoa.abertas}</span>

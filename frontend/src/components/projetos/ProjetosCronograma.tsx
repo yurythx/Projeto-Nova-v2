@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Button } from "@/components/ui/Button";
 import {
   ESTADO_PROJETO,
@@ -240,7 +241,7 @@ export function ProjetosCronograma({ projetos }: Props) {
                         </Link>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted">
-                        <span>{p.gerente_nome || "Sem gerente"}</span>
+                        <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} vazio="Sem gerente" />
                         {prioridadeMeta && <span>• {prioridadeMeta.label}</span>}
                       </div>
                     </div>

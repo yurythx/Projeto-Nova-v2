@@ -102,7 +102,7 @@ function ShellBody({
             <ThemeToggle initialTheme={initialTheme} />
             <EntitySelector />
             <NotificationBell />
-            <UserMenu userLabel={userLabel} />
+            <UserMenu userLabel={userLabel} usuarioId={me?.id} />
           </>
         }
       />

@@ -11,6 +11,7 @@ import {
   type ColunaFaixa,
   type ControlesColuna,
 } from "@/components/plataforma/Faixas";
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Badge } from "@/components/ui/Badge";
 import { diaBrasil } from "@/components/projetos/datas";
 import {
@@ -104,7 +105,7 @@ export function ProjetosKanban({
               className="line-clamp-2 text-left text-sm font-semibold text-foreground hover:underline"
             />
             <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-              <span className="truncate">{p.gerente_nome || "Sem responsável"}</span>
+              <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} className="min-w-0" />
               <span className="shrink-0">{diaBrasil(p.data_fim_planejada) || "Sem prazo"}</span>
             </div>
             {moves.length > 0 && (

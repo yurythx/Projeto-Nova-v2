@@ -129,6 +129,24 @@ func (r *Repository) DepartamentoUnidade(ctx context.Context, db database.DBTX, 
 	return id, wrap(err)
 }
 
+// LerAvatar devolve a chave da foto. Vazio significa que a pessoa não enviou.
+func (r *Repository) LerAvatar(ctx context.Context, db database.DBTX, userID uuid.UUID) (string, error) {
+	var key string
+	err := db.QueryRow(ctx, `SELECT avatar_key FROM users WHERE id = $1 AND active`, userID).Scan(&key)
+	return key, wrap(err)
+}
+
+// GravarAvatar troca a foto e devolve a chave anterior, para apagar o arquivo velho.
+func (r *Repository) GravarAvatar(ctx context.Context, db database.DBTX, userID uuid.UUID, key string) (string, error) {
+	var anterior string
+	err := db.QueryRow(ctx, `
+		WITH antes AS (SELECT avatar_key FROM users WHERE id = $1 AND active)
+		UPDATE users SET avatar_key = $2, updated_at = now()
+		WHERE id = $1 AND active
+		RETURNING (SELECT avatar_key FROM antes)`, userID, key).Scan(&anterior)
+	return anterior, wrap(err)
+}
+
 func (r *Repository) Sectors(ctx context.Context, db database.DBTX, query string) ([]domain.Sector, error) {
 	rows, err := db.Query(ctx, `
 		SELECT un.id, 'unidade', un.nome, un.sigla, un.email, un.telefone, un.endereco, NULL::uuid, '', e.nome

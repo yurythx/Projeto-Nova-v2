@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 
+import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
 import { useAction, fmtDateTime } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
@@ -191,9 +192,12 @@ export function TarefaPainel({
               onChange={setResp}
             />
           ) : (
-            <p className="text-sm text-muted">
-              Responsável: {tarefa.responsavel_nome || "ninguém atribuído"}
-            </p>
+            <PessoaComAvatar
+              id={tarefa.responsavel_id}
+              nome={tarefa.responsavel_nome}
+              vazio="ninguém atribuído"
+              className="text-sm text-muted"
+            />
           )}
           <Textarea
             id="tarefa-relato"
