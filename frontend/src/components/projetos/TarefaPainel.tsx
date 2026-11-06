@@ -3,7 +3,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
-import { useAction } from "@/components/plataforma/useAction";
+import { useAction, fmtDateTime } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Textarea } from "@/components/ui/Textarea";
@@ -11,7 +11,7 @@ import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 import type { UploadTicket } from "@/lib/plataforma/types";
-import type { Tarefa } from "@/lib/projetos/projetos";
+import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
 
 export interface AnexoTarefa {
   id: string;
@@ -21,6 +21,33 @@ export interface AnexoTarefa {
   tamanho: number;
   autor_nome: string;
   created_at: string;
+}
+
+export interface MovimentoTarefa {
+  id: string;
+  estado_antes: string;
+  estado_depois: string;
+  responsavel_antes_nome: string;
+  responsavel_depois_nome: string;
+  autor_nome: string;
+  created_at: string;
+}
+
+function rotuloEstado(estado: string) {
+  return ESTADO_TAREFA[estado as EstadoTarefa]?.label ?? estado;
+}
+
+function textoMovimento(m: MovimentoTarefa) {
+  const partes: string[] = [];
+  if (m.estado_antes !== m.estado_depois) {
+    partes.push(`moveu de ${rotuloEstado(m.estado_antes)} para ${rotuloEstado(m.estado_depois)}`);
+  }
+  if (m.responsavel_antes_nome !== m.responsavel_depois_nome) {
+    if (!m.responsavel_antes_nome) partes.push(`definiu o responsável ${m.responsavel_depois_nome}`);
+    else if (!m.responsavel_depois_nome) partes.push("tirou o responsável");
+    else partes.push(`trocou o responsável de ${m.responsavel_antes_nome} para ${m.responsavel_depois_nome}`);
+  }
+  return partes.join(" e ");
 }
 
 const TIPOS: Record<string, string> = {
@@ -78,6 +105,9 @@ export function TarefaPainel({
   const anexos = useApiQuery<AnexoTarefa[]>(
     tarefa ? `v1/projetos/${projetoId}/tarefas/${tarefa.id}/anexos` : null,
   );
+  const movimentos = useApiQuery<MovimentoTarefa[]>(
+    tarefa ? `v1/projetos/${projetoId}/tarefas/${tarefa.id}/movimentos` : null,
+  );
 
   async function salvar() {
     if (!tarefa) return;
@@ -95,7 +125,10 @@ export function TarefaPainel({
         }),
       "Tarefa atualizada",
     );
-    if (ok) onSaved();
+    if (ok) {
+      onSaved();
+      void movimentos.mutate();
+    }
   }
 
   async function enviar(e: FormEvent) {
@@ -204,6 +237,20 @@ export function TarefaPainel({
                 </Button>
               </form>
             )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-foreground">Registros</p>
+            {(movimentos.data ?? []).length === 0 && (
+              <p className="text-xs text-muted">Nenhuma movimentação ainda.</p>
+            )}
+            <ul className="flex flex-col gap-2">
+              {(movimentos.data ?? []).map((m) => (
+                <li key={m.id} className="text-sm text-foreground">
+                  <span className="text-muted">{fmtDateTime(m.created_at)}</span>
+                  {m.autor_nome ? ` · ${m.autor_nome}` : ""} {textoMovimento(m)}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}

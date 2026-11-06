@@ -96,6 +96,8 @@ func MapError(err error) error {
 		return apperrors.Validation("a tarefa anterior precisa ser outra tarefa deste projeto, sem ciclo")
 	case errors.Is(err, domain.ErrPredecessoraAberta):
 		return apperrors.Conflict("conclua a tarefa anterior antes de concluir esta")
+	case errors.Is(err, domain.ErrResponsavelObrigatorio):
+		return apperrors.Conflict("atribua um responsável antes de mover a tarefa")
 	case errors.Is(err, domain.ErrRelatoInvalido):
 		return apperrors.Validation("o relato da tarefa tem no máximo 4000 caracteres")
 	case errors.Is(err, domain.ErrAnexoNaoEncontrado):
@@ -829,6 +831,9 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 		if err != nil {
 			return err
 		}
+		if err := domain.MovimentoExigeResponsavel("", t.Estado, gid); err != nil {
+			return err
+		}
 		t.Titulo = titulo
 		t.Descricao = descricao
 		t.ResponsavelID = gid
@@ -839,7 +844,7 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 			return err
 		}
 		criada = t
-		return nil
+		return s.anotarMovimento(ctx, tx, idt, domain.Tarefa{}, *t)
 	})
 	if err != nil {
 		return nil, err
@@ -882,8 +887,14 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		if err != nil {
 			return err
 		}
+		if err := domain.MovimentoExigeResponsavel(atual.Estado, estadoEfetivo(estado), gid); err != nil {
+			return err
+		}
 		atualizada, err = s.repo.AtualizarTarefa(ctx, tx, id, titulo, descricao, strings.TrimSpace(relato), gid, gnome, estadoEfetivo(estado), ordem, dataLimite, predecessoraID)
-		return err
+		if err != nil {
+			return err
+		}
+		return s.anotarMovimento(ctx, tx, idt, *atual, *atualizada)
 	})
 	if err != nil {
 		return nil, err

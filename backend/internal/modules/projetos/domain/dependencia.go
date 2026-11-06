@@ -70,3 +70,21 @@ func ConferirPredecessora(estado string, predecessora *Tarefa) error {
 	}
 	return nil
 }
+
+// MovimentoExigeResponsavel libera criar e editar em "a fazer" sem pessoa.
+// Qualquer passagem de coluna exige um usuário responsável.
+func MovimentoExigeResponsavel(antes, depois string, responsavel *uuid.UUID) error {
+	if antes == "" {
+		antes = EstadoTarefaAFazer
+	}
+	if depois == "" {
+		depois = EstadoTarefaAFazer
+	}
+	if antes == depois {
+		return nil
+	}
+	if responsavel == nil || *responsavel == uuid.Nil {
+		return ErrResponsavelObrigatorio
+	}
+	return nil
+}

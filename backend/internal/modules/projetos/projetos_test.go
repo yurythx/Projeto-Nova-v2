@@ -204,17 +204,26 @@ func TestModuloCicloCompleto(t *testing.T) {
 		Data domain.Tarefa `json:"data"`
 	}
 	_ = json.Unmarshal(recSeg.Body.Bytes(), &envSeg)
+	pessoa := dbtest.User(t, pool)
+	if _, err := pool.Exec(ctx, `INSERT INTO directory_profiles (user_id, unidade_id) VALUES ($1, $2)`, pessoa, uA); err != nil {
+		t.Fatal(err)
+	}
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
-		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusOK {
+		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusConflict {
+		t.Fatalf("mover sem responsável: %d %s", rec.Code, rec.Body.String())
+	}
+	comPessoa := `"responsavel_id":"` + pessoa.String() + `"`
+	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
+		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`",`+comPessoa+`}`); rec.Code != http.StatusOK {
 		t.Fatalf("andamento em paralelo: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
-		`{"titulo":"Depois do mapa","estado":"concluida","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusConflict {
+		`{"titulo":"Depois do mapa","estado":"concluida","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`",`+comPessoa+`}`); rec.Code != http.StatusConflict {
 		t.Fatalf("concluir fora de ordem: %d %s", rec.Code, rec.Body.String())
 	}
 
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(),
-		`{"titulo":"Mapear filas GLPI","descricao":"Feito","estado":"concluida","ordem":1}`); rec.Code != http.StatusOK {
+		`{"titulo":"Mapear filas GLPI","descricao":"Feito","estado":"concluida","ordem":1,`+comPessoa+`}`); rec.Code != http.StatusOK {
 		t.Fatalf("atualizar tarefa: %d %s", rec.Code, rec.Body.String())
 	}
 
@@ -869,6 +878,7 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	pessoa := dbtest.User(t, pool)
 	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err != nil {
 		t.Fatal(err)
@@ -884,19 +894,19 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", nil, "", "em_andamento", 2, nil, &aberta.ID); err != nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "em_andamento", 2, nil, &aberta.ID); err != nil {
 		t.Fatalf("andamento em paralelo: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", nil, "", "concluida", 2, nil, &aberta.ID); !errors.Is(err, domain.ErrPredecessoraAberta) {
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "concluida", 2, nil, &aberta.ID); !errors.Is(err, domain.ErrPredecessoraAberta) {
 		t.Fatalf("concluir fora de ordem: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", nil, "", "concluida", 1, nil, &segunda.ID); !errors.Is(err, domain.ErrPredecessoraInvalida) {
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", &pessoa, "", "concluida", 1, nil, &segunda.ID); !errors.Is(err, domain.ErrPredecessoraInvalida) {
 		t.Fatalf("ciclo: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", nil, "", "concluida", 1, nil, nil); err != nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", &pessoa, "", "concluida", 1, nil, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", nil, "", "concluida", 2, nil, &aberta.ID); err != nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "concluida", 2, nil, &aberta.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); err != nil {

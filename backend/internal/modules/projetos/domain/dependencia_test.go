@@ -37,6 +37,16 @@ func TestCadeiaEConclusao(t *testing.T) {
 	if err := ConferirPredecessora(EstadoTarefaConcluida, aberta); !errors.Is(err, ErrPredecessoraAberta) {
 		t.Fatalf("concluir com anterior aberta: %v", err)
 	}
+	if err := MovimentoExigeResponsavel(EstadoTarefaAFazer, EstadoTarefaEmAndamento, nil); !errors.Is(err, ErrResponsavelObrigatorio) {
+		t.Fatalf("mover sem responsável: %v", err)
+	}
+	quem := uuid.New()
+	if err := MovimentoExigeResponsavel(EstadoTarefaAFazer, EstadoTarefaEmAndamento, &quem); err != nil {
+		t.Fatalf("mover com responsável: %v", err)
+	}
+	if err := MovimentoExigeResponsavel("", EstadoTarefaAFazer, nil); err != nil {
+		t.Fatalf("criar sem responsável: %v", err)
+	}
 	if err := ConferirPredecessora(EstadoTarefaBloqueada, aberta); err != nil {
 		t.Fatalf("bloquear pode: %v", err)
 	}

@@ -38,6 +38,8 @@ type Repository interface {
 	ListarAnexos(ctx context.Context, db database.DBTX, tarefaID uuid.UUID) ([]Anexo, error)
 	ObterAnexo(ctx context.Context, db database.DBTX, id uuid.UUID) (*Anexo, error)
 	CriarAnexo(ctx context.Context, db database.DBTX, a *Anexo) (*Anexo, error)
+	RegistrarMovimento(ctx context.Context, db database.DBTX, m *Movimento) error
+	ListarMovimentos(ctx context.Context, db database.DBTX, tarefaID uuid.UUID) ([]Movimento, error)
 	PrazosVencidos(ctx context.Context, db database.DBTX, agora time.Time) ([]PrazoTarefa, []PrazoProjeto, error)
 	NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)

@@ -625,8 +625,9 @@ export function ProjetoDetalheConteudo() {
                     idDe={(t) => t.id}
                     nomeDe={(t) => t.titulo}
                     pending={pending}
-                    arrastavel={() => mutavel}
+                    arrastavel={(t) => mutavel && Boolean(t.responsavel_id)}
                     podeSoltar={(t, coluna) =>
+                      Boolean(t.responsavel_id) &&
                       t.estado !== coluna &&
                       catalogoTarefas.colunas.find((item) => item.id === coluna)?.ativa !== false
                     }
@@ -653,9 +654,13 @@ export function ProjetoDetalheConteudo() {
                             <Badge tone={meta?.tone ?? "neutral"}>{meta?.label ?? t.estado}</Badge>
                           </div>
                           {t.descricao && <p className="text-xs text-muted">{t.descricao}</p>}
-                          {t.responsavel_nome && (
+                          {t.responsavel_nome ? (
                             <span className="text-[11px] text-muted">
                               Atribuído a: {t.responsavel_nome}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-muted">
+                              Sem responsável. Abra a tarefa e atribua alguém para movê-la.
                             </span>
                           )}
                           {t.predecessora_id && (
@@ -679,6 +684,7 @@ export function ProjetoDetalheConteudo() {
                             <div className="flex items-center gap-2">
                               <Select
                                 value={t.estado}
+                                disabled={!t.responsavel_id}
                                 onChange={(e) =>
                                   void atualizarTarefaEstado(t, e.target.value as EstadoTarefa)
                                 }

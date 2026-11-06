@@ -125,6 +125,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/projetos/{id}", h.Obter)
 		r.Get("/projetos/{id}/tarefas", h.ListarTarefas)
 		r.Get("/projetos/{id}/tarefas/{tarefaId}/anexos", h.ListarAnexos)
+		r.Get("/projetos/{id}/tarefas/{tarefaId}/movimentos", h.ListarMovimentos)
 		r.Get("/projetos/{id}/tarefas/{tarefaId}/anexos/{anexoId}", h.URLAnexo)
 		r.Get("/projetos/{id}/vinculos", h.ListarVinculos)
 		r.Get("/projetos/{id}/apontamentos", h.ListarApontamentos)

@@ -87,6 +87,26 @@ func (h *Handlers) ListarAnexos(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, lista)
 }
 
+func (h *Handlers) ListarMovimentos(w http.ResponseWriter, r *http.Request) {
+	projetoID, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	tarefaID, err := httputil.UUIDParam(r, "tarefaId")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarMovimentos(r.Context(), identity, projetoID, tarefaID)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
 func (h *Handlers) URLAnexo(w http.ResponseWriter, r *http.Request) {
 	projetoID, err := httputil.UUIDParam(r, "id")
 	if err != nil {
