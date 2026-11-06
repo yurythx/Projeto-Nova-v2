@@ -141,6 +141,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 
 		r.Post("/projetos/{id}/tarefas", h.CriarTarefa)
 		r.Put("/projetos/{id}/tarefas/{tarefaId}", h.AtualizarTarefa)
+		r.Get("/projetos/{id}/responsaveis", h.ListarResponsaveis)
 		r.Delete("/projetos/{id}/tarefas/{tarefaId}", h.ExcluirTarefa)
 		r.Post("/projetos/{id}/tarefas/{tarefaId}/anexos/uploads", h.PedirAnexo)
 		r.Post("/projetos/{id}/tarefas/{tarefaId}/anexos", h.RegistrarAnexo)
@@ -385,11 +386,26 @@ func (h *Handlers) ExcluirTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	if err := h.svc.ExcluirTarefa(r.Context(), identity, tarefaID); err != nil {
+	if err := h.svc.ExcluirTarefa(r.Context(), identity, tarefaID, r.URL.Query().Get("confirmar")); err != nil {
 		h.fail(w, r, err)
 		return
 	}
 	httputil.WriteNoContent(w)
+}
+
+func (h *Handlers) ListarResponsaveis(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarResponsaveis(r.Context(), identity, id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
 }
 
 func (h *Handlers) ListarVinculos(w http.ResponseWriter, r *http.Request) {

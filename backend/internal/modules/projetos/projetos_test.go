@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -208,6 +209,13 @@ func TestModuloCicloCompleto(t *testing.T) {
 	if _, err := pool.Exec(ctx, `INSERT INTO directory_profiles (user_id, unidade_id) VALUES ($1, $2)`, pessoa, uA); err != nil {
 		t.Fatal(err)
 	}
+	var perfil uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO perfis (slug, nome, permissoes) VALUES ($1, 'Gestão de projetos', $2) RETURNING id`, "gestao-"+pessoa.String(), []string{"projetos:manage"}).Scan(&perfil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO user_scopes (user_id, perfil_id, unidade_id) VALUES ($1, $2, $3)`, pessoa, perfil, uA); err != nil {
+		t.Fatal(err)
+	}
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
 		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`"}`); rec.Code != http.StatusConflict {
 		t.Fatalf("mover sem responsável: %d %s", rec.Code, rec.Body.String())
@@ -283,7 +291,10 @@ func TestModuloCicloCompleto(t *testing.T) {
 	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/vinculos/"+envVinc.Data.ID.String(), ""); rec.Code != http.StatusNoContent {
 		t.Fatalf("excluir vínculo: %d", rec.Code)
 	}
-	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(), ""); rec.Code != http.StatusNoContent {
+	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(), ""); rec.Code != http.StatusBadRequest {
+		t.Fatalf("apagar sem confirmação: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String()+"?confirmar="+url.QueryEscape("Mapear filas GLPI"), ""); rec.Code != http.StatusNoContent {
 		t.Fatalf("excluir tarefa: %d", rec.Code)
 	}
 
@@ -879,6 +890,13 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 		t.Fatal(err)
 	}
 	pessoa := dbtest.User(t, pool)
+	var perfil uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO perfis (slug, nome, permissoes) VALUES ($1, 'Gestão de projetos', $2) RETURNING id`, "gestao-"+pessoa.String(), []string{"projetos:manage"}).Scan(&perfil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO user_scopes (user_id, perfil_id) VALUES ($1, $2)`, pessoa, perfil); err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err != nil {
 		t.Fatal(err)

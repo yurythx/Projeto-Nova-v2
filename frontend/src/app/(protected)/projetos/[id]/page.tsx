@@ -311,10 +311,16 @@ export function ProjetoDetalheConteudo() {
 
   async function excluirTarefa(t: Tarefa) {
     const ok = await run(
-      () => apiClient.delete(`v1/projetos/${id}/tarefas/${t.id}`),
+      () =>
+        apiClient.delete(
+          `v1/projetos/${id}/tarefas/${t.id}?confirmar=${encodeURIComponent(t.titulo)}`,
+        ),
       `Tarefa removida`,
     );
-    if (ok) void tarefas.mutate();
+    if (ok) {
+      setTarefaAberta(null);
+      void tarefas.mutate();
+    }
   }
 
   async function criarVinculo(e: FormEvent) {
@@ -635,7 +641,6 @@ export function ProjetoDetalheConteudo() {
                     onVista={trocarVistaTarefas}
                     onMover={(t, estado) => void atualizarTarefaEstado(t, estado)}
                     onRenomear={mutavel ? (t, nome) => void renomearTarefa(t, nome) : undefined}
-                    onExcluir={(t) => void excluirTarefa(t)}
                     onAbrir={(t) => setTarefaAberta(t.id)}
                   />
                 </DataState>
@@ -645,8 +650,8 @@ export function ProjetoDetalheConteudo() {
             <TarefaPainel
               tarefa={listaTarefas.find((item) => item.id === tarefaAberta) ?? null}
               projetoId={id}
-              unidadeId={p?.unidade_id}
               mutavel={mutavel}
+              onExcluir={(t) => void excluirTarefa(t)}
               onClose={() => setTarefaAberta(null)}
               onSaved={() => void tarefas.mutate()}
             />

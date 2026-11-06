@@ -98,6 +98,8 @@ func MapError(err error) error {
 		return apperrors.Conflict("conclua a tarefa anterior antes de concluir esta")
 	case errors.Is(err, domain.ErrResponsavelObrigatorio):
 		return apperrors.Conflict("atribua um responsável antes de mover a tarefa")
+	case errors.Is(err, domain.ErrExclusaoNaoConfirmada):
+		return apperrors.Validation("confirme o título da tarefa para apagar")
 	case errors.Is(err, domain.ErrRelatoInvalido):
 		return apperrors.Validation("o relato da tarefa tem no máximo 4000 caracteres")
 	case errors.Is(err, domain.ErrAnexoNaoEncontrado):
@@ -162,6 +164,29 @@ func (s *Service) fixarPessoa(ctx context.Context, db database.DBTX, unidade, id
 	}
 	if id != nil {
 		canon, err := s.repo.NomeDaPessoa(ctx, db, *id, unidade)
+		if err != nil {
+			return nil, "", err
+		}
+		return id, canon, nil
+	}
+	if nome == "" {
+		return nil, "", nil
+	}
+	if nome == strings.TrimSpace(nomeGuardado) {
+		return idGuardado, nomeGuardado, nil
+	}
+	return nil, "", domain.ErrPessoaInvalida
+}
+
+// fixarResponsavel aceita quem pode gerir projetos da entidade, mesmo sem
+// lotação gravada na unidade do projeto.
+func (s *Service) fixarResponsavel(ctx context.Context, db database.DBTX, unidade, id *uuid.UUID, nome, nomeGuardado string, idGuardado *uuid.UUID) (*uuid.UUID, string, error) {
+	nome = strings.TrimSpace(nome)
+	if id != nil && *id == uuid.Nil {
+		id = nil
+	}
+	if id != nil {
+		canon, err := s.repo.NomeDeResponsavel(ctx, db, *id, unidade)
 		if err != nil {
 			return nil, "", err
 		}
@@ -827,7 +852,7 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 		if err := s.conferirPredecessora(ctx, tx, projetoID, t.ID, predecessoraID, t.Estado); err != nil {
 			return err
 		}
-		gid, gnome, err := s.fixarPessoa(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, "", nil)
+		gid, gnome, err := s.fixarResponsavel(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, "", nil)
 		if err != nil {
 			return err
 		}
@@ -883,7 +908,7 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		if err := s.conferirPredecessora(ctx, tx, atual.ProjetoID, id, predecessoraID, estadoEfetivo(estado)); err != nil {
 			return err
 		}
-		gid, gnome, err := s.fixarPessoa(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
+		gid, gnome, err := s.fixarResponsavel(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
 		if err != nil {
 			return err
 		}
@@ -913,11 +938,14 @@ func (s *Service) ListarTarefas(ctx context.Context, idt auth.Identity, projetoI
 	return s.repo.ListarTarefas(ctx, s.pool, projetoID)
 }
 
-func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID) error {
+func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, confirmar string) error {
 	return database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		atual, err := s.repo.ObterTarefa(ctx, tx, id)
 		if err != nil {
 			return err
+		}
+		if strings.TrimSpace(confirmar) != strings.TrimSpace(atual.Titulo) {
+			return domain.ErrExclusaoNaoConfirmada
 		}
 		projeto, err := s.repo.Obter(ctx, tx, atual.ProjetoID)
 		if err != nil {
@@ -933,12 +961,23 @@ func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.
 			return err
 		}
 		if s.outbox != nil {
-			if err := s.outbox.Write(ctx, tx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), uuid.Nil, map[string]any{"id": id}); err != nil {
+			if err := s.outbox.Write(ctx, tx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), uuid.Nil, map[string]any{"id": id, "titulo": atual.Titulo}); err != nil {
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), nil, nil))
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), atual, nil))
 	})
+}
+
+func (s *Service) ListarResponsaveis(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Responsavel, error) {
+	projeto, err := s.repo.Obter(ctx, s.pool, projetoID)
+	if err != nil {
+		return nil, err
+	}
+	if !s.podeGerir(idt, projeto.UnidadeID) {
+		return nil, domain.ErrForaDoEscopo
+	}
+	return s.repo.ListarResponsaveis(ctx, s.pool, projeto.UnidadeID)
 }
 
 func (s *Service) ListarVinculos(ctx context.Context, idt auth.Identity, projetoID uuid.UUID) ([]domain.Vinculo, error) {

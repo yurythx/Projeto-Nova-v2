@@ -42,6 +42,8 @@ type Repository interface {
 	ListarMovimentos(ctx context.Context, db database.DBTX, tarefaID uuid.UUID) ([]Movimento, error)
 	PrazosVencidos(ctx context.Context, db database.DBTX, agora time.Time) ([]PrazoTarefa, []PrazoProjeto, error)
 	NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
+	ListarResponsaveis(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Responsavel, error)
+	NomeDeResponsavel(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)
 	ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error
 

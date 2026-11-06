@@ -2,10 +2,11 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 
-import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
+import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
 import { useAction, fmtDateTime } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
@@ -78,15 +79,15 @@ function tipoDoArquivo(file: File): string {
 export function TarefaPainel({
   tarefa,
   projetoId,
-  unidadeId,
   mutavel,
+  onExcluir,
   onClose,
   onSaved,
 }: {
   tarefa: Tarefa | null;
   projetoId: string;
-  unidadeId?: string;
   mutavel: boolean;
+  onExcluir?: (tarefa: Tarefa) => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -94,12 +95,14 @@ export function TarefaPainel({
   const [relato, setRelato] = useState("");
   const [resp, setResp] = useState({ id: "", nome: "" });
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [confirmacao, setConfirmacao] = useState("");
 
   useEffect(() => {
     if (!tarefa) return;
     setRelato(tarefa.relato ?? "");
     setResp({ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome ?? "" });
     setArquivo(null);
+    setConfirmacao("");
   }, [tarefa]);
 
   const anexos = useApiQuery<AnexoTarefa[]>(
@@ -181,10 +184,8 @@ export function TarefaPainel({
       {tarefa && (
         <div className="mt-3 flex flex-col gap-4">
           {mutavel ? (
-            <PessoaDaUnidade
-              id="tarefa-responsavel-painel"
-              label="Responsável pela tarefa"
-              unidadeId={unidadeId}
+            <ResponsavelDaTarefa
+              projetoId={projetoId}
               value={resp}
               onChange={setResp}
             />
@@ -252,6 +253,31 @@ export function TarefaPainel({
               ))}
             </ul>
           </div>
+          {mutavel && onExcluir && (
+            <div className="flex flex-col gap-2 border-t border-surface-border pt-4">
+              <p className="text-sm font-medium text-foreground">Apagar tarefa</p>
+              <p className="text-xs text-muted">
+                Digite o título exato da tarefa para confirmar. Essa ação não tem volta.
+              </p>
+              <Input
+                id="tarefa-confirmar-exclusao"
+                label="Título para confirmar"
+                value={confirmacao}
+                onChange={(e) => setConfirmacao(e.target.value)}
+                autoComplete="off"
+              />
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                className="self-start"
+                disabled={pending || confirmacao.trim() !== tarefa.titulo.trim()}
+                onClick={() => onExcluir(tarefa)}
+              >
+                Apagar tarefa
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Dialog>

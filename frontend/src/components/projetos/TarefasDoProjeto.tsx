@@ -11,7 +11,6 @@ import {
 } from "@/components/plataforma/Faixas";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { rotuloQuadro } from "@/components/plataforma/useQuadro";
-import { Button } from "@/components/ui/Button";
 import { TableCell } from "@/components/ui/Table";
 import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
 
@@ -23,7 +22,6 @@ const CABECALHOS = [
   { id: "responsavel", rotulo: "Responsável" },
   { id: "estado", rotulo: "Estado" },
   { id: "prazo", rotulo: "Prazo" },
-  { id: "acoes", rotulo: "Ações", oculta: true },
 ];
 
 function depoisDe(tarefas: Tarefa[], id?: string) {
@@ -42,7 +40,6 @@ export function TarefasDoProjeto({
   onVista,
   onMover,
   onRenomear,
-  onExcluir,
   onAbrir,
 }: {
   projetoId: string;
@@ -55,7 +52,6 @@ export function TarefasDoProjeto({
   onVista: (vista: "quadro" | "lista") => void;
   onMover: (tarefa: Tarefa, estado: EstadoTarefa) => void;
   onRenomear?: (tarefa: Tarefa, nome: string) => void;
-  onExcluir: (tarefa: Tarefa) => void;
   onAbrir: (tarefa: Tarefa) => void;
 }) {
   const look = useAparencia(`nova-faixas:tarefas:${projetoId}`);
@@ -149,18 +145,6 @@ export function TarefasDoProjeto({
                 <TableCell>
                   <span className="text-sm text-muted">{diaBrasil(t.data_limite) || "Sem prazo"}</span>
                 </TableCell>
-                <TableCell>
-                  {mutavel && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onExcluir(t)}
-                      aria-label={`Excluir tarefa ${t.titulo}`}
-                    >
-                      &times;
-                    </Button>
-                  )}
-                </TableCell>
               </>
             );
           }}
@@ -203,19 +187,7 @@ export function TarefasDoProjeto({
                   <span className="text-[11px] text-muted">Atribua alguém para mover</span>
                 )}
                 {anterior && <span className="text-[11px] text-muted">Depois de {anterior}</span>}
-                {mutavel && (
-                  <div className="flex items-center gap-2">
-                    {estadoDa(t)}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onExcluir(t)}
-                      aria-label={`Excluir tarefa ${t.titulo}`}
-                    >
-                      &times;
-                    </Button>
-                  </div>
-                )}
+                {mutavel && estadoDa(t)}
               </div>
             );
           }}

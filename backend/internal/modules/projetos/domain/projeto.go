@@ -50,6 +50,7 @@ var (
 	ErrPredecessoraInvalida     = errors.New("projetos: predecessora inválida")
 	ErrPredecessoraAberta       = errors.New("projetos: a tarefa anterior ainda não foi concluída")
 	ErrResponsavelObrigatorio   = errors.New("projetos: a tarefa precisa de um responsável para ser movida")
+	ErrExclusaoNaoConfirmada    = errors.New("projetos: confirme o título da tarefa para apagar")
 	ErrRelatoInvalido           = errors.New("projetos: relato longo demais")
 	ErrAnexoNaoEncontrado       = errors.New("projetos: anexo não encontrado")
 	ErrPrioridadeInvalida       = errors.New("projetos: prioridade inválida")
