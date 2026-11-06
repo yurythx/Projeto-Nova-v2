@@ -2,15 +2,12 @@
 
 import { ArrowLeft, Clock, Link2, Plus, Printer, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useIdDaRota, usePainelEmbutido } from "@/components/plataforma/PainelDoQuadro";
 import { type FormEvent, Suspense, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
 import {
-  ListaFaixas,
-  NomeClicavel,
-  Quadro,
   colunasEmOrdem,
   ordenarColunas,
   seloDoEstado,
@@ -23,6 +20,7 @@ import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { Painel5W2H } from "@/components/projetos/Painel5W2H";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
 import { TarefaPainel } from "@/components/projetos/TarefaPainel";
+import { TarefasDoProjeto } from "@/components/projetos/TarefasDoProjeto";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
 import { Badge } from "@/components/ui/Badge";
@@ -41,10 +39,8 @@ import type { Ativo, Mudanca, Problema } from "@/lib/servicos/servicos";
 import {
   ESTADO_PROJETO,
   ESTADO_TAREFA,
-  GRADE_TAREFA,
   PRIORIDADE_PROJETO,
   TIPO_VINCULO_PROJETO,
-  dataCurta,
   type ApontamentoHora,
   type EstadoProjeto,
   type EstadoTarefa,
@@ -71,10 +67,26 @@ export function ProjetoDetalheConteudo() {
   const le = gere || can("projetos:read");
   const { filtrarPorEntidade } = useEntityFilter();
   const params = useSearchParams();
+  const router = useRouter();
   const [aba, setAba] = useState<"ficha" | "5w2h">(
     params.get("vista") === "5w2h" ? "5w2h" : "ficha",
   );
-  const [vistaTarefas, setVistaTarefas] = useState<"quadro" | "lista">("quadro");
+  const daUrl = params.get("tarefas") === "lista" ? "lista" : "quadro";
+  const [vistaTarefas, setVistaTarefas] = useState<"lista" | "quadro">(daUrl);
+  const [urlTarefas, setUrlTarefas] = useState(daUrl);
+  if (urlTarefas !== daUrl) {
+    setUrlTarefas(daUrl);
+    setVistaTarefas(daUrl);
+  }
+
+  function trocarVistaTarefas(proxima: "lista" | "quadro") {
+    setVistaTarefas(proxima);
+    const consulta = new URLSearchParams(params.toString());
+    if (proxima === "lista") consulta.set("tarefas", "lista");
+    else consulta.delete("tarefas");
+    const sufixo = consulta.toString();
+    router.replace(sufixo ? `?${sufixo}` : "?", { scroll: false });
+  }
 
   const { run, pending } = useAction();
   const lookTarefas = useAparencia(id ? `nova-faixas:tarefas:${id}` : "nova-faixas:tarefas:sem");
@@ -606,207 +618,26 @@ export function ProjetoDetalheConteudo() {
                 )}
               </CardHeader>
               <CardContent className="pb-5">
-                <SectionTabsInline
-                  label="Forma de ver as tarefas"
-                  value={vistaTarefas}
-                  onChange={setVistaTarefas}
-                  tabs={[
-                    { value: "quadro", label: "Cartões" },
-                    { value: "lista", label: "Lista" },
-                  ]}
-                />
                 <DataState
                   loading={tarefas.isLoading}
                   error={tarefas.error}
                   onRetry={() => void tarefas.mutate()}
                   empty={false}
                 >
-                  {listaTarefas.length === 0 && (
-                    <p className="mb-3 text-sm text-muted">
-                      Nenhuma tarefa criada. Adicione a primeira tarefa para estruturar as entregas
-                      deste projeto.
-                    </p>
-                  )}
-                  {vistaTarefas === "lista" ? (
-                    <ListaFaixas
-                      rotulo="Lista de tarefas"
-                      memoria={`nova-faixas:tarefas-lista:${p.id}`}
-                      aparencia={`nova-faixas:tarefas:${p.id}`}
-                      colunas={colunasTarefa}
-                      {...controlesTarefas}
-                      itens={listaTarefas}
-                      colunaDe={(t) => t.estado}
-                      idDe={(t) => t.id}
-                      nomeDe={(t) => t.titulo}
-                      aoAbrir={(t) => setTarefaAberta(t.id)}
-                      aoRenomear={
-                        mutavel ? (t, nome) => void renomearTarefa(t, nome) : undefined
-                      }
-                      denso
-                      cabecalho={
-                        <div className={GRADE_TAREFA}>
-                          <span>Tarefa</span>
-                          <span>Responsável</span>
-                          <span>Estado</span>
-                          <span>Prazo</span>
-                          <span className="sr-only">Ações</span>
-                        </div>
-                      }
-                      render={(t, vista) => (
-                        <div className={GRADE_TAREFA} data-testid={`tarefa-${t.id}`}>
-                          <div className="min-w-0">
-                            <NomeClicavel
-                              nome={vista.titulo || t.titulo}
-                              onSalvar={vista.salvarNome}
-                              className="block truncate text-left text-sm font-medium text-foreground hover:underline"
-                            />
-                            {t.predecessora_id && (
-                              <p className="truncate text-[11px] text-muted">
-                                Depois de{" "}
-                                {listaTarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
-                                  "outra tarefa"}
-                              </p>
-                            )}
-                          </div>
-                          <span className="truncate text-sm text-foreground">
-                            {t.responsavel_nome || "Sem responsável"}
-                          </span>
-                          {mutavel ? (
-                            <Select
-                              value={t.estado}
-                              disabled={!t.responsavel_id}
-                              onChange={(e) =>
-                                void atualizarTarefaEstado(t, e.target.value as EstadoTarefa)
-                              }
-                              aria-label={`Estado da tarefa ${t.titulo}`}
-                              options={ordenarColunas(
-                                catalogoTarefas.colunas.filter(
-                                  (coluna) => coluna.ativa !== false || coluna.id === t.estado,
-                                ),
-                              ).map((coluna) => ({
-                                value: coluna.id,
-                                label: rotuloQuadro(
-                                  catalogoTarefas.oficial,
-                                  catalogoTarefas.colunas,
-                                  lookTarefas.gravado,
-                                  coluna.id,
-                                ),
-                              }))}
-                            />
-                          ) : (
-                            <span className="text-sm text-muted">
-                              {seloDoEstado(catalogoTarefas.colunas, t.estado, ESTADO_TAREFA[t.estado]).label}
-                            </span>
-                          )}
-                          <span className="text-sm text-muted">
-                            {dataCurta(t.data_limite) || "Sem prazo"}
-                          </span>
-                          {mutavel ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => void excluirTarefa(t)}
-                              aria-label={`Excluir tarefa ${t.titulo}`}
-                            >
-                              &times;
-                            </Button>
-                          ) : (
-                            <span />
-                          )}
-                        </div>
-                      )}
-                    />
-                  ) : (
-                  <Quadro
-                    rotulo="Quadro de tarefas"
-                    memoria={`nova-faixas:tarefas:${p.id}`}
-                    aparencia={`nova-faixas:tarefas:${p.id}`}
+                  <TarefasDoProjeto
+                    projetoId={p.id}
+                    tarefas={listaTarefas}
                     colunas={colunasTarefa}
-                    {...controlesTarefas}
-                    itens={listaTarefas}
-                    colunaDe={(t) => t.estado}
-                    idDe={(t) => t.id}
-                    nomeDe={(t) => t.titulo}
+                    oficial={catalogoTarefas.oficial}
+                    mutavel={mutavel}
                     pending={pending}
-                    arrastavel={(t) => mutavel && Boolean(t.responsavel_id)}
-                    podeSoltar={(t, coluna) =>
-                      Boolean(t.responsavel_id) &&
-                      t.estado !== coluna &&
-                      catalogoTarefas.colunas.find((item) => item.id === coluna)?.ativa !== false
-                    }
-                    aoSoltar={(t, coluna) => void atualizarTarefaEstado(t, coluna as EstadoTarefa)}
-                    aoAbrir={(t) => setTarefaAberta(t.id)}
-                    aoRenomear={
-                      mutavel
-                        ? (t, nome) => void renomearTarefa(t, nome)
-                        : undefined
-                    }
-                    render={(t, vista) => {
-                      return (
-                        <div className="flex flex-col gap-1.5" data-testid={`tarefa-${t.id}`}>
-                          <NomeClicavel
-                            nome={vista.titulo || t.titulo}
-                            onSalvar={vista.salvarNome}
-                            className="line-clamp-2 text-left text-sm font-medium text-foreground hover:underline"
-                          />
-                          <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-                            <span className="truncate">
-                              {t.responsavel_nome || "Sem responsável"}
-                            </span>
-                            <span className="shrink-0">
-                              {dataCurta(t.data_limite) || "Sem prazo"}
-                            </span>
-                          </div>
-                          {!t.responsavel_id && (
-                            <span className="text-[11px] text-muted">
-                              Atribua alguém para mover
-                            </span>
-                          )}
-                          {t.predecessora_id && (
-                            <span className="text-[11px] text-muted">
-                              Depois de{" "}
-                              {listaTarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
-                                "outra tarefa"}
-                            </span>
-                          )}
-                          {mutavel && (
-                            <div className="flex items-center gap-2">
-                              <Select
-                                value={t.estado}
-                                disabled={!t.responsavel_id}
-                                onChange={(e) =>
-                                  void atualizarTarefaEstado(t, e.target.value as EstadoTarefa)
-                                }
-                                aria-label={`Estado da tarefa ${t.titulo}`}
-                                options={ordenarColunas(
-                                  catalogoTarefas.colunas.filter(
-                                    (coluna) => coluna.ativa !== false || coluna.id === t.estado,
-                                  ),
-                                ).map((coluna) => ({
-                                  value: coluna.id,
-                                  label: rotuloQuadro(
-                                    catalogoTarefas.oficial,
-                                    catalogoTarefas.colunas,
-                                    lookTarefas.gravado,
-                                    coluna.id,
-                                  ),
-                                }))}
-                              />
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => void excluirTarefa(t)}
-                                aria-label={`Excluir tarefa ${t.titulo}`}
-                              >
-                                &times;
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }}
+                    vista={vistaTarefas}
+                    onVista={trocarVistaTarefas}
+                    onMover={(t, estado) => void atualizarTarefaEstado(t, estado)}
+                    onRenomear={mutavel ? (t, nome) => void renomearTarefa(t, nome) : undefined}
+                    onExcluir={(t) => void excluirTarefa(t)}
+                    onAbrir={(t) => setTarefaAberta(t.id)}
                   />
-                  )}
                 </DataState>
               </CardContent>
             </Card>

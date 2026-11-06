@@ -101,19 +101,6 @@ export const PRIORIDADE_PROJETO: Record<PrioridadeProjeto, { label: string; tone
   critica: { label: "Crítica", tone: "danger" },
 };
 
-export function dataCurta(iso?: string | null): string {
-  if (!iso) return "";
-  const data = new Date(iso);
-  if (Number.isNaN(data.getTime())) return "";
-  return data.toLocaleDateString("pt-BR");
-}
-
-export const GRADE_PROJETO =
-  "grid min-w-[44rem] grid-cols-[4.5rem_minmax(0,1.6fr)_minmax(8rem,0.9fr)_6.5rem_7.5rem] items-center gap-3";
-
-export const GRADE_TAREFA =
-  "grid min-w-[40rem] grid-cols-[minmax(0,1.6fr)_minmax(8rem,0.8fr)_9.5rem_7rem_2rem] items-center gap-3";
-
 export const ESTADO_TAREFA: Record<EstadoTarefa, { label: string; tone: Tone }> = {
   a_fazer: { label: "A fazer", tone: "neutral" },
   em_andamento: { label: "Em andamento", tone: "info" },

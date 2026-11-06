@@ -12,10 +12,10 @@ import {
   type ControlesColuna,
 } from "@/components/plataforma/Faixas";
 import { Badge } from "@/components/ui/Badge";
+import { diaBrasil } from "@/components/projetos/datas";
 import {
   ESTADO_PROJETO,
   PRIORIDADE_PROJETO,
-  dataCurta,
   type EstadoProjeto,
   type Projeto,
 } from "@/lib/projetos/projetos";
@@ -105,7 +105,7 @@ export function ProjetosKanban({
             />
             <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
               <span className="truncate">{p.gerente_nome || "Sem responsável"}</span>
-              <span className="shrink-0">{dataCurta(p.data_fim_planejada) || "Sem prazo"}</span>
+              <span className="shrink-0">{diaBrasil(p.data_fim_planejada) || "Sem prazo"}</span>
             </div>
             {moves.length > 0 && (
               <label className="mt-1 flex flex-col gap-1 text-xs">

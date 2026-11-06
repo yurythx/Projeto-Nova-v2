@@ -482,10 +482,6 @@ interface FaixasProps<T> {
   testeId?: string;
   /** Nome, cor e ordem vêm das colunas. O navegador só guarda o recolher e o card. */
   oficial?: boolean;
-  /** Linha curta, no estilo de tabela: o seletor de cor fica no canto. */
-  denso?: boolean;
-  /** Rótulos das colunas, alinhados com a linha. Só aparece no grupo que tem item. */
-  cabecalho?: ReactNode;
 }
 
 /** Lista em faixas na largura da tela. Cada estado aparece, mesmo sem item,
@@ -506,8 +502,6 @@ export function ListaFaixas<T>({
   aoAbrir,
   testeId,
   oficial = false,
-  denso = false,
-  cabecalho,
 }: FaixasProps<T>) {
   const { recolhidas, alternar } = useFaixasRecolhidas(memoria);
   const look = useAparencia(aparencia ?? memoria);
@@ -553,14 +547,9 @@ export function ListaFaixas<T>({
               extra={extra?.(coluna.id)}
             />
             {!recolhida && (
-              <div className={denso ? "overflow-x-auto" : "flex flex-col gap-2 p-2"}>
+              <div className="flex flex-col gap-2 p-2">
                 {cartoes.length === 0 && (
                   <p className="px-1 py-2 text-sm text-muted">Nenhum item</p>
-                )}
-                {denso && cabecalho && cartoes.length > 0 && (
-                  <div className="px-3 py-1.5 pr-8 text-[11px] font-semibold uppercase tracking-wide text-muted">
-                    {cabecalho}
-                  </div>
                 )}
                 {cartoes.length > 0 && (
                   <ul className="flex flex-col">
@@ -573,16 +562,13 @@ export function ListaFaixas<T>({
                         <li
                           key={id}
                           onClick={(e) => cliqueAbre(e, aoAbrir ? () => aoAbrir(item) : undefined)}
-                          className={`min-w-0 border-b border-surface-border border-l-4 bg-surface last:border-b-0 ${
-                            denso ? "relative px-3 py-2 pr-8" : "px-3 py-3"
-                          } ${aoAbrir ? "cursor-pointer" : ""} ${faixa.className}`}
+                          className={`min-w-0 border-b border-surface-border border-l-4 bg-surface px-3 py-3 last:border-b-0 ${aoAbrir ? "cursor-pointer" : ""} ${faixa.className}`}
                           style={faixa.style}
                         >
                           <CorDoCard
                             nome={nome || titulo}
                             tom={coluna.tom}
                             cor={cor}
-                            canto={denso}
                             onCor={(valor) => look.salvarCartao(id, { cor: valor })}
                           />
                           {render(item, {
@@ -618,13 +604,11 @@ function CorDoCard({
   nome,
   tom,
   cor,
-  canto = false,
   onCor,
 }: {
   nome: string;
   tom: TomFaixa;
   cor?: string;
-  canto?: boolean;
   onCor: (cor: string) => void;
 }) {
   return (
@@ -634,9 +618,7 @@ function CorDoCard({
       value={cor || COR_PADRAO[tom]}
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => onCor(e.target.value)}
-      className={
-        canto ? `${swatch} absolute right-2 top-1/2 z-10 -translate-y-1/2` : swatch
-      }
+      className={swatch}
     />
   );
 }

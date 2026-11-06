@@ -76,6 +76,9 @@ describe("Projetos — Lista e Criação", () => {
     // Encontra o projeto existente
     expect(await screen.findByText("Expansão da Fibra Óptica")).toBeInTheDocument();
     expect(screen.getByText("#101")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Responsável" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Prazo" })).toBeInTheDocument();
+    expect(screen.getByText("Carlos Silva")).toBeInTheDocument();
 
     // Clica no botão de novo projeto
     await user.click(screen.getByTestId("novo-projeto-btn"));
@@ -404,6 +407,11 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(screen.getByText("Apontamento de Horas & Timesheet")).toBeInTheDocument();
     expect(screen.getByText("Mariana Engenheira")).toBeInTheDocument();
     expect(screen.getByText("Elaboração do termo de referência para compra")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Lista" }));
+    expect(screen.getByRole("columnheader", { name: "Tarefa" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Responsável" })).toBeInTheDocument();
+    expect(router.replace).toHaveBeenCalled();
 
     await user.click(screen.getByTestId("lancar-horas-btn"));
     expect(

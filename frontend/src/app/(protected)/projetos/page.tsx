@@ -9,7 +9,6 @@ import { FileSpreadsheet } from "lucide-react";
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { DataState } from "@/components/plataforma/DataState";
 import {
-  ListaFaixas,
   NomeClicavel,
   ordenarColunas,
   useAparencia,
@@ -20,6 +19,8 @@ import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
+import { ListaTabela } from "@/components/projetos/ListaTabela";
+import { diaBrasil } from "@/components/projetos/datas";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
 import { ProjetosCronograma } from "@/components/projetos/ProjetosCronograma";
 import { COLUNAS_PROJETO, ProjetosKanban } from "@/components/projetos/ProjetosKanban";
@@ -27,6 +28,7 @@ import { Wizard5W2H, type Corpo5W2H } from "@/components/projetos/Wizard5W2H";
 import { FiltroPorUnidade, filtrarPorUnidade } from "@/components/servicos/FiltroPorUnidade";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
+import { TableCell } from "@/components/ui/Table";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -37,9 +39,7 @@ import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import {
   ESTADO_PROJETO,
-  GRADE_PROJETO,
   PRIORIDADE_PROJETO,
-  dataCurta,
   type EstadoProjeto,
   type PrioridadeProjeto,
   type Projeto,
@@ -131,6 +131,7 @@ function ProjetosConteudo() {
       "Estado",
       "Prioridade",
       "Gerente",
+      "Prazo",
       "Orcamento",
       "CriadoEm",
     ];
@@ -140,6 +141,7 @@ function ProjetosConteudo() {
       ESTADO_PROJETO[p.estado]?.label ?? p.estado,
       PRIORIDADE_PROJETO[p.prioridade]?.label ?? p.prioridade,
       `"${(p.gerente_nome || "").replace(/"/g, '""')}"`,
+      diaBrasil(p.data_fim_planejada),
       Number(p.orcamento) || 0,
       new Date(p.created_at).toLocaleDateString("pt-BR"),
     ]);
@@ -355,51 +357,58 @@ function ProjetosConteudo() {
         ) : vista === "cronograma" ? (
           <ProjetosCronograma projetos={lista} />
         ) : (
-          <ListaFaixas
+          <ListaTabela
             rotulo="Lista de projetos"
             memoria="nova-faixas:projetos-lista"
             aparencia="nova-faixas:projetos"
             colunas={colunas}
-            {...controles}
+            oficial={controles.oficial}
             itens={lista}
             colunaDe={(p) => p.estado}
             idDe={(p) => p.id}
             nomeDe={(p) => p.titulo}
             aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
             aoAbrir={(p) => painel.abrir(p.id)}
-            denso
-            cabecalho={
-              <div className={GRADE_PROJETO}>
-                <span>#</span>
-                <span>Projeto</span>
-                <span>Responsável</span>
-                <span>Prioridade</span>
-                <span>Prazo</span>
-              </div>
-            }
+            cabecalhos={[
+              { id: "numero", rotulo: "#" },
+              { id: "projeto", rotulo: "Projeto" },
+              { id: "responsavel", rotulo: "Responsável" },
+              { id: "prioridade", rotulo: "Prioridade" },
+              { id: "prazo", rotulo: "Prazo" },
+            ]}
             render={(p, vista) => {
               const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
               return (
-                <div className={GRADE_PROJETO}>
-                  <span className="font-mono text-sm font-semibold text-primary">#{p.numero}</span>
-                  <NomeClicavel
-                    nome={vista.titulo || p.titulo}
-                    href={`/projetos/${p.id}`}
-                    onSalvar={vista.salvarNome}
-                    className="truncate text-left text-sm font-semibold text-foreground hover:underline"
-                  />
-                  <span className="truncate text-sm text-foreground">
-                    {p.gerente_nome || "Sem responsável"}
-                  </span>
-                  {prioridadeMeta ? (
-                    <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
-                  ) : (
-                    <span className="text-sm text-muted">—</span>
-                  )}
-                  <span className="text-sm text-muted">
-                    {dataCurta(p.data_fim_planejada) || "Sem prazo"}
-                  </span>
-                </div>
+                <>
+                  <TableCell>
+                    <span className="font-mono text-sm font-semibold text-primary">#{p.numero}</span>
+                  </TableCell>
+                  <TableCell>
+                    <NomeClicavel
+                      nome={vista.titulo || p.titulo}
+                      href={`/projetos/${p.id}`}
+                      onSalvar={vista.salvarNome}
+                      className="truncate text-left text-sm font-semibold text-foreground hover:underline"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-foreground">
+                      {p.gerente_nome || "Sem responsável"}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {prioridadeMeta ? (
+                      <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
+                    ) : (
+                      <span className="text-sm text-muted">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted">
+                      {diaBrasil(p.data_fim_planejada) || "Sem prazo"}
+                    </span>
+                  </TableCell>
+                </>
               );
             }}
           />
