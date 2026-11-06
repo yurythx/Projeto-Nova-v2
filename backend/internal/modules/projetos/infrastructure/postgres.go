@@ -112,7 +112,10 @@ func (r *Repository) Listar(ctx context.Context, db database.DBTX, f domain.Filt
 	args := []any{}
 	n := 1
 
-	q := fmt.Sprintf(`SELECT %s FROM projetos WHERE 1=1`, colunasProjeto)
+	q := fmt.Sprintf(`SELECT %s,
+		(SELECT count(*) FROM projetos_tarefas t WHERE t.projeto_id = projetos.id),
+		(SELECT count(*) FILTER (WHERE t.estado = 'concluida') FROM projetos_tarefas t WHERE t.projeto_id = projetos.id)
+		FROM projetos WHERE 1=1`, colunasProjeto)
 
 	if f.Estado != "" {
 		q += fmt.Sprintf(` AND estado = $%d`, n)
@@ -159,10 +162,18 @@ func (r *Repository) Listar(ctx context.Context, db database.DBTX, f domain.Filt
 
 	var lista []domain.Projeto
 	for rows.Next() {
-		item, err := scanProjeto(rows)
+		var item domain.Projeto
+		err := rows.Scan(
+			&item.ID, &item.Numero, &item.Titulo, &item.Descricao, &item.Objetivo, &item.Estado, &item.Prioridade,
+			&item.DataInicioPlanejada, &item.DataFimPlanejada, &item.DataInicioReal, &item.DataFimReal,
+			&item.Orcamento, &item.UnidadeID, &item.ProdutoID, &item.GerenteID, &item.GerenteNome,
+			&item.CreatedAt, &item.UpdatedAt, &item.TarefasTotal, &item.TarefasConcluidas,
+		)
 		if err != nil {
 			return nil, mapDB(err)
 		}
+		item.Proximos = domain.ProximosEstados(item.Estado)
+		item.Tarefas = []domain.Tarefa{}
 		lista = append(lista, item)
 	}
 	if err := rows.Err(); err != nil {

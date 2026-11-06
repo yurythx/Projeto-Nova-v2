@@ -12,6 +12,7 @@ import {
   type ControlesColuna,
 } from "@/components/plataforma/Faixas";
 import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { ProgressoProjeto } from "@/components/projetos/ProgressoProjeto";
 import { Badge } from "@/components/ui/Badge";
 import { diaBrasil } from "@/components/projetos/datas";
 import {
@@ -108,6 +109,11 @@ export function ProjetosKanban({
               <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} className="min-w-0" />
               <span className="shrink-0">{diaBrasil(p.data_fim_planejada) || "Sem prazo"}</span>
             </div>
+            <ProgressoProjeto
+              titulo={p.titulo}
+              total={p.tarefas_total}
+              concluidas={p.tarefas_concluidas}
+            />
             {moves.length > 0 && (
               <label className="mt-1 flex flex-col gap-1 text-xs">
                 <span className="sr-only">Mudar estado de {p.titulo}</span>

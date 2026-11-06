@@ -164,7 +164,7 @@ describe("Projetos — Detalhes e Tarefas", () => {
     const user = userEvent.setup();
     mockBackend({
       ...identityRoutes(perms("projetos:read")),
-      "GET v1/projetos": { data: [projeto()] },
+      "GET v1/projetos": { data: [projeto({ tarefas_total: 4, tarefas_concluidas: 1 })] },
       "GET v1/projetos/proj-1/tarefas": {
         data: [tarefa({ responsavel_id: "u-mariana", responsavel_nome: "Mariana Costa" })],
       },
@@ -179,6 +179,10 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(await screen.findByText("Comprar cabos de fibra")).toBeInTheDocument();
     expect(screen.getByText("A fazer")).toBeInTheDocument();
     expect(screen.getByText("Mariana Costa")).toBeInTheDocument();
+    expect(screen.getByRole("meter", { name: "Progresso de Expansão da Fibra Óptica" })).toHaveAttribute(
+      "aria-valuenow",
+      "25",
+    );
   });
 
   it("exibe informações do projeto e permite adicionar tarefas", async () => {

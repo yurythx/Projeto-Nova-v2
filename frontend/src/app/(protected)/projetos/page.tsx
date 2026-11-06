@@ -22,6 +22,7 @@ import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { useAction } from "@/components/plataforma/useAction";
 import { CargaEquipe, MeuTrabalho } from "@/components/projetos/MeuTrabalho";
 import { ListaTabela } from "@/components/projetos/ListaTabela";
+import { ProgressoProjeto } from "@/components/projetos/ProgressoProjeto";
 import { TarefasNaLista } from "@/components/projetos/TarefasNaLista";
 import { diaBrasil } from "@/components/projetos/datas";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
@@ -416,6 +417,7 @@ function ProjetosConteudo() {
               { id: "projeto", rotulo: "Projeto" },
               { id: "responsavel", rotulo: "Responsável" },
               { id: "prioridade", rotulo: "Prioridade" },
+              { id: "progresso", rotulo: "Progresso" },
               { id: "prazo", rotulo: "Prazo" },
             ]}
             render={(p, vista) => {
@@ -446,6 +448,13 @@ function ProjetosConteudo() {
                     ) : (
                       <span className="text-sm text-muted">—</span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <ProgressoProjeto
+                      titulo={p.titulo}
+                      total={p.tarefas_total}
+                      concluidas={p.tarefas_concluidas}
+                    />
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted">

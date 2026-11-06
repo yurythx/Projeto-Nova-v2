@@ -23,6 +23,8 @@ export interface Projeto {
   produto_id?: string;
   gerente_id?: string;
   gerente_nome: string;
+  tarefas_total?: number;
+  tarefas_concluidas?: number;
   created_at: string;
   updated_at: string;
   pode_reabrir?: boolean;
@@ -113,6 +115,13 @@ export const PRIORIDADE_PROJETO: Record<PrioridadeProjeto, { label: string; tone
   alta: { label: "Alta", tone: "warning" },
   critica: { label: "Crítica", tone: "danger" },
 };
+
+/** Fatia das tarefas concluídas, como a coluna de progresso da lista. */
+export function porcentagemDoProjeto(total?: number, concluidas?: number): number {
+  const todas = total ?? 0;
+  if (todas <= 0) return 0;
+  return Math.round(((concluidas ?? 0) / todas) * 100);
+}
 
 export const ESTADO_TAREFA: Record<EstadoTarefa, { label: string; tone: Tone }> = {
   a_fazer: { label: "A fazer", tone: "neutral" },

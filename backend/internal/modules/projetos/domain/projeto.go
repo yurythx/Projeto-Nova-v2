@@ -147,6 +147,8 @@ type Projeto struct {
 	ProdutoID           *uuid.UUID  `json:"produto_id,omitempty"`
 	GerenteID           *uuid.UUID  `json:"gerente_id,omitempty"`
 	GerenteNome         string      `json:"gerente_nome"`
+	TarefasTotal        int         `json:"tarefas_total"`
+	TarefasConcluidas   int         `json:"tarefas_concluidas"`
 	CreatedAt           time.Time   `json:"created_at"`
 	UpdatedAt           time.Time   `json:"updated_at"`
 	Proximos            []string    `json:"proximos"`
