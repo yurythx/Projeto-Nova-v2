@@ -71,17 +71,26 @@ export function TarefasDoProjeto({
   const [atrasadas, setAtrasadas] = useState(false);
   const [semana, setSemana] = useState(false);
   const [pessoaAberta, setPessoaAberta] = useState<string | null>(null);
+  const raizes = useMemo(() => tarefas.filter((t) => !t.pai_id), [tarefas]);
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
-    return tarefas.filter((t) => {
-      if (termo && !t.titulo.toLocaleLowerCase("pt-BR").includes(termo)) return false;
-      if (minhas && t.responsavel_id !== usuarioId) return false;
-      const faixa = faixaDoPrazo(t.data_limite);
-      if (atrasadas && faixa !== "atrasada") return false;
-      if (semana && faixa !== "semana") return false;
+    return raizes.filter((t) => {
+      const filhas = tarefas.filter((item) => item.pai_id === t.id);
+      const grupo = [t, ...filhas];
+      if (termo && !grupo.some((item) => item.titulo.toLocaleLowerCase("pt-BR").includes(termo))) return false;
+      if (minhas && !grupo.some((item) => item.responsavel_id === usuarioId)) return false;
+      if (atrasadas || semana) {
+        const passa = grupo.some((item) => {
+          const faixa = faixaDoPrazo(item.data_limite);
+          if (atrasadas && faixa !== "atrasada") return false;
+          if (semana && faixa !== "semana") return false;
+          return true;
+        });
+        if (!passa) return false;
+      }
       return true;
     });
-  }, [atrasadas, busca, minhas, semana, tarefas, usuarioId]);
+  }, [atrasadas, busca, minhas, raizes, semana, tarefas, usuarioId]);
 
   function estadoDa(t: Tarefa) {
     const ativas = ordenarColunas(
@@ -141,10 +150,10 @@ export function TarefasDoProjeto({
           { value: "lista", label: "Lista" },
         ]}
       />
-      {tarefas.length > 0 && visiveis.length === 0 && (
+      {raizes.length > 0 && visiveis.length === 0 && (
         <p className="text-sm text-muted">Nenhuma tarefa com esse filtro.</p>
       )}
-      {tarefas.length === 0 && (
+      {raizes.length === 0 && (
         <p className="text-sm text-muted">
           Nenhuma tarefa criada. Adicione a primeira tarefa para estruturar as entregas deste
           projeto.
@@ -166,6 +175,8 @@ export function TarefasDoProjeto({
           cabecalhos={CABECALHOS}
           render={(t, vistaCard) => {
             const anterior = depoisDe(tarefas, t.predecessora_id);
+            const filhas = tarefas.filter((item) => item.pai_id === t.id);
+            const feitas = filhas.filter((item) => item.estado === "concluida").length;
             return (
               <>
                 <TableCell>
@@ -173,6 +184,11 @@ export function TarefasDoProjeto({
                     {nome(t, vistaCard, "block truncate text-left text-sm font-medium text-foreground hover:underline")}
                     {anterior && (
                       <p className="truncate text-[11px] text-muted">Depois de {anterior}</p>
+                    )}
+                    {filhas.length > 0 && (
+                      <p className="text-[11px] text-muted">
+                        {feitas} de {filhas.length} subtarefas
+                      </p>
                     )}
                   </div>
                 </TableCell>
@@ -228,6 +244,8 @@ export function TarefasDoProjeto({
           aoRenomear={onRenomear}
           render={(t, vistaCard) => {
             const anterior = depoisDe(tarefas, t.predecessora_id);
+            const filhas = tarefas.filter((item) => item.pai_id === t.id);
+            const feitas = filhas.filter((item) => item.estado === "concluida").length;
             return (
               <div className="flex flex-col gap-1.5" data-testid={`tarefa-${t.id}`}>
                 {nome(
@@ -247,6 +265,11 @@ export function TarefasDoProjeto({
                   <span className="text-[11px] text-muted">Atribua alguém para mover</span>
                 )}
                 {anterior && <span className="text-[11px] text-muted">Depois de {anterior}</span>}
+                {filhas.length > 0 && (
+                  <span className="text-[11px] text-muted">
+                    {feitas} de {filhas.length} subtarefas
+                  </span>
+                )}
                 {mutavel && estadoDa(t)}
               </div>
             );

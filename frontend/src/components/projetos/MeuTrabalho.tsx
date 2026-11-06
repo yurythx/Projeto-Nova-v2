@@ -42,7 +42,7 @@ export function MeuTrabalho({ tarefas }: { tarefas: TarefaMinha[] }) {
                   <TableRow key={t.id}>
                     <TableCell>
                       <Link href={`/projetos/${t.projeto_id}`} className="text-sm font-medium hover:underline">
-                        {t.titulo}
+                        {t.pai_id ? `Subtarefa · ${t.titulo}` : t.titulo}
                       </Link>
                     </TableCell>
                     <TableCell>

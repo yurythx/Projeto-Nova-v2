@@ -7,15 +7,17 @@ export function ProgressoProjeto({
   titulo,
   total,
   concluidas,
+  unidade = "tarefas",
 }: {
   titulo: string;
   total?: number;
   concluidas?: number;
+  unidade?: string;
 }) {
   const pct = porcentagemDoProjeto(total, concluidas);
   const todas = total ?? 0;
   const feitas = concluidas ?? 0;
-  const conta = todas === 0 ? "Sem tarefas" : `${feitas} de ${todas} tarefas concluídas`;
+  const conta = todas === 0 ? `Sem ${unidade}` : `${feitas} de ${todas} ${unidade} concluídas`;
   return (
     <div className="flex min-w-[6.5rem] items-center gap-2" title={conta}>
       <div

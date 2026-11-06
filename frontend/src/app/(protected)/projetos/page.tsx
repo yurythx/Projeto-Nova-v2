@@ -411,7 +411,7 @@ function ProjetosConteudo() {
             idDe={(p) => p.id}
             nomeDe={(p) => p.titulo}
             aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
-            detalhe={(p) => <TarefasNaLista projetoId={p.id} titulo={p.titulo} />}
+            detalhe={(p) => <TarefasNaLista projetoId={p.id} titulo={p.titulo} podeCriar={gere} />}
             cabecalhos={[
               { id: "numero", rotulo: "#" },
               { id: "projeto", rotulo: "Projeto" },

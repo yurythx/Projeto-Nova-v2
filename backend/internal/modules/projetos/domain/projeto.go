@@ -49,6 +49,8 @@ var (
 	ErrTarefasAbertas           = errors.New("projetos: há tarefas em aberto")
 	ErrPredecessoraInvalida     = errors.New("projetos: predecessora inválida")
 	ErrPredecessoraAberta       = errors.New("projetos: a tarefa anterior ainda não foi concluída")
+	ErrSubtarefaInvalida        = errors.New("projetos: subtarefa inválida")
+	ErrSubtarefasAbertas        = errors.New("projetos: há subtarefas em aberto")
 	ErrResponsavelObrigatorio   = errors.New("projetos: a tarefa precisa de um responsável para ser movida")
 	ErrExclusaoNaoConfirmada    = errors.New("projetos: confirme o título da tarefa para apagar")
 	ErrRelatoInvalido           = errors.New("projetos: relato longo demais")
@@ -182,6 +184,7 @@ type Tarefa struct {
 	DataLimite      *time.Time `json:"data_limite,omitempty"`
 	Origem          string     `json:"origem,omitempty"`
 	PredecessoraID  *uuid.UUID `json:"predecessora_id,omitempty"`
+	PaiID           *uuid.UUID `json:"pai_id,omitempty"`
 	Relato          string     `json:"relato"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`

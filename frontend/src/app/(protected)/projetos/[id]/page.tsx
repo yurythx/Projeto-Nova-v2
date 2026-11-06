@@ -259,7 +259,7 @@ export function ProjetoDetalheConteudo() {
           responsavel_id: tarefaResp.id || undefined,
           responsavel_nome: tarefaResp.id ? tarefaResp.nome : "",
           estado: tarefaEstado,
-          ordem: listaTarefas.length + 1,
+          ordem: listaTarefas.filter((t) => !t.pai_id).length + 1,
           predecessora_id: tarefaPred || null,
         }),
       "Tarefa adicionada",
@@ -599,7 +599,7 @@ export function ProjetoDetalheConteudo() {
             {/* Cronograma Visual e Diagrama de Gantt */}
             <ProjetoGanttChart
               projeto={p}
-              tarefas={listaTarefas}
+              tarefas={listaTarefas.filter((t) => !t.pai_id)}
               vinculos={listaVinculos}
               podeEditar={mutavel}
             />
@@ -674,9 +674,12 @@ export function ProjetoDetalheConteudo() {
 
             <TarefaPainel
               tarefa={listaTarefas.find((item) => item.id === tarefaAberta) ?? null}
+              tarefas={listaTarefas}
               projetoId={id}
               mutavel={mutavel}
               onExcluir={(t) => void excluirTarefa(t)}
+              onMover={mutavel ? (t, estado) => void atualizarTarefaEstado(t, estado) : undefined}
+              onAbrir={(t) => setTarefaAberta(t.id)}
               onClose={() => setTarefaAberta(null)}
               onSaved={() => void tarefas.mutate()}
             />
@@ -725,7 +728,9 @@ export function ProjetoDetalheConteudo() {
                     value={tarefaPred}
                     onChange={(e) => setTarefaPred(e.target.value)}
                     placeholder="Nenhuma"
-                    options={listaTarefas.map((t) => ({ value: t.id, label: t.titulo }))}
+                    options={listaTarefas
+                      .filter((t) => !t.pai_id)
+                      .map((t) => ({ value: t.id, label: t.titulo }))}
                   />
 
                   <Select
@@ -1078,7 +1083,7 @@ export function ProjetoDetalheConteudo() {
                     { value: "", label: "Nenhuma (esforço geral do projeto)" },
                     ...listaTarefas.map((t) => ({
                       value: t.id,
-                      label: t.titulo,
+                      label: t.pai_id ? `Subtarefa · ${t.titulo}` : t.titulo,
                     })),
                   ]}
                 />

@@ -425,7 +425,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.RegistrarApontamento(ctx, admin, uuid.New(), nil, "", 1, "Ativ", 0); err == nil {
 		t.Fatal("apontamento em projeto inexistente deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil, nil, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
 		t.Fatalf("estado de tarefa inválido: %v", err)
 	}
 	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
@@ -447,7 +447,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err == nil {
 		t.Fatal("transicionar com erro de passagens deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil, nil, nil); err == nil {
 		t.Fatal("criar tarefa com erro de passagens deveria falhar")
 	}
 }
@@ -901,14 +901,14 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err != nil {
 		t.Fatal(err)
 	}
-	aberta, err := svc.CriarTarefa(ctx, admin, p.ID, "Aberta", "", nil, "", "a_fazer", 1, nil, nil)
+	aberta, err := svc.CriarTarefa(ctx, admin, p.ID, "Aberta", "", nil, "", "a_fazer", 1, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); !errors.Is(err, domain.ErrTarefasAbertas) {
 		t.Fatalf("concluir com tarefa aberta: %v", err)
 	}
-	segunda, err := svc.CriarTarefa(ctx, admin, p.ID, "Segunda", "", nil, "", "a_fazer", 2, nil, &aberta.ID)
+	segunda, err := svc.CriarTarefa(ctx, admin, p.ID, "Segunda", "", nil, "", "a_fazer", 2, nil, &aberta.ID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -945,7 +945,7 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, outro.ID, "Prazo", "", nil, "", "a_fazer", 1, nil, nil); err != nil {
+	if _, err := svc.CriarTarefa(ctx, admin, outro.ID, "Prazo", "", nil, "", "a_fazer", 1, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	svc.ComHoras(horasFalsas{total: 7.5})

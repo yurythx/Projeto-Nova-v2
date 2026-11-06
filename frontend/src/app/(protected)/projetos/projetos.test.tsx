@@ -166,7 +166,16 @@ describe("Projetos — Detalhes e Tarefas", () => {
       ...identityRoutes(perms("projetos:read")),
       "GET v1/projetos": { data: [projeto({ tarefas_total: 4, tarefas_concluidas: 1 })] },
       "GET v1/projetos/proj-1/tarefas": {
-        data: [tarefa({ responsavel_id: "u-mariana", responsavel_nome: "Mariana Costa" })],
+        data: [
+          tarefa({ responsavel_id: "u-mariana", responsavel_nome: "Mariana Costa" }),
+          tarefa({
+            id: "tar-2",
+            pai_id: "tar-1",
+            titulo: "Pedir cotação",
+            responsavel_nome: "João Lima",
+            estado: "concluida",
+          }),
+        ],
       },
     });
 
@@ -177,11 +186,17 @@ describe("Projetos — Detalhes e Tarefas", () => {
     );
 
     expect(await screen.findByText("Comprar cabos de fibra")).toBeInTheDocument();
+    expect(screen.getByText("Pedir cotação")).toBeInTheDocument();
     expect(screen.getByText("A fazer")).toBeInTheDocument();
     expect(screen.getByText("Mariana Costa")).toBeInTheDocument();
+    expect(screen.getByText("João Lima")).toBeInTheDocument();
     expect(screen.getByRole("meter", { name: "Progresso de Expansão da Fibra Óptica" })).toHaveAttribute(
       "aria-valuenow",
       "25",
+    );
+    expect(screen.getByRole("meter", { name: "Progresso de Comprar cabos de fibra" })).toHaveAttribute(
+      "aria-valuenow",
+      "100",
     );
   });
 

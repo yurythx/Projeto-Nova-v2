@@ -24,7 +24,7 @@ const colunasProjeto = `id, numero, titulo, descricao, objetivo, estado, priorid
 	orcamento, unidade_id, produto_id, gerente_id, gerente_nome, created_at, updated_at`
 
 const colunasTarefa = `id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem,
-	data_limite, created_at, updated_at, origem, predecessora_id, relato`
+	data_limite, created_at, updated_at, origem, predecessora_id, relato, pai_id`
 
 func scanProjeto(row interface{ Scan(...any) error }) (domain.Projeto, error) {
 	var p domain.Projeto
@@ -43,7 +43,7 @@ func scanTarefa(row interface{ Scan(...any) error }) (domain.Tarefa, error) {
 	var t domain.Tarefa
 	err := row.Scan(
 		&t.ID, &t.ProjetoID, &t.Titulo, &t.Descricao, &t.ResponsavelID, &t.ResponsavelNome, &t.Estado, &t.Ordem,
-		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem, &t.PredecessoraID, &t.Relato,
+		&t.DataLimite, &t.CreatedAt, &t.UpdatedAt, &t.Origem, &t.PredecessoraID, &t.Relato, &t.PaiID,
 	)
 	return t, err
 }
@@ -113,8 +113,8 @@ func (r *Repository) Listar(ctx context.Context, db database.DBTX, f domain.Filt
 	n := 1
 
 	q := fmt.Sprintf(`SELECT %s,
-		(SELECT count(*) FROM projetos_tarefas t WHERE t.projeto_id = projetos.id),
-		(SELECT count(*) FILTER (WHERE t.estado = 'concluida') FROM projetos_tarefas t WHERE t.projeto_id = projetos.id)
+		(SELECT count(*) FROM projetos_tarefas t WHERE t.projeto_id = projetos.id AND t.pai_id IS NULL),
+		(SELECT count(*) FILTER (WHERE t.estado = 'concluida') FROM projetos_tarefas t WHERE t.projeto_id = projetos.id AND t.pai_id IS NULL)
 		FROM projetos WHERE 1=1`, colunasProjeto)
 
 	if f.Estado != "" {
@@ -354,12 +354,12 @@ func (r *Repository) CriarTarefa(ctx context.Context, db database.DBTX, t *domai
 	}
 
 	const q = `INSERT INTO projetos_tarefas (
-		id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem, data_limite, created_at, updated_at, origem, predecessora_id
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		id, projeto_id, titulo, descricao, responsavel_id, responsavel_nome, estado, ordem, data_limite, created_at, updated_at, origem, predecessora_id, pai_id
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	RETURNING created_at, updated_at`
 
 	err := db.QueryRow(ctx, q,
-		t.ID, t.ProjetoID, t.Titulo, t.Descricao, t.ResponsavelID, t.ResponsavelNome, t.Estado, t.Ordem, t.DataLimite, t.CreatedAt, t.UpdatedAt, t.Origem, t.PredecessoraID,
+		t.ID, t.ProjetoID, t.Titulo, t.Descricao, t.ResponsavelID, t.ResponsavelNome, t.Estado, t.Ordem, t.DataLimite, t.CreatedAt, t.UpdatedAt, t.Origem, t.PredecessoraID, t.PaiID,
 	).Scan(&t.CreatedAt, &t.UpdatedAt)
 
 	return mapDB(err)
@@ -442,7 +442,7 @@ func (r *Repository) ListarTarefas(ctx context.Context, db database.DBTX, projet
 }
 
 const colunasTarefaAlias = `t.id, t.projeto_id, t.titulo, t.descricao, t.responsavel_id, t.responsavel_nome, t.estado, t.ordem,
-	t.data_limite, t.created_at, t.updated_at, t.origem, t.predecessora_id, t.relato`
+	t.data_limite, t.created_at, t.updated_at, t.origem, t.predecessora_id, t.relato, t.pai_id`
 
 func clausulaUnidade(restrito bool, n int) string {
 	if !restrito {
@@ -476,7 +476,7 @@ func (r *Repository) ListarMinhas(ctx context.Context, db database.DBTX, pessoa 
 		var item domain.TarefaMinha
 		if err := rows.Scan(
 			&item.ID, &item.ProjetoID, &item.Titulo, &item.Descricao, &item.ResponsavelID, &item.ResponsavelNome, &item.Estado, &item.Ordem,
-			&item.DataLimite, &item.CreatedAt, &item.UpdatedAt, &item.Origem, &item.PredecessoraID, &item.Relato,
+			&item.DataLimite, &item.CreatedAt, &item.UpdatedAt, &item.Origem, &item.PredecessoraID, &item.Relato, &item.PaiID,
 			&item.ProjetoNumero, &item.ProjetoTitulo, &item.ProjetoEstado,
 		); err != nil {
 			return nil, mapDB(err)

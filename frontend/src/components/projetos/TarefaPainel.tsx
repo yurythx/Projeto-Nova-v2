@@ -79,16 +79,22 @@ function tipoDoArquivo(file: File): string {
 
 export function TarefaPainel({
   tarefa,
+  tarefas = [],
   projetoId,
   mutavel,
   onExcluir,
+  onMover,
+  onAbrir,
   onClose,
   onSaved,
 }: {
   tarefa: Tarefa | null;
+  tarefas?: Tarefa[];
   projetoId: string;
   mutavel: boolean;
   onExcluir?: (tarefa: Tarefa) => void;
+  onMover?: (tarefa: Tarefa, estado: EstadoTarefa) => void;
+  onAbrir?: (tarefa: Tarefa) => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -97,6 +103,7 @@ export function TarefaPainel({
   const [resp, setResp] = useState({ id: "", nome: "" });
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [confirmacao, setConfirmacao] = useState("");
+  const [nova, setNova] = useState("");
 
   useEffect(() => {
     if (!tarefa) return;
@@ -104,6 +111,7 @@ export function TarefaPainel({
     setResp({ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome ?? "" });
     setArquivo(null);
     setConfirmacao("");
+    setNova("");
   }, [tarefa]);
 
   const anexos = useApiQuery<AnexoTarefa[]>(
@@ -133,6 +141,28 @@ export function TarefaPainel({
     if (ok) {
       onSaved();
       onClose();
+    }
+  }
+
+  async function criarSubtarefa(e: FormEvent) {
+    e.preventDefault();
+    if (!tarefa || tarefa.pai_id) return;
+    const titulo = nova.trim();
+    if (!titulo) return;
+    const filhas = tarefas.filter((item) => item.pai_id === tarefa.id);
+    const ok = await run(
+      () =>
+        apiClient.post(`v1/projetos/${projetoId}/tarefas`, {
+          titulo,
+          pai_id: tarefa.id,
+          estado: "a_fazer",
+          ordem: filhas.length + 1,
+        }),
+      "Subtarefa adicionada",
+    );
+    if (ok) {
+      setNova("");
+      onSaved();
     }
   }
 
@@ -199,6 +229,73 @@ export function TarefaPainel({
               className="text-sm text-muted"
             />
           )}
+          {tarefa.pai_id && (
+            <p className="text-xs text-muted">
+              Subtarefa de {tarefas.find((item) => item.id === tarefa.pai_id)?.titulo ?? "outra tarefa"}
+            </p>
+          )}
+          {!tarefa.pai_id && (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-foreground">Subtarefas</p>
+              {tarefas.filter((item) => item.pai_id === tarefa.id).length === 0 && (
+                <p className="text-xs text-muted">Nenhuma subtarefa. Use quando esta tarefa crescer.</p>
+              )}
+              <ul className="flex flex-col gap-2">
+                {tarefas
+                  .filter((item) => item.pai_id === tarefa.id)
+                  .map((filha) => (
+                    <li key={filha.id} className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        className="text-left text-sm text-foreground hover:underline"
+                        onClick={() => onAbrir?.(filha)}
+                      >
+                        {filha.titulo}
+                      </button>
+                      <PessoaComAvatar
+                        id={filha.responsavel_id}
+                        nome={filha.responsavel_nome}
+                        vazio="ninguém"
+                        className="text-xs text-muted"
+                      />
+                      {mutavel && onMover ? (
+                        <select
+                          aria-label={`Estado da subtarefa ${filha.titulo}`}
+                          value={filha.estado}
+                          disabled={pending || !filha.responsavel_id}
+                          onChange={(e) => onMover(filha, e.target.value as EstadoTarefa)}
+                          className="h-8 rounded-md border border-surface-border bg-surface px-2 text-xs text-foreground"
+                        >
+                          {(Object.keys(ESTADO_TAREFA) as EstadoTarefa[]).map((estado) => (
+                            <option key={estado} value={estado}>
+                              {ESTADO_TAREFA[estado].label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-muted">{rotuloEstado(filha.estado)}</span>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+              {mutavel && (
+                <form onSubmit={(e) => void criarSubtarefa(e)} className="flex items-center gap-2">
+                  <Input
+                    id="nova-subtarefa"
+                    value={nova}
+                    onChange={(e) => setNova(e.target.value)}
+                    placeholder="Nova subtarefa"
+                    aria-label="Nova subtarefa"
+                    maxLength={160}
+                    className="h-8"
+                  />
+                  <Button type="submit" size="sm" variant="secondary" disabled={pending || !nova.trim()}>
+                    Adicionar
+                  </Button>
+                </form>
+              )}
+            </div>
+          )}
           <Textarea
             id="tarefa-relato"
             label="Como foi feita"
@@ -263,6 +360,9 @@ export function TarefaPainel({
               <p className="text-sm font-medium text-foreground">Apagar tarefa</p>
               <p className="text-xs text-muted">
                 Digite o título exato da tarefa para confirmar. Essa ação não tem volta.
+                {tarefas.some((item) => item.pai_id === tarefa.id)
+                  ? " As subtarefas também são apagadas."
+                  : ""}
               </p>
               <Input
                 id="tarefa-confirmar-exclusao"

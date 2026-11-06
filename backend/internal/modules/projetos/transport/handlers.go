@@ -101,6 +101,7 @@ type TarefaRequest struct {
 	Ordem           int        `json:"ordem"`
 	DataLimite      *time.Time `json:"data_limite"`
 	PredecessoraID  *uuid.UUID `json:"predecessora_id"`
+	PaiID           *uuid.UUID `json:"pai_id"`
 }
 
 type VinculoRequest struct {
@@ -373,7 +374,7 @@ func (h *Handlers) CriarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID)
+	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID, req.PaiID)
 	if err != nil {
 		h.fail(w, r, err)
 		return

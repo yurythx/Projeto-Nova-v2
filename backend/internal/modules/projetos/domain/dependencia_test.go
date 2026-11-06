@@ -68,3 +68,33 @@ func TestCadeiaEConclusao(t *testing.T) {
 		t.Fatal("contagem de tarefas em aberto")
 	}
 }
+
+func TestSubtarefaUmNivel(t *testing.T) {
+	projeto := uuid.New()
+	pai := Tarefa{ID: uuid.New(), ProjetoID: projeto}
+	if err := PodeSerPai(pai, projeto); err != nil {
+		t.Fatalf("tarefa do projeto: %v", err)
+	}
+	filha := pai
+	filha.PaiID = &pai.ID
+	if err := PodeSerPai(filha, projeto); !errors.Is(err, ErrSubtarefaInvalida) {
+		t.Fatalf("segundo nível: %v", err)
+	}
+	outro := Tarefa{ID: uuid.New(), ProjetoID: uuid.New()}
+	if err := PodeSerPai(outro, projeto); !errors.Is(err, ErrSubtarefaInvalida) {
+		t.Fatalf("outro projeto: %v", err)
+	}
+	aberta := []Tarefa{{Estado: EstadoTarefaAFazer}}
+	if err := ConclusaoExigeSubtarefas(EstadoTarefaConcluida, aberta); !errors.Is(err, ErrSubtarefasAbertas) {
+		t.Fatalf("filha aberta: %v", err)
+	}
+	if err := ConclusaoExigeSubtarefas(EstadoTarefaEmAndamento, aberta); err != nil {
+		t.Fatalf("mover com filha aberta: %v", err)
+	}
+	if err := ConclusaoExigeSubtarefas(EstadoTarefaConcluida, []Tarefa{{Estado: EstadoTarefaConcluida}}); err != nil {
+		t.Fatalf("filhas prontas: %v", err)
+	}
+	if err := ConclusaoExigeSubtarefas(EstadoTarefaConcluida, nil); err != nil {
+		t.Fatalf("sem filha: %v", err)
+	}
+}

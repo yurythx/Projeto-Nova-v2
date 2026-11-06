@@ -58,6 +58,29 @@ func ValidarCadeia(tarefa, predecessora uuid.UUID, tarefas []Tarefa) error {
 	}
 }
 
+// PodeSerPai aceita uma tarefa do mesmo projeto que ainda não é subtarefa.
+// Subtarefa de subtarefa não existe.
+func PodeSerPai(pai Tarefa, projeto uuid.UUID) error {
+	if pai.ProjetoID != projeto || pai.PaiID != nil {
+		return ErrSubtarefaInvalida
+	}
+	return nil
+}
+
+// ConclusaoExigeSubtarefas trava a conclusão da tarefa enquanto alguma filha
+// estiver aberta. Sem filhas, a tarefa conclui como sempre.
+func ConclusaoExigeSubtarefas(estado string, filhas []Tarefa) error {
+	if estado != EstadoTarefaConcluida {
+		return nil
+	}
+	for _, filha := range filhas {
+		if filha.Estado != EstadoTarefaConcluida {
+			return ErrSubtarefasAbertas
+		}
+	}
+	return nil
+}
+
 // ConferirPredecessora só trava a conclusão. Várias tarefas podem estar
 // em andamento ao mesmo tempo; a anterior precisa estar concluída para
 // esta ser concluída.

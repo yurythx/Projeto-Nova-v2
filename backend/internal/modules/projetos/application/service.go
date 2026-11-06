@@ -96,6 +96,10 @@ func MapError(err error) error {
 		return apperrors.Validation("a tarefa anterior precisa ser outra tarefa deste projeto, sem ciclo")
 	case errors.Is(err, domain.ErrPredecessoraAberta):
 		return apperrors.Conflict("conclua a tarefa anterior antes de concluir esta")
+	case errors.Is(err, domain.ErrSubtarefaInvalida):
+		return apperrors.Validation("a subtarefa fica sob uma tarefa deste projeto, em um nível só")
+	case errors.Is(err, domain.ErrSubtarefasAbertas):
+		return apperrors.Conflict("conclua as subtarefas antes de concluir a tarefa")
 	case errors.Is(err, domain.ErrResponsavelObrigatorio):
 		return apperrors.Conflict("atribua um responsável antes de mover a tarefa")
 	case errors.Is(err, domain.ErrExclusaoNaoConfirmada):
@@ -869,8 +873,11 @@ func estadoEfetivo(estado string) string {
 	return estado
 }
 
-func (s *Service) conferirPredecessora(ctx context.Context, db database.DBTX, projetoID, tarefaID uuid.UUID, pred *uuid.UUID, estado string) error {
+func (s *Service) conferirPredecessora(ctx context.Context, db database.DBTX, projetoID, tarefaID uuid.UUID, paiDaTarefa, pred *uuid.UUID, estado string) error {
 	pred = normalizarPredecessora(pred)
+	if paiDaTarefa != nil && pred != nil {
+		return domain.ErrPredecessoraInvalida
+	}
 	tarefas, err := s.repo.ListarTarefas(ctx, db, projetoID)
 	if err != nil {
 		return err
@@ -889,10 +896,13 @@ func (s *Service) conferirPredecessora(ctx context.Context, db database.DBTX, pr
 			}
 		}
 	}
+	if anterior != nil && anterior.PaiID != nil {
+		return domain.ErrPredecessoraInvalida
+	}
 	return domain.ConferirPredecessora(estadoEfetivo(estado), anterior)
 }
 
-func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID, paiID *uuid.UUID) (*domain.Tarefa, error) {
 	var criada *domain.Tarefa
 	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
@@ -906,6 +916,16 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 		if err := domain.RecusarAlteracao(projeto.Estado); err != nil {
 			return err
 		}
+		paiID = normalizarPredecessora(paiID)
+		if paiID != nil {
+			pai, err := s.repo.ObterTarefa(ctx, tx, *paiID)
+			if err != nil {
+				return err
+			}
+			if err := domain.PodeSerPai(*pai, projetoID); err != nil {
+				return err
+			}
+		}
 		mapa, err := s.mapa(ctx, tx, "tarefas")
 		if err != nil {
 			return err
@@ -918,9 +938,10 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 			ID:             uuid.New(),
 			ProjetoID:      projetoID,
 			PredecessoraID: predecessoraID,
+			PaiID:          paiID,
 			Estado:         estadoEfetivo(estado),
 		}
-		if err := s.conferirPredecessora(ctx, tx, projetoID, t.ID, predecessoraID, t.Estado); err != nil {
+		if err := s.conferirPredecessora(ctx, tx, projetoID, t.ID, paiID, predecessoraID, t.Estado); err != nil {
 			return err
 		}
 		gid, gnome, err := s.fixarResponsavel(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, "", nil)
@@ -986,7 +1007,20 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 			return domain.ErrEstadoInvalido
 		}
 		predecessoraID = normalizarPredecessora(predecessoraID)
-		if err := s.conferirPredecessora(ctx, tx, atual.ProjetoID, id, predecessoraID, estadoEfetivo(estado)); err != nil {
+		if err := s.conferirPredecessora(ctx, tx, atual.ProjetoID, id, atual.PaiID, predecessoraID, estadoEfetivo(estado)); err != nil {
+			return err
+		}
+		irmas, err := s.repo.ListarTarefas(ctx, tx, atual.ProjetoID)
+		if err != nil {
+			return err
+		}
+		var filhas []domain.Tarefa
+		for i := range irmas {
+			if irmas[i].PaiID != nil && *irmas[i].PaiID == id {
+				filhas = append(filhas, irmas[i])
+			}
+		}
+		if err := domain.ConclusaoExigeSubtarefas(estadoEfetivo(estado), filhas); err != nil {
 			return err
 		}
 		gid, gnome, err := s.fixarResponsavel(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
