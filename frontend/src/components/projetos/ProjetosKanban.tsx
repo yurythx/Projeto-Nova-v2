@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/Badge";
 import {
   ESTADO_PROJETO,
   PRIORIDADE_PROJETO,
+  dataCurta,
   type EstadoProjeto,
   type Projeto,
 } from "@/lib/projetos/projetos";
@@ -92,40 +93,20 @@ export function ProjetosKanban({
         const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
         return (
           <>
-            <div className="flex items-center justify-between gap-2 text-xs text-muted">
+            <div className="flex items-center justify-between gap-2 text-xs">
               <span className="font-semibold tabular-nums text-foreground">#{p.numero}</span>
-              <div className="flex items-center gap-1">
-                {prioridadeMeta && <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>}
-                <Badge
-                  tone={
-                    seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).tone
-                  }
-                >
-                  {seloDoEstado(colunas, p.estado, ESTADO_PROJETO[p.estado as EstadoProjeto]).label}
-                </Badge>
-              </div>
+              {prioridadeMeta && <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>}
             </div>
             <NomeClicavel
               nome={vista.titulo || p.titulo}
               href={`/projetos/${p.id}`}
               onSalvar={vista.salvarNome}
+              className="line-clamp-2 text-left text-sm font-semibold text-foreground hover:underline"
             />
-            {p.descricao && <p className="line-clamp-2 text-xs text-muted">{p.descricao}</p>}
-            <div className="flex items-center justify-between gap-2 border-t border-surface-border/60 pt-1 text-[11px] text-muted">
-              <span>{p.gerente_nome ? p.gerente_nome : "Sem gerente"}</span>
-              {Number(p.orcamento) > 0 && (
-                <span className="font-mono">
-                  R$ {Number(p.orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </span>
-              )}
+            <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
+              <span className="truncate">{p.gerente_nome || "Sem responsável"}</span>
+              <span className="shrink-0">{dataCurta(p.data_fim_planejada) || "Sem prazo"}</span>
             </div>
-            <button
-              type="button"
-              className="text-left text-xs font-medium text-primary hover:underline"
-              onClick={() => abrir(p)}
-            >
-              Editar
-            </button>
             {moves.length > 0 && (
               <label className="mt-1 flex flex-col gap-1 text-xs">
                 <span className="sr-only">Mudar estado de {p.titulo}</span>

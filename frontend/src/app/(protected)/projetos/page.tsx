@@ -37,7 +37,9 @@ import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import {
   ESTADO_PROJETO,
+  GRADE_PROJETO,
   PRIORIDADE_PROJETO,
+  dataCurta,
   type EstadoProjeto,
   type PrioridadeProjeto,
   type Projeto,
@@ -365,60 +367,38 @@ function ProjetosConteudo() {
             nomeDe={(p) => p.titulo}
             aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
             aoAbrir={(p) => painel.abrir(p.id)}
+            denso
+            cabecalho={
+              <div className={GRADE_PROJETO}>
+                <span>#</span>
+                <span>Projeto</span>
+                <span>Responsável</span>
+                <span>Prioridade</span>
+                <span>Prazo</span>
+              </div>
+            }
             render={(p, vista) => {
-              const estadoMeta = ESTADO_PROJETO[p.estado];
               const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
               return (
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm font-semibold text-primary">
-                        #{p.numero}
-                      </span>
-                      <NomeClicavel
-                        nome={vista.titulo || p.titulo}
-                        href={`/projetos/${p.id}`}
-                        onSalvar={vista.salvarNome}
-                        className="text-left text-base font-semibold text-foreground hover:underline"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {prioridadeMeta && (
-                        <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
-                      )}
-                      <Badge tone={estadoMeta?.tone ?? "neutral"}>
-                        {estadoMeta?.label ?? p.estado}
-                      </Badge>
-                    </div>
-                  </div>
-                  {p.descricao && <p className="line-clamp-2 text-sm text-muted">{p.descricao}</p>}
-                  <div className="flex flex-wrap items-center gap-4 border-t border-surface-border pt-2 text-xs text-muted">
-                    <span>
-                      Gerente: <strong>{p.gerente_nome || "Não definido"}</strong>
-                    </span>
-                    {Number(p.orcamento) > 0 && (
-                      <span>
-                        Orçamento:{" "}
-                        <strong className="font-mono">
-                          R${" "}
-                          {Number(p.orcamento).toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </strong>
-                      </span>
-                    )}
-                    <span>
-                      Criado em:{" "}
-                      <strong>{new Date(p.created_at).toLocaleDateString("pt-BR")}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      className="font-medium text-primary hover:underline"
-                      onClick={() => painel.abrir(p.id)}
-                    >
-                      Editar
-                    </button>
-                  </div>
+                <div className={GRADE_PROJETO}>
+                  <span className="font-mono text-sm font-semibold text-primary">#{p.numero}</span>
+                  <NomeClicavel
+                    nome={vista.titulo || p.titulo}
+                    href={`/projetos/${p.id}`}
+                    onSalvar={vista.salvarNome}
+                    className="truncate text-left text-sm font-semibold text-foreground hover:underline"
+                  />
+                  <span className="truncate text-sm text-foreground">
+                    {p.gerente_nome || "Sem responsável"}
+                  </span>
+                  {prioridadeMeta ? (
+                    <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
+                  ) : (
+                    <span className="text-sm text-muted">—</span>
+                  )}
+                  <span className="text-sm text-muted">
+                    {dataCurta(p.data_fim_planejada) || "Sem prazo"}
+                  </span>
                 </div>
               );
             }}
