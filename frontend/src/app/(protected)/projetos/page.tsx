@@ -62,7 +62,7 @@ function passosDoProjeto(alvo: EstadoProjeto): EstadoProjeto[] {
     case "em_andamento":
       return ["em_andamento"];
     case "cancelado":
-      return ["cancelado"];
+      return [];
     case "suspenso":
       return ["em_andamento", "suspenso"];
     case "concluido":
@@ -512,7 +512,7 @@ function ProjetosConteudo() {
           <Wizard5W2H
             produtos={produtos.data ?? []}
             colunas={ordenarColunas(
-              catalogo.colunas.filter((coluna) => coluna.ativa !== false),
+              catalogo.colunas.filter((coluna) => coluna.ativa !== false && coluna.id !== "cancelado"),
             ).map((coluna) => ({
               value: coluna.id,
               label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
@@ -561,7 +561,7 @@ function ProjetosConteudo() {
             value={quadro}
             onChange={(e) => setQuadro(e.target.value as EstadoProjeto)}
             options={ordenarColunas(
-              catalogo.colunas.filter((coluna) => coluna.ativa !== false),
+              catalogo.colunas.filter((coluna) => coluna.ativa !== false && coluna.id !== "cancelado"),
             ).map((coluna) => ({
               value: coluna.id,
               label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),

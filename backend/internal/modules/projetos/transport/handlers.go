@@ -144,6 +144,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Put("/projetos/{id}", h.Atualizar)
 		r.Post("/projetos/{id}/estado", h.Transicionar)
 		r.Post("/projetos/{id}/reabertura", h.Reabrir)
+		r.Post("/projetos/{id}/cancelamento", h.Cancelar)
 
 		r.Post("/projetos/{id}/tarefas", h.CriarTarefa)
 		r.Put("/projetos/{id}/tarefas/{tarefaId}", h.AtualizarTarefa)
@@ -343,6 +344,28 @@ func (h *Handlers) Reabrir(w http.ResponseWriter, r *http.Request) {
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
 	p, err := h.svc.Reabrir(r.Context(), identity, id, req.Motivo)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, p)
+}
+
+func (h *Handlers) Cancelar(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req struct {
+		Motivo string `json:"motivo"`
+	}
+	if err := httputil.DecodeJSON(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	p, err := h.svc.Cancelar(r.Context(), identity, id, req.Motivo)
 	if err != nil {
 		h.fail(w, r, err)
 		return

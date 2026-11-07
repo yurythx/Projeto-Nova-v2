@@ -111,6 +111,7 @@ export function ProjetoDetalheConteudo() {
 
   const p = projeto.data;
   const mutavel = Boolean(p && gere && p.estado !== "cancelado" && p.estado !== "concluido");
+  const admin = Boolean(me?.roles?.includes("nova-admin") || me?.permissions?.includes("*"));
   function podeEscrever(t: Tarefa | null) {
     if (!p || !t || p.estado === "cancelado" || p.estado === "concluido") return false;
     if (gere) return true;
@@ -132,6 +133,8 @@ export function ProjetoDetalheConteudo() {
   const [tarefaDescricao, setTarefaDescricao] = useState("");
   const [tarefaResp, setTarefaResp] = useState({ id: "", nome: "" });
   const [reabrirAberto, setReabrirAberto] = useState(false);
+  const [cancelarAberto, setCancelarAberto] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [motivoReabertura, setMotivoReabertura] = useState("");
   const [tarefaEstado, setTarefaEstado] = useState<EstadoTarefa>("a_fazer");
   const [tarefaPred, setTarefaPred] = useState("");
@@ -242,6 +245,19 @@ export function ProjetoDetalheConteudo() {
     if (ok) {
       setReabrirAberto(false);
       setMotivoReabertura("");
+      void projeto.mutate();
+    }
+  }
+
+  async function cancelar(e: FormEvent) {
+    e.preventDefault();
+    const ok = await run(
+      () => apiClient.post(`v1/projetos/${id}/cancelamento`, { motivo: motivoCancelamento.trim() }),
+      "Projeto cancelado",
+    );
+    if (ok) {
+      setCancelarAberto(false);
+      setMotivoCancelamento("");
       void projeto.mutate();
     }
   }
@@ -456,14 +472,14 @@ export function ProjetoDetalheConteudo() {
                           Reabrir projeto
                         </Button>
                       )}
-                      {p.estado !== "concluido" && (
+                      {admin && p.estado !== "concluido" && (
                         <Button
                           size="sm"
                           variant="danger"
                           disabled={pending}
-                          onClick={() => void mudarEstado("cancelado")}
+                          onClick={() => setCancelarAberto(true)}
                         >
-                          Cancelar
+                          Cancelar projeto
                         </Button>
                       )}
                     </div>
@@ -477,6 +493,18 @@ export function ProjetoDetalheConteudo() {
                 Projeto concluído. Título, tarefas, carta, vínculos e horas só mudam depois da reabertura.
                 {!p.pode_reabrir &&
                   " A reabertura depende de um superior da unidade ou de um administrador, com o motivo descrito."}
+              </p>
+            )}
+            {gere && !admin && p.estado !== "cancelado" && p.estado !== "concluido" && (
+              <p className="text-sm text-muted">
+                O cancelamento depende de um administrador e de um motivo.
+              </p>
+            )}
+            {p.estado === "cancelado" && (
+              <p className="text-sm text-muted">
+                Projeto cancelado
+                {p.cancelamento?.aprovador_nome ? ` por ${p.cancelamento.aprovador_nome}` : ""}.
+                {p.cancelamento?.motivo ? ` Motivo: ${p.cancelamento.motivo}` : ""}
               </p>
             )}
             {p.reabertura && (
@@ -511,6 +539,39 @@ export function ProjetoDetalheConteudo() {
                 </Button>
                 <Button type="submit" form="reabrir-projeto" loading={pending} disabled={!motivoReabertura.trim()}>
                   Aprovar reabertura
+                </Button>
+              </div>
+            </Dialog>
+
+            <Dialog
+              open={cancelarAberto}
+              onClose={() => setCancelarAberto(false)}
+              title="Cancelar projeto"
+              description="Só um administrador cancela. O motivo fica registrado na ficha."
+            >
+              <form id="cancelar-projeto" onSubmit={cancelar} className="grid gap-3">
+                <Textarea
+                  id="cancelamento-motivo"
+                  label="Motivo do cancelamento"
+                  value={motivoCancelamento}
+                  onChange={(e) => setMotivoCancelamento(e.target.value)}
+                  rows={4}
+                  maxLength={2000}
+                  required
+                />
+              </form>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={() => setCancelarAberto(false)}>
+                  Voltar
+                </Button>
+                <Button
+                  type="submit"
+                  form="cancelar-projeto"
+                  variant="danger"
+                  loading={pending}
+                  disabled={!motivoCancelamento.trim()}
+                >
+                  Confirmar cancelamento
                 </Button>
               </div>
             </Dialog>

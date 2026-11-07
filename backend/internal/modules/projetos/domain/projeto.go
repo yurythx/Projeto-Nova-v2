@@ -40,41 +40,42 @@ const (
 )
 
 var (
-	ErrProjetoNaoEncontrado     = errors.New("projetos: projeto não encontrado")
-	ErrTarefaNaoEncontrada      = errors.New("projetos: tarefa não encontrada")
-	ErrTituloObrigatorio        = errors.New("projetos: título obrigatório (até 160 caracteres)")
-	ErrTransicaoInvalida        = errors.New("projetos: passagem de estado inválida")
-	ErrProjetoEncerrado         = errors.New("projetos: projeto cancelado não aceita alterações")
-	ErrProjetoConcluido         = errors.New("projetos: projeto concluído só muda depois da reabertura")
-	ErrTarefasAbertas           = errors.New("projetos: há tarefas em aberto")
-	ErrPredecessoraInvalida     = errors.New("projetos: predecessora inválida")
-	ErrPredecessoraAberta       = errors.New("projetos: a tarefa anterior ainda não foi concluída")
-	ErrSubtarefaInvalida        = errors.New("projetos: subtarefa inválida")
-	ErrSubtarefasAbertas        = errors.New("projetos: há subtarefas em aberto")
-	ErrResponsavelObrigatorio   = errors.New("projetos: a tarefa precisa de um responsável para ser movida")
-	ErrExclusaoNaoConfirmada    = errors.New("projetos: confirme o título da tarefa para apagar")
-	ErrRelatoInvalido           = errors.New("projetos: relato longo demais")
-	ErrAtualizacaoInvalida      = errors.New("projetos: atualização inválida")
-	ErrAtualizacaoNaoAutorizada = errors.New("projetos: atualização não autorizada")
-	ErrMesInvalido              = errors.New("projetos: mês inválido")
-	ErrAnexoNaoEncontrado       = errors.New("projetos: anexo não encontrado")
-	ErrPrioridadeInvalida       = errors.New("projetos: prioridade inválida")
-	ErrEstadoInvalido           = errors.New("projetos: estado inválido")
-	ErrApontamentoInvalido      = errors.New("projetos: horas devem ser maiores que zero e até 24h, com descrição")
-	ErrApontamentoNaoEncontrado = errors.New("projetos: apontamento não encontrado")
-	ErrForaDoEscopo             = errors.New("projetos: fora do seu escopo de gestão")
-	ErrVinculoInvalido          = errors.New("projetos: tipo de vínculo inválido")
-	ErrVinculoInexistente       = errors.New("projetos: item do vínculo não encontrado")
-	ErrDeOutraUnidade           = errors.New("projetos: o vínculo ou produto precisa ser da mesma unidade do projeto")
-	ErrIntegracaoDesligada      = errors.New("projetos: o módulo deste vínculo está desligado")
-	ErrPeriodoInvalido          = errors.New("projetos: término antes do início")
-	ErrOrcamentoInvalido        = errors.New("projetos: orçamento negativo")
-	ErrEtapaInvalida            = errors.New("projetos: etapa inválida")
-	ErrCartaInvalida            = errors.New("projetos: carta inválida")
-	ErrPessoaInvalida           = errors.New("projetos: pessoa inválida")
-	ErrReaberturaExigeAprovacao = errors.New("projetos: concluído só reabre com aprovação")
-	ErrReaberturaNaoAutorizada  = errors.New("projetos: reabertura não autorizada")
-	ErrMotivoObrigatorio        = errors.New("projetos: motivo obrigatório")
+	ErrProjetoNaoEncontrado      = errors.New("projetos: projeto não encontrado")
+	ErrTarefaNaoEncontrada       = errors.New("projetos: tarefa não encontrada")
+	ErrTituloObrigatorio         = errors.New("projetos: título obrigatório (até 160 caracteres)")
+	ErrTransicaoInvalida         = errors.New("projetos: passagem de estado inválida")
+	ErrProjetoEncerrado          = errors.New("projetos: projeto cancelado não aceita alterações")
+	ErrProjetoConcluido          = errors.New("projetos: projeto concluído só muda depois da reabertura")
+	ErrTarefasAbertas            = errors.New("projetos: há tarefas em aberto")
+	ErrPredecessoraInvalida      = errors.New("projetos: predecessora inválida")
+	ErrPredecessoraAberta        = errors.New("projetos: a tarefa anterior ainda não foi concluída")
+	ErrSubtarefaInvalida         = errors.New("projetos: subtarefa inválida")
+	ErrSubtarefasAbertas         = errors.New("projetos: há subtarefas em aberto")
+	ErrResponsavelObrigatorio    = errors.New("projetos: a tarefa precisa de um responsável para ser movida")
+	ErrExclusaoNaoConfirmada     = errors.New("projetos: confirme o título da tarefa para apagar")
+	ErrRelatoInvalido            = errors.New("projetos: relato longo demais")
+	ErrAtualizacaoInvalida       = errors.New("projetos: atualização inválida")
+	ErrAtualizacaoNaoAutorizada  = errors.New("projetos: atualização não autorizada")
+	ErrMesInvalido               = errors.New("projetos: mês inválido")
+	ErrAnexoNaoEncontrado        = errors.New("projetos: anexo não encontrado")
+	ErrPrioridadeInvalida        = errors.New("projetos: prioridade inválida")
+	ErrEstadoInvalido            = errors.New("projetos: estado inválido")
+	ErrApontamentoInvalido       = errors.New("projetos: horas devem ser maiores que zero e até 24h, com descrição")
+	ErrApontamentoNaoEncontrado  = errors.New("projetos: apontamento não encontrado")
+	ErrForaDoEscopo              = errors.New("projetos: fora do seu escopo de gestão")
+	ErrVinculoInvalido           = errors.New("projetos: tipo de vínculo inválido")
+	ErrVinculoInexistente        = errors.New("projetos: item do vínculo não encontrado")
+	ErrDeOutraUnidade            = errors.New("projetos: o vínculo ou produto precisa ser da mesma unidade do projeto")
+	ErrIntegracaoDesligada       = errors.New("projetos: o módulo deste vínculo está desligado")
+	ErrPeriodoInvalido           = errors.New("projetos: término antes do início")
+	ErrOrcamentoInvalido         = errors.New("projetos: orçamento negativo")
+	ErrEtapaInvalida             = errors.New("projetos: etapa inválida")
+	ErrCartaInvalida             = errors.New("projetos: carta inválida")
+	ErrPessoaInvalida            = errors.New("projetos: pessoa inválida")
+	ErrReaberturaExigeAprovacao  = errors.New("projetos: concluído só reabre com aprovação")
+	ErrReaberturaNaoAutorizada   = errors.New("projetos: reabertura não autorizada")
+	ErrCancelamentoNaoAutorizado = errors.New("projetos: cancelamento não autorizado")
+	ErrMotivoObrigatorio         = errors.New("projetos: motivo obrigatório")
 )
 
 const (
@@ -136,31 +137,32 @@ var transicoesProjeto = map[string][]string{
 
 // Projeto representa um projeto ou iniciativa institucional.
 type Projeto struct {
-	ID                  uuid.UUID   `json:"id"`
-	Numero              int64       `json:"numero"`
-	Titulo              string      `json:"titulo"`
-	Descricao           string      `json:"descricao"`
-	Objetivo            string      `json:"objetivo"`
-	Estado              string      `json:"estado"`
-	Prioridade          string      `json:"prioridade"`
-	DataInicioPlanejada *time.Time  `json:"data_inicio_planejada,omitempty"`
-	DataFimPlanejada    *time.Time  `json:"data_fim_planejada,omitempty"`
-	DataInicioReal      *time.Time  `json:"data_inicio_real,omitempty"`
-	DataFimReal         *time.Time  `json:"data_fim_real,omitempty"`
-	Orcamento           float64     `json:"orcamento"`
-	UnidadeID           *uuid.UUID  `json:"unidade_id,omitempty"`
-	ProdutoID           *uuid.UUID  `json:"produto_id,omitempty"`
-	GerenteID           *uuid.UUID  `json:"gerente_id,omitempty"`
-	GerenteNome         string      `json:"gerente_nome"`
-	TarefasTotal        int         `json:"tarefas_total"`
-	TarefasConcluidas   int         `json:"tarefas_concluidas"`
-	CreatedAt           time.Time   `json:"created_at"`
-	UpdatedAt           time.Time   `json:"updated_at"`
-	Proximos            []string    `json:"proximos"`
-	PodeReabrir         bool        `json:"pode_reabrir,omitempty"`
-	Reabertura          *Reabertura `json:"reabertura,omitempty"`
-	Tarefas             []Tarefa    `json:"tarefas,omitempty"`
-	Vinculos            []Vinculo   `json:"vinculos,omitempty"`
+	ID                  uuid.UUID     `json:"id"`
+	Numero              int64         `json:"numero"`
+	Titulo              string        `json:"titulo"`
+	Descricao           string        `json:"descricao"`
+	Objetivo            string        `json:"objetivo"`
+	Estado              string        `json:"estado"`
+	Prioridade          string        `json:"prioridade"`
+	DataInicioPlanejada *time.Time    `json:"data_inicio_planejada,omitempty"`
+	DataFimPlanejada    *time.Time    `json:"data_fim_planejada,omitempty"`
+	DataInicioReal      *time.Time    `json:"data_inicio_real,omitempty"`
+	DataFimReal         *time.Time    `json:"data_fim_real,omitempty"`
+	Orcamento           float64       `json:"orcamento"`
+	UnidadeID           *uuid.UUID    `json:"unidade_id,omitempty"`
+	ProdutoID           *uuid.UUID    `json:"produto_id,omitempty"`
+	GerenteID           *uuid.UUID    `json:"gerente_id,omitempty"`
+	GerenteNome         string        `json:"gerente_nome"`
+	TarefasTotal        int           `json:"tarefas_total"`
+	TarefasConcluidas   int           `json:"tarefas_concluidas"`
+	CreatedAt           time.Time     `json:"created_at"`
+	UpdatedAt           time.Time     `json:"updated_at"`
+	Proximos            []string      `json:"proximos"`
+	PodeReabrir         bool          `json:"pode_reabrir,omitempty"`
+	Reabertura          *Reabertura   `json:"reabertura,omitempty"`
+	Cancelamento        *Cancelamento `json:"cancelamento,omitempty"`
+	Tarefas             []Tarefa      `json:"tarefas,omitempty"`
+	Vinculos            []Vinculo     `json:"vinculos,omitempty"`
 }
 
 // Vinculo representa a ligação do projeto com uma mudança, problema, ativo ou chamado.

@@ -142,10 +142,12 @@ func MapError(err error) error {
 		return apperrors.Validation("escolha uma pessoa ativa lotada na unidade do projeto")
 	case errors.Is(err, domain.ErrReaberturaExigeAprovacao):
 		return apperrors.Conflict("projeto concluído não muda por esta passagem; a reabertura pede um superior ou administrador e o motivo")
+	case errors.Is(err, domain.ErrCancelamentoNaoAutorizado):
+		return apperrors.Forbidden("só um administrador cancela o projeto, e o motivo é obrigatório")
 	case errors.Is(err, domain.ErrReaberturaNaoAutorizada):
 		return apperrors.Forbidden("só um superior da unidade ou um administrador reabre um projeto concluído")
 	case errors.Is(err, domain.ErrMotivoObrigatorio):
-		return apperrors.Validation("descreva o motivo da reabertura, em até 2000 caracteres")
+		return apperrors.Validation("descreva o motivo, em até 2000 caracteres")
 	}
 	return err
 }
@@ -446,7 +448,11 @@ func (s *Service) Obter(ctx context.Context, idt auth.Identity, id uuid.UUID) (*
 	if err != nil {
 		return nil, err
 	}
-	return s.comReabertura(ctx, s.pool, idt, p)
+	p, err = s.comReabertura(ctx, s.pool, idt, p)
+	if err != nil {
+		return nil, err
+	}
+	return s.comCancelamento(ctx, s.pool, p)
 }
 
 func (s *Service) Listar(ctx context.Context, idt auth.Identity, estado, busca string) ([]domain.Projeto, error) {
@@ -555,6 +561,9 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 		}
 		if p.Estado == domain.EstadoConcluido {
 			return domain.ErrReaberturaExigeAprovacao
+		}
+		if novoEstado == domain.EstadoCancelado {
+			return domain.ErrCancelamentoNaoAutorizado
 		}
 
 		mapa, err := s.mapa(ctx, tx, "projetos")

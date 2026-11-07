@@ -30,6 +30,8 @@ type Repository interface {
 	Aprovadores(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]uuid.UUID, error)
 	SalvarReabertura(ctx context.Context, db database.DBTX, r *Reabertura) error
 	UltimaReabertura(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Reabertura, bool, error)
+	SalvarCancelamento(ctx context.Context, db database.DBTX, c *Cancelamento) error
+	UltimoCancelamento(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Cancelamento, bool, error)
 
 	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error

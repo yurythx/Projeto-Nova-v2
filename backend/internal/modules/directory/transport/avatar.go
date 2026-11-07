@@ -1,9 +1,11 @@
 package transport
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
+	"github.com/yurythx/projeto-nova-v2/internal/modules/directory/domain"
 	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
@@ -59,6 +61,11 @@ func (h *Handlers) AbrirAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	rc, tipo, err := h.svc.AbrirAvatar(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			w.Header().Set("Cache-Control", "private, max-age=120")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		h.fail(w, r, err)
 		return
 	}

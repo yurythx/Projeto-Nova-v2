@@ -29,6 +29,7 @@ export interface Projeto {
   updated_at: string;
   pode_reabrir?: boolean;
   reabertura?: ReaberturaProjeto;
+  cancelamento?: ReaberturaProjeto;
   tarefas?: Tarefa[];
   vinculos?: VinculoProjeto[];
 }

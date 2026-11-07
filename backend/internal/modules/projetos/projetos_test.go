@@ -298,9 +298,20 @@ func TestModuloCicloCompleto(t *testing.T) {
 		t.Fatalf("excluir tarefa: %d", rec.Code)
 	}
 
-	// Cancela o projeto e verifica que não aceita mais edições ou vínculos.
-	if rec := do(gestorA, http.MethodPost, "/projetos/"+projID.String()+"/estado", `{"estado":"cancelado"}`); rec.Code != http.StatusOK {
-		t.Fatalf("cancelar projeto: %d", rec.Code)
+	// O gestor não cancela. Só o administrador, com motivo.
+	if rec := do(gestorA, http.MethodPost, "/projetos/"+projID.String()+"/estado", `{"estado":"cancelado"}`); rec.Code != http.StatusForbidden {
+		t.Fatalf("gestor cancelando pela passagem: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := do(gestorA, http.MethodPost, "/projetos/"+projID.String()+"/cancelamento", `{"motivo":"não cabe mais"}`); rec.Code != http.StatusForbidden {
+		t.Fatalf("gestor cancelando: %d %s", rec.Code, rec.Body.String())
+	}
+	admin := gestorA
+	admin.Roles = []string{string(auth.RoleAdmin)}
+	if rec := do(admin, http.MethodPost, "/projetos/"+projID.String()+"/cancelamento", `{"motivo":""}`); rec.Code != http.StatusBadRequest {
+		t.Fatalf("cancelar sem motivo: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := do(admin, http.MethodPost, "/projetos/"+projID.String()+"/cancelamento", `{"motivo":"o teste encerrou o projeto"}`); rec.Code != http.StatusOK {
+		t.Fatalf("administrador cancelando: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String(), `{"titulo":"Editado","unidade_id":"`+uA.String()+`"}`); rec.Code != http.StatusConflict {
 		t.Fatalf("editar cancelado deveria dar 409, obteve %d", rec.Code)

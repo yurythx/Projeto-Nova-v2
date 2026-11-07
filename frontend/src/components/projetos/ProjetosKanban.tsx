@@ -31,9 +31,9 @@ export const COLUNAS_PROJETO: ColunaFaixa[] = colunasEmOrdem([
 ]);
 
 const TRANSOES: Record<EstadoProjeto, EstadoProjeto[]> = {
-  planejado: ["em_andamento", "cancelado"],
-  em_andamento: ["suspenso", "concluido", "cancelado"],
-  suspenso: ["em_andamento", "cancelado"],
+  planejado: ["em_andamento"],
+  em_andamento: ["suspenso", "concluido"],
+  suspenso: ["em_andamento"],
   concluido: [],
   cancelado: [],
 };
