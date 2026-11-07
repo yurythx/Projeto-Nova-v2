@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/yurythx/projeto-nova-v2/internal/platform/nome"
 )
 
 // Categoria é uma categoria de chamado do GLPI.
@@ -97,7 +99,7 @@ type Pessoa struct {
 
 // NomeCompleto é o nome para mostrar, ou o login.
 func (p Pessoa) NomeCompleto() string {
-	if n := strings.TrimSpace(p.Nome + " " + p.Sobrenome); n != "" {
+	if n := nome.Limpar(p.Nome, p.Sobrenome); n != "" {
 		return n
 	}
 	return p.Login

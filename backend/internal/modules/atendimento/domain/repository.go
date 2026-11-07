@@ -261,6 +261,12 @@ type PrazoRepository interface {
 	// ComPrazoCorrendo são as solicitações classificadas e em andamento:
 	// as que o alerta de prazo acompanha.
 	ComPrazoCorrendo(ctx context.Context, db database.DBTX) ([]Solicitacao, error)
+	// ParaEncerrar são as concluídas (resolvido ou atendido) sem movimento
+	// desde o instante, as mais antigas primeiro, até o limite.
+	ParaEncerrar(ctx context.Context, db database.DBTX, ate time.Time, limite int) ([]Solicitacao, error)
+	// Paradas são as em atendimento ou aguardando terceiro sem movimento
+	// desde o instante, as mais antigas primeiro, até o limite.
+	Paradas(ctx context.Context, db database.DBTX, ate time.Time, limite int) ([]Solicitacao, error)
 
 	VisitaRepository
 }

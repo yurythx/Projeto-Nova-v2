@@ -32,6 +32,7 @@ type Repository interface {
 	UltimaReabertura(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Reabertura, bool, error)
 	SalvarCancelamento(ctx context.Context, db database.DBTX, c *Cancelamento) error
 	UltimoCancelamento(ctx context.Context, db database.DBTX, projetoID uuid.UUID) (Cancelamento, bool, error)
+	ListarHistorico(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Marco, error)
 
 	EstadoDaTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	CriarTarefa(ctx context.Context, db database.DBTX, t *Tarefa) error

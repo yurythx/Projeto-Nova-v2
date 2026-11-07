@@ -18,6 +18,7 @@ import {
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { HistoricoDoProjeto } from "@/components/projetos/HistoricoDoProjeto";
 import { Painel5W2H } from "@/components/projetos/Painel5W2H";
 import { prazoDoDia } from "@/components/projetos/datas";
 import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
@@ -575,6 +576,8 @@ export function ProjetoDetalheConteudo() {
                 </Button>
               </div>
             </Dialog>
+
+            <HistoricoDoProjeto projetoId={id} />
 
             <SectionTabsInline
               label="Seções do projeto"

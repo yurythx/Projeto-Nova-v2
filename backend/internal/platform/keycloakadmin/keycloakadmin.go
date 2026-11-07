@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/yurythx/projeto-nova-v2/internal/platform/nome"
 )
 
 // ErrNaoConfigurado: sem issuer, client ou segredo não há o que ler.
@@ -41,7 +43,7 @@ type Usuario struct {
 
 // Nome é o nome para mostrar, como o token traz em "name".
 func (u Usuario) Nome() string {
-	return strings.TrimSpace(u.FirstName + " " + u.LastName)
+	return nome.Limpar(u.FirstName, u.LastName)
 }
 
 // Cliente fala com o Keycloak.

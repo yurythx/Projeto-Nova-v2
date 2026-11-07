@@ -102,6 +102,7 @@ function ProjetosConteudo() {
   const [estado, setEstado] = useState("");
   const [busca, setBusca] = useState("");
   const [unidadeFiltro, setUnidadeFiltro] = useState("todas");
+  const [gerenteFiltro, setGerenteFiltro] = useState("");
   const somenteFiltroLista = vista === "lista";
 
   const { run, pending } = useAction();
@@ -273,7 +274,19 @@ function ProjetosConteudo() {
     [filtrarPorEntidade, projetos.data],
   );
 
-  const lista = filtrarPorUnidade(todosProjetos, unidadeFiltro);
+  const gerentes = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const p of todosProjetos) {
+      if (p.gerente_id) mapa.set(p.gerente_id, p.gerente_nome || "Sem nome");
+    }
+    return [...mapa.entries()].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
+  }, [todosProjetos]);
+  const lista = useMemo(() => {
+    const base = filtrarPorUnidade(todosProjetos, unidadeFiltro);
+    if (!gerenteFiltro) return base;
+    if (gerenteFiltro === "sem") return base.filter((p) => !p.gerente_id);
+    return base.filter((p) => p.gerente_id === gerenteFiltro);
+  }, [todosProjetos, unidadeFiltro, gerenteFiltro]);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
 
   return (
@@ -335,7 +348,7 @@ function ProjetosConteudo() {
         onChange={setUnidadeFiltro}
       />
 
-      <div className={`grid gap-3 ${somenteFiltroLista ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
+      <div className={`grid gap-3 ${somenteFiltroLista ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         {somenteFiltroLista && (
           <Select
             id="projetos-estado"
@@ -351,6 +364,17 @@ function ProjetosConteudo() {
             ]}
           />
         )}
+        <Select
+          id="projetos-responsavel"
+          label="Responsável"
+          value={gerenteFiltro}
+          onChange={(e) => setGerenteFiltro(e.target.value)}
+          options={[
+            { value: "", label: "Todos os responsáveis" },
+            { value: "sem", label: "Sem responsável" },
+            ...gerentes.map(([id, nome]) => ({ value: id, label: nome })),
+          ]}
+        />
         <Input
           id="projetos-busca"
           label="Buscar no título ou objetivo"

@@ -260,6 +260,9 @@ func (s *Service) RunAlertas(ctx context.Context) error {
 		if err := s.VerificarPrazos(ctx); err != nil && ctx.Err() == nil {
 			s.logger.WarnContext(ctx, "atendimento: verificação de prazos falhou", slog.Any("error", err))
 		}
+		if err := s.CuidarDaFila(ctx); err != nil && ctx.Err() == nil {
+			s.logger.WarnContext(ctx, "atendimento: cuidado da fila falhou", slog.Any("error", err))
+		}
 		select {
 		case <-ctx.Done():
 			return nil

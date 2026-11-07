@@ -127,6 +127,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/projetos/carga", h.ListarCarga)
 		r.Get("/projetos/prazos", h.ListarPrazos)
 		r.Get("/projetos/{id}", h.Obter)
+		r.Get("/projetos/{id}/historico", h.ListarHistorico)
 		r.Get("/projetos/{id}/tarefas", h.ListarTarefas)
 		r.Get("/projetos/{id}/tarefas/{tarefaId}/anexos", h.ListarAnexos)
 		r.Get("/projetos/{id}/tarefas/{tarefaId}/movimentos", h.ListarMovimentos)
@@ -197,6 +198,21 @@ func (h *Handlers) Listar(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ListarMinhas(w http.ResponseWriter, r *http.Request) {
 	identity, _ := auth.IdentityFromContext(r.Context())
 	lista, err := h.svc.ListarMinhas(r.Context(), identity)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+func (h *Handlers) ListarHistorico(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarHistorico(r.Context(), identity, id)
 	if err != nil {
 		h.fail(w, r, err)
 		return
