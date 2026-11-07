@@ -45,6 +45,54 @@ export function faixaDaSemana(agora = new Date()): { inicio: string; fim: string
   return { inicio: iso(inicio), fim: iso(fim), hoje };
 }
 
+/** Mês civil YYYY-MM em America/Sao_Paulo. */
+export function mesISO(agora = new Date()): string {
+  return agora.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }).slice(0, 7);
+}
+
+/** Anda meses civis sem depender do fuso da máquina. */
+export function deslocarMes(mes: string, delta: number): string {
+  const partes = mes.split("-").map(Number);
+  const ano = partes[0] ?? 1970;
+  const m = partes[1] ?? 1;
+  const base = new Date(Date.UTC(ano, m - 1 + delta, 1));
+  const mm = String(base.getUTCMonth() + 1).padStart(2, "0");
+  return `${base.getUTCFullYear()}-${mm}`;
+}
+
+export function nomeDoMes(mes: string): string {
+  const partes = mes.split("-").map(Number);
+  const ano = partes[0] ?? 1970;
+  const m = partes[1] ?? 1;
+  return new Date(Date.UTC(ano, m - 1, 1)).toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** Grade de segunda a domingo, com os dias vizinhos que completam a semana. */
+export function gradeDoMes(mes: string): { dia: string; nesteMes: boolean }[] {
+  const partes = mes.split("-").map(Number);
+  const ano = partes[0] ?? 1970;
+  const m = partes[1] ?? 1;
+  const primeiro = new Date(Date.UTC(ano, m - 1, 1));
+  const semana = primeiro.getUTCDay();
+  const ateSegunda = semana === 0 ? -6 : 1 - semana;
+  const inicio = new Date(primeiro);
+  inicio.setUTCDate(primeiro.getUTCDate() + ateSegunda);
+  const dias: { dia: string; nesteMes: boolean }[] = [];
+  for (let i = 0; i < 42; i++) {
+    const data = new Date(inicio);
+    data.setUTCDate(inicio.getUTCDate() + i);
+    const dia = data.toISOString().slice(0, 10);
+    dias.push({ dia, nesteMes: dia.slice(0, 7) === mes });
+  }
+  const ultima = dias.slice(35);
+  if (ultima.every((celula) => !celula.nesteMes)) return dias.slice(0, 35);
+  return dias;
+}
+
 export type FaixaPrazo = "atrasada" | "semana" | "depois" | "sem";
 
 export function faixaDoPrazo(iso?: string | null, agora = new Date()): FaixaPrazo {

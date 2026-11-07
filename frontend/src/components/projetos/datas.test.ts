@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { diaISO, faixaDaSemana, faixaDoPrazo, prazoDoDia } from "./datas";
+import { diaISO, deslocarMes, faixaDaSemana, faixaDoPrazo, gradeDoMes, mesISO, nomeDoMes, prazoDoDia } from "./datas";
 
 describe("datas do projeto", () => {
   const sexta = new Date("2026-11-06T15:00:00-03:00");
@@ -22,5 +22,17 @@ describe("datas do projeto", () => {
     expect(faixaDoPrazo("2026-11-08T18:00:00-03:00", sexta)).toBe("semana");
     expect(faixaDoPrazo("2026-11-09", sexta)).toBe("depois");
     expect(faixaDoPrazo(null, sexta)).toBe("sem");
+  });
+
+  it("monta o mês de segunda a domingo", () => {
+    expect(mesISO(sexta)).toBe("2026-11");
+    expect(deslocarMes("2026-11", 1)).toBe("2026-12");
+    expect(deslocarMes("2026-01", -1)).toBe("2025-12");
+    expect(nomeDoMes("2026-11")).toMatch(/novembro de 2026/i);
+    const grade = gradeDoMes("2026-11");
+    expect(grade[0]?.dia).toBe("2026-10-26");
+    expect(grade[6]?.dia).toBe("2026-11-01");
+    expect(grade.at(-1)?.dia).toBe("2026-12-06");
+    expect(grade.filter((celula) => celula.nesteMes)).toHaveLength(30);
   });
 });

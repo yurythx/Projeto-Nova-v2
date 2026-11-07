@@ -87,6 +87,28 @@ export interface TarefaMinha extends Tarefa {
   projeto_estado: string;
 }
 
+export interface PrazoAgenda {
+  id: string;
+  titulo: string;
+  estado: EstadoTarefa;
+  data_limite: string;
+  responsavel_id?: string;
+  responsavel_nome: string;
+  pai_id?: string;
+  projeto_id: string;
+  projeto_numero: number;
+  projeto_titulo: string;
+}
+
+export interface AtualizacaoTarefa {
+  id: string;
+  tarefa_id: string;
+  texto: string;
+  autor_id?: string;
+  autor_nome: string;
+  created_at: string;
+}
+
 export interface CargaPessoa {
   id: string;
   nome: string;

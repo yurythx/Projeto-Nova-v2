@@ -106,6 +106,12 @@ func MapError(err error) error {
 		return apperrors.Validation("confirme o título da tarefa para apagar")
 	case errors.Is(err, domain.ErrRelatoInvalido):
 		return apperrors.Validation("o relato da tarefa tem no máximo 4000 caracteres")
+	case errors.Is(err, domain.ErrAtualizacaoInvalida):
+		return apperrors.Validation("escreva uma atualização de até 2000 caracteres")
+	case errors.Is(err, domain.ErrAtualizacaoNaoAutorizada):
+		return apperrors.Forbidden("só o responsável da tarefa, o responsável do projeto ou quem gerencia projetos escreve uma atualização")
+	case errors.Is(err, domain.ErrMesInvalido):
+		return apperrors.Validation("informe o mês no formato AAAA-MM")
 	case errors.Is(err, domain.ErrAnexoNaoEncontrado):
 		return apperrors.NotFound("anexo não encontrado")
 	case errors.Is(err, domain.ErrPrioridadeInvalida):

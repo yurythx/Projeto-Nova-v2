@@ -40,6 +40,9 @@ type Repository interface {
 	CriarAnexo(ctx context.Context, db database.DBTX, a *Anexo) (*Anexo, error)
 	RegistrarMovimento(ctx context.Context, db database.DBTX, m *Movimento) error
 	ListarMovimentos(ctx context.Context, db database.DBTX, tarefaID uuid.UUID) ([]Movimento, error)
+	CriarAtualizacao(ctx context.Context, db database.DBTX, a *Atualizacao) error
+	ListarAtualizacoes(ctx context.Context, db database.DBTX, tarefaID uuid.UUID) ([]Atualizacao, error)
+	ListarPrazos(ctx context.Context, db database.DBTX, mes string, restrito bool, unidades []uuid.UUID) ([]PrazoAgenda, error)
 	PrazosVencidos(ctx context.Context, db database.DBTX, agora time.Time) ([]PrazoTarefa, []PrazoProjeto, error)
 	NomeDaPessoa(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarResponsaveis(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Responsavel, error)

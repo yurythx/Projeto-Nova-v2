@@ -23,6 +23,7 @@ import { useAction } from "@/components/plataforma/useAction";
 import { CargaEquipe, MeuTrabalho } from "@/components/projetos/MeuTrabalho";
 import { ListaTabela } from "@/components/projetos/ListaTabela";
 import { ProgressoProjeto } from "@/components/projetos/ProgressoProjeto";
+import { CalendarioPrazos } from "@/components/projetos/CalendarioPrazos";
 import { TarefasNaLista } from "@/components/projetos/TarefasNaLista";
 import { diaBrasil } from "@/components/projetos/datas";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
@@ -51,7 +52,7 @@ import {
   type TarefaMinha,
 } from "@/lib/projetos/projetos";
 
-type Vista = "lista" | "kanban" | "cronograma" | "minhas" | "carga";
+type Vista = "lista" | "kanban" | "cronograma" | "calendario" | "minhas" | "carga";
 
 /** Caminho legal a partir de planejado. O valor enviado é o id do estado. */
 function passosDoProjeto(alvo: EstadoProjeto): EstadoProjeto[] {
@@ -78,7 +79,7 @@ export default function ProjetosPage() {
 }
 
 function ProjetosConteudo() {
-  const { can, loading: carregandoSessao } = usePlataforma();
+  const { can, loading: carregandoSessao, me } = usePlataforma();
   const router = useRouter();
   const params = useSearchParams();
   const painel = usePainelNaUrl();
@@ -93,7 +94,9 @@ function ProjetosConteudo() {
           ? "minhas"
           : paramVista === "carga"
             ? "carga"
-            : "kanban";
+            : paramVista === "calendario"
+              ? "calendario"
+              : "kanban";
   const gere = can("projetos:manage");
   const le = gere || can("projetos:read");
   const [estado, setEstado] = useState("");
@@ -104,7 +107,7 @@ function ProjetosConteudo() {
   const { run, pending } = useAction();
 
   const projetos = useApiQuery<Projeto[]>(
-    le && vista !== "minhas" && vista !== "carga"
+    le && vista !== "minhas" && vista !== "carga" && vista !== "calendario"
       ? withQuery("v1/projetos", {
           estado: somenteFiltroLista ? estado : undefined,
           q: busca || undefined,
@@ -135,7 +138,11 @@ function ProjetosConteudo() {
 
   function trocarVista(proxima: string) {
     const vista =
-      proxima === "lista" || proxima === "cronograma" || proxima === "minhas" || proxima === "carga"
+      proxima === "lista" ||
+      proxima === "cronograma" ||
+      proxima === "calendario" ||
+      proxima === "minhas" ||
+      proxima === "carga"
         ? proxima
         : "quadro";
     router.replace(painel.href({ vista }));
@@ -313,12 +320,13 @@ function ProjetosConteudo() {
           { value: "kanban", label: "Quadro" },
           { value: "lista", label: "Lista" },
           { value: "cronograma", label: "Cronograma" },
+          { value: "calendario", label: "Calendário" },
           { value: "minhas", label: "Meu trabalho" },
           { value: "carga", label: "Carga" },
         ]}
       />
 
-      {vista !== "minhas" && vista !== "carga" && (
+      {vista !== "minhas" && vista !== "carga" && vista !== "calendario" && (
       <>
       <FiltroPorUnidade
         rotulo="Filtrar projetos por unidade"
@@ -371,6 +379,8 @@ function ProjetosConteudo() {
         >
           <CargaEquipe pessoas={carga.data ?? []} />
         </DataState>
+      ) : vista === "calendario" ? (
+        <CalendarioPrazos usuarioId={me?.id} />
       ) : (
       <DataState
         loading={projetos.isLoading || carregandoSessao}

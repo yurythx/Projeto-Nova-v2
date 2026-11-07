@@ -111,6 +111,11 @@ export function ProjetoDetalheConteudo() {
 
   const p = projeto.data;
   const mutavel = Boolean(p && gere && p.estado !== "cancelado" && p.estado !== "concluido");
+  function podeEscrever(t: Tarefa | null) {
+    if (!p || !t || p.estado === "cancelado" || p.estado === "concluido") return false;
+    if (gere) return true;
+    return Boolean(me?.id && (t.responsavel_id === me.id || p.gerente_id === me.id));
+  }
   const listaTarefas = tarefas.data ?? [];
   const colunasTarefa = colunasVisiveis(catalogoTarefas.colunas, listaTarefas, (t) => t.estado);
   const listaVinculos = vinculos.data ?? [];
@@ -677,6 +682,9 @@ export function ProjetoDetalheConteudo() {
               tarefas={listaTarefas}
               projetoId={id}
               mutavel={mutavel}
+              podeComentar={podeEscrever(
+                listaTarefas.find((item) => item.id === tarefaAberta) ?? null,
+              )}
               onExcluir={(t) => void excluirTarefa(t)}
               onMover={mutavel ? (t, estado) => void atualizarTarefaEstado(t, estado) : undefined}
               onAbrir={(t) => setTarefaAberta(t.id)}

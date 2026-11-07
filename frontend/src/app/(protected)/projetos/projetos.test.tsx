@@ -7,6 +7,8 @@ import { resetNavigation, router } from "@/test/navigation";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
 
+import { CalendarioPrazos } from "@/components/projetos/CalendarioPrazos";
+
 import ProjetoPage from "./[id]/page";
 import ProjetosPage from "./page";
 
@@ -300,6 +302,48 @@ describe("Projetos — Detalhes e Tarefas", () => {
     await user.click(screen.getByRole("button", { name: "365d" }));
     expect(screen.getByText("Cronograma & Linha do Tempo (365 dias)")).toBeInTheDocument();
     expect(screen.getAllByText("Projeto Cronograma Alpha").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("mostra o prazo da tarefa no calendário do mês", async () => {
+    const sexta = new Date("2026-11-06T15:00:00-03:00");
+    mockBackend({
+      ...identityRoutes(perms("projetos:read")),
+      "GET v1/projetos/prazos": {
+        data: [
+          {
+            id: "tar-1",
+            titulo: "Comprar cabos de fibra",
+            estado: "a_fazer",
+            data_limite: "2026-11-10T18:00:00-03:00",
+            responsavel_id: "u-mariana",
+            responsavel_nome: "Mariana Costa",
+            projeto_id: "proj-1",
+            projeto_numero: 101,
+            projeto_titulo: "Expansão da Fibra Óptica",
+          },
+          {
+            id: "tar-velha",
+            titulo: "Trocar o switch",
+            estado: "a_fazer",
+            data_limite: "2026-10-02T18:00:00-03:00",
+            responsavel_nome: "João Lima",
+            projeto_id: "proj-1",
+            projeto_numero: 101,
+            projeto_titulo: "Expansão da Fibra Óptica",
+          },
+        ],
+      },
+    });
+
+    renderApp(<CalendarioPrazos agora={sexta} />);
+
+    expect(await screen.findByRole("region", { name: /Prazos de novembro de 2026/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Comprar cabos de fibra" })).toHaveAttribute(
+      "href",
+      "/projetos/proj-1",
+    );
+    expect(screen.getByRole("heading", { name: "Atrasadas de outros meses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Trocar o switch" })).toBeInTheDocument();
   });
 
   it("permite vincular itens da assistência ao projeto", async () => {

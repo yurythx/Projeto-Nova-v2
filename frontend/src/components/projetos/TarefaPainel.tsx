@@ -13,7 +13,7 @@ import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 import type { UploadTicket } from "@/lib/plataforma/types";
-import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
+import { ESTADO_TAREFA, type AtualizacaoTarefa, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
 
 export interface AnexoTarefa {
   id: string;
@@ -82,6 +82,7 @@ export function TarefaPainel({
   tarefas = [],
   projetoId,
   mutavel,
+  podeComentar = false,
   onExcluir,
   onMover,
   onAbrir,
@@ -92,6 +93,7 @@ export function TarefaPainel({
   tarefas?: Tarefa[];
   projetoId: string;
   mutavel: boolean;
+  podeComentar?: boolean;
   onExcluir?: (tarefa: Tarefa) => void;
   onMover?: (tarefa: Tarefa, estado: EstadoTarefa) => void;
   onAbrir?: (tarefa: Tarefa) => void;
@@ -104,6 +106,7 @@ export function TarefaPainel({
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [confirmacao, setConfirmacao] = useState("");
   const [nova, setNova] = useState("");
+  const [atualizacao, setAtualizacao] = useState("");
 
   useEffect(() => {
     if (!tarefa) return;
@@ -112,6 +115,7 @@ export function TarefaPainel({
     setArquivo(null);
     setConfirmacao("");
     setNova("");
+    setAtualizacao("");
   }, [tarefa]);
 
   const anexos = useApiQuery<AnexoTarefa[]>(
@@ -119,6 +123,9 @@ export function TarefaPainel({
   );
   const movimentos = useApiQuery<MovimentoTarefa[]>(
     tarefa ? `v1/projetos/${projetoId}/tarefas/${tarefa.id}/movimentos` : null,
+  );
+  const atualizacoes = useApiQuery<AtualizacaoTarefa[]>(
+    tarefa ? `v1/projetos/${projetoId}/tarefas/${tarefa.id}/atualizacoes` : null,
   );
 
   async function salvar() {
@@ -163,6 +170,22 @@ export function TarefaPainel({
     if (ok) {
       setNova("");
       onSaved();
+    }
+  }
+
+  async function publicar(e: FormEvent) {
+    e.preventDefault();
+    if (!tarefa || !atualizacao.trim()) return;
+    const ok = await run(
+      () =>
+        apiClient.post(`v1/projetos/${projetoId}/tarefas/${tarefa.id}/atualizacoes`, {
+          texto: atualizacao.trim(),
+        }),
+      "Atualização publicada",
+    );
+    if (ok) {
+      setAtualizacao("");
+      void atualizacoes.mutate();
     }
   }
 
@@ -306,6 +329,37 @@ export function TarefaPainel({
             maxLength={4000}
             readOnly={!mutavel}
           />
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-foreground">Atualizações</p>
+            {(atualizacoes.data ?? []).length === 0 && (
+              <p className="text-xs text-muted">Nenhuma atualização nesta tarefa.</p>
+            )}
+            <ul className="flex flex-col gap-3">
+              {(atualizacoes.data ?? []).map((item) => (
+                <li key={item.id} className="flex flex-col gap-1">
+                  <PessoaComAvatar id={item.autor_id} nome={item.autor_nome} className="text-sm" />
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{item.texto}</p>
+                  <span className="text-[11px] text-muted">{fmtDateTime(item.created_at)}</span>
+                </li>
+              ))}
+            </ul>
+            {podeComentar && (
+              <form onSubmit={(e) => void publicar(e)} className="flex flex-col gap-2">
+                <Textarea
+                  id="tarefa-atualizacao"
+                  label="Nova atualização"
+                  value={atualizacao}
+                  onChange={(e) => setAtualizacao(e.target.value)}
+                  placeholder="O que mudou, o que foi combinado, o que falta."
+                  rows={3}
+                  maxLength={2000}
+                />
+                <Button type="submit" size="sm" variant="secondary" className="self-start" disabled={pending || !atualizacao.trim()}>
+                  Publicar
+                </Button>
+              </form>
+            )}
+          </div>
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium text-foreground">Arquivos e fotos</p>
             {(anexos.data ?? []).length === 0 && (
