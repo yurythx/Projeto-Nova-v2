@@ -299,7 +299,7 @@ func (im *Importador) oferta(ctx context.Context, tx pgx.Tx, chave string, categ
 	if strings.TrimSpace(nome) == "" {
 		nome = "Sem categoria"
 	}
-	o, err := domain.NovaOferta(Cortar(Texto(nome, domain.NomeMax), domain.NomeMax), "Importada do GLPI.", tipo, nil, im.Unidade, false)
+	o, err := domain.NovaOferta(Cortar(Texto(nome, domain.NomeMax), domain.NomeMax), "", tipo, nil, im.Unidade, false)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -331,7 +331,7 @@ func (im *Importador) ofertaDoMapa(ctx context.Context, tx pgx.Tx, chave string,
 	switch {
 	case database.IsNoRows(err):
 		criada = true
-		o, err := domain.NovaOferta(Cortar(d.Oferta, domain.NomeMax), "Importada do GLPI.", d.Tipo, nil, d.Unidade, true)
+		o, err := domain.NovaOferta(Cortar(d.Oferta, domain.NomeMax), "", d.Tipo, nil, d.Unidade, true)
 		if err != nil {
 			return uuid.Nil, err
 		}
@@ -373,7 +373,7 @@ func (im *Importador) categoria(ctx context.Context, tx pgx.Tx, nome string) (*u
 	var id uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT id FROM atendimento_categorias WHERE lower(btrim(nome)) = $1`, chave).Scan(&id)
 	if database.IsNoRows(err) {
-		c, err := domain.NovaCategoria(Cortar(nome, domain.CategoriaNomeMax), "Importada do GLPI.", "", 0, true)
+		c, err := domain.NovaCategoria(Cortar(nome, domain.CategoriaNomeMax), "", "", 0, true)
 		if err != nil {
 			return nil, err
 		}
