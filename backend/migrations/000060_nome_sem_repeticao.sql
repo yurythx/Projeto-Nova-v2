@@ -2,6 +2,7 @@
 -- O diretório (AD e GLPI) grava o mesmo trecho no nome e no sobrenome.
 -- A função tira o bloco repetido; a sincronização passa a gravar o nome já limpo.
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION nova_nome_sem_repeticao(s text) RETURNS text
 LANGUAGE plpgsql IMMUTABLE AS $$
 DECLARE
@@ -42,6 +43,7 @@ BEGIN
     END LOOP;
     RETURN array_to_string(w, ' ');
 END $$;
+-- +goose StatementEnd
 
 UPDATE users
    SET display_name = nova_nome_sem_repeticao(display_name)
