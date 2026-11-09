@@ -82,7 +82,10 @@ describe("ModalShell", () => {
       </ModalShell>,
     );
     const dialogs = document.querySelectorAll("dialog");
-    expect(dialogs[1]).toHaveClass("w-[min(100vw,max(68vw,42rem))]");
+    const folha = dialogs[1] as HTMLElement;
+    expect(folha.style.width).toBe("min(100vw, max(68vw, 42rem))");
+    expect(folha.style.right).toBe("0px");
+    expect(folha.style.left).toBe("auto");
     dialogs[1]!.dispatchEvent(new Event("close", { bubbles: true }));
     expect(dentro).toHaveBeenCalledTimes(1);
     expect(fora).not.toHaveBeenCalled();

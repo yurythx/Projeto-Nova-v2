@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useState, useRef, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+const larguraDrawer: Record<"media" | "larga" | "ampla", string> = {
+  media: "min(100vw, 30rem)",
+  larga: "min(100vw, 56rem)",
+  ampla: "min(100vw, max(68vw, 42rem))",
+};
 
 const sizeClass: Record<ModalSize, string> = {
   sm: "max-w-sm",
@@ -52,13 +59,18 @@ export function ModalShell({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [corpo, setCorpo] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setCorpo(document.body);
+  }, []);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (open && !el.open) el.showModal();
     if (!open && el.open) el.close();
-  }, [open]);
+  }, [open, corpo]);
 
   useEffect(() => {
     if (!open) return;
@@ -69,7 +81,23 @@ export function ModalShell({
     };
   }, [open]);
 
-  return (
+  const drawer = variant === "drawer";
+  const geometria: CSSProperties | undefined = drawer
+    ? {
+        position: "fixed",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: "auto",
+        margin: 0,
+        height: "100dvh",
+        maxHeight: "none",
+        width: larguraDrawer[amplitude],
+        maxWidth: larguraDrawer[amplitude],
+      }
+    : undefined;
+
+  const dialog = (
     <dialog
       ref={ref}
       onClose={(event) => {
@@ -86,24 +114,22 @@ export function ModalShell({
       }}
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
+      style={geometria}
       className={`${
-        variant === "drawer"
-          ? `my-0 ml-auto mr-0 h-dvh max-h-dvh rounded-l-xl max-md:rounded-none ${
-              amplitude === "ampla"
-                ? "w-[min(100vw,max(68vw,42rem))]"
-                : amplitude === "larga"
-                  ? "w-[min(100vw,56rem)]"
-                  : "w-[min(100vw,30rem)]"
-            }`
+        drawer
+          ? "rounded-l-xl max-md:rounded-none"
           : `m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)] rounded-xl`
       } overflow-hidden border border-surface-border bg-surface p-0 text-foreground
         shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm ${className}`}
     >
       <div
-        className={`flex flex-col ${variant === "drawer" ? "h-full" : "max-h-[calc(100dvh-2rem)]"}`}
+        className={`flex flex-col ${drawer ? "h-full" : "max-h-[calc(100dvh-2rem)]"}`}
       >
         {children}
       </div>
     </dialog>
   );
+
+  if (!corpo) return null;
+  return createPortal(dialog, corpo);
 }
