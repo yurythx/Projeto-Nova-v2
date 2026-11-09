@@ -578,8 +578,6 @@ export function ProjetoDetalheConteudo() {
               </div>
             </Dialog>
 
-            <HistoricoDoProjeto projetoId={id} />
-
             <SectionTabsInline
               label="Seções do projeto"
               value={aba}
@@ -600,6 +598,76 @@ export function ProjetoDetalheConteudo() {
 
             {aba === "ficha" && (
             <>
+            {/* Tarefas e Marcos */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle as="h2">Tarefas e Marcos</CardTitle>
+                  <p className="text-xs text-muted mt-0.5">
+                    Acompanhamento operacional das entregas e atividades vinculadas.
+                  </p>
+                </div>
+                {mutavel && (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href="/projetos/tarefas/colunas"
+                      className={buttonClass("secondary", "sm")}
+                    >
+                      Colunas
+                    </Link>
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => setModalTarefa(true)}
+                      data-testid="adicionar-tarefa-btn"
+                    >
+                      Nova tarefa
+                    </Button>
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="pb-5">
+                <DataState
+                  loading={tarefas.isLoading}
+                  error={tarefas.error}
+                  onRetry={() => void tarefas.mutate()}
+                  empty={false}
+                >
+                  <TarefasDoProjeto
+                    projetoId={p.id}
+                    tarefas={listaTarefas}
+                    colunas={colunasTarefa}
+                    oficial={catalogoTarefas.oficial}
+                    mutavel={mutavel}
+                    pending={pending}
+                    vista={vistaTarefas}
+                    onVista={trocarVistaTarefas}
+                    onMover={(t, estado) => void atualizarTarefaEstado(t, estado)}
+                    onRenomear={mutavel ? (t, nome) => void renomearTarefa(t, nome) : undefined}
+                    onAbrir={(t) => setTarefaAberta(t.id)}
+                    usuarioId={me?.id}
+                    onAtribuir={
+                      mutavel
+                        ? (t, pessoa) =>
+                            void gravarTarefa(
+                              t,
+                              { responsavel_id: pessoa.id || null, responsavel_nome: pessoa.nome },
+                              pessoa.nome ? `Responsável: ${pessoa.nome}` : "Responsável removido",
+                            )
+                        : undefined
+                    }
+                    onPrazo={
+                      mutavel
+                        ? (t, dia) => void gravarTarefa(t, { data_limite: prazoDoDia(dia) }, "Prazo atualizado")
+                        : undefined
+                    }
+                  />
+                </DataState>
+              </CardContent>
+            </Card>
+
+            <HistoricoDoProjeto projetoId={id} />
+
             <Section title="Ficha" collapsible defaultExpanded={false}>
             <div className="grid gap-4 md:grid-cols-3">
               <Card className="md:col-span-2">
@@ -674,74 +742,6 @@ export function ProjetoDetalheConteudo() {
               podeEditar={mutavel}
               inicioRecolhido
             />
-
-            {/* Tarefas e Marcos */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div>
-                  <CardTitle as="h2">Tarefas e Marcos</CardTitle>
-                  <p className="text-xs text-muted mt-0.5">
-                    Acompanhamento operacional das entregas e atividades vinculadas.
-                  </p>
-                </div>
-                {mutavel && (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href="/projetos/tarefas/colunas"
-                      className={buttonClass("secondary", "sm")}
-                    >
-                      Colunas
-                    </Link>
-                    <Button
-                      size="sm"
-                      type="button"
-                      onClick={() => setModalTarefa(true)}
-                      data-testid="adicionar-tarefa-btn"
-                    >
-                      Nova tarefa
-                    </Button>
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="pb-5">
-                <DataState
-                  loading={tarefas.isLoading}
-                  error={tarefas.error}
-                  onRetry={() => void tarefas.mutate()}
-                  empty={false}
-                >
-                  <TarefasDoProjeto
-                    projetoId={p.id}
-                    tarefas={listaTarefas}
-                    colunas={colunasTarefa}
-                    oficial={catalogoTarefas.oficial}
-                    mutavel={mutavel}
-                    pending={pending}
-                    vista={vistaTarefas}
-                    onVista={trocarVistaTarefas}
-                    onMover={(t, estado) => void atualizarTarefaEstado(t, estado)}
-                    onRenomear={mutavel ? (t, nome) => void renomearTarefa(t, nome) : undefined}
-                    onAbrir={(t) => setTarefaAberta(t.id)}
-                    usuarioId={me?.id}
-                    onAtribuir={
-                      mutavel
-                        ? (t, pessoa) =>
-                            void gravarTarefa(
-                              t,
-                              { responsavel_id: pessoa.id || null, responsavel_nome: pessoa.nome },
-                              pessoa.nome ? `Responsável: ${pessoa.nome}` : "Responsável removido",
-                            )
-                        : undefined
-                    }
-                    onPrazo={
-                      mutavel
-                        ? (t, dia) => void gravarTarefa(t, { data_limite: prazoDoDia(dia) }, "Prazo atualizado")
-                        : undefined
-                    }
-                  />
-                </DataState>
-              </CardContent>
-            </Card>
 
             <TarefaPainel
               tarefa={listaTarefas.find((item) => item.id === tarefaAberta) ?? null}
