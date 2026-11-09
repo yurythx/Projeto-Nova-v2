@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -129,7 +130,7 @@ func (s *Service) avisarGerenteNovo(ctx context.Context, tx pgx.Tx, autor uuid.U
 	return s.enviarAviso(ctx, tx, autor, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   "Você é o responsável pelo projeto #" + strconv.FormatInt(p.Numero, 10),
-		Mensagem: cortar(p.Titulo, 1000),
+		Mensagem: cortar(mensagemAtribuida(s.nomeDoAutor(ctx, tx, autor), p.Titulo), 1000),
 		Link:     linkProjeto(p.ID),
 		Chave:    chaveAviso("projeto", p.ID.String(), "gerente"),
 	}, true)
@@ -256,6 +257,7 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 		if antes.ID != uuid.Nil && antes.Estado != depois.Estado {
 			mensagem = depois.Titulo + " foi para " + rotuloEstadoTarefa(depois.Estado) + " · projeto #" + strconv.FormatInt(p.Numero, 10)
 		}
+		mensagem = mensagemAtribuida(s.nomeDoAutor(ctx, tx, autor), mensagem)
 		parte, err := s.enviarAviso(ctx, tx, autor, []uuid.UUID{*depois.ResponsavelID}, notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "Você é o responsável pela tarefa",
@@ -326,6 +328,30 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 		return nil, err
 	}
 	return append(enviadas, parte...), nil
+}
+
+func (s *Service) nomeDoAutor(ctx context.Context, db database.DBTX, autor uuid.UUID) string {
+	if s == nil || autor == uuid.Nil {
+		return ""
+	}
+	nome, err := s.repo.NomeDaPessoa(ctx, db, autor, nil)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(nome)
+}
+
+func mensagemAtribuida(autor, corpo string) string {
+	quem := strings.TrimSpace(autor)
+	if quem == "" {
+		quem = "alguém"
+	}
+	texto := "Atribuído por " + quem + "."
+	corpo = strings.TrimSpace(corpo)
+	if corpo == "" {
+		return texto
+	}
+	return texto + " " + corpo
 }
 
 func nomeOuNinguem(nome string) string {
