@@ -71,13 +71,14 @@ export function usePainelNaUrl() {
   return { id: escolha, abrir, fechar, href };
 }
 
-/** Detalhe do card no centro da tela, por cima do quadro. */
+/** Detalhe do card por cima do quadro. `folha` encosta na direita e ocupa mais da metade da tela. */
 export function PainelDoQuadro({
   aberto,
   id,
   titulo,
   href,
   onClose,
+  folha = false,
   children,
 }: {
   aberto: boolean;
@@ -85,14 +86,28 @@ export function PainelDoQuadro({
   titulo: string;
   href: string;
   onClose: () => void;
+  folha?: boolean;
   children: ReactNode;
 }) {
   const titleId = useId();
   return (
-    <ModalShell open={aberto} onClose={onClose} size="full" variant="center" labelledBy={titleId}>
+    <ModalShell
+      open={aberto}
+      onClose={onClose}
+      size="full"
+      variant={folha ? "drawer" : "center"}
+      amplitude="ampla"
+      labelledBy={titleId}
+    >
       <IdDoPainel.Provider value={id}>
         <Embutido.Provider value>
-          <div className="flex min-h-[min(88dvh,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] flex-col">
+          <div
+            className={
+              folha
+                ? "flex h-full min-h-0 flex-col"
+                : "flex min-h-[min(88dvh,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] flex-col"
+            }
+          >
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-surface-border px-8 py-5">
               <h2 id={titleId} className="truncate text-xl font-semibold">
                 {titulo}

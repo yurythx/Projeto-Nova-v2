@@ -7,7 +7,6 @@ import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
 import { useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
@@ -121,7 +120,7 @@ export function Painel5W2H({
             <p className="text-sm text-muted">
               Plano diretor do projeto. Salvar de novo atualiza estes campos e não gera tarefa.
             </p>
-            {podeEditar && (
+            {podeEditar && !editando && (
               <Button type="button" size="sm" onClick={() => setEditando(true)}>
                 Editar escopo 5W2H
               </Button>
@@ -183,6 +182,24 @@ export function Painel5W2H({
             </Card>
           </div>
 
+          {editando ? (
+            <EditorCarta
+              visao={v}
+              pending={pending}
+              onClose={() => setEditando(false)}
+              onSalvar={async (corpo) => {
+                const ok = await run(
+                  () => apiClient.put(`v1/projetos/${projetoId}/carta`, corpo),
+                  "Escopo 5W2H atualizado",
+                );
+                if (ok) {
+                  setEditando(false);
+                  void carta.mutate();
+                  onSalvo();
+                }
+              }}
+            />
+          ) : (
           <div className="grid gap-4 md:grid-cols-2">
             <Bloco titulo="O que" texto={texto(v.descricao ? `${v.titulo}\n\n${v.descricao}` : v.titulo)} />
             <Bloco titulo="Por que" texto={texto(v.objetivo)} />
@@ -229,24 +246,6 @@ export function Painel5W2H({
               }
             />
           </div>
-
-          {editando && (
-            <EditorCarta
-              visao={v}
-              pending={pending}
-              onClose={() => setEditando(false)}
-              onSalvar={async (corpo) => {
-                const ok = await run(
-                  () => apiClient.put(`v1/projetos/${projetoId}/carta`, corpo),
-                  "Escopo 5W2H atualizado",
-                );
-                if (ok) {
-                  setEditando(false);
-                  void carta.mutate();
-                  onSalvo();
-                }
-              }}
-            />
           )}
         </div>
       )}
@@ -309,8 +308,8 @@ function EditorCarta({
   }
 
   return (
-    <Dialog open title="Editar escopo 5W2H" onClose={onClose} size="lg">
-      <form onSubmit={enviar} className="mt-3 grid gap-3">
+    <form onSubmit={enviar} className="grid gap-3" aria-label="Editar escopo 5W2H">
+      <h3 className="text-base font-semibold text-foreground">Editar escopo 5W2H</h3>
         <Input id="carta-titulo" label="Nome do projeto *" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={160} required />
         <Textarea id="carta-descricao" label="Escopo e entregáveis" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} maxLength={4000} />
         <Textarea id="carta-objetivo" label="Por que" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} rows={3} maxLength={4000} />
@@ -340,7 +339,6 @@ function EditorCarta({
             Salvar escopo
           </Button>
         </div>
-      </form>
-    </Dialog>
+    </form>
   );
 }

@@ -265,7 +265,10 @@ function ProjetosConteudo() {
         }),
       "Nome atualizado",
     );
-    if (ok) void projetos.mutate();
+    if (ok) {
+      void projetos.mutate();
+      painel.abrir(p.id);
+    }
   }
 
   const { filtrarPorEntidade } = useEntityFilter();
@@ -465,7 +468,10 @@ function ProjetosConteudo() {
                     <NomeClicavel
                       nome={vista.titulo || p.titulo}
                       href={`/projetos/${p.id}`}
-                      onSalvar={vista.salvarNome}
+                      onSalvar={(nome) => {
+                        vista.salvarNome(nome);
+                        painel.abrir(p.id);
+                      }}
                       className="truncate text-left text-sm font-semibold text-foreground hover:underline"
                     />
                   </TableCell>
@@ -664,6 +670,7 @@ function ProjetosConteudo() {
         titulo="Detalhe do projeto"
         href={painel.id ? `/projetos/${painel.id}` : "/projetos"}
         onClose={painel.fechar}
+        folha
       >
         {painel.id && <ProjetoDetalheConteudo />}
       </PainelDoQuadro>

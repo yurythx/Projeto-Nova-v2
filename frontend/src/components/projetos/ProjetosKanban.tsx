@@ -102,7 +102,10 @@ export function ProjetosKanban({
             <NomeClicavel
               nome={vista.titulo || p.titulo}
               href={`/projetos/${p.id}`}
-              onSalvar={vista.salvarNome}
+              onSalvar={(nome) => {
+                vista.salvarNome(nome);
+                abrir(p);
+              }}
               className="line-clamp-2 text-left text-sm font-semibold text-foreground hover:underline"
             />
             <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
