@@ -34,7 +34,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
-import { apiClient } from "@/lib/api/client";
+import { ApiError, apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import type { Solicitacao } from "@/lib/atendimento/atendimento";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
@@ -76,6 +76,11 @@ export function ProjetoDetalheConteudo() {
     params.get("vista") === "5w2h" ? "5w2h" : "ficha",
   );
   const [confirmacao, setConfirmacao] = useState("");
+  const [gerenteFicha, setGerenteFicha] = useState({ id: "", nome: "" });
+  const [gerenteChave, setGerenteChave] = useState("");
+  const [avisoFicha, setAvisoFicha] = useState("");
+  const [erroFicha, setErroFicha] = useState("");
+  const [salvandoResp, setSalvandoResp] = useState(false);
   const daUrl = params.get("tarefas") === "lista" ? "lista" : "quadro";
   const [vistaTarefas, setVistaTarefas] = useState<"lista" | "quadro">(daUrl);
   const [urlTarefas, setUrlTarefas] = useState(daUrl);
@@ -113,8 +118,47 @@ export function ProjetoDetalheConteudo() {
   );
 
   const p = projeto.data;
+  const chaveGerente = p ? `${p.gerente_id ?? ""}:${p.gerente_nome}` : "";
+  if (p && gerenteChave !== chaveGerente) {
+    setGerenteChave(chaveGerente);
+    setGerenteFicha({ id: p.gerente_id ?? "", nome: p.gerente_nome });
+  }
   const mutavel = Boolean(p && gere && p.estado !== "cancelado" && p.estado !== "concluido");
   const admin = Boolean(me?.roles?.includes("nova-admin") || me?.permissions?.includes("*"));
+  async function salvarResponsavel() {
+    if (!p) return;
+    const nome = gerenteFicha.nome.trim();
+    const mensagem = nome
+      ? `Responsável do projeto salvo: ${nome}.`
+      : "Responsável do projeto removido.";
+    setErroFicha("");
+    setSalvandoResp(true);
+    try {
+      await apiClient.put(`v1/projetos/${p.id}`, {
+        titulo: p.titulo,
+        descricao: p.descricao,
+        objetivo: p.objetivo,
+        prioridade: p.prioridade,
+        data_inicio_planejada: p.data_inicio_planejada ?? null,
+        data_fim_planejada: p.data_fim_planejada ?? null,
+        data_inicio_real: p.data_inicio_real ?? null,
+        data_fim_real: p.data_fim_real ?? null,
+        orcamento: Number(p.orcamento) || 0,
+        unidade_id: p.unidade_id ?? null,
+        produto_id: p.produto_id ?? null,
+        gerente_id: gerenteFicha.id || null,
+        gerente_nome: nome,
+      });
+      setAvisoFicha(mensagem);
+      setConfirmacao(mensagem);
+      void projeto.mutate();
+    } catch (err) {
+      setErroFicha(err instanceof ApiError ? err.message : "Não foi possível salvar o responsável.");
+    } finally {
+      setSalvandoResp(false);
+    }
+  }
+
   function podeEscrever(t: Tarefa | null) {
     if (!p || !t || p.estado === "cancelado" || p.estado === "concluido") return false;
     if (gere) return true;
@@ -712,9 +756,46 @@ export function ProjetoDetalheConteudo() {
                 <CardContent className="space-y-3 text-xs pb-5">
                   <div>
                     <span className="text-muted">Responsável:</span>
-                    <p className="font-medium text-foreground">
-                      <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} vazio="Não informado" />
-                    </p>
+                    {mutavel ? (
+                      <div className="mt-2 text-sm">
+                        <ResponsavelDaTarefa
+                          id="ficha-responsavel"
+                          projetoId={p.id}
+                          rotulo="Responsável pelo projeto"
+                          value={gerenteFicha}
+                          onChange={(pessoa) => {
+                            setGerenteFicha(pessoa);
+                            setAvisoFicha("");
+                          }}
+                        />
+                        {erroFicha && (
+                          <p role="alert" className="mt-2 text-sm text-danger">
+                            {erroFicha}
+                          </p>
+                        )}
+                        {avisoFicha && (
+                          <p
+                            role="status"
+                            className="mt-2 rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-foreground"
+                          >
+                            {avisoFicha}
+                          </p>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="mt-2"
+                          loading={salvandoResp}
+                          onClick={() => void salvarResponsavel()}
+                        >
+                          Salvar
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="font-medium text-foreground">
+                        <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} vazio="Não informado" />
+                      </p>
+                    )}
                   </div>
                   <div>
                     <span className="text-muted">Orçamento:</span>

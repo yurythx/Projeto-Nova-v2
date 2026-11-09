@@ -325,6 +325,40 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(screen.getByRole("heading", { name: "Tarefas e Marcos" })).toBeInTheDocument();
   });
 
+  it("na ficha, salvar o responsável confirma e permanece no detalhe", async () => {
+    const user = userEvent.setup();
+    resetNavigation({ id: "proj-1" }, "/projetos/proj-1");
+
+    const api = mockBackend({
+      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      "GET v1/projetos/proj-1": { data: projeto() },
+      "GET v1/projetos/proj-1/tarefas": { data: [] },
+      "GET v1/projetos/proj-1/responsaveis": {
+        data: [{ id: "u-mariana", nome: "Mariana Costa" }],
+      },
+      "PUT v1/projetos/proj-1": {
+        data: projeto({ gerente_id: "u-mariana", gerente_nome: "Mariana Costa" }),
+      },
+    });
+
+    renderApp(<ProjetoPage />);
+    await user.click(await screen.findByRole("button", { name: 'Expandir seção "Ficha"' }));
+    await user.type(screen.getByLabelText("Responsável pelo projeto"), "Ma");
+    await user.click(await screen.findByRole("button", { name: "Mariana Costa" }));
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findAllByText("Responsável do projeto salvo: Mariana Costa."),
+    ).not.toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "Tarefas e Marcos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Ficha" })).toBeInTheDocument();
+    await waitFor(() => expect(api.to("PUT v1/projetos/proj-1")).toHaveLength(1));
+    expect(api.to("PUT v1/projetos/proj-1")[0]!.body).toMatchObject({
+      gerente_id: "u-mariana",
+      gerente_nome: "Mariana Costa",
+    });
+  });
+
   it("renderiza o cronograma gantt na vista cronograma", async () => {
     const user = userEvent.setup();
     resetNavigation({}, "/projetos", "vista=cronograma");

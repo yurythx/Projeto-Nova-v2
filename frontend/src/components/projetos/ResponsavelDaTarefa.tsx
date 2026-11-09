@@ -16,11 +16,13 @@ export function ResponsavelDaTarefa({
   value,
   onChange,
   id = "tarefa-responsavel-painel",
+  rotulo = "Responsável pela tarefa",
 }: {
   projetoId: string;
   value: ResponsavelOpcao;
   onChange: (v: ResponsavelOpcao) => void;
   id?: string;
+  rotulo?: string;
 }) {
   const [q, setQ] = useState("");
   const lista = useApiQuery<ResponsavelOpcao[]>(
@@ -39,7 +41,7 @@ export function ResponsavelDaTarefa({
     <div className="flex flex-col gap-2">
       <Input
         id={id}
-        label="Responsável pela tarefa"
+        label={rotulo}
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Digite o nome"
