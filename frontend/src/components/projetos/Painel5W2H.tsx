@@ -3,13 +3,13 @@
 import { type FormEvent, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
+import { useToast } from "@/components/notifications/ToastProvider";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
-import { useAction } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { apiClient } from "@/lib/api/client";
+import { ApiError, apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 
 export interface VisaoCarta {
@@ -92,12 +92,14 @@ export function Painel5W2H({
 }: {
   projetoId: string;
   podeEditar: boolean;
-  onSalvo: () => void;
+  onSalvo: (mensagem: string) => void;
 }) {
   const carta = useApiQuery<VisaoCarta>(`v1/projetos/${projetoId}/carta`);
   const v = carta.data;
-  const { run, pending } = useAction();
+  const { showToast } = useToast();
   const [editando, setEditando] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [erro, setErro] = useState("");
 
   const fisico =
     v && v.etapas_how > 0 ? Math.round((v.etapas_how_concluidas / v.etapas_how) * 100) : null;
@@ -186,16 +188,35 @@ export function Painel5W2H({
             <EditorCarta
               visao={v}
               pending={pending}
-              onClose={() => setEditando(false)}
+              erro={erro}
+              onClose={() => {
+                setErro("");
+                setEditando(false);
+              }}
               onSalvar={async (corpo) => {
-                const ok = await run(
-                  () => apiClient.put(`v1/projetos/${projetoId}/carta`, corpo),
-                  "Escopo 5W2H atualizado",
-                );
-                if (ok) {
+                const nome = String(corpo.gerente_nome ?? "").trim();
+                const mensagem = nome
+                  ? `Responsável do projeto salvo: ${nome}.`
+                  : "Alterações do projeto salvas.";
+                setErro("");
+                setPending(true);
+                try {
+                  await apiClient.put(`v1/projetos/${projetoId}/carta`, corpo);
+                  showToast({ title: mensagem, tone: "success" });
                   setEditando(false);
                   void carta.mutate();
-                  onSalvo();
+                  onSalvo(mensagem);
+                } catch (err) {
+                  const message =
+                    err instanceof ApiError ? err.message : "Não foi possível salvar o responsável.";
+                  setErro(message);
+                  showToast({
+                    title: "Operação não concluída",
+                    description: message,
+                    tone: "danger",
+                  });
+                } finally {
+                  setPending(false);
                 }
               }}
             />
@@ -269,11 +290,13 @@ function Bloco({ titulo, texto: corpo }: { titulo: string; texto: string }) {
 function EditorCarta({
   visao,
   pending,
+  erro,
   onClose,
   onSalvar,
 }: {
   visao: VisaoCarta;
   pending: boolean;
+  erro: string;
   onClose: () => void;
   onSalvar: (corpo: Record<string, unknown>) => Promise<void>;
 }) {
@@ -331,6 +354,11 @@ function EditorCarta({
           <Input id="carta-orcamento" label="Orçamento (R$)" type="number" min="0" step="0.01" value={orcamento} onChange={(e) => setOrcamento(e.target.value)} />
           <Input id="carta-centro" label="Centro de custo" value={centro} onChange={(e) => setCentro(e.target.value)} maxLength={120} />
         </div>
+        {erro && (
+          <p role="alert" className="text-sm text-danger">
+            {erro}
+          </p>
+        )}
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar

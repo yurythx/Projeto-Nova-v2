@@ -75,6 +75,7 @@ export function ProjetoDetalheConteudo() {
   const [aba, setAba] = useState<"ficha" | "5w2h">(
     params.get("vista") === "5w2h" ? "5w2h" : "ficha",
   );
+  const [confirmacao, setConfirmacao] = useState("");
   const daUrl = params.get("tarefas") === "lista" ? "lista" : "quadro";
   const [vistaTarefas, setVistaTarefas] = useState<"lista" | "quadro">(daUrl);
   const [urlTarefas, setUrlTarefas] = useState(daUrl);
@@ -578,6 +579,15 @@ export function ProjetoDetalheConteudo() {
               </div>
             </Dialog>
 
+            {confirmacao && (
+              <p
+                role="status"
+                className="rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-foreground"
+              >
+                {confirmacao}
+              </p>
+            )}
+
             <SectionTabsInline
               label="Seções do projeto"
               value={aba}
@@ -592,7 +602,11 @@ export function ProjetoDetalheConteudo() {
               <Painel5W2H
                 projetoId={id}
                 podeEditar={mutavel}
-                onSalvo={() => void projeto.mutate()}
+                onSalvo={(mensagem) => {
+                  void projeto.mutate();
+                  setAba("ficha");
+                  setConfirmacao(mensagem);
+                }}
               />
             )}
 

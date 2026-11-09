@@ -284,6 +284,47 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(screen.getByText("Escolas da SEMED")).toBeInTheDocument();
   });
 
+  it("ao salvar o responsável, confirma e volta para o detalhe do projeto", async () => {
+    const user = userEvent.setup();
+    resetNavigation({ id: "proj-1" }, "/projetos/proj-1");
+
+    mockBackend({
+      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      "GET v1/projetos/proj-1": { data: projeto() },
+      "GET v1/projetos/proj-1/tarefas": { data: [] },
+      "GET v1/projetos/proj-1/carta": {
+        data: {
+          projeto_id: "proj-1",
+          titulo: "Expansão da Fibra Óptica",
+          descricao: "Conectar escolas municipais",
+          objetivo: "100% das escolas conectadas",
+          onde: "",
+          patrocinador: "",
+          metodologia: "",
+          centro_custo: "",
+          gerente_nome: "Carlos Silva",
+          orcamento: 0,
+          existe: true,
+          etapas_how: 0,
+          etapas_how_concluidas: 0,
+          custo_realizado: 0,
+        },
+      },
+      "PUT v1/projetos/proj-1/carta": { data: { gerente_nome: "Carlos Silva" } },
+    });
+
+    renderApp(<ProjetoPage />);
+    await user.click(await screen.findByRole("tab", { name: "5W2H" }));
+    await user.click(await screen.findByRole("button", { name: "Editar escopo 5W2H" }));
+    await user.click(screen.getByRole("button", { name: "Salvar escopo" }));
+
+    expect(
+      await screen.findAllByText("Responsável do projeto salvo: Carlos Silva."),
+    ).not.toHaveLength(0);
+    expect(screen.getByRole("tab", { name: "Ficha" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Tarefas e Marcos" })).toBeInTheDocument();
+  });
+
   it("renderiza o cronograma gantt na vista cronograma", async () => {
     const user = userEvent.setup();
     resetNavigation({}, "/projetos", "vista=cronograma");
