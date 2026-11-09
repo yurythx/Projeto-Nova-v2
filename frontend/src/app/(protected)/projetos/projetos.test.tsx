@@ -404,6 +404,7 @@ describe("Projetos — Detalhes e Tarefas", () => {
       "href",
       "/ativos/00000000-0000-0000-0000-000000000099",
     );
+    await user.click(screen.getByRole("button", { name: 'Expandir seção "Ficha"' }));
     expect(screen.getByRole("link", { name: "Ver no catálogo de produtos" })).toHaveAttribute(
       "href",
       "/produtos",

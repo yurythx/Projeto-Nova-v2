@@ -3,8 +3,10 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Clock,
   Flag,
   Milestone,
@@ -29,6 +31,8 @@ interface ProjetoGanttChartProps {
   vinculos?: VinculoProjeto[];
   onAdicionarTarefa?: () => void;
   podeEditar?: boolean;
+  /** A página de detalhes abre só com o título. */
+  inicioRecolhido?: boolean;
 }
 
 export function ProjetoGanttChart({
@@ -37,7 +41,9 @@ export function ProjetoGanttChart({
   vinculos = [],
   onAdicionarTarefa,
   podeEditar,
+  inicioRecolhido = false,
 }: ProjetoGanttChartProps) {
+  const [aberto, setAberto] = useState(!inicioRecolhido);
   // Filtro por estado da tarefa
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
   // Janela em dias. 90 é o padrão, no mesmo recorte da carteira.
@@ -220,8 +226,25 @@ export function ProjetoGanttChart({
       data-testid="projeto-gantt-chart"
     >
       {/* Cabeçalho do Gantt e Resumo Operacional */}
-      <div className="flex flex-col gap-3 pb-3 border-b border-surface-border sm:flex-row sm:items-center sm:justify-between">
+      <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${aberto ? "border-b border-surface-border pb-3" : ""}`}>
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setAberto((v) => !v)}
+            aria-expanded={aberto}
+            aria-label={
+              aberto
+                ? 'Minimizar seção "Cronograma & Diagrama de Gantt"'
+                : 'Expandir seção "Cronograma & Diagrama de Gantt"'
+            }
+            className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface-border/50 hover:text-foreground"
+          >
+            {aberto ? (
+              <ChevronUp size={20} aria-hidden="true" />
+            ) : (
+              <ChevronDown size={20} aria-hidden="true" />
+            )}
+          </button>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Milestone className="h-5 w-5" />
           </div>
@@ -265,6 +288,8 @@ export function ProjetoGanttChart({
         </div>
       </div>
 
+      {aberto && (
+      <>
       {/* Controles de Navegação e Filtros */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-1.5">
@@ -503,6 +528,8 @@ export function ProjetoGanttChart({
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

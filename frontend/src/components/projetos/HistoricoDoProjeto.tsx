@@ -1,5 +1,6 @@
 "use client";
 
+import { Section } from "@/components/ui/Section";
 import { useApiQuery } from "@/lib/api/swr";
 
 export interface MarcoProjeto {
@@ -28,8 +29,7 @@ export function HistoricoDoProjeto({ projetoId }: { projetoId: string }) {
   const itens = historico.data ?? [];
   if (itens.length === 0) return null;
   return (
-    <section aria-label="Histórico do projeto" className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium text-foreground">Histórico</h2>
+    <Section title="Histórico" collapsible defaultExpanded={false}>
       <ol className="flex flex-col gap-2">
         {itens.map((m) => (
           <li key={m.id} className="text-sm text-muted">
@@ -39,6 +39,6 @@ export function HistoricoDoProjeto({ projetoId }: { projetoId: string }) {
           </li>
         ))}
       </ol>
-    </section>
+    </Section>
   );
 }

@@ -27,6 +27,7 @@ import { TarefasDoProjeto } from "@/components/projetos/TarefasDoProjeto";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProjetoGanttChart } from "@/components/projetos/ProjetoGanttChart";
 import { Badge } from "@/components/ui/Badge";
+import { Section } from "@/components/ui/Section";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
@@ -599,7 +600,7 @@ export function ProjetoDetalheConteudo() {
 
             {aba === "ficha" && (
             <>
-            {/* Informações e Escopo */}
+            <Section title="Ficha" collapsible defaultExpanded={false}>
             <div className="grid gap-4 md:grid-cols-3">
               <Card className="md:col-span-2">
                 <CardHeader>
@@ -664,13 +665,14 @@ export function ProjetoDetalheConteudo() {
                 </CardContent>
               </Card>
             </div>
+            </Section>
 
-            {/* Cronograma Visual e Diagrama de Gantt */}
             <ProjetoGanttChart
               projeto={p}
               tarefas={listaTarefas.filter((t) => !t.pai_id)}
               vinculos={listaVinculos}
               podeEditar={mutavel}
+              inicioRecolhido
             />
 
             {/* Tarefas e Marcos */}
