@@ -359,6 +359,38 @@ describe("Projetos — Detalhes e Tarefas", () => {
     });
   });
 
+  it("na lista, salvar o responsável da tarefa confirma e volta ao detalhe", async () => {
+    const user = userEvent.setup();
+    resetNavigation({ id: "proj-1" }, "/projetos/proj-1");
+
+    mockBackend({
+      ...identityRoutes(perms("projetos:read", "projetos:manage")),
+      "GET v1/projetos/proj-1": { data: projeto() },
+      "GET v1/projetos/proj-1/tarefas": {
+        data: [tarefa({ responsavel_id: "", responsavel_nome: "" })],
+      },
+      "GET v1/projetos/proj-1/responsaveis": {
+        data: [{ id: "u-mariana", nome: "Mariana Costa" }],
+      },
+      "PUT v1/projetos/proj-1/tarefas/tar-1": {
+        data: tarefa({ responsavel_id: "u-mariana", responsavel_nome: "Mariana Costa" }),
+      },
+    });
+
+    renderApp(<ProjetoPage />);
+    await user.click(await screen.findByRole("tab", { name: "Lista" }));
+    await user.click(await screen.findByRole("button", { name: "Atribuir" }));
+    await user.type(document.getElementById("resp-tar-1")!, "Ma");
+    await user.click(await screen.findByRole("button", { name: "Mariana Costa" }));
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findAllByText("Responsável da tarefa salvo: Mariana Costa."),
+    ).not.toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "Tarefas e Marcos" })).toBeInTheDocument();
+    expect(document.getElementById("resp-tar-1")).not.toBeInTheDocument();
+  });
+
   it("renderiza o cronograma gantt na vista cronograma", async () => {
     const user = userEvent.setup();
     resetNavigation({}, "/projetos", "vista=cronograma");

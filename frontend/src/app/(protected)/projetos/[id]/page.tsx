@@ -372,6 +372,7 @@ export function ProjetoDetalheConteudo() {
       aviso,
     );
     if (ok) void tarefas.mutate();
+    return Boolean(ok);
   }
 
   async function atualizarTarefaEstado(t: Tarefa, novoEstado: EstadoTarefa) {
@@ -706,12 +707,18 @@ export function ProjetoDetalheConteudo() {
                     usuarioId={me?.id}
                     onAtribuir={
                       mutavel
-                        ? (t, pessoa) =>
-                            void gravarTarefa(
+                        ? async (t, pessoa) => {
+                            const mensagem = pessoa.nome
+                              ? `Responsável da tarefa salvo: ${pessoa.nome}.`
+                              : "Responsável da tarefa removido.";
+                            const ok = await gravarTarefa(
                               t,
                               { responsavel_id: pessoa.id || null, responsavel_nome: pessoa.nome },
-                              pessoa.nome ? `Responsável: ${pessoa.nome}` : "Responsável removido",
-                            )
+                              mensagem,
+                            );
+                            if (ok) setConfirmacao(mensagem);
+                            return ok;
+                          }
                         : undefined
                     }
                     onPrazo={
@@ -850,7 +857,10 @@ export function ProjetoDetalheConteudo() {
               onMover={mutavel ? (t, estado) => void atualizarTarefaEstado(t, estado) : undefined}
               onAbrir={(t) => setTarefaAberta(t.id)}
               onClose={() => setTarefaAberta(null)}
-              onSaved={() => void tarefas.mutate()}
+              onSaved={(mensagem) => {
+                void tarefas.mutate();
+                if (mensagem) setConfirmacao(mensagem);
+              }}
             />
 
             {/* Modal de Nova Tarefa */}

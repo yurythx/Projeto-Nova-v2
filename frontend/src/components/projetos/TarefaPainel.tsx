@@ -99,7 +99,7 @@ export function TarefaPainel({
   onMover?: (tarefa: Tarefa, estado: EstadoTarefa) => void;
   onAbrir?: (tarefa: Tarefa) => void;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (mensagem?: string) => void;
 }) {
   const { run, pending } = useAction();
   const [relato, setRelato] = useState("");
@@ -131,6 +131,10 @@ export function TarefaPainel({
 
   async function salvar() {
     if (!tarefa) return;
+    const nome = resp.nome.trim();
+    const mensagem = nome
+      ? `Responsável da tarefa salvo: ${nome}.`
+      : "Tarefa atualizada.";
     const ok = await run(
       () =>
         apiClient.put(`v1/projetos/${projetoId}/tarefas/${tarefa.id}`, {
@@ -144,9 +148,12 @@ export function TarefaPainel({
           data_limite: tarefa.data_limite ?? null,
           predecessora_id: tarefa.predecessora_id ?? null,
         }),
-      "Tarefa atualizada",
+      mensagem,
     );
-    if (ok) onSaved();
+    if (ok) {
+      onSaved(mensagem);
+      onClose();
+    }
   }
 
   async function criarSubtarefa(e: FormEvent) {

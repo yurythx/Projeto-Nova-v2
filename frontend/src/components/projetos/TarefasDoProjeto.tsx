@@ -14,6 +14,7 @@ import {
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { rotuloQuadro } from "@/components/plataforma/useQuadro";
 import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TableCell } from "@/components/ui/Table";
 import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
@@ -61,7 +62,7 @@ export function TarefasDoProjeto({
   onMover: (tarefa: Tarefa, estado: EstadoTarefa) => void;
   onRenomear?: (tarefa: Tarefa, nome: string) => void;
   onAbrir: (tarefa: Tarefa) => void;
-  onAtribuir?: (tarefa: Tarefa, pessoa: ResponsavelOpcao) => void;
+  onAtribuir?: (tarefa: Tarefa, pessoa: ResponsavelOpcao) => void | Promise<boolean | void>;
   onPrazo?: (tarefa: Tarefa, dia: string) => void;
   usuarioId?: string;
 }) {
@@ -199,10 +200,8 @@ export function TarefasDoProjeto({
                     mutavel={mutavel}
                     aberta={pessoaAberta === t.id}
                     onAbrir={() => setPessoaAberta(t.id)}
-                    onAtribuir={(pessoa) => {
-                      setPessoaAberta(null);
-                      onAtribuir?.(t, pessoa);
-                    }}
+                    onFechar={() => setPessoaAberta(null)}
+                    onAtribuir={(pessoa) => onAtribuir?.(t, pessoa)}
                   />
                 </TableCell>
                 <TableCell>
@@ -303,6 +302,7 @@ function CelulaPessoa({
   mutavel,
   aberta,
   onAbrir,
+  onFechar,
   onAtribuir,
 }: {
   tarefa: Tarefa;
@@ -310,8 +310,21 @@ function CelulaPessoa({
   mutavel: boolean;
   aberta: boolean;
   onAbrir: () => void;
-  onAtribuir: (pessoa: ResponsavelOpcao) => void;
+  onFechar: () => void;
+  onAtribuir: (pessoa: ResponsavelOpcao) => void | Promise<boolean | void>;
 }) {
+  const [escolha, setEscolha] = useState<ResponsavelOpcao>({
+    id: tarefa.responsavel_id ?? "",
+    nome: tarefa.responsavel_nome ?? "",
+  });
+  const [abertaVista, setAbertaVista] = useState(aberta);
+  const [salvando, setSalvando] = useState(false);
+  if (aberta !== abertaVista) {
+    setAbertaVista(aberta);
+    if (aberta) {
+      setEscolha({ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome ?? "" });
+    }
+  }
   if (!mutavel || !aberta) {
     const nome = tarefa.responsavel_nome || "";
     if (!mutavel) return <PessoaComAvatar id={tarefa.responsavel_id} nome={nome} className="text-sm" />;
@@ -322,12 +335,34 @@ function CelulaPessoa({
     );
   }
   return (
-    <ResponsavelDaTarefa
-      id={`resp-${tarefa.id}`}
-      projetoId={projetoId}
-      value={{ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome }}
-      onChange={onAtribuir}
-    />
+    <div className="flex min-w-52 flex-col gap-2">
+      <ResponsavelDaTarefa
+        id={`resp-${tarefa.id}`}
+        projetoId={projetoId}
+        rotulo="Responsável pela tarefa"
+        value={escolha}
+        onChange={setEscolha}
+      />
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          loading={salvando}
+          onClick={() => {
+            setSalvando(true);
+            void Promise.resolve(onAtribuir(escolha)).then((ok) => {
+              setSalvando(false);
+              if (ok !== false) onFechar();
+            });
+          }}
+        >
+          Salvar
+        </Button>
+        <Button type="button" size="sm" variant="secondary" onClick={onFechar}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
   );
 }
 
