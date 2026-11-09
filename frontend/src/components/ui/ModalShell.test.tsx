@@ -71,6 +71,23 @@ describe("ModalShell", () => {
     unmount();
   });
 
+  it("o fechamento de um painel de dentro não fecha o de fora", () => {
+    const fora = vi.fn();
+    const dentro = vi.fn();
+    render(
+      <ModalShell open onClose={fora}>
+        <ModalShell open onClose={dentro} variant="drawer" amplitude="ampla">
+          <p>tarefa</p>
+        </ModalShell>
+      </ModalShell>,
+    );
+    const dialogs = document.querySelectorAll("dialog");
+    expect(dialogs[1]).toHaveClass("w-[min(100vw,max(68vw,42rem))]");
+    dialogs[1]!.dispatchEvent(new Event("close", { bubbles: true }));
+    expect(dentro).toHaveBeenCalledTimes(1);
+    expect(fora).not.toHaveBeenCalled();
+  });
+
   it("aplica a classe de largura conforme size", () => {
     render(
       <ModalShell open onClose={() => {}} size="xl">

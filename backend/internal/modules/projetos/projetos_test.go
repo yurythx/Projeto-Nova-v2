@@ -710,8 +710,8 @@ func TestConclusaoAvisaQuemPodeReabrir(t *testing.T) {
 		daUnidade, "/projetos/"+proprio.ID.String()).Scan(&nProprio); err != nil {
 		t.Fatal(err)
 	}
-	if nProprio != 0 {
-		t.Fatalf("gerente que conclui o próprio projeto foi avisado: %d", nProprio)
+	if nProprio != 2 {
+		t.Fatalf("gerente no próprio projeto: %d", nProprio)
 	}
 }
 

@@ -1,13 +1,14 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { X } from "lucide-react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 
 import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
 import { useAction, fmtDateTime } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
-import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
+import { ModalShell } from "@/components/ui/ModalShell";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
@@ -145,10 +146,7 @@ export function TarefaPainel({
         }),
       "Tarefa atualizada",
     );
-    if (ok) {
-      onSaved();
-      onClose();
-    }
+    if (ok) onSaved();
   }
 
   async function criarSubtarefa(e: FormEvent) {
@@ -221,23 +219,40 @@ export function TarefaPainel({
     if (!ok) return;
   }
 
+  const titleId = useId();
+  const descId = useId();
+
   return (
-    <Dialog
+    <ModalShell
       open={tarefa != null}
-      size="lg"
       onClose={onClose}
-      title={tarefa?.titulo ?? "Tarefa"}
-      description="Quem faz, como foi feita e os arquivos desta tarefa."
-      footer={
-        mutavel ? (
-          <Button type="button" disabled={pending} onClick={() => void salvar()}>
-            Salvar
-          </Button>
-        ) : null
-      }
+      variant="drawer"
+      amplitude="ampla"
+      labelledBy={titleId}
+      describedBy={descId}
     >
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-surface-border px-6 py-5">
+          <div className="min-w-0">
+            <h2 id={titleId} className="truncate text-xl font-semibold">
+              {tarefa?.titulo ?? "Tarefa"}
+            </h2>
+            <p id={descId} className="mt-1 text-sm text-muted">
+              Quem faz, como foi feita e os arquivos desta tarefa.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar tarefa"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+          >
+            <X aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
       {tarefa && (
-        <div className="mt-3 flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
           {mutavel ? (
             <ResponsavelDaTarefa
               projetoId={projetoId}
@@ -439,6 +454,15 @@ export function TarefaPainel({
           )}
         </div>
       )}
-    </Dialog>
+        </div>
+        {tarefa && mutavel && (
+          <div className="flex shrink-0 items-center gap-2 border-t border-surface-border px-6 py-4">
+            <Button type="button" disabled={pending} onClick={() => void salvar()}>
+              Salvar
+            </Button>
+          </div>
+        )}
+      </div>
+    </ModalShell>
   );
 }

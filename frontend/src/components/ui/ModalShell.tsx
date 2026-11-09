@@ -47,8 +47,8 @@ export function ModalShell({
   className?: string;
   /** "drawer": painel encostado à direita, na altura toda. */
   variant?: "center" | "drawer";
-  /** No drawer, `larga` cabe o detalhe de um card sem esconder o quadro inteiro. */
-  amplitude?: "media" | "larga";
+  /** No drawer: `larga` cabe um card; `ampla` ocupa mais da metade da tela. */
+  amplitude?: "media" | "larga" | "ampla";
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -72,9 +72,16 @@ export function ModalShell({
   return (
     <dialog
       ref={ref}
-      onClose={onClose}
-      onCancel={onClose}
+      onClose={(event) => {
+        event.stopPropagation();
+        onClose();
+      }}
+      onCancel={(event) => {
+        event.stopPropagation();
+        onClose();
+      }}
       onClick={(e) => {
+        e.stopPropagation();
         if (e.target === ref.current) onClose();
       }}
       aria-labelledby={labelledBy}
@@ -82,7 +89,11 @@ export function ModalShell({
       className={`${
         variant === "drawer"
           ? `my-0 ml-auto mr-0 h-dvh max-h-dvh rounded-l-xl max-md:rounded-none ${
-              amplitude === "larga" ? "w-[min(100vw,56rem)]" : "w-[min(100vw,30rem)]"
+              amplitude === "ampla"
+                ? "w-[min(100vw,max(68vw,42rem))]"
+                : amplitude === "larga"
+                  ? "w-[min(100vw,56rem)]"
+                  : "w-[min(100vw,30rem)]"
             }`
           : `m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)] rounded-xl`
       } overflow-hidden border border-surface-border bg-surface p-0 text-foreground

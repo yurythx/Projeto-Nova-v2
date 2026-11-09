@@ -21,13 +21,20 @@ func (s *Service) entregar(ctx context.Context, enviadas []notificacoes.Enviada)
 
 // registrar grava um aviso para cada destinatário, menos quem fez a ação.
 func (s *Service) registrar(ctx context.Context, db database.DBTX, autor uuid.UUID, destinos []uuid.UUID, n notificacoes.Nova) ([]notificacoes.Enviada, error) {
+	return s.enviarAviso(ctx, db, autor, destinos, n, false)
+}
+
+// enviarAviso grava o aviso. Na atribuição e na movimentação, quem fez
+// a ação também recebe, porque o sino é o registro de que a pessoa ficou
+// com o projeto ou a tarefa.
+func (s *Service) enviarAviso(ctx context.Context, db database.DBTX, autor uuid.UUID, destinos []uuid.UUID, n notificacoes.Nova, incluirAutor bool) ([]notificacoes.Enviada, error) {
 	if s.avisos == nil || len(destinos) == 0 {
 		return nil, nil
 	}
 	visto := map[uuid.UUID]struct{}{}
 	limpos := make([]uuid.UUID, 0, len(destinos))
 	for _, id := range destinos {
-		if id == uuid.Nil || id == autor {
+		if id == uuid.Nil || (!incluirAutor && id == autor) {
 			continue
 		}
 		if _, ok := visto[id]; ok {
@@ -119,13 +126,13 @@ func (s *Service) avisarGerenteNovo(ctx context.Context, tx pgx.Tx, autor uuid.U
 	if p == nil || p.GerenteID == nil {
 		return nil, nil
 	}
-	return s.registrar(ctx, tx, autor, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
+	return s.enviarAviso(ctx, tx, autor, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   "Você é o responsável pelo projeto #" + strconv.FormatInt(p.Numero, 10),
 		Mensagem: cortar(p.Titulo, 1000),
 		Link:     linkProjeto(p.ID),
 		Chave:    chaveAviso("projeto", p.ID.String(), "gerente"),
-	})
+	}, true)
 }
 
 func (s *Service) avisarGerenteSaiu(ctx context.Context, tx pgx.Tx, autor uuid.UUID, p *domain.Projeto, antigo *uuid.UUID) ([]notificacoes.Enviada, error) {
@@ -195,13 +202,13 @@ func (s *Service) avisarProjeto(ctx context.Context, tx pgx.Tx, autor uuid.UUID,
 	if err != nil {
 		return nil, err
 	}
-	return s.registrar(ctx, tx, autor, destinos, notificacoes.Nova{
+	return s.enviarAviso(ctx, tx, autor, destinos, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   cortar(titulo, 200),
 		Mensagem: cortar(mensagem, 1000),
 		Link:     linkProjeto(p.ID),
 		Chave:    chaveAviso("projeto", p.ID.String(), assunto),
-	})
+	}, assunto == "estado")
 }
 
 func (s *Service) avisarSucessoras(ctx context.Context, tx pgx.Tx, autor uuid.UUID, p *domain.Projeto, concluida domain.Tarefa) ([]notificacoes.Enviada, error) {
@@ -218,13 +225,13 @@ func (s *Service) avisarSucessoras(ctx context.Context, tx pgx.Tx, autor uuid.UU
 		if seguinte.PredecessoraID == nil || *seguinte.PredecessoraID != concluida.ID || seguinte.ResponsavelID == nil {
 			continue
 		}
-		parte, err := s.registrar(ctx, tx, autor, []uuid.UUID{*seguinte.ResponsavelID}, notificacoes.Nova{
+		parte, err := s.enviarAviso(ctx, tx, autor, []uuid.UUID{*seguinte.ResponsavelID}, notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "A tarefa anterior terminou",
 			Mensagem: cortar(concluida.Titulo+" foi concluída. "+seguinte.Titulo+" já pode ser concluída.", 1000),
 			Link:     linkProjeto(p.ID),
 			Chave:    chaveAviso("tarefa", seguinte.ID.String(), "anterior"),
-		})
+		}, true)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +245,7 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 		return nil, nil
 	}
 	var enviadas []notificacoes.Enviada
-	ja := map[uuid.UUID]struct{}{autor: {}}
+	ja := map[uuid.UUID]struct{}{}
 	marcar := func(ids []uuid.UUID) {
 		for _, id := range ids {
 			ja[id] = struct{}{}
@@ -249,13 +256,13 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 		if antes.ID != uuid.Nil && antes.Estado != depois.Estado {
 			mensagem = depois.Titulo + " foi para " + rotuloEstadoTarefa(depois.Estado) + " · projeto #" + strconv.FormatInt(p.Numero, 10)
 		}
-		parte, err := s.registrar(ctx, tx, autor, []uuid.UUID{*depois.ResponsavelID}, notificacoes.Nova{
+		parte, err := s.enviarAviso(ctx, tx, autor, []uuid.UUID{*depois.ResponsavelID}, notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "Você é o responsável pela tarefa",
 			Mensagem: cortar(mensagem, 1000),
 			Link:     linkProjeto(p.ID),
 			Chave:    chaveAviso("tarefa", depois.ID.String(), "responsavel"),
-		})
+		}, true)
 		if err != nil {
 			return nil, err
 		}
@@ -285,13 +292,13 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 					titulo = "Nova tarefa no projeto #" + strconv.FormatInt(p.Numero, 10)
 					mensagem = depois.Titulo
 				}
-				parte, err := s.registrar(ctx, tx, autor, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
+				parte, err := s.enviarAviso(ctx, tx, autor, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
 					Modulo:   "projetos",
 					Titulo:   titulo,
 					Mensagem: cortar(mensagem, 1000),
 					Link:     linkProjeto(p.ID),
 					Chave:    chaveAviso("tarefa", depois.ID.String(), "gerente"),
-				})
+				}, antes.ID != uuid.Nil)
 				if err != nil {
 					return nil, err
 				}
@@ -308,13 +315,13 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 		}
 		filtrados = append(filtrados, id)
 	}
-	parte, err := s.registrar(ctx, tx, autor, filtrados, notificacoes.Nova{
+	parte, err := s.enviarAviso(ctx, tx, autor, filtrados, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   "Tarefa no projeto #" + strconv.FormatInt(p.Numero, 10),
 		Mensagem: cortar(resumoTarefa(antes, depois), 1000),
 		Link:     linkProjeto(p.ID),
 		Chave:    chaveAviso("tarefa", depois.ID.String(), "mudou"),
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}
