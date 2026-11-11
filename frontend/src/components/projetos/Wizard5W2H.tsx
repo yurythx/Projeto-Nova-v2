@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
@@ -82,12 +82,16 @@ export function Wizard5W2H({
   produtos,
   colunas,
   pending,
+  unidadeInicial = "",
+  exigirUnidade = false,
   onCancel,
   onCriar,
 }: {
   produtos: { id: string; nome: string; unidade_id?: string }[];
   colunas: { value: string; label: string }[];
   pending: boolean;
+  unidadeInicial?: string;
+  exigirUnidade?: boolean;
   onCancel: () => void;
   onCriar: (corpo: Corpo5W2H, quadro: EstadoProjeto) => void;
 }) {
@@ -106,7 +110,11 @@ export function Wizard5W2H({
   const [orcamento, setOrcamento] = useState("");
   const [centro, setCentro] = useState("");
   const [prioridade, setPrioridade] = useState<PrioridadeProjeto>("media");
-  const [unidadeId, setUnidadeId] = useState("");
+  const [unidadeId, setUnidadeId] = useState(unidadeInicial);
+
+  useEffect(() => {
+    if (!unidadeId && unidadeInicial) setUnidadeId(unidadeInicial);
+  }, [unidadeId, unidadeInicial]);
   const [produtoId, setProdutoId] = useState("");
   const [quadro, setQuadro] = useState<EstadoProjeto>(
     (colunas[0]?.value as EstadoProjeto) || "planejado",
@@ -135,6 +143,11 @@ export function Wizard5W2H({
       setPasso(3);
       return;
     }
+    const unidade = unidadeId || unidadeInicial;
+    if (exigirUnidade && !unidade) {
+      setErro("Informe a unidade. Sem ela o projeto some da lista da instituição.");
+      return;
+    }
     setErro("");
     onCriar(
       {
@@ -145,7 +158,7 @@ export function Wizard5W2H({
         gerente_id: gerente.id || undefined,
         gerente_nome: gerente.id ? gerente.nome : "",
         orcamento: Number(orcamento) || 0,
-        unidade_id: unidadeId || undefined,
+        unidade_id: unidade || undefined,
         produto_id: produtoId || undefined,
         data_inicio_planejada: diaIso(inicio),
         data_fim_planejada: diaIso(fim),
@@ -227,7 +240,8 @@ export function Wizard5W2H({
             id="w5-unidade"
             label="Unidade"
             permission="projetos:manage"
-            defaultValue={unidadeId}
+            defaultValue={unidadeId || unidadeInicial}
+            exigir={exigirUnidade}
             onChange={setUnidadeId}
           />
           {produtos.length > 0 && (

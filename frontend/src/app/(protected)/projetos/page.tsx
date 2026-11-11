@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useMemo, useState } from "react";
+import { type FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 
 import { FileSpreadsheet } from "lucide-react";
 
@@ -19,6 +19,7 @@ import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDo
 import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
+import { useToast } from "@/components/notifications/ToastProvider";
 import { useAction } from "@/components/plataforma/useAction";
 import { CargaEquipe, MeuTrabalho } from "@/components/projetos/MeuTrabalho";
 import { ListaTabela } from "@/components/projetos/ListaTabela";
@@ -40,6 +41,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
+import { unidadeDaEntidadeAtiva } from "@/lib/plataforma/unidadeDaEntidade";
 import { useEntityFilter } from "@/lib/plataforma/useEntityFilter";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import {
@@ -106,6 +108,10 @@ function ProjetosConteudo() {
   const somenteFiltroLista = vista === "lista";
 
   const { run, pending } = useAction();
+  const { showToast } = useToast();
+  const { filtrarPorEntidade, activeEntity, tree } = useEntityFilter();
+  const instituicaoAtiva = Boolean(activeEntity);
+  const unidadePadrao = unidadeDaEntidadeAtiva(tree.data, activeEntity);
 
   const projetos = useApiQuery<Projeto[]>(
     le && vista !== "minhas" && vista !== "carga" && vista !== "calendario"
@@ -128,6 +134,11 @@ function ProjetosConteudo() {
   const [gerente, setGerente] = useState({ id: "", nome: "" });
   const [orcamento, setOrcamento] = useState("0");
   const [unidadeId, setUnidadeId] = useState("");
+
+  useEffect(() => {
+    if (!modalAberto || unidadeId || !unidadePadrao) return;
+    setUnidadeId(unidadePadrao);
+  }, [modalAberto, unidadeId, unidadePadrao]);
   const [produtoId, setProdutoId] = useState("");
   const [quadro, setQuadro] = useState<EstadoProjeto>("planejado");
   const produtos = useApiQuery<{ id: string; nome: string; unidade_id?: string }[]>(
@@ -190,6 +201,7 @@ function ProjetosConteudo() {
   function fecharModal() {
     setModalAberto(false);
     setModo("branco");
+    setUnidadeId("");
   }
 
   async function criarProjeto(corpo: Record<string, unknown>, alvo: EstadoProjeto, carta: boolean) {
@@ -214,8 +226,25 @@ function ProjetosConteudo() {
     }
   }
 
+  function unidadeDoFormulario(informada?: string) {
+    return informada || unidadeId || unidadePadrao;
+  }
+
+  function recusarSemUnidade() {
+    showToast({
+      title: "Informe a unidade",
+      description: "Sem unidade o projeto some da lista da instituição selecionada.",
+      tone: "danger",
+    });
+  }
+
   function criar(e: FormEvent) {
     e.preventDefault();
+    const unidade = unidadeDoFormulario();
+    if (instituicaoAtiva && !unidade) {
+      recusarSemUnidade();
+      return;
+    }
     void criarProjeto(
       {
         titulo,
@@ -225,7 +254,7 @@ function ProjetosConteudo() {
         gerente_id: gerente.id || undefined,
         gerente_nome: gerente.id ? gerente.nome : "",
         orcamento: Number(orcamento) || 0,
-        unidade_id: unidadeId || undefined,
+        unidade_id: unidade || undefined,
         produto_id: produtoId || undefined,
       },
       quadro,
@@ -234,7 +263,12 @@ function ProjetosConteudo() {
   }
 
   function criarGuiado(corpo: Corpo5W2H, alvo: EstadoProjeto) {
-    void criarProjeto(corpo as unknown as Record<string, unknown>, alvo, true);
+    const unidade = unidadeDoFormulario(corpo.unidade_id);
+    if (instituicaoAtiva && !unidade) {
+      recusarSemUnidade();
+      return;
+    }
+    void criarProjeto({ ...corpo, unidade_id: unidade || undefined }, alvo, true);
   }
 
   async function mover(p: Projeto, para: EstadoProjeto) {
@@ -271,7 +305,6 @@ function ProjetosConteudo() {
     }
   }
 
-  const { filtrarPorEntidade } = useEntityFilter();
   const todosProjetos = useMemo(
     () => filtrarPorEntidade(projetos.data ?? []),
     [filtrarPorEntidade, projetos.data],
@@ -318,7 +351,10 @@ function ProjetosConteudo() {
             {gere && (
               <Button
                 type="button"
-                onClick={() => setModalAberto(true)}
+                onClick={() => {
+                  setUnidadeId(unidadePadrao);
+                  setModalAberto(true);
+                }}
                 data-testid="novo-projeto-btn"
               >
                 Novo projeto
@@ -548,6 +584,8 @@ function ProjetosConteudo() {
               label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
             }))}
             pending={pending}
+            unidadeInicial={unidadeId || unidadePadrao}
+            exigirUnidade={instituicaoAtiva}
             onCancel={fecharModal}
             onCriar={criarGuiado}
           />
@@ -633,7 +671,8 @@ function ProjetosConteudo() {
               id="proj-unidade"
               label="Unidade"
               permission="projetos:manage"
-              defaultValue={unidadeId}
+              defaultValue={unidadeId || unidadePadrao}
+              exigir={instituicaoAtiva}
               onChange={(uid) => setUnidadeId(uid)}
             />
           </div>

@@ -23,6 +23,7 @@ export function UnidadeDonaSelect({
   label = "Unidade dona",
   lotacao = false,
   optional = false,
+  exigir = false,
   placeholder,
   onChange,
 }: {
@@ -33,6 +34,9 @@ export function UnidadeDonaSelect({
   label?: string;
   lotacao?: boolean;
   optional?: boolean;
+  /** Exige unidade mesmo para quem tem gestão global. Projeto sem unidade
+   * some da lista quando uma instituição está selecionada. */
+  exigir?: boolean;
   placeholder?: string;
   onChange?: (unidadeId: string) => void;
 }) {
@@ -42,7 +46,7 @@ export function UnidadeDonaSelect({
   const oferecidas = new Set(geridas.unidades);
   if (lotacao) for (const u of unidadesLotadas(me, tree.data)) oferecidas.add(u);
   if ((lotacao || optional) && defaultValue) oferecidas.add(defaultValue);
-  const opcional = geridas.global || lotacao || optional;
+  const opcional = !exigir && (geridas.global || lotacao || optional);
   const options = (tree.data ?? []).flatMap((e) =>
     e.unidades
       .filter((u) => oferecidas.has(u.id))
@@ -51,8 +55,8 @@ export function UnidadeDonaSelect({
   return (
     <Select
       // key: select não controlado — remonta com a dona marcada quando a
-      // árvore chega depois de abrir o formulário.
-      key={`${id}-${options.length}`}
+      // árvore ou o valor padrão chega depois de abrir o formulário.
+      key={`${id}-${options.length}-${defaultValue ?? ""}`}
       id={id}
       name={name}
       label={opcional ? label : `${label} *`}
