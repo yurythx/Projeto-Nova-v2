@@ -7,7 +7,8 @@ export function unidadeDaEntidadeAtiva(tree: OrgTree[] | undefined, activeEntity
   if (!activeEntity || !tree?.length) return "";
   for (const ent of tree) {
     if (ent.id === activeEntity) {
-      return ent.unidades.length === 1 ? ent.unidades[0].id : "";
+      const unica = ent.unidades[0];
+      return ent.unidades.length === 1 && unica ? unica.id : "";
     }
     if (ent.unidades.some((u) => u.id === activeEntity)) return activeEntity;
   }
