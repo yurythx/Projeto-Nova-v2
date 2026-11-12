@@ -92,16 +92,17 @@ type EstadoRequest struct {
 }
 
 type TarefaRequest struct {
-	Titulo          string     `json:"titulo" validate:"required,max=200"`
-	Descricao       string     `json:"descricao" validate:"max=2000"`
-	Relato          string     `json:"relato" validate:"max=4000"`
-	ResponsavelID   *uuid.UUID `json:"responsavel_id"`
-	ResponsavelNome string     `json:"responsavel_nome" validate:"max=200"`
-	Estado          string     `json:"estado" validate:"omitempty,min=1,max=40"`
-	Ordem           int        `json:"ordem"`
-	DataLimite      *time.Time `json:"data_limite"`
-	PredecessoraID  *uuid.UUID `json:"predecessora_id"`
-	PaiID           *uuid.UUID `json:"pai_id"`
+	Titulo          string           `json:"titulo" validate:"required,max=200"`
+	Descricao       string           `json:"descricao" validate:"max=2000"`
+	Relato          string           `json:"relato" validate:"max=4000"`
+	ResponsavelID   *uuid.UUID       `json:"responsavel_id"`
+	ResponsavelNome string           `json:"responsavel_nome" validate:"max=200"`
+	Pessoas         *[]domain.Pessoa `json:"pessoas"`
+	Estado          string           `json:"estado" validate:"omitempty,min=1,max=40"`
+	Ordem           int              `json:"ordem"`
+	DataLimite      *time.Time       `json:"data_limite"`
+	PredecessoraID  *uuid.UUID       `json:"predecessora_id"`
+	PaiID           *uuid.UUID       `json:"pai_id"`
 }
 
 type VinculoRequest struct {
@@ -137,6 +138,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Get("/projetos/{id}/vinculos", h.ListarVinculos)
 		r.Get("/projetos/{id}/apontamentos", h.ListarApontamentos)
 		r.Get("/projetos/{id}/carta", h.ObterCarta)
+		r.Get("/projetos/{id}/participantes", h.ListarParticipantes)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -150,6 +152,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.Post("/projetos/{id}/tarefas", h.CriarTarefa)
 		r.Put("/projetos/{id}/tarefas/{tarefaId}", h.AtualizarTarefa)
 		r.Get("/projetos/{id}/responsaveis", h.ListarResponsaveis)
+		r.Post("/projetos/{id}/participantes", h.IncluirParticipante)
+		r.Delete("/projetos/{id}/participantes/{pessoaId}", h.ExcluirParticipante)
 		r.Delete("/projetos/{id}/tarefas/{tarefaId}", h.ExcluirTarefa)
 		r.Post("/projetos/{id}/tarefas/{tarefaId}/anexos/uploads", h.PedirAnexo)
 		r.Post("/projetos/{id}/tarefas/{tarefaId}/anexos", h.RegistrarAnexo)
@@ -416,7 +420,7 @@ func (h *Handlers) CriarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID, req.PaiID)
+	t, err := h.svc.CriarTarefa(r.Context(), identity, id, req.Titulo, req.Descricao, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID, req.PaiID, req.Pessoas)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -436,12 +440,69 @@ func (h *Handlers) AtualizarTarefa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
-	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.Relato, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID)
+	t, err := h.svc.AtualizarTarefa(r.Context(), identity, tarefaID, req.Titulo, req.Descricao, req.Relato, req.ResponsavelID, req.ResponsavelNome, req.Estado, req.Ordem, req.DataLimite, req.PredecessoraID, req.Pessoas)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
 	httputil.WriteOK(w, t)
+}
+
+func (h *Handlers) ListarParticipantes(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ListarMembros(r.Context(), identity, id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+func (h *Handlers) IncluirParticipante(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req struct {
+		ID uuid.UUID `json:"id"`
+	}
+	if err := httputil.DecodeJSON(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.IncluirParticipante(r.Context(), identity, id, req.ID)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+func (h *Handlers) ExcluirParticipante(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	pessoa, err := httputil.UUIDParam(r, "pessoaId")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	lista, err := h.svc.ExcluirParticipante(r.Context(), identity, id, pessoa)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
 }
 
 func (h *Handlers) ExcluirTarefa(w http.ResponseWriter, r *http.Request) {

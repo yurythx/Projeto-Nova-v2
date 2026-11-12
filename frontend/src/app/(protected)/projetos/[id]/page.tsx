@@ -22,6 +22,8 @@ import { HistoricoDoProjeto } from "@/components/projetos/HistoricoDoProjeto";
 import { Painel5W2H } from "@/components/projetos/Painel5W2H";
 import { prazoDoDia } from "@/components/projetos/datas";
 import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
+import { PessoasDaTarefa } from "@/components/projetos/PessoasDaTarefa";
+import { ParticipantesDoProjeto } from "@/components/projetos/ParticipantesDoProjeto";
 import { TarefaPainel } from "@/components/projetos/TarefaPainel";
 import { TarefasDoProjeto } from "@/components/projetos/TarefasDoProjeto";
 import { useAction } from "@/components/plataforma/useAction";
@@ -53,6 +55,8 @@ import {
   type Tarefa,
   type TipoVinculoProjeto,
   type VinculoProjeto,
+  pessoasDaTarefa,
+  tarefaInclui,
 } from "@/lib/projetos/projetos";
 
 export default function ProjetoDetalhePage() {
@@ -162,7 +166,7 @@ export function ProjetoDetalheConteudo() {
   function podeEscrever(t: Tarefa | null) {
     if (!p || !t || p.estado === "cancelado" || p.estado === "concluido") return false;
     if (gere) return true;
-    return Boolean(me?.id && (t.responsavel_id === me.id || p.gerente_id === me.id));
+    return Boolean(me?.id && (tarefaInclui(t, me.id) || p.gerente_id === me.id));
   }
   const listaTarefas = tarefas.data ?? [];
   const colunasTarefa = colunasVisiveis(catalogoTarefas.colunas, listaTarefas, (t) => t.estado);
@@ -178,7 +182,7 @@ export function ProjetoDetalheConteudo() {
   const [modalTarefa, setModalTarefa] = useState(false);
   const [tarefaTitulo, setTarefaTitulo] = useState("");
   const [tarefaDescricao, setTarefaDescricao] = useState("");
-  const [tarefaResp, setTarefaResp] = useState({ id: "", nome: "" });
+  const [tarefaResp, setTarefaResp] = useState<{ id: string; nome: string }[]>([]);
   const [reabrirAberto, setReabrirAberto] = useState(false);
   const [cancelarAberto, setCancelarAberto] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
@@ -324,8 +328,7 @@ export function ProjetoDetalheConteudo() {
         apiClient.post(`v1/projetos/${id}/tarefas`, {
           titulo: tarefaTitulo,
           descricao: tarefaDescricao,
-          responsavel_id: tarefaResp.id || undefined,
-          responsavel_nome: tarefaResp.id ? tarefaResp.nome : "",
+          pessoas: tarefaResp,
           estado: tarefaEstado,
           ordem: listaTarefas.filter((t) => !t.pai_id).length + 1,
           predecessora_id: tarefaPred || null,
@@ -336,7 +339,7 @@ export function ProjetoDetalheConteudo() {
       setModalTarefa(false);
       setTarefaTitulo("");
       setTarefaDescricao("");
-      setTarefaResp({ id: "", nome: "" });
+      setTarefaResp([]);
       setTarefaEstado("a_fazer");
       setTarefaPred("");
       void tarefas.mutate();
@@ -350,15 +353,16 @@ export function ProjetoDetalheConteudo() {
       estado?: string;
       responsavel_id?: string | null;
       responsavel_nome?: string;
+      pessoas?: { id: string; nome: string }[];
       data_limite?: string | null;
     },
   ) {
+    const pessoas = "pessoas" in patch ? patch.pessoas ?? [] : pessoasDaTarefa(t);
     return {
       titulo: patch.titulo ?? t.titulo,
       descricao: t.descricao,
       relato: t.relato ?? "",
-      responsavel_id: "responsavel_id" in patch ? patch.responsavel_id || null : t.responsavel_id ?? null,
-      responsavel_nome: "responsavel_nome" in patch ? patch.responsavel_nome ?? "" : t.responsavel_nome,
+      pessoas,
       estado: patch.estado ?? t.estado,
       ordem: t.ordem,
       data_limite: "data_limite" in patch ? patch.data_limite : t.data_limite ?? null,
@@ -686,6 +690,9 @@ export function ProjetoDetalheConteudo() {
                 )}
               </CardHeader>
               <CardContent className="pb-5">
+                <div className="mb-4">
+                  <ParticipantesDoProjeto projetoId={p.id} mutavel={mutavel} />
+                </div>
                 <DataState
                   loading={tarefas.isLoading}
                   error={tarefas.error}
@@ -707,15 +714,12 @@ export function ProjetoDetalheConteudo() {
                     usuarioId={me?.id}
                     onAtribuir={
                       mutavel
-                        ? async (t, pessoa) => {
-                            const mensagem = pessoa.nome
-                              ? `Responsável da tarefa salvo: ${pessoa.nome}.`
+                        ? async (t, pessoas) => {
+                            const nomes = pessoas.map((pessoa) => pessoa.nome).filter(Boolean);
+                            const mensagem = nomes.length
+                              ? `Responsável da tarefa salvo: ${nomes.join(", ")}.`
                               : "Responsável da tarefa removido.";
-                            const ok = await gravarTarefa(
-                              t,
-                              { responsavel_id: pessoa.id || null, responsavel_nome: pessoa.nome },
-                              mensagem,
-                            );
+                            const ok = await gravarTarefa(t, { pessoas }, mensagem);
                             if (ok) setConfirmacao(mensagem);
                             return ok;
                           }
@@ -894,7 +898,7 @@ export function ProjetoDetalheConteudo() {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <ResponsavelDaTarefa
+                  <PessoasDaTarefa
                     id="tarefa-resp"
                     projetoId={id}
                     value={tarefaResp}

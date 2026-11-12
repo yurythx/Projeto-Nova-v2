@@ -374,7 +374,11 @@ func (r *Repository) ObterTarefa(ctx context.Context, db database.DBTX, id uuid.
 		}
 		return nil, mapDB(err)
 	}
-	return &t, nil
+	completas, err := preencherPessoas(ctx, r, db, []domain.Tarefa{t})
+	if err != nil {
+		return nil, err
+	}
+	return &completas[0], nil
 }
 
 // NomeDaPessoa devolve o nome canônico de um usuário ativo. Com unidade,
@@ -438,7 +442,7 @@ func (r *Repository) ListarTarefas(ctx context.Context, db database.DBTX, projet
 	if lista == nil {
 		lista = []domain.Tarefa{}
 	}
-	return lista, nil
+	return preencherPessoas(ctx, r, db, lista)
 }
 
 const colunasTarefaAlias = `t.id, t.projeto_id, t.titulo, t.descricao, t.responsavel_id, t.responsavel_nome, t.estado, t.ordem,
@@ -458,7 +462,13 @@ func (r *Repository) ListarMinhas(ctx context.Context, db database.DBTX, pessoa 
 	q := `SELECT ` + colunasTarefaAlias + `, p.numero, p.titulo, p.estado
 		FROM projetos_tarefas t
 		JOIN projetos p ON p.id = t.projeto_id
-		WHERE t.responsavel_id = $1
+		WHERE (
+		    t.responsavel_id = $1
+		    OR EXISTS (
+		      SELECT 1 FROM projetos_tarefa_pessoas tp
+		      WHERE tp.tarefa_id = t.id AND tp.user_id = $1
+		    )
+		  )
 		  AND t.estado <> 'concluida'
 		  AND p.estado NOT IN ('concluido', 'cancelado')` + clausulaUnidade(restrito, 2) + `
 		ORDER BY t.data_limite NULLS LAST, p.numero, t.ordem`
@@ -483,22 +493,47 @@ func (r *Repository) ListarMinhas(ctx context.Context, db database.DBTX, pessoa 
 		}
 		lista = append(lista, item)
 	}
-	return lista, mapDB(rows.Err())
+	if err := rows.Err(); err != nil {
+		return nil, mapDB(err)
+	}
+	base := make([]domain.Tarefa, len(lista))
+	for i := range lista {
+		base[i] = lista[i].Tarefa
+	}
+	completas, err := preencherPessoas(ctx, r, db, base)
+	if err != nil {
+		return nil, err
+	}
+	for i := range lista {
+		lista[i].Tarefa = completas[i]
+	}
+	return lista, nil
 }
 
 func (r *Repository) ListarCarga(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID) ([]domain.CargaPessoa, error) {
 	if unidades == nil {
 		unidades = []uuid.UUID{}
 	}
-	q := `SELECT t.responsavel_id, max(t.responsavel_nome),
-			count(*) FILTER (WHERE t.estado <> 'concluida'),
-			count(*) FILTER (WHERE t.estado <> 'concluida' AND t.data_limite IS NOT NULL AND t.data_limite < now())
-		FROM projetos_tarefas t
-		JOIN projetos p ON p.id = t.projeto_id
-		WHERE t.responsavel_id IS NOT NULL
-		  AND p.estado NOT IN ('concluido', 'cancelado')` + clausulaUnidade(restrito, 1) + `
-		GROUP BY t.responsavel_id
-		HAVING count(*) FILTER (WHERE t.estado <> 'concluida') > 0
+	q := `WITH pessoas AS (
+			SELECT tp.user_id AS id, tp.nome, t.id AS tarefa_id, t.estado, t.data_limite
+			FROM projetos_tarefa_pessoas tp
+			JOIN projetos_tarefas t ON t.id = tp.tarefa_id
+			JOIN projetos p ON p.id = t.projeto_id
+			WHERE p.estado NOT IN ('concluido', 'cancelado')` + clausulaUnidade(restrito, 1) + `
+			UNION
+			SELECT t.responsavel_id, t.responsavel_nome, t.id, t.estado, t.data_limite
+			FROM projetos_tarefas t
+			JOIN projetos p ON p.id = t.projeto_id
+			WHERE t.responsavel_id IS NOT NULL
+			  AND p.estado NOT IN ('concluido', 'cancelado')
+			  AND NOT EXISTS (SELECT 1 FROM projetos_tarefa_pessoas tp WHERE tp.tarefa_id = t.id)` + clausulaUnidade(restrito, 1) + `
+		)
+		SELECT id, max(nome),
+			count(DISTINCT tarefa_id) FILTER (WHERE estado <> 'concluida'),
+			count(DISTINCT tarefa_id) FILTER (WHERE estado <> 'concluida' AND data_limite IS NOT NULL AND data_limite < now())
+		FROM pessoas
+		GROUP BY id
+		HAVING count(DISTINCT tarefa_id) FILTER (WHERE estado <> 'concluida') > 0
 		ORDER BY 3 DESC, 2`
 	args := []any{}
 	if restrito {
@@ -737,6 +772,19 @@ func (r *Repository) PrazosVencidos(ctx context.Context, db database.DBTX, agora
 	}
 	if err := rows.Err(); err != nil {
 		return nil, nil, mapDB(err)
+	}
+	ids := make([]uuid.UUID, len(lista))
+	for i := range lista {
+		ids[i] = lista[i].TarefaID
+	}
+	mapa, err := r.PessoasPorTarefa(ctx, db, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	for i := range lista {
+		for _, pessoa := range mapa[lista[i].TarefaID] {
+			lista[i].Pessoas = append(lista[i].Pessoas, pessoa.ID)
+		}
 	}
 
 	const projetosQ = `SELECT id, numero, titulo, data_fim_planejada, gerente_id

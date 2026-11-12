@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -23,6 +23,7 @@ import {
   type Projeto,
   type Tarefa,
   type VinculoProjeto,
+  pessoasDaTarefa,
 } from "@/lib/projetos/projetos";
 
 interface ProjetoGanttChartProps {
@@ -430,9 +431,9 @@ export function ProjetoGanttChart({
                             {t.titulo}
                           </span>
                         </div>
-                        {t.responsavel_nome && (
+                        {pessoasDaTarefa(t).length > 0 && (
                           <div className="mt-0.5 text-[11px] text-muted">
-                            <PessoaComAvatar id={t.responsavel_id} nome={t.responsavel_nome} />
+                            <PessoasComAvatar pessoas={pessoasDaTarefa(t)} />
                           </div>
                         )}
                         {t.predecessora_id && (

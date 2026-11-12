@@ -3,8 +3,8 @@
 import { X } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 
-import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
-import { ResponsavelDaTarefa } from "@/components/projetos/ResponsavelDaTarefa";
+import { PessoaComAvatar, PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { PessoasDaTarefa } from "@/components/projetos/PessoasDaTarefa";
 import { useAction, fmtDateTime } from "@/components/plataforma/useAction";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +14,7 @@ import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 import type { UploadTicket } from "@/lib/plataforma/types";
-import { ESTADO_TAREFA, type AtualizacaoTarefa, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
+import { ESTADO_TAREFA, pessoasDaTarefa, tarefaInclui, type AtualizacaoTarefa, type EstadoTarefa, type PessoaProjeto, type Tarefa } from "@/lib/projetos/projetos";
 
 export interface AnexoTarefa {
   id: string;
@@ -40,16 +40,34 @@ function rotuloEstado(estado: string) {
   return ESTADO_TAREFA[estado as EstadoTarefa]?.label ?? estado;
 }
 
+function nomesDe(texto: string) {
+  return texto.split("\n").map((nome) => nome.trim()).filter(Boolean);
+}
+
+function textoPessoas(antes: string, depois: string) {
+  const saiuDe = nomesDe(antes);
+  const entrouEm = nomesDe(depois);
+  if (saiuDe.join("\n") === entrouEm.join("\n")) return "";
+  if (saiuDe.length <= 1 && entrouEm.length <= 1) {
+    if (!antes) return `definiu o responsável ${depois}`;
+    if (!depois) return "tirou o responsável";
+    return `trocou o responsável de ${antes} para ${depois}`;
+  }
+  const saiu = saiuDe.filter((nome) => !entrouEm.includes(nome));
+  const entrou = entrouEm.filter((nome) => !saiuDe.includes(nome));
+  const partes: string[] = [];
+  if (entrou.length) partes.push(`adicionou ${entrou.join(", ")}`);
+  if (saiu.length) partes.push(`tirou ${saiu.join(", ")}`);
+  return partes.join(" e ");
+}
+
 function textoMovimento(m: MovimentoTarefa) {
   const partes: string[] = [];
   if (m.estado_antes !== m.estado_depois) {
     partes.push(`moveu de ${rotuloEstado(m.estado_antes)} para ${rotuloEstado(m.estado_depois)}`);
   }
-  if (m.responsavel_antes_nome !== m.responsavel_depois_nome) {
-    if (!m.responsavel_antes_nome) partes.push(`definiu o responsável ${m.responsavel_depois_nome}`);
-    else if (!m.responsavel_depois_nome) partes.push("tirou o responsável");
-    else partes.push(`trocou o responsável de ${m.responsavel_antes_nome} para ${m.responsavel_depois_nome}`);
-  }
+  const pessoas = textoPessoas(m.responsavel_antes_nome, m.responsavel_depois_nome);
+  if (pessoas) partes.push(pessoas);
   return partes.join(" e ");
 }
 
@@ -103,7 +121,7 @@ export function TarefaPainel({
 }) {
   const { run, pending } = useAction();
   const [relato, setRelato] = useState("");
-  const [resp, setResp] = useState({ id: "", nome: "" });
+  const [resp, setResp] = useState<PessoaProjeto[]>([]);
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [confirmacao, setConfirmacao] = useState("");
   const [nova, setNova] = useState("");
@@ -112,7 +130,7 @@ export function TarefaPainel({
   useEffect(() => {
     if (!tarefa) return;
     setRelato(tarefa.relato ?? "");
-    setResp({ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome ?? "" });
+    setResp(pessoasDaTarefa(tarefa));
     setArquivo(null);
     setConfirmacao("");
     setNova("");
@@ -131,9 +149,9 @@ export function TarefaPainel({
 
   async function salvar() {
     if (!tarefa) return;
-    const nome = resp.nome.trim();
-    const mensagem = nome
-      ? `Responsável da tarefa salvo: ${nome}.`
+    const nomes = resp.map((pessoa) => pessoa.nome).filter(Boolean);
+    const mensagem = nomes.length
+      ? `Responsável da tarefa salvo: ${nomes.join(", ")}.`
       : "Tarefa atualizada.";
     const ok = await run(
       () =>
@@ -141,8 +159,7 @@ export function TarefaPainel({
           titulo: tarefa.titulo,
           descricao: tarefa.descricao,
           relato,
-          responsavel_id: resp.id || undefined,
-          responsavel_nome: resp.id ? resp.nome : "",
+          pessoas: resp,
           estado: tarefa.estado,
           ordem: tarefa.ordem,
           data_limite: tarefa.data_limite ?? null,
@@ -261,15 +278,14 @@ export function TarefaPainel({
       {tarefa && (
         <div className="flex flex-col gap-4">
           {mutavel ? (
-            <ResponsavelDaTarefa
+            <PessoasDaTarefa
               projetoId={projetoId}
               value={resp}
               onChange={setResp}
             />
           ) : (
-            <PessoaComAvatar
-              id={tarefa.responsavel_id}
-              nome={tarefa.responsavel_nome}
+            <PessoasComAvatar
+              pessoas={pessoasDaTarefa(tarefa)}
               vazio="ninguém atribuído"
               className="text-sm text-muted"
             />
@@ -297,9 +313,8 @@ export function TarefaPainel({
                       >
                         {filha.titulo}
                       </button>
-                      <PessoaComAvatar
-                        id={filha.responsavel_id}
-                        nome={filha.responsavel_nome}
+                      <PessoasComAvatar
+                        pessoas={pessoasDaTarefa(filha)}
                         vazio="ninguém"
                         className="text-xs text-muted"
                       />
@@ -307,7 +322,7 @@ export function TarefaPainel({
                         <select
                           aria-label={`Estado da subtarefa ${filha.titulo}`}
                           value={filha.estado}
-                          disabled={pending || !filha.responsavel_id}
+                          disabled={pending || !tarefaInclui(filha)}
                           onChange={(e) => onMover(filha, e.target.value as EstadoTarefa)}
                           className="h-8 rounded-md border border-surface-border bg-surface px-2 text-xs text-foreground"
                         >

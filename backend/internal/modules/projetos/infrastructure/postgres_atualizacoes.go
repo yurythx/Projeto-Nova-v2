@@ -78,5 +78,21 @@ func (r *Repository) ListarPrazos(ctx context.Context, db database.DBTX, mes str
 		}
 		lista = append(lista, item)
 	}
-	return lista, mapDB(rows.Err())
+	if err := rows.Err(); err != nil {
+		return nil, mapDB(err)
+	}
+	ids := make([]uuid.UUID, len(lista))
+	for i := range lista {
+		ids[i] = lista[i].ID
+	}
+	mapa, err := r.PessoasPorTarefa(ctx, db, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range lista {
+		if grupo := mapa[lista[i].ID]; len(grupo) > 0 {
+			lista[i].Pessoas = grupo
+		}
+	}
+	return lista, nil
 }

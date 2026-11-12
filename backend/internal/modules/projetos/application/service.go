@@ -139,7 +139,15 @@ func MapError(err error) error {
 	case errors.Is(err, domain.ErrCartaInvalida):
 		return apperrors.Validation("texto longo demais na carta do projeto")
 	case errors.Is(err, domain.ErrPessoaInvalida):
-		return apperrors.Validation("escolha uma pessoa ativa lotada na unidade do projeto")
+		return apperrors.Validation("escolha uma pessoa que pode gerir projetos desta unidade")
+	case errors.Is(err, domain.ErrForaDoProjeto):
+		return apperrors.Validation("só quem participa do projeto pode ficar na tarefa")
+	case errors.Is(err, domain.ErrPessoasDemais):
+		return apperrors.Validation("a tarefa aceita até 12 pessoas")
+	case errors.Is(err, domain.ErrGerentePermanece):
+		return apperrors.Conflict("o gerente permanece no projeto")
+	case errors.Is(err, domain.ErrParticipanteAusente):
+		return apperrors.Validation("essa pessoa não está no projeto")
 	case errors.Is(err, domain.ErrReaberturaExigeAprovacao):
 		return apperrors.Conflict("projeto concluído não muda por esta passagem; a reabertura pede um superior ou administrador e o motivo")
 	case errors.Is(err, domain.ErrCancelamentoNaoAutorizado):
@@ -272,6 +280,9 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 		if err := s.repo.Criar(ctx, tx, p); err != nil {
 			return err
 		}
+		if err := s.garantirParticipante(ctx, tx, p.ID, p.GerenteID, p.GerenteNome); err != nil {
+			return err
+		}
 		parte, err := s.avisarGerenteNovo(ctx, tx, idt.UserID, p)
 		if err != nil {
 			return err
@@ -289,6 +300,11 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 				}
 				if err := s.repo.CriarTarefa(ctx, tx, t); err != nil {
 					return err
+				}
+				if p.GerenteID != nil {
+					if err := s.repo.SubstituirPessoasDaTarefa(ctx, tx, t.ID, []domain.Pessoa{{ID: *p.GerenteID, Nome: p.GerenteNome}}); err != nil {
+						return err
+					}
 				}
 			}
 			if s.outbox != nil {
@@ -524,6 +540,9 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 			return err
 		}
 		atualizado = res
+		if err := s.garantirParticipante(ctx, tx, id, e.GerenteID, e.GerenteNome); err != nil {
+			return err
+		}
 
 		if s.outbox != nil {
 			payload := map[string]any{"id": id, "titulo": e.Titulo}
@@ -917,7 +936,7 @@ func (s *Service) conferirPredecessora(ctx context.Context, db database.DBTX, pr
 	return domain.ConferirPredecessora(estadoEfetivo(estado), anterior)
 }
 
-func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID, paiID *uuid.UUID) (*domain.Tarefa, error) {
+func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID uuid.UUID, titulo, descricao string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID, paiID *uuid.UUID, pessoas *[]domain.Pessoa) (*domain.Tarefa, error) {
 	var criada *domain.Tarefa
 	var enviadas []notificacoes.Enviada
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
@@ -959,10 +978,11 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 		if err := s.conferirPredecessora(ctx, tx, projetoID, t.ID, paiID, predecessoraID, t.Estado); err != nil {
 			return err
 		}
-		gid, gnome, err := s.fixarResponsavel(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, "", nil)
+		grupo, err := s.fixarGrupo(ctx, tx, projeto, nil, responsavelID, responsavel, pessoas)
 		if err != nil {
 			return err
 		}
+		gid, gnome := primeiroDoGrupo(grupo)
 		if err := domain.MovimentoExigeResponsavel("", t.Estado, gid); err != nil {
 			return err
 		}
@@ -970,9 +990,13 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 		t.Descricao = descricao
 		t.ResponsavelID = gid
 		t.ResponsavelNome = gnome
+		t.Pessoas = grupo
 		t.Ordem = ordem
 		t.DataLimite = dataLimite
 		if err := s.repo.CriarTarefa(ctx, tx, t); err != nil {
+			return err
+		}
+		if err := s.repo.SubstituirPessoasDaTarefa(ctx, tx, t.ID, grupo); err != nil {
 			return err
 		}
 		criada = t
@@ -993,7 +1017,7 @@ func (s *Service) CriarTarefa(ctx context.Context, idt auth.Identity, projetoID 
 	return criada, nil
 }
 
-func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, relato string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID) (*domain.Tarefa, error) {
+func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uuid.UUID, titulo, descricao, relato string, responsavelID *uuid.UUID, responsavel, estado string, ordem int, dataLimite *time.Time, predecessoraID *uuid.UUID, pessoas *[]domain.Pessoa) (*domain.Tarefa, error) {
 	if utf8.RuneCountInString(relato) > domain.RelatoMax {
 		return nil, domain.ErrRelatoInvalido
 	}
@@ -1038,10 +1062,11 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		if err := domain.ConclusaoExigeSubtarefas(estadoEfetivo(estado), filhas); err != nil {
 			return err
 		}
-		gid, gnome, err := s.fixarResponsavel(ctx, tx, projeto.UnidadeID, responsavelID, responsavel, atual.ResponsavelNome, atual.ResponsavelID)
+		grupo, err := s.fixarGrupo(ctx, tx, projeto, atual, responsavelID, responsavel, pessoas)
 		if err != nil {
 			return err
 		}
+		gid, gnome := primeiroDoGrupo(grupo)
 		if err := domain.MovimentoExigeResponsavel(atual.Estado, estadoEfetivo(estado), gid); err != nil {
 			return err
 		}
@@ -1049,6 +1074,12 @@ func (s *Service) AtualizarTarefa(ctx context.Context, idt auth.Identity, id uui
 		if err != nil {
 			return err
 		}
+		if err := s.repo.SubstituirPessoasDaTarefa(ctx, tx, id, grupo); err != nil {
+			return err
+		}
+		atualizada.Pessoas = grupo
+		atualizada.ResponsavelID = gid
+		atualizada.ResponsavelNome = gnome
 		if err := s.anotarMovimento(ctx, tx, idt, *atual, *atualizada); err != nil {
 			return err
 		}

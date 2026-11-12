@@ -223,10 +223,10 @@ func (s *Service) avisarSucessoras(ctx context.Context, tx pgx.Tx, autor uuid.UU
 	var enviadas []notificacoes.Enviada
 	for i := range tarefas {
 		seguinte := tarefas[i]
-		if seguinte.PredecessoraID == nil || *seguinte.PredecessoraID != concluida.ID || seguinte.ResponsavelID == nil {
+		if seguinte.PredecessoraID == nil || *seguinte.PredecessoraID != concluida.ID || len(idsDoGrupo(seguinte)) == 0 {
 			continue
 		}
-		parte, err := s.enviarAviso(ctx, tx, autor, []uuid.UUID{*seguinte.ResponsavelID}, notificacoes.Nova{
+		parte, err := s.enviarAviso(ctx, tx, autor, idsDoGrupo(seguinte), notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "A tarefa anterior terminou",
 			Mensagem: cortar(concluida.Titulo+" foi concluída. "+seguinte.Titulo+" já pode ser concluída.", 1000),
@@ -252,27 +252,26 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 			ja[id] = struct{}{}
 		}
 	}
-	if !igualID(antes.ResponsavelID, depois.ResponsavelID) && depois.ResponsavelID != nil {
-		mensagem := depois.Titulo + " · projeto #" + strconv.FormatInt(p.Numero, 10) + " " + p.Titulo
-		if antes.ID != uuid.Nil && antes.Estado != depois.Estado {
-			mensagem = depois.Titulo + " foi para " + rotuloEstadoTarefa(depois.Estado) + " · projeto #" + strconv.FormatInt(p.Numero, 10)
+	if !mesmoGrupo(antes, depois) {
+		entrou := diferenca(idsDoGrupo(depois), idsDoGrupo(antes))
+		if len(entrou) > 0 {
+			mensagem := depois.Titulo + " · projeto #" + strconv.FormatInt(p.Numero, 10) + " " + p.Titulo
+			mensagem = mensagemAtribuida(s.nomeDoAutor(ctx, tx, autor), mensagem)
+			parte, err := s.enviarAviso(ctx, tx, autor, entrou, notificacoes.Nova{
+				Modulo:   "projetos",
+				Titulo:   "Você é responsável pela tarefa",
+				Mensagem: cortar(mensagem, 1000),
+				Link:     linkProjeto(p.ID),
+				Chave:    chaveAviso("tarefa", depois.ID.String(), "responsavel"),
+			}, true)
+			if err != nil {
+				return nil, err
+			}
+			enviadas = append(enviadas, parte...)
+			marcar(entrou)
 		}
-		mensagem = mensagemAtribuida(s.nomeDoAutor(ctx, tx, autor), mensagem)
-		parte, err := s.enviarAviso(ctx, tx, autor, []uuid.UUID{*depois.ResponsavelID}, notificacoes.Nova{
-			Modulo:   "projetos",
-			Titulo:   "Você é o responsável pela tarefa",
-			Mensagem: cortar(mensagem, 1000),
-			Link:     linkProjeto(p.ID),
-			Chave:    chaveAviso("tarefa", depois.ID.String(), "responsavel"),
-		}, true)
-		if err != nil {
-			return nil, err
-		}
-		enviadas = append(enviadas, parte...)
-		marcar([]uuid.UUID{*depois.ResponsavelID})
-	}
-	if !igualID(antes.ResponsavelID, depois.ResponsavelID) {
-		parte, err := s.registrar(ctx, tx, autor, idDe(antes.ResponsavelID), notificacoes.Nova{
+		saiu := diferenca(idsDoGrupo(antes), idsDoGrupo(depois))
+		parte, err := s.registrar(ctx, tx, autor, saiu, notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "Você deixou de ser responsável pela tarefa",
 			Mensagem: cortar(antes.Titulo+" · projeto #"+strconv.FormatInt(p.Numero, 10)+" "+p.Titulo, 1000),
@@ -283,13 +282,13 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 			return nil, err
 		}
 		enviadas = append(enviadas, parte...)
-		marcar(idDe(antes.ResponsavelID))
+		marcar(saiu)
 	}
 	if antes.ID == uuid.Nil || !tarefaMudou(antes, depois) {
 		if p.GerenteID != nil {
 			if _, ok := ja[*p.GerenteID]; !ok {
 				titulo := "Responsável da tarefa no projeto #" + strconv.FormatInt(p.Numero, 10)
-				mensagem := depois.Titulo + " ficou com " + nomeOuNinguem(depois.ResponsavelNome)
+				mensagem := depois.Titulo + " ficou com " + nomeOuNinguem(rotuloGrupo(depois))
 				if antes.ID == uuid.Nil {
 					titulo = "Nova tarefa no projeto #" + strconv.FormatInt(p.Numero, 10)
 					mensagem = depois.Titulo
@@ -309,7 +308,7 @@ func (s *Service) avisarTarefa(ctx context.Context, tx pgx.Tx, autor uuid.UUID, 
 		}
 		return enviadas, nil
 	}
-	destinos := append(idDe(p.GerenteID), idDe(depois.ResponsavelID)...)
+	destinos := append(idDe(p.GerenteID), idsDoGrupo(depois)...)
 	filtrados := make([]uuid.UUID, 0, len(destinos))
 	for _, id := range destinos {
 		if _, ok := ja[id]; ok {
@@ -383,8 +382,8 @@ func mesmoPrazo(a, b *time.Time) bool {
 
 func resumoTarefa(antes, depois domain.Tarefa) string {
 	texto := depois.Titulo
-	if !igualID(antes.ResponsavelID, depois.ResponsavelID) {
-		texto += " ficou com " + nomeOuNinguem(depois.ResponsavelNome)
+	if !igualID(antes.ResponsavelID, depois.ResponsavelID) || rotuloGrupo(antes) != rotuloGrupo(depois) {
+		texto += " ficou com " + nomeOuNinguem(rotuloGrupo(depois))
 	}
 	if antes.Estado != depois.Estado {
 		texto += " foi para " + rotuloEstadoTarefa(depois.Estado)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 )
 
@@ -44,7 +45,7 @@ func (s *Service) VerificarPrazos(ctx context.Context, agora time.Time) error {
 	}
 	var enviadas []notificacoes.Enviada
 	for _, t := range tarefas {
-		destinos := destinosDoPrazo(t.ResponsavelID, t.GerenteID)
+		destinos := destinosDaTarefa(t)
 		if len(destinos) == 0 {
 			continue
 		}
@@ -78,6 +79,30 @@ func (s *Service) VerificarPrazos(ctx context.Context, agora time.Time) error {
 	}
 	s.avisos.Entregar(ctx, enviadas)
 	return nil
+}
+
+func destinosDaTarefa(t domain.PrazoTarefa) []uuid.UUID {
+	if len(t.Pessoas) == 0 {
+		return destinosDoPrazo(t.ResponsavelID, t.GerenteID)
+	}
+	visto := map[uuid.UUID]struct{}{}
+	var out []uuid.UUID
+	for _, id := range t.Pessoas {
+		if id == uuid.Nil {
+			continue
+		}
+		if _, ok := visto[id]; ok {
+			continue
+		}
+		visto[id] = struct{}{}
+		out = append(out, id)
+	}
+	if t.GerenteID != nil && *t.GerenteID != uuid.Nil {
+		if _, ok := visto[*t.GerenteID]; !ok {
+			out = append(out, *t.GerenteID)
+		}
+	}
+	return out
 }
 
 func destinosDoPrazo(responsavel, gerente *uuid.UUID) []uuid.UUID {

@@ -64,6 +64,38 @@ export const TIPO_VINCULO_PROJETO: Record<TipoVinculoProjeto, { label: string; t
 
 export type EstadoTarefa = "a_fazer" | "em_andamento" | "concluida" | "bloqueada";
 
+export interface PessoaProjeto {
+  id: string;
+  nome: string;
+  papel?: string;
+}
+
+/** Pessoas da tarefa. Sem a lista nova, usa o responsável único já gravado. */
+export function pessoasDaTarefa(t: {
+  pessoas?: PessoaProjeto[];
+  responsavel_id?: string | null;
+  responsavel_nome?: string;
+}): PessoaProjeto[] {
+  if (t.pessoas && t.pessoas.length > 0) return t.pessoas;
+  if (t.responsavel_id || t.responsavel_nome?.trim()) {
+    return [{ id: t.responsavel_id ?? "", nome: t.responsavel_nome ?? "" }];
+  }
+  return [];
+}
+
+export function tarefaInclui(
+  t: {
+    pessoas?: PessoaProjeto[];
+    responsavel_id?: string | null;
+    responsavel_nome?: string;
+  },
+  usuarioId?: string,
+) {
+  const pessoas = pessoasDaTarefa(t);
+  if (!usuarioId) return pessoas.length > 0;
+  return pessoas.some((pessoa) => pessoa.id === usuarioId);
+}
+
 export interface Tarefa {
   id: string;
   projeto_id: string;
@@ -71,6 +103,7 @@ export interface Tarefa {
   descricao: string;
   responsavel_id?: string;
   responsavel_nome: string;
+  pessoas?: PessoaProjeto[];
   estado: EstadoTarefa;
   ordem: number;
   data_limite?: string;
@@ -95,6 +128,7 @@ export interface PrazoAgenda {
   data_limite: string;
   responsavel_id?: string;
   responsavel_nome: string;
+  pessoas?: PessoaProjeto[];
   pai_id?: string;
   projeto_id: string;
   projeto_numero: number;

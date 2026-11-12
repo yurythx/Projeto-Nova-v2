@@ -333,6 +333,9 @@ describe("Projetos — Detalhes e Tarefas", () => {
       ...identityRoutes(perms("projetos:read", "projetos:manage")),
       "GET v1/projetos/proj-1": { data: projeto() },
       "GET v1/projetos/proj-1/tarefas": { data: [] },
+      "GET v1/projetos/proj-1/participantes": {
+        data: [{ id: "u-mariana", nome: "Mariana Costa", papel: "participante" }],
+      },
       "GET v1/projetos/proj-1/responsaveis": {
         data: [{ id: "u-mariana", nome: "Mariana Costa" }],
       },
@@ -368,6 +371,9 @@ describe("Projetos — Detalhes e Tarefas", () => {
       "GET v1/projetos/proj-1": { data: projeto() },
       "GET v1/projetos/proj-1/tarefas": {
         data: [tarefa({ responsavel_id: "", responsavel_nome: "" })],
+      },
+      "GET v1/projetos/proj-1/participantes": {
+        data: [{ id: "u-mariana", nome: "Mariana Costa", papel: "participante" }],
       },
       "GET v1/projetos/proj-1/responsaveis": {
         data: [{ id: "u-mariana", nome: "Mariana Costa" }],

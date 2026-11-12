@@ -221,6 +221,9 @@ func TestModuloCicloCompleto(t *testing.T) {
 		t.Fatalf("mover sem responsável: %d %s", rec.Code, rec.Body.String())
 	}
 	comPessoa := `"responsavel_id":"` + pessoa.String() + `"`
+	if rec := do(gestorA, http.MethodPost, "/projetos/"+projID.String()+"/participantes", `{"id":"`+pessoa.String()+`"}`); rec.Code != http.StatusOK {
+		t.Fatalf("incluir participante: %d %s", rec.Code, rec.Body.String())
+	}
 	if rec := do(gestorA, http.MethodPut, "/projetos/"+projID.String()+"/tarefas/"+envSeg.Data.ID.String(),
 		`{"titulo":"Depois do mapa","estado":"em_andamento","ordem":2,"predecessora_id":"`+envTar.Data.ID.String()+`",`+comPessoa+`}`); rec.Code != http.StatusOK {
 		t.Fatalf("andamento em paralelo: %d %s", rec.Code, rec.Body.String())
@@ -436,10 +439,10 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.RegistrarApontamento(ctx, admin, uuid.New(), nil, "", 1, "Ativ", 0); err == nil {
 		t.Fatal("apontamento em projeto inexistente deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil, nil, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "invalido", 1, nil, nil, nil, nil); !errors.Is(err, domain.ErrEstadoInvalido) {
 		t.Fatalf("estado de tarefa inválido: %v", err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", "", nil, "", "a_fazer", 1, nil, nil); err == nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, uuid.New(), "T", "", "", nil, "", "a_fazer", 1, nil, nil, nil); err == nil {
 		t.Fatal("atualizar tarefa inexistente deveria falhar")
 	}
 	if _, err := svc.Vincular(ctx, admin, p.ID, "invalido", uuid.New(), ""); !errors.Is(err, domain.ErrVinculoInvalido) {
@@ -458,7 +461,7 @@ func TestRepositorioEServicoCaminhosDeErro(t *testing.T) {
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err == nil {
 		t.Fatal("transicionar com erro de passagens deveria falhar")
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil, nil, nil); err == nil {
+	if _, err := svc.CriarTarefa(ctx, admin, p.ID, "T", "", nil, "", "a_fazer", 1, nil, nil, nil, nil); err == nil {
 		t.Fatal("criar tarefa com erro de passagens deveria falhar")
 	}
 }
@@ -912,30 +915,33 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoEmAndamento); err != nil {
 		t.Fatal(err)
 	}
-	aberta, err := svc.CriarTarefa(ctx, admin, p.ID, "Aberta", "", nil, "", "a_fazer", 1, nil, nil, nil)
+	aberta, err := svc.CriarTarefa(ctx, admin, p.ID, "Aberta", "", nil, "", "a_fazer", 1, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); !errors.Is(err, domain.ErrTarefasAbertas) {
 		t.Fatalf("concluir com tarefa aberta: %v", err)
 	}
-	segunda, err := svc.CriarTarefa(ctx, admin, p.ID, "Segunda", "", nil, "", "a_fazer", 2, nil, &aberta.ID, nil)
+	segunda, err := svc.CriarTarefa(ctx, admin, p.ID, "Segunda", "", nil, "", "a_fazer", 2, nil, &aberta.ID, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "em_andamento", 2, nil, &aberta.ID); err != nil {
-		t.Fatalf("andamento em paralelo: %v", err)
-	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "concluida", 2, nil, &aberta.ID); !errors.Is(err, domain.ErrPredecessoraAberta) {
-		t.Fatalf("concluir fora de ordem: %v", err)
-	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", &pessoa, "", "concluida", 1, nil, &segunda.ID); !errors.Is(err, domain.ErrPredecessoraInvalida) {
-		t.Fatalf("ciclo: %v", err)
-	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", &pessoa, "", "concluida", 1, nil, nil); err != nil {
+	if _, err := svc.IncluirParticipante(ctx, admin, p.ID, pessoa); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "concluida", 2, nil, &aberta.ID); err != nil {
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "em_andamento", 2, nil, &aberta.ID, nil); err != nil {
+		t.Fatalf("andamento em paralelo: %v", err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "concluida", 2, nil, &aberta.ID, nil); !errors.Is(err, domain.ErrPredecessoraAberta) {
+		t.Fatalf("concluir fora de ordem: %v", err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", &pessoa, "", "concluida", 1, nil, &segunda.ID, nil); !errors.Is(err, domain.ErrPredecessoraInvalida) {
+		t.Fatalf("ciclo: %v", err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, aberta.ID, "Aberta", "", "", &pessoa, "", "concluida", 1, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AtualizarTarefa(ctx, admin, segunda.ID, "Segunda", "", "", &pessoa, "", "concluida", 2, nil, &aberta.ID, nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := svc.Transicionar(ctx, admin, p.ID, domain.EstadoConcluido); err != nil {
@@ -956,7 +962,7 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.CriarTarefa(ctx, admin, outro.ID, "Prazo", "", nil, "", "a_fazer", 1, nil, nil, nil); err != nil {
+	if _, err := svc.CriarTarefa(ctx, admin, outro.ID, "Prazo", "", nil, "", "a_fazer", 1, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	svc.ComHoras(horasFalsas{total: 7.5})
@@ -998,5 +1004,61 @@ func TestConclusaoTarefaPrazoEHoras(t *testing.T) {
 	}
 	if n != 2 {
 		t.Fatalf("avisos de prazo: %d", n)
+	}
+}
+
+func TestPessoasDoProjeto(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := application.NewService(pool, infrastructure.NewRepository(), outbox.NewWriter("test"), logger)
+	admin := auth.Identity{
+		UserID: uuid.New(), Name: "Administrador",
+		Roles: []string{auth.RoleAdmin}, Permissions: []string{"*"},
+	}
+	p, err := svc.Criar(ctx, admin, domain.EntradaProjeto{Titulo: "Com equipe"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM projetos WHERE id = $1`, p.ID) })
+	ana := dbtest.User(t, pool)
+	bia := dbtest.User(t, pool)
+	fora := dbtest.User(t, pool)
+	for _, id := range []uuid.UUID{ana, bia, fora} {
+		var perfil uuid.UUID
+		if err := pool.QueryRow(ctx, `INSERT INTO perfis (slug, nome, permissoes) VALUES ($1, 'Gestão de projetos', $2) RETURNING id`, "eq-"+id.String(), []string{"projetos:manage"}).Scan(&perfil); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := pool.Exec(ctx, `INSERT INTO user_scopes (user_id, perfil_id) VALUES ($1, $2)`, id, perfil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := svc.IncluirParticipante(ctx, admin, p.ID, ana); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.IncluirParticipante(ctx, admin, p.ID, bia); err != nil {
+		t.Fatal(err)
+	}
+	grupo := []domain.Pessoa{{ID: ana}, {ID: bia}}
+	tarefa, err := svc.CriarTarefa(ctx, admin, p.ID, "Juntas", "", nil, "", "a_fazer", 1, nil, nil, nil, &grupo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tarefa.Pessoas) != 2 || tarefa.Pessoas[0].ID != ana || tarefa.Pessoas[1].ID != bia {
+		t.Fatalf("as duas pessoas: %+v", tarefa.Pessoas)
+	}
+	deFora := []domain.Pessoa{{ID: fora}}
+	if _, err := svc.AtualizarTarefa(ctx, admin, tarefa.ID, "Juntas", "", "", nil, "", "a_fazer", 1, nil, nil, &deFora); !errors.Is(err, domain.ErrForaDoProjeto) {
+		t.Fatalf("pessoa de fora: %v", err)
+	}
+	if _, err := svc.ExcluirParticipante(ctx, admin, p.ID, bia); err != nil {
+		t.Fatal(err)
+	}
+	lista, err := svc.ListarTarefas(ctx, admin, p.ID)
+	if err != nil || len(lista) != 1 || len(lista[0].Pessoas) != 1 || lista[0].Pessoas[0].ID != ana {
+		t.Fatalf("bia saiu da tarefa: %+v %v", lista, err)
+	}
+	if _, err := svc.ExcluirParticipante(ctx, admin, p.ID, bia); !errors.Is(err, domain.ErrParticipanteAusente) {
+		t.Fatalf("quem já saiu: %v", err)
 	}
 }

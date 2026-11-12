@@ -25,7 +25,12 @@ func (s *Service) podeComentar(idt auth.Identity, projeto *domain.Projeto, taref
 	if projeto.GerenteID != nil && *projeto.GerenteID == idt.UserID {
 		return true
 	}
-	return tarefa.ResponsavelID != nil && *tarefa.ResponsavelID == idt.UserID
+	for _, id := range idsDoGrupo(*tarefa) {
+		if id == idt.UserID {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Service) ListarAtualizacoes(ctx context.Context, idt auth.Identity, projetoID, tarefaID uuid.UUID) ([]domain.Atualizacao, error) {

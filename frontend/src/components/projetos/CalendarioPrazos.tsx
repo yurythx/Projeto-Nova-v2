@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
-import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Button } from "@/components/ui/Button";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
 import type { PrazoAgenda } from "@/lib/projetos/projetos";
+import { pessoasDaTarefa, tarefaInclui } from "@/lib/projetos/projetos";
 
 import { diaBrasil, diaISO, deslocarMes, faixaDaSemana, gradeDoMes, mesISO, nomeDoMes } from "./datas";
 
@@ -44,7 +45,7 @@ export function CalendarioPrazos({ usuarioId, agora }: { usuarioId?: string; ago
   const lista = useMemo(() => {
     const itens = prazos.data ?? [];
     if (!minhas) return itens;
-    return itens.filter((item) => item.responsavel_id === usuarioId);
+    return itens.filter((item) => tarefaInclui(item, usuarioId));
   }, [minhas, prazos.data, usuarioId]);
   const grade = useMemo(() => gradeDoMes(mes), [mes]);
   const porDia = useMemo(() => {
@@ -99,7 +100,7 @@ export function CalendarioPrazos({ usuarioId, agora }: { usuarioId?: string; ago
                 <li key={item.id} className="flex flex-wrap items-center gap-2 text-sm">
                   <ItemPrazo item={item} hoje={hoje} />
                   <span className="text-xs text-muted">{diaBrasil(item.data_limite)}</span>
-                  <PessoaComAvatar id={item.responsavel_id} nome={item.responsavel_nome} className="text-xs" />
+                  <PessoasComAvatar pessoas={pessoasDaTarefa(item)} className="text-xs" />
                 </li>
               ))}
             </ul>

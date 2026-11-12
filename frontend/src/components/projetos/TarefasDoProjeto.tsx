@@ -13,15 +13,15 @@ import {
 } from "@/components/plataforma/Faixas";
 import { SectionTabsInline } from "@/components/plataforma/SectionTabsInline";
 import { rotuloQuadro } from "@/components/plataforma/useQuadro";
-import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TableCell } from "@/components/ui/Table";
-import { ESTADO_TAREFA, type EstadoTarefa, type Tarefa } from "@/lib/projetos/projetos";
+import { ESTADO_TAREFA, pessoasDaTarefa, tarefaInclui, type EstadoTarefa, type PessoaProjeto, type Tarefa } from "@/lib/projetos/projetos";
 
 import { diaBrasil, diaISO, faixaDoPrazo } from "./datas";
 import { ListaTabela } from "./ListaTabela";
-import { ResponsavelDaTarefa, type ResponsavelOpcao } from "./ResponsavelDaTarefa";
+import { PessoasDaTarefa } from "./PessoasDaTarefa";
 
 const CABECALHOS = [
   { id: "tarefa", rotulo: "Tarefa" },
@@ -62,7 +62,7 @@ export function TarefasDoProjeto({
   onMover: (tarefa: Tarefa, estado: EstadoTarefa) => void;
   onRenomear?: (tarefa: Tarefa, nome: string) => void;
   onAbrir: (tarefa: Tarefa) => void;
-  onAtribuir?: (tarefa: Tarefa, pessoa: ResponsavelOpcao) => void | Promise<boolean | void>;
+  onAtribuir?: (tarefa: Tarefa, pessoas: PessoaProjeto[]) => void | Promise<boolean | void>;
   onPrazo?: (tarefa: Tarefa, dia: string) => void;
   usuarioId?: string;
 }) {
@@ -79,7 +79,7 @@ export function TarefasDoProjeto({
       const filhas = tarefas.filter((item) => item.pai_id === t.id);
       const grupo = [t, ...filhas];
       if (termo && !grupo.some((item) => item.titulo.toLocaleLowerCase("pt-BR").includes(termo))) return false;
-      if (minhas && !grupo.some((item) => item.responsavel_id === usuarioId)) return false;
+      if (minhas && !grupo.some((item) => tarefaInclui(item, usuarioId))) return false;
       if (atrasadas || semana) {
         const passa = grupo.some((item) => {
           const faixa = faixaDoPrazo(item.data_limite);
@@ -101,7 +101,7 @@ export function TarefasDoProjeto({
       <select
         aria-label={`Estado da tarefa ${t.titulo}`}
         value={t.estado}
-        disabled={!t.responsavel_id || pending}
+        disabled={!tarefaInclui(t) || pending}
         onChange={(e) => onMover(t, e.target.value as EstadoTarefa)}
         className="h-8 w-full min-w-0 rounded-md border border-surface-border bg-surface px-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
@@ -232,9 +232,9 @@ export function TarefasDoProjeto({
           idDe={(t) => t.id}
           nomeDe={(t) => t.titulo}
           pending={pending}
-          arrastavel={(t) => mutavel && Boolean(t.responsavel_id)}
+          arrastavel={(t) => mutavel && tarefaInclui(t)}
           podeSoltar={(t, coluna) =>
-            Boolean(t.responsavel_id) &&
+            tarefaInclui(t) &&
             t.estado !== coluna &&
             colunas.find((item) => item.id === coluna)?.ativa !== false
           }
@@ -253,14 +253,13 @@ export function TarefasDoProjeto({
                   "line-clamp-2 text-left text-sm font-medium text-foreground hover:underline",
                 )}
                 <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-                  <PessoaComAvatar
-                    id={t.responsavel_id}
-                    nome={t.responsavel_nome}
+                  <PessoasComAvatar
+                    pessoas={pessoasDaTarefa(t)}
                     className="min-w-0"
                   />
                   <span className="shrink-0">{diaBrasil(t.data_limite) || "Sem prazo"}</span>
                 </div>
-                {!t.responsavel_id && (
+                {!tarefaInclui(t) && (
                   <span className="text-[11px] text-muted">Atribua alguém para mover</span>
                 )}
                 {anterior && <span className="text-[11px] text-muted">Depois de {anterior}</span>}
@@ -311,35 +310,29 @@ function CelulaPessoa({
   aberta: boolean;
   onAbrir: () => void;
   onFechar: () => void;
-  onAtribuir: (pessoa: ResponsavelOpcao) => void | Promise<boolean | void>;
+  onAtribuir: (pessoas: PessoaProjeto[]) => void | Promise<boolean | void>;
 }) {
-  const [escolha, setEscolha] = useState<ResponsavelOpcao>({
-    id: tarefa.responsavel_id ?? "",
-    nome: tarefa.responsavel_nome ?? "",
-  });
+  const [escolha, setEscolha] = useState<PessoaProjeto[]>(pessoasDaTarefa(tarefa));
   const [abertaVista, setAbertaVista] = useState(aberta);
   const [salvando, setSalvando] = useState(false);
   if (aberta !== abertaVista) {
     setAbertaVista(aberta);
-    if (aberta) {
-      setEscolha({ id: tarefa.responsavel_id ?? "", nome: tarefa.responsavel_nome ?? "" });
-    }
+    if (aberta) setEscolha(pessoasDaTarefa(tarefa));
   }
   if (!mutavel || !aberta) {
-    const nome = tarefa.responsavel_nome || "";
-    if (!mutavel) return <PessoaComAvatar id={tarefa.responsavel_id} nome={nome} className="text-sm" />;
+    if (!mutavel) return <PessoasComAvatar pessoas={pessoasDaTarefa(tarefa)} className="text-sm" />;
     return (
       <button type="button" className="text-left text-sm hover:underline" onClick={onAbrir}>
-        <PessoaComAvatar id={tarefa.responsavel_id} nome={nome} vazio="Atribuir" />
+        <PessoasComAvatar pessoas={pessoasDaTarefa(tarefa)} vazio="Atribuir" />
       </button>
     );
   }
   return (
     <div className="flex min-w-52 flex-col gap-2">
-      <ResponsavelDaTarefa
+      <PessoasDaTarefa
         id={`resp-${tarefa.id}`}
         projetoId={projetoId}
-        rotulo="Responsável pela tarefa"
+        rotulo="Pessoas da tarefa"
         value={escolha}
         onChange={setEscolha}
       />

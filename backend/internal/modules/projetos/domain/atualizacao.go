@@ -31,6 +31,7 @@ type PrazoAgenda struct {
 	DataLimite      time.Time  `json:"data_limite"`
 	ResponsavelID   *uuid.UUID `json:"responsavel_id,omitempty"`
 	ResponsavelNome string     `json:"responsavel_nome"`
+	Pessoas         []Pessoa   `json:"pessoas,omitempty"`
 	PaiID           *uuid.UUID `json:"pai_id,omitempty"`
 	ProjetoID       uuid.UUID  `json:"projeto_id"`
 	ProjetoNumero   int64      `json:"projeto_numero"`

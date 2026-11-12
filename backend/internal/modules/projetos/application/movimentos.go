@@ -13,13 +13,6 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
-func mesmoUUID(a, b *uuid.UUID) bool {
-	if a == nil || *a == uuid.Nil {
-		return b == nil || *b == uuid.Nil
-	}
-	return b != nil && *a == *b
-}
-
 func mudouTrilha(antes, depois domain.Tarefa) bool {
 	ea, ed := antes.Estado, depois.Estado
 	if ea == "" {
@@ -31,7 +24,7 @@ func mudouTrilha(antes, depois domain.Tarefa) bool {
 	if ea != ed {
 		return true
 	}
-	return !mesmoUUID(antes.ResponsavelID, depois.ResponsavelID) || antes.ResponsavelNome != depois.ResponsavelNome
+	return !mesmoGrupo(antes, depois) || antes.ResponsavelNome != depois.ResponsavelNome
 }
 
 func (s *Service) anotarMovimento(ctx context.Context, tx pgx.Tx, idt auth.Identity, antes, depois domain.Tarefa) error {
@@ -50,8 +43,8 @@ func (s *Service) anotarMovimento(ctx context.Context, tx pgx.Tx, idt auth.Ident
 	m := &domain.Movimento{
 		ID: uuid.New(), TarefaID: depois.ID,
 		EstadoAntes: antes.Estado, EstadoDepois: depois.Estado,
-		ResponsavelAntesID: antes.ResponsavelID, ResponsavelAntesNome: antes.ResponsavelNome,
-		ResponsavelDepoisID: depois.ResponsavelID, ResponsavelDepoisNome: depois.ResponsavelNome,
+		ResponsavelAntesID: antes.ResponsavelID, ResponsavelAntesNome: nomesDoGrupo(antes),
+		ResponsavelDepoisID: depois.ResponsavelID, ResponsavelDepoisNome: nomesDoGrupo(depois),
 		AutorID: autorID, AutorNome: autorNome, CreatedAt: time.Now().UTC(),
 	}
 	if antes.Estado == "" {

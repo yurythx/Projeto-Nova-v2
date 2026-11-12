@@ -105,3 +105,40 @@ export function PessoaComAvatar({
     </span>
   );
 }
+
+/** Várias pessoas da mesma tarefa, no lugar do responsável único. */
+export function PessoasComAvatar({
+  pessoas,
+  vazio = "Sem responsável",
+  className = "",
+}: {
+  pessoas: { id?: string | null; nome?: string }[];
+  vazio?: string;
+  className?: string;
+}) {
+  const lista = pessoas.filter((pessoa) => pessoa.nome?.trim() || pessoa.id);
+  if (lista.length <= 1) {
+    return (
+      <PessoaComAvatar
+        id={lista[0]?.id}
+        nome={lista[0]?.nome}
+        vazio={vazio}
+        className={className}
+      />
+    );
+  }
+  const nomes = lista
+    .map((pessoa) => pessoa.nome?.trim())
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <span className={`inline-flex min-w-0 items-center gap-2 ${className}`}>
+      <span className="inline-flex shrink-0">
+        {lista.slice(0, 3).map((pessoa) => (
+          <AvatarPessoa key={pessoa.id || pessoa.nome} id={pessoa.id} nome={pessoa.nome?.trim() ?? ""} />
+        ))}
+      </span>
+      <span className="truncate">{nomes}</span>
+    </span>
+  );
+}

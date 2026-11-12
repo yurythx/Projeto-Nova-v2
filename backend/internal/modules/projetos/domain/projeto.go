@@ -34,6 +34,9 @@ const (
 	EstadoTarefaEmAndamento = "em_andamento"
 	EstadoTarefaConcluida   = "concluida"
 	EstadoTarefaBloqueada   = "bloqueada"
+	PessoasPorTarefaMax     = 12
+	PapelGerente            = "gerente"
+	PapelParticipante       = "participante"
 
 	TituloMax = 160
 	RelatoMax = 4000
@@ -72,6 +75,10 @@ var (
 	ErrEtapaInvalida             = errors.New("projetos: etapa inválida")
 	ErrCartaInvalida             = errors.New("projetos: carta inválida")
 	ErrPessoaInvalida            = errors.New("projetos: pessoa inválida")
+	ErrForaDoProjeto             = errors.New("projetos: pessoa fora do projeto")
+	ErrPessoasDemais             = errors.New("projetos: pessoas demais na tarefa")
+	ErrGerentePermanece          = errors.New("projetos: o gerente permanece no projeto")
+	ErrParticipanteAusente       = errors.New("projetos: participante ausente")
 	ErrReaberturaExigeAprovacao  = errors.New("projetos: concluído só reabre com aprovação")
 	ErrReaberturaNaoAutorizada   = errors.New("projetos: reabertura não autorizada")
 	ErrCancelamentoNaoAutorizado = errors.New("projetos: cancelamento não autorizado")
@@ -176,6 +183,13 @@ type Vinculo struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// Pessoa é alguém do projeto ou da tarefa.
+type Pessoa struct {
+	ID    uuid.UUID `json:"id"`
+	Nome  string    `json:"nome"`
+	Papel string    `json:"papel,omitempty"`
+}
+
 // Tarefa representa uma atividade ou marco do projeto.
 type Tarefa struct {
 	ID              uuid.UUID  `json:"id"`
@@ -184,6 +198,7 @@ type Tarefa struct {
 	Descricao       string     `json:"descricao"`
 	ResponsavelID   *uuid.UUID `json:"responsavel_id,omitempty"`
 	ResponsavelNome string     `json:"responsavel_nome"`
+	Pessoas         []Pessoa   `json:"pessoas,omitempty"`
 	Estado          string     `json:"estado"`
 	Ordem           int        `json:"ordem"`
 	DataLimite      *time.Time `json:"data_limite,omitempty"`
@@ -217,6 +232,7 @@ type PrazoTarefa struct {
 	Titulo        string
 	DataLimite    time.Time
 	ResponsavelID *uuid.UUID
+	Pessoas       []uuid.UUID
 	ProjetoID     uuid.UUID
 	ProjetoNumero int64
 	ProjetoTitulo string

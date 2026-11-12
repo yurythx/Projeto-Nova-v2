@@ -3,7 +3,7 @@
 import { type FormEvent, Fragment, useState } from "react";
 
 import { DataState } from "@/components/plataforma/DataState";
-import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
+import { PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { useAction } from "@/components/plataforma/useAction";
 import { ProgressoProjeto } from "@/components/projetos/ProgressoProjeto";
 import { Badge } from "@/components/ui/Badge";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
-import { ESTADO_TAREFA, type Tarefa } from "@/lib/projetos/projetos";
+import { pessoasDaTarefa, ESTADO_TAREFA, type Tarefa } from "@/lib/projetos/projetos";
 
 function estadoDa(tarefa: Tarefa) {
   const estado = ESTADO_TAREFA[tarefa.estado];
@@ -98,11 +98,7 @@ export function TarefasNaLista({
                       </TableCell>
                       <TableCell>{estadoDa(tarefa)}</TableCell>
                       <TableCell>
-                        <PessoaComAvatar
-                          id={tarefa.responsavel_id}
-                          nome={tarefa.responsavel_nome}
-                          className="text-sm"
-                        />
+                        <PessoasComAvatar pessoas={pessoasDaTarefa(tarefa)} className="text-sm" />
                       </TableCell>
                     </TableRow>
                     {filhas.map((filha) => (
@@ -112,11 +108,7 @@ export function TarefasNaLista({
                         </TableCell>
                         <TableCell>{estadoDa(filha)}</TableCell>
                         <TableCell>
-                          <PessoaComAvatar
-                            id={filha.responsavel_id}
-                            nome={filha.responsavel_nome}
-                            className="text-sm"
-                          />
+                          <PessoasComAvatar pessoas={pessoasDaTarefa(filha)} className="text-sm" />
                         </TableCell>
                       </TableRow>
                     ))}

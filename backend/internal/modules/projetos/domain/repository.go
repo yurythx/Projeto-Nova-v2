@@ -51,6 +51,13 @@ type Repository interface {
 	ListarResponsaveis(ctx context.Context, db database.DBTX, unidade *uuid.UUID) ([]Responsavel, error)
 	NomeDeResponsavel(ctx context.Context, db database.DBTX, pessoa uuid.UUID, unidade *uuid.UUID) (string, error)
 	ListarTarefas(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Tarefa, error)
+	IncluirParticipante(ctx context.Context, db database.DBTX, projetoID uuid.UUID, pessoa Pessoa) error
+	ExcluirParticipante(ctx context.Context, db database.DBTX, projetoID, pessoa uuid.UUID) error
+	ListarParticipantes(ctx context.Context, db database.DBTX, projetoID uuid.UUID) ([]Pessoa, error)
+	EhParticipante(ctx context.Context, db database.DBTX, projetoID, pessoa uuid.UUID) (bool, error)
+	SubstituirPessoasDaTarefa(ctx context.Context, db database.DBTX, tarefaID uuid.UUID, pessoas []Pessoa) error
+	PessoasPorTarefa(ctx context.Context, db database.DBTX, ids []uuid.UUID) (map[uuid.UUID][]Pessoa, error)
+	RetirarPessoaDasTarefas(ctx context.Context, db database.DBTX, projetoID, pessoa uuid.UUID) error
 	ListarMinhas(ctx context.Context, db database.DBTX, pessoa uuid.UUID, restrito bool, unidades []uuid.UUID) ([]TarefaMinha, error)
 	ListarCarga(ctx context.Context, db database.DBTX, restrito bool, unidades []uuid.UUID) ([]CargaPessoa, error)
 	ExcluirTarefa(ctx context.Context, db database.DBTX, id uuid.UUID) error
