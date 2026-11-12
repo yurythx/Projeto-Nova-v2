@@ -71,14 +71,14 @@ export function usePainelNaUrl() {
   return { id: escolha, abrir, fechar, href };
 }
 
-/** Detalhe do card por cima do quadro. `folha` encosta na direita e ocupa mais da metade da tela. */
+/** Detalhe do card por cima do quadro. Encosta na direita e desliza, como o de projetos. */
 export function PainelDoQuadro({
   aberto,
   id,
   titulo,
   href,
   onClose,
-  folha = false,
+  folha = true,
   children,
 }: {
   aberto: boolean;

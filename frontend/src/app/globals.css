@@ -268,41 +268,40 @@ h2 {
   background: var(--seal);
 }
 
-/* Entrada/saída dos modais <dialog> (ModalShell / Dialog) — transição
-   nativa via @starting-style, sem JS nem biblioteca. `allow-discrete`
-   mantém o elemento no top layer durante o fade de saída. O bloco de
-   prefers-reduced-motion abaixo zera a duração pra quem pediu. */
-dialog {
+/* Entrada/saída dos modais centrais. A folha lateral (`data-motion`) fica
+   de fora: ela desliza da direita e não herda este scale. `allow-discrete`
+   mantém o modal no top layer durante a saída. */
+dialog:not([data-motion]) {
   transition:
-    opacity 150ms ease,
-    transform 150ms ease,
-    overlay 150ms ease allow-discrete,
-    display 150ms ease allow-discrete;
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    overlay 220ms ease allow-discrete,
+    display 220ms ease allow-discrete;
   opacity: 0;
-  transform: translateY(4px) scale(0.985);
+  transform: translateY(6px) scale(0.985);
 }
-dialog[open] {
+dialog[open]:not([data-motion]) {
   opacity: 1;
   transform: none;
 }
 @starting-style {
-  dialog[open] {
+  dialog[open]:not([data-motion]) {
     opacity: 0;
-    transform: translateY(4px) scale(0.985);
+    transform: translateY(6px) scale(0.985);
   }
 }
-dialog::backdrop {
+dialog:not([data-motion])::backdrop {
   opacity: 0;
   transition:
-    opacity 150ms ease,
-    overlay 150ms ease allow-discrete,
-    display 150ms ease allow-discrete;
+    opacity 220ms ease,
+    overlay 220ms ease allow-discrete,
+    display 220ms ease allow-discrete;
 }
-dialog[open]::backdrop {
+dialog[open]:not([data-motion])::backdrop {
   opacity: 1;
 }
 @starting-style {
-  dialog[open]::backdrop {
+  dialog[open]:not([data-motion])::backdrop {
     opacity: 0;
   }
 }
