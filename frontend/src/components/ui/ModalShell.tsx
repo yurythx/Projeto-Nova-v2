@@ -59,6 +59,7 @@ export function ModalShell({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const silenciarFecho = useRef(false);
   const [corpo, setCorpo] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -68,9 +69,37 @@ export function ModalShell({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
-    if (!open && el.open) el.close();
-  }, [open, corpo]);
+    const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (open) {
+      if (!el.open) el.showModal();
+      return;
+    }
+    if (!el.open) return;
+    if (variant !== "drawer" || reduzir) {
+      el.close();
+      return;
+    }
+    let fechou = false;
+    const fechar = () => {
+      if (fechou) return;
+      fechou = true;
+      el.removeEventListener("animationend", noFim);
+      if (el.open) {
+        silenciarFecho.current = true;
+        el.close();
+      }
+    };
+    const noFim = (event: AnimationEvent) => {
+      if (event.target !== el || event.animationName !== "nova-painel-sai") return;
+      fechar();
+    };
+    el.addEventListener("animationend", noFim);
+    const timer = window.setTimeout(fechar, 260);
+    return () => {
+      window.clearTimeout(timer);
+      el.removeEventListener("animationend", noFim);
+    };
+  }, [open, corpo, variant]);
 
   useEffect(() => {
     if (!open) return;
@@ -102,9 +131,14 @@ export function ModalShell({
       ref={ref}
       onClose={(event) => {
         event.stopPropagation();
+        if (silenciarFecho.current) {
+          silenciarFecho.current = false;
+          return;
+        }
         onClose();
       }}
       onCancel={(event) => {
+        event.preventDefault();
         event.stopPropagation();
         onClose();
       }}
@@ -114,13 +148,14 @@ export function ModalShell({
       }}
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
+      data-motion={drawer ? (open ? "entra" : "sai") : undefined}
       style={geometria}
       className={`${
         drawer
-          ? "rounded-l-xl max-md:rounded-none"
-          : `m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)] rounded-xl`
+          ? "rounded-l-xl max-md:rounded-none backdrop:bg-black/40"
+          : `m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)] rounded-xl backdrop:bg-black/50 backdrop:backdrop-blur-sm`
       } overflow-hidden border border-surface-border bg-surface p-0 text-foreground
-        shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm ${className}`}
+        shadow-2xl ${className}`}
     >
       <div
         className={`flex flex-col ${drawer ? "h-full" : "max-h-[calc(100dvh-2rem)]"}`}

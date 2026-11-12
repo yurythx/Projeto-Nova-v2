@@ -86,6 +86,7 @@ describe("ModalShell", () => {
     expect(folha.style.width).toBe("min(100vw, max(68vw, 42rem))");
     expect(folha.style.right).toBe("0px");
     expect(folha.style.left).toBe("auto");
+    expect(folha.getAttribute("data-motion")).toBe("entra");
     dialogs[1]!.dispatchEvent(new Event("close", { bubbles: true }));
     expect(dentro).toHaveBeenCalledTimes(1);
     expect(fora).not.toHaveBeenCalled();

@@ -346,3 +346,44 @@ dialog[open]::backdrop {
     width: 100%;
   }
 }
+
+/* Painel lateral (detalhe do quadro). Só transform e opacidade do véu:
+   a curva desacelera no fim, sem salto, e sai um pouco mais rápido. */
+@keyframes nova-painel-entra {
+  from { transform: translate3d(100%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+@keyframes nova-painel-sai {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
+}
+@keyframes nova-velo-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes nova-velo-sai {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+dialog[data-motion="entra"] {
+  animation: nova-painel-entra 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+dialog[data-motion="entra"]::backdrop {
+  animation: nova-velo-entra 260ms ease-out both;
+}
+dialog[data-motion="sai"] {
+  animation: nova-painel-sai 240ms cubic-bezier(0.4, 0, 1, 1) both;
+  will-change: transform;
+}
+dialog[data-motion="sai"]::backdrop {
+  animation: nova-velo-sai 180ms ease-in both;
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog[data-motion="entra"],
+  dialog[data-motion="sai"],
+  dialog[data-motion="entra"]::backdrop,
+  dialog[data-motion="sai"]::backdrop {
+    animation: none;
+  }
+}
