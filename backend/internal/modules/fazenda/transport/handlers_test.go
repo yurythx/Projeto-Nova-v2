@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/fazenda/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/govbr"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 )
 
 type falso struct{ err error }
@@ -76,6 +78,27 @@ func (f falso) MarcarExecucao(context.Context, auth.Identity, uuid.UUID, bool) (
 }
 func (f falso) Avisar(context.Context, auth.Identity, uuid.UUID, string, string) (string, error) {
 	return "000001/2026", f.err
+}
+func (f falso) EmitirCertidao(context.Context, auth.Identity, uuid.UUID, domain.DadosCertidao) (domain.Processo, error) {
+	return domain.Processo{}, f.err
+}
+func (f falso) AssinarTQC(context.Context, auth.Identity, uuid.UUID, time.Time) (domain.Processo, error) {
+	return domain.Processo{}, f.err
+}
+func (f falso) GuardarSelo(context.Context, auth.Identity, uuid.UUID, int) (domain.Processo, error) {
+	return domain.Processo{}, f.err
+}
+func (f falso) GuardarIsencao(context.Context, auth.Identity, uuid.UUID, int) (domain.Processo, error) {
+	return domain.Processo{}, f.err
+}
+func (f falso) AbrirCassacao(context.Context, auth.Identity, uuid.UUID) (domain.Processo, error) {
+	return domain.Processo{}, f.err
+}
+func (f falso) PedirPeca(context.Context, auth.Identity, uuid.UUID, string, string, string) (modkit.UploadTicket, error) {
+	return modkit.UploadTicket{}, f.err
+}
+func (f falso) GuardarPeca(context.Context, auth.Identity, uuid.UUID, string, string) (domain.Processo, error) {
+	return domain.Processo{}, f.err
 }
 func (f falso) ReceberDUA([]domain.LinhaDUA, int) (domain.ReciboDUA, error) {
 	return domain.ReciboDUA{Recibo: "entrega recebida", Linhas: 1}, f.err

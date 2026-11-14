@@ -773,3 +773,44 @@ func TestRegrasDosDocumentos(t *testing.T) {
 		t.Fatal("pendência")
 	}
 }
+
+func TestCertidaoEAtos(t *testing.T) {
+	base := Processo{Programa: ProgramaRegulariza, Situacao: SituacaoDecidido, Numero: "000001/2026", Codigo: "abc"}
+	out, err := base.EmitirAnexoV(DadosCertidao{
+		Adquirente: "Ana", Transmitente: "Bia", Inscricao: "10", Matricula: "20",
+		Aliquota: "0,5%", DataInstrumento: em(2026, 1, 2, 0, 0),
+	})
+	if err != nil || !strings.Contains(out.Certidao, "000001/2026") || !strings.Contains(out.Certidao, "Ana") {
+		t.Fatalf("certidão: %v %s", err, out.Certidao)
+	}
+	if _, err := base.EmitirAnexoV(DadosCertidao{}); err == nil {
+		t.Fatal("certidão incompleta")
+	}
+	if TipoDePeca("foto") == nil || TipoDePeca("matricula") != nil {
+		t.Fatal("tipo de peça")
+	}
+	avanca := Processo{Programa: ProgramaAvanca, DespachoEm: em(2026, 1, 1, 0, 0)}
+	assinado, err := avanca.RegistrarTQC(em(2026, 1, 5, 0, 0))
+	if err != nil || assinado.ComAtos(em(2026, 1, 5, 0, 0)).TQCSemEfeito {
+		t.Fatal("TQC no prazo")
+	}
+	if !avanca.ComAtos(em(2026, 2, 1, 0, 0)).TQCSemEfeito {
+		t.Fatal("TQC sem assinatura")
+	}
+	selo, err := avanca.RegistrarSelo(2)
+	if err != nil || selo.ComAtos(em(2026, 1, 5, 0, 0)).SeloPercentual != 2 {
+		t.Fatal("selo")
+	}
+	isencao, err := avanca.RegistrarIsencao(2028)
+	if err != nil {
+		t.Fatal(err)
+	}
+	isencao = isencao.ComAtos(em(2026, 1, 5, 0, 0))
+	if isencao.SeloDe != 2029 || isencao.SeloAte != 2031 {
+		t.Fatalf("exercícios do selo: %d %d", isencao.SeloDe, isencao.SeloAte)
+	}
+	cassacao, err := avanca.RegistrarCassacao(em(2026, 3, 1, 0, 0))
+	if err != nil || cassacao.ComAtos(em(2026, 3, 1, 0, 0)).CassacaoPrazo.Day() != 21 {
+		t.Fatal("cassação")
+	}
+}

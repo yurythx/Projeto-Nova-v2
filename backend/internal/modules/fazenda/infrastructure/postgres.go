@@ -15,7 +15,8 @@ import (
 )
 
 const colunas = `id, numero, ano, seq, programa, entrada, titular, situacao, recibo_em, codigo,
-	certidao, aliquota, execucao, exigencia_aberta, exigencia_prazo, exigencia_prorrogada, despacho_em, alerta_limite, destinatario, consulta_em`
+	certidao, aliquota, execucao, exigencia_aberta, exigencia_prazo, exigencia_prorrogada, despacho_em, alerta_limite, destinatario, consulta_em,
+	tqc_assinado_em, selo_criterios, isencao_fim, cassacao_ciencia`
 
 // PostgresRepository implementa domain.Repositorio.
 type PostgresRepository struct{}
@@ -24,10 +25,11 @@ func NewPostgresRepository() *PostgresRepository { return &PostgresRepository{} 
 
 func scanProcesso(row pgx.Row) (domain.Processo, error) {
 	var p domain.Processo
-	var aberta, prazo, despacho, alerta, consulta *time.Time
+	var aberta, prazo, despacho, alerta, consulta, tqc, cassacao *time.Time
 	var destinatario *uuid.UUID
 	err := row.Scan(&p.ID, &p.Numero, &p.Ano, &p.Seq, &p.Programa, &p.Entrada, &p.Titular, &p.Situacao,
-		&p.ReciboEm, &p.Codigo, &p.Certidao, &p.Aliquota, &p.Execucao, &aberta, &prazo, &p.ExigenciaProrrogada, &despacho, &alerta, &destinatario, &consulta)
+		&p.ReciboEm, &p.Codigo, &p.Certidao, &p.Aliquota, &p.Execucao, &aberta, &prazo, &p.ExigenciaProrrogada, &despacho, &alerta, &destinatario, &consulta,
+		&tqc, &p.SeloCriterios, &p.IsencaoFim, &cassacao)
 	if aberta != nil {
 		p.ExigenciaAberta = *aberta
 	}
@@ -45,6 +47,12 @@ func scanProcesso(row pgx.Row) (domain.Processo, error) {
 	}
 	if consulta != nil {
 		p.ConsultaEm = *consulta
+	}
+	if tqc != nil {
+		p.TQCAssinadoEm = *tqc
+	}
+	if cassacao != nil {
+		p.CassacaoCiencia = *cassacao
 	}
 	return p, err
 }
@@ -64,10 +72,11 @@ func tempo(t time.Time) any {
 }
 
 func (r *PostgresRepository) Inserir(ctx context.Context, db database.DBTX, p domain.Processo) error {
-	_, err := db.Exec(ctx, `INSERT INTO fazenda_processos (`+colunas+`) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+	_, err := db.Exec(ctx, `INSERT INTO fazenda_processos (`+colunas+`) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`,
 		p.ID, p.Numero, p.Ano, p.Seq, p.Programa, p.Entrada, p.Titular, p.Situacao, p.ReciboEm, p.Codigo,
 		p.Certidao, p.Aliquota, p.Execucao, tempo(p.ExigenciaAberta), tempo(p.ExigenciaPrazo), p.ExigenciaProrrogada,
-		tempo(p.DespachoEm), tempo(p.AlertaLimite), idOuNulo(p.Destinatario), tempo(p.ConsultaEm))
+		tempo(p.DespachoEm), tempo(p.AlertaLimite), idOuNulo(p.Destinatario), tempo(p.ConsultaEm),
+		tempo(p.TQCAssinadoEm), p.SeloCriterios, p.IsencaoFim, tempo(p.CassacaoCiencia))
 	if err != nil {
 		return fmt.Errorf("fazenda.Inserir: %w", err)
 	}
@@ -76,9 +85,11 @@ func (r *PostgresRepository) Inserir(ctx context.Context, db database.DBTX, p do
 
 func (r *PostgresRepository) Atualizar(ctx context.Context, db database.DBTX, p domain.Processo) error {
 	tag, err := db.Exec(ctx, `UPDATE fazenda_processos SET situacao = $2, certidao = $3, aliquota = $4, execucao = $5,
-		exigencia_aberta = $6, exigencia_prazo = $7, exigencia_prorrogada = $8, despacho_em = $9, alerta_limite = $10, destinatario = $11, consulta_em = $12 WHERE id = $1`,
+		exigencia_aberta = $6, exigencia_prazo = $7, exigencia_prorrogada = $8, despacho_em = $9, alerta_limite = $10, destinatario = $11, consulta_em = $12,
+		tqc_assinado_em = $13, selo_criterios = $14, isencao_fim = $15, cassacao_ciencia = $16 WHERE id = $1`,
 		p.ID, p.Situacao, p.Certidao, p.Aliquota, p.Execucao, tempo(p.ExigenciaAberta), tempo(p.ExigenciaPrazo), p.ExigenciaProrrogada,
-		tempo(p.DespachoEm), tempo(p.AlertaLimite), idOuNulo(p.Destinatario), tempo(p.ConsultaEm))
+		tempo(p.DespachoEm), tempo(p.AlertaLimite), idOuNulo(p.Destinatario), tempo(p.ConsultaEm),
+		tempo(p.TQCAssinadoEm), p.SeloCriterios, p.IsencaoFim, tempo(p.CassacaoCiencia))
 	if err != nil {
 		return fmt.Errorf("fazenda.Atualizar: %w", err)
 	}
@@ -126,6 +137,37 @@ func (r *PostgresRepository) Listar(ctx context.Context, db database.DBTX, titul
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("fazenda.Listar rows: %w", err)
+	}
+	return out, nil
+}
+
+func (r *PostgresRepository) GuardarPeca(ctx context.Context, db database.DBTX, processo uuid.UUID, tipo, objectKey string) error {
+	_, err := db.Exec(ctx, `INSERT INTO fazenda_pecas (processo_id, tipo, object_key) VALUES ($1, $2, $3)
+		ON CONFLICT (processo_id, tipo) DO UPDATE SET object_key = EXCLUDED.object_key`, processo, tipo, objectKey)
+	if err != nil {
+		return fmt.Errorf("fazenda.GuardarPeca: %w", err)
+	}
+	return nil
+}
+
+func (r *PostgresRepository) ListarPecas(ctx context.Context, db database.DBTX, processo uuid.UUID) ([]domain.PecaArquivo, error) {
+	rows, err := db.Query(ctx, `SELECT tipo, object_key FROM fazenda_pecas WHERE processo_id = $1 ORDER BY tipo`, processo)
+	if err != nil {
+		return nil, fmt.Errorf("fazenda.ListarPecas: %w", err)
+	}
+	defer rows.Close()
+	out := []domain.PecaArquivo{}
+	for rows.Next() {
+		var peca domain.PecaArquivo
+		var chave string
+		if err := rows.Scan(&peca.Tipo, &chave); err != nil {
+			return nil, fmt.Errorf("fazenda.ListarPecas scan: %w", err)
+		}
+		peca.Chave = chave
+		out = append(out, peca)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("fazenda.ListarPecas rows: %w", err)
 	}
 	return out, nil
 }

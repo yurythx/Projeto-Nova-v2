@@ -11,9 +11,13 @@ import { andamento, nomePrograma, nomeSituacao, tomSituacao } from "../rotulos";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ApiError, apiClient } from "@/lib/api/client";
 import { centavosDeReais } from "@/lib/moeda";
+import type { UploadTicket } from "@/lib/plataforma/types";
+import { putToTicket } from "@/lib/plataforma/upload";
+import { NOMES } from "../pecas";
 import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
@@ -32,6 +36,14 @@ interface Processo {
   ciencia_exigencia?: string;
   aliquota?: number;
   execucao?: string;
+  certidao?: string;
+  tqc_limite?: string;
+  tqc_sem_efeito?: boolean;
+  selo_percentual?: number;
+  selo_de?: number;
+  selo_ate?: number;
+  cassacao_prazo?: string;
+  pecas?: { tipo: string; url?: string }[];
 }
 
 /** Acompanhamento e resposta de exigência. O texto da tela não repete débito. */
@@ -119,6 +131,47 @@ export default function ProcessoPage() {
     });
   }
 
+  async function certidao(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    await agir("certidao", {
+      adquirente: String(form.get("adquirente") ?? ""),
+      transmitente: String(form.get("transmitente") ?? ""),
+      inscricao: String(form.get("inscricao") ?? ""),
+      matricula: String(form.get("matricula") ?? ""),
+      aliquota: String(form.get("aliquota") ?? ""),
+      data_instrumento: String(form.get("data_instrumento") ?? ""),
+    });
+  }
+
+  async function enviarPeca(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const dados = new FormData(form);
+    const arquivo = dados.get("arquivo");
+    if (!(arquivo instanceof File) || arquivo.size === 0) {
+      setErro("Selecione o PDF da peça.");
+      return;
+    }
+    setErro("");
+    try {
+      const tipo = String(dados.get("tipo") ?? "");
+      const { data: ticket } = await apiClient.post<UploadTicket>(
+        `v1/fazenda/processos/${id}/pecas/upload`,
+        { tipo, nome: arquivo.name, content_type: "application/pdf" },
+      );
+      await putToTicket(ticket, arquivo);
+      await apiClient.post(`v1/fazenda/processos/${id}/pecas`, {
+        tipo,
+        object_key: ticket.object_key,
+      });
+      form.reset();
+      await processo.mutate();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : "Não foi possível anexar a peça.");
+    }
+  }
+
   async function execucao(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const emExecucao = new FormData(e.currentTarget).get("em_execucao") === "sim";
@@ -169,6 +222,55 @@ export default function ProcessoPage() {
               {item.execucao === "procuradoria" && (
                 <p className="text-sm">Sinalizado para a Procuradoria. A suspensão é ato dela.</p>
               )}
+              {item.certidao && (
+                <pre className="whitespace-pre-wrap font-sans text-sm">{item.certidao}</pre>
+              )}
+              {emCuiaba(item.tqc_limite) && (
+                <p className="text-sm">
+                  Assinatura do TQC até {emCuiaba(item.tqc_limite)}
+                  {item.tqc_sem_efeito ? ". Sem assinatura no prazo, o despacho não produz efeito." : "."}
+                </p>
+              )}
+              {!!item.selo_percentual && (
+                <p className="text-sm">
+                  Selo de {item.selo_percentual}%
+                  {item.selo_de && item.selo_ate ? `, exercícios ${item.selo_de} a ${item.selo_ate}` : ""}.
+                </p>
+              )}
+              {emCuiaba(item.cassacao_prazo) && (
+                <p className="text-sm">Defesa da cassação até {emCuiaba(item.cassacao_prazo)}.</p>
+              )}
+              <section aria-labelledby="pecas" className="flex flex-col gap-3">
+                <h3 id="pecas" className="text-sm font-semibold">
+                  Peças
+                </h3>
+                {(item.pecas ?? []).length > 0 && (
+                  <ul className="text-sm">
+                    {(item.pecas ?? []).map((peca) => (
+                      <li key={peca.tipo}>
+                        {peca.url ? (
+                          <a href={peca.url}>{NOMES[peca.tipo] ?? peca.tipo}</a>
+                        ) : (
+                          NOMES[peca.tipo] ?? peca.tipo
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <form onSubmit={enviarPeca} className="flex flex-col gap-3">
+                  <Select
+                    id="tipo-peca"
+                    name="tipo"
+                    label="Tipo"
+                    options={Object.entries(NOMES).map(([value, label]) => ({ value, label }))}
+                  />
+                  <label className="flex flex-col gap-1 text-sm" htmlFor="arquivo-peca">
+                    PDF
+                    <input id="arquivo-peca" name="arquivo" type="file" accept="application/pdf" />
+                  </label>
+                  <Button type="submit">Anexar PDF</Button>
+                </form>
+              </section>
               {item.codigo && (
                 <p className="text-sm">
                   Código de autenticidade <span className="font-medium">{item.codigo}</span>{" "}
@@ -271,6 +373,59 @@ export default function ProcessoPage() {
                       />
                       <Button type="submit">Anotar redução</Button>
                     </form>
+                  )}
+                  {item.situacao === "decidido" &&
+                    item.programa === "regulariza" &&
+                    can("fazenda:decidir") && (
+                      <form onSubmit={certidao} className="flex flex-col gap-3">
+                        <Input id="adquirente" name="adquirente" label="Adquirente" />
+                        <Input id="transmitente" name="transmitente" label="Transmitente" />
+                        <Input id="inscricao" name="inscricao" label="Inscrição" />
+                        <Input id="matricula-certidao" name="matricula" label="Matrícula" />
+                        <Input id="aliquota" name="aliquota" label="Alíquota" />
+                        <Input id="data-instrumento" name="data_instrumento" type="date" label="Data do instrumento" />
+                        <Button type="submit">Emitir certidão</Button>
+                      </form>
+                    )}
+                  {item.situacao === "decidido" && item.programa === "avanca" && can("fazenda:decidir") && (
+                    <>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const data = String(new FormData(e.currentTarget).get("assinado_em") ?? "");
+                          void agir("tqc", { assinado_em: data });
+                        }}
+                        className="flex flex-col gap-3"
+                      >
+                        <Input id="assinado-tqc" name="assinado_em" type="date" label="Assinatura do TQC" />
+                        <Button type="submit">Registrar TQC</Button>
+                      </form>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const criterios = Number(new FormData(e.currentTarget).get("criterios") ?? 0);
+                          void agir("selo", { criterios });
+                        }}
+                        className="flex flex-col gap-3"
+                      >
+                        <Input id="criterios-selo" name="criterios" type="number" min={2} max={5} label="Critérios do selo" />
+                        <Button type="submit">Anotar selo</Button>
+                      </form>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const fim = Number(new FormData(e.currentTarget).get("fim") ?? 0);
+                          void agir("isencao", { fim });
+                        }}
+                        className="flex flex-col gap-3"
+                      >
+                        <Input id="fim-isencao" name="fim" type="number" label="Último exercício da isenção" />
+                        <Button type="submit">Anotar isenção</Button>
+                      </form>
+                      <Button type="button" onClick={() => void agir("cassacao", {})}>
+                        Abrir defesa da cassação
+                      </Button>
+                    </>
                   )}
                   {analisa && (
                     <form onSubmit={execucao} className="flex flex-col gap-3">

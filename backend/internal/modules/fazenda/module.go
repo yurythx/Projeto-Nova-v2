@@ -35,6 +35,12 @@ func New(deps modkit.Deps) *Module {
 		RedirectURL: os.Getenv("GOVBR_REDIRECT_URL"), Ambiente: os.Getenv("GOVBR_AMBIENTE"),
 	}
 	svc := application.NewService(deps.Pool, infrastructure.NewPostgresRepository(), application.Nucleo{Out: deps.Outbox}, gov, deps.Logger).ComSino(deps.Notificacoes)
+	if deps.Storage != nil && deps.Config != nil {
+		svc.ComArquivos(application.Arquivos{
+			Store: deps.Storage, Bucket: deps.Config.MinIO.Bucket,
+			MaxBytes: deps.Config.Upload.MaxFileBytes, Expiry: deps.Config.Upload.URLExpiry,
+		})
+	}
 	return &Module{deps: deps, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger)}
 }
 

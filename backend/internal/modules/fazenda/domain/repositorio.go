@@ -21,4 +21,6 @@ type Repositorio interface {
 	Listar(ctx context.Context, db database.DBTX, titular string) ([]Processo, error)
 	Proximo(ctx context.Context, db database.DBTX, ano int) (int, error)
 	PorCodigo(ctx context.Context, db database.DBTX, codigo string) (Processo, error)
+	GuardarPeca(ctx context.Context, db database.DBTX, processo uuid.UUID, tipo, objectKey string) error
+	ListarPecas(ctx context.Context, db database.DBTX, processo uuid.UUID) ([]PecaArquivo, error)
 }

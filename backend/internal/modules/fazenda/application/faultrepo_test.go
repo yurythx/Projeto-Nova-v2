@@ -91,6 +91,22 @@ func (fr *faultRepo) Proximo(ctx context.Context, db database.DBTX, ano int) (in
 	return fr.inner.Proximo(ctx, db, ano)
 }
 
+func (fr *faultRepo) GuardarPeca(ctx context.Context, db database.DBTX, processo uuid.UUID, tipo, objectKey string) error {
+	if err := fr.hook("GuardarPeca"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.GuardarPeca(ctx, db, processo, tipo, objectKey)
+}
+
+func (fr *faultRepo) ListarPecas(ctx context.Context, db database.DBTX, processo uuid.UUID) ([]domain.PecaArquivo, error) {
+	if err := fr.hook("ListarPecas"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.ListarPecas(ctx, db, processo)
+}
+
 func (fr *faultRepo) PorCodigo(ctx context.Context, db database.DBTX, codigo string) (domain.Processo, error) {
 	if err := fr.hook("PorCodigo"); err != nil {
 		var z0 domain.Processo

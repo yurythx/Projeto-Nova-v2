@@ -84,6 +84,14 @@ func (m *mem) Proximo(_ context.Context, _ database.DBTX, _ int) (int, error) {
 	return len(m.itens) + 1, nil
 }
 
+func (m *mem) GuardarPeca(context.Context, database.DBTX, uuid.UUID, string, string) error {
+	return nil
+}
+
+func (m *mem) ListarPecas(context.Context, database.DBTX, uuid.UUID) ([]domain.PecaArquivo, error) {
+	return nil, nil
+}
+
 func (m *mem) PorCodigo(_ context.Context, _ database.DBTX, codigo string) (domain.Processo, error) {
 	if m.falha == "codigo" {
 		return domain.Processo{}, errors.New("codigo")

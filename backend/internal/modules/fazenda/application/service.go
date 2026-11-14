@@ -78,6 +78,7 @@ type Service struct {
 	transacao func(ctx context.Context, fn func(context.Context, pgx.Tx) error) error
 	agora     func() time.Time
 	http      govHTTP
+	arquivos  *Arquivos
 	sino      *notificacoes.Service
 	intervalo time.Duration
 }
@@ -333,7 +334,13 @@ func (s *Service) Buscar(ctx context.Context, quem auth.Identity, id uuid.UUID) 
 		return domain.Processo{}, err
 	}
 	p.Pendencia = domain.Pendencia(p, s.agora())
-	return p.ComCiencia(), nil
+	pecas, err := s.repo.ListarPecas(ctx, s.leitor, id)
+	if err != nil {
+		return domain.Processo{}, err
+	}
+	p = p.ComCiencia().ComAtos(s.agora())
+	p.Pecas = s.links(ctx, pecas)
+	return p, nil
 }
 
 // RegistrarConsulta grava a ciência quando o titular abre o processo.

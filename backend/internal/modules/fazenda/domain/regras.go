@@ -1066,29 +1066,58 @@ type Abertura struct {
 
 // Processo é o protocolo. O recibo é a data legal, no fuso de Mato Grosso.
 type Processo struct {
-	ID                  uuid.UUID `json:"id"`
-	Numero              string    `json:"numero"`
-	Ano                 int       `json:"ano"`
-	Seq                 int       `json:"seq"`
-	Programa            string    `json:"programa"`
-	Entrada             string    `json:"entrada"`
-	Titular             string    `json:"titular"`
-	Situacao            string    `json:"situacao"`
-	ReciboEm            time.Time `json:"recibo_em"`
-	Codigo              string    `json:"codigo"`
-	Certidao            string    `json:"certidao,omitempty"`
-	Aliquota            int64     `json:"aliquota,omitempty"`
-	Execucao            string    `json:"execucao,omitempty"`
-	Pendencia           string    `json:"pendencia,omitempty"`
-	ExigenciaAberta     time.Time `json:"exigencia_aberta,omitempty"`
-	ExigenciaPrazo      time.Time `json:"exigencia_prazo,omitempty"`
-	ExigenciaProrrogada bool      `json:"exigencia_prorrogada,omitempty"`
-	DespachoEm          time.Time `json:"despacho_em,omitempty"`
-	AlertaLimite        time.Time `json:"alerta_limite,omitempty"`
-	Destinatario        uuid.UUID `json:"destinatario,omitempty"`
-	ConsultaEm          time.Time `json:"consulta_em,omitempty"`
-	CienciaRecibo       time.Time `json:"ciencia_recibo,omitempty"`
-	CienciaExigencia    time.Time `json:"ciencia_exigencia,omitempty"`
+	ID                  uuid.UUID     `json:"id"`
+	Numero              string        `json:"numero"`
+	Ano                 int           `json:"ano"`
+	Seq                 int           `json:"seq"`
+	Programa            string        `json:"programa"`
+	Entrada             string        `json:"entrada"`
+	Titular             string        `json:"titular"`
+	Situacao            string        `json:"situacao"`
+	ReciboEm            time.Time     `json:"recibo_em"`
+	Codigo              string        `json:"codigo"`
+	Certidao            string        `json:"certidao,omitempty"`
+	Aliquota            int64         `json:"aliquota,omitempty"`
+	Execucao            string        `json:"execucao,omitempty"`
+	Pendencia           string        `json:"pendencia,omitempty"`
+	ExigenciaAberta     time.Time     `json:"exigencia_aberta,omitempty"`
+	ExigenciaPrazo      time.Time     `json:"exigencia_prazo,omitempty"`
+	ExigenciaProrrogada bool          `json:"exigencia_prorrogada,omitempty"`
+	DespachoEm          time.Time     `json:"despacho_em,omitempty"`
+	AlertaLimite        time.Time     `json:"alerta_limite,omitempty"`
+	Destinatario        uuid.UUID     `json:"destinatario,omitempty"`
+	ConsultaEm          time.Time     `json:"consulta_em,omitempty"`
+	CienciaRecibo       time.Time     `json:"ciencia_recibo,omitempty"`
+	CienciaExigencia    time.Time     `json:"ciencia_exigencia,omitempty"`
+	TQCAssinadoEm       time.Time     `json:"tqc_assinado_em,omitempty"`
+	TQCLimite           time.Time     `json:"tqc_limite,omitempty"`
+	TQCSemEfeito        bool          `json:"tqc_sem_efeito,omitempty"`
+	SeloCriterios       int           `json:"selo_criterios,omitempty"`
+	SeloPercentual      int           `json:"selo_percentual,omitempty"`
+	IsencaoFim          int           `json:"isencao_fim,omitempty"`
+	SeloDe              int           `json:"selo_de,omitempty"`
+	SeloAte             int           `json:"selo_ate,omitempty"`
+	CassacaoCiencia     time.Time     `json:"cassacao_ciencia,omitempty"`
+	CassacaoPrazo       time.Time     `json:"cassacao_prazo,omitempty"`
+	Pecas               []PecaArquivo `json:"pecas,omitempty"`
+}
+
+// PecaArquivo é uma peça do Anexo II já guardada. A URL é de leitura e expira.
+type PecaArquivo struct {
+	Tipo  string `json:"tipo"`
+	URL   string `json:"url,omitempty"`
+	Chave string `json:"-"`
+}
+
+// TipoDePeca recusa tipo fora do Anexo II. Portaria não cria peça.
+func TipoDePeca(tipo string) error {
+	switch tipo {
+	case "identificacao", "instrumento", "comprovante_endereco", "prova_posse", "prova_data", "matricula", "cessao", "procuracao",
+		"documento_unico_regularidade", "orcamento_cronograma", "quadro_metas", "documento_pessoal", "declaracao_nao_inicio":
+		return nil
+	default:
+		return Recusa{"essa peça não está no Anexo II"}
+	}
 }
 
 // CienciaDo usa a consulta deste processo só se ela ocorreu depois do envio.
@@ -1102,6 +1131,96 @@ func (p Processo) CienciaDo(enviado time.Time) time.Time {
 		consulta = &c
 	}
 	return Ciencia(enviado, consulta)
+}
+
+// ComAtos preenche os prazos do TQC, do selo e da cassação.
+func (p Processo) ComAtos(agora time.Time) Processo {
+	if p.Programa == ProgramaAvanca && !p.DespachoEm.IsZero() {
+		p.TQCLimite = PrazoAssinaturaTQC(p.CienciaDo(p.DespachoEm))
+		if !p.TQCAssinadoEm.IsZero() {
+			assinado := p.TQCAssinadoEm
+			p.TQCSemEfeito = TQCSemEfeito(&assinado, p.TQCLimite)
+		} else if !agora.IsZero() && agora.After(p.TQCLimite) {
+			p.TQCSemEfeito = true
+		}
+	}
+	if p.SeloCriterios > 0 {
+		if percentual, err := DescontoSelo(p.SeloCriterios); err == nil {
+			p.SeloPercentual = percentual
+		}
+	}
+	if p.IsencaoFim > 0 {
+		p.SeloDe, p.SeloAte = ExerciciosDoSelo(p.IsencaoFim)
+	}
+	if !p.CassacaoCiencia.IsZero() {
+		p.CassacaoPrazo = PrazoDefesaCassacao(p.CassacaoCiencia)
+	}
+	return p
+}
+
+// EmitirAnexoV grava a certidão do Regulariza depois da decisão.
+func (p Processo) EmitirAnexoV(d DadosCertidao) (Processo, error) {
+	if p.Programa != ProgramaRegulariza {
+		return p, Recusa{"a certidão do Anexo V é do Regulariza"}
+	}
+	if p.Situacao != SituacaoDecidido {
+		return p, Recusa{"a certidão sai depois da decisão"}
+	}
+	d.Numero, d.Codigo = p.Numero, p.Codigo
+	texto, err := CertidaoAnexoV(d)
+	if err != nil {
+		return p, err
+	}
+	p.Certidao = texto
+	return p, nil
+}
+
+// RegistrarTQC anota a assinatura. O prazo conta da ciência da decisão.
+func (p Processo) RegistrarTQC(assinado time.Time) (Processo, error) {
+	if p.Programa != ProgramaAvanca || p.DespachoEm.IsZero() {
+		return p, Recusa{"o TQC conta da decisão do Avança"}
+	}
+	if assinado.IsZero() {
+		return p, Recusa{"informe a data da assinatura do TQC"}
+	}
+	p.TQCAssinadoEm = assinado.In(Cuiaba)
+	return p, nil
+}
+
+// RegistrarSelo guarda os critérios. O percentual sai da tabela do decreto.
+func (p Processo) RegistrarSelo(criterios int) (Processo, error) {
+	if p.Programa != ProgramaAvanca {
+		return p, Recusa{"o selo é do Avança"}
+	}
+	if _, err := DescontoSelo(criterios); err != nil {
+		return p, err
+	}
+	p.SeloCriterios = criterios
+	return p, nil
+}
+
+// RegistrarIsencao guarda o exercício final. Os três do selo vêm em seguida.
+func (p Processo) RegistrarIsencao(fim int) (Processo, error) {
+	if p.Programa != ProgramaAvanca {
+		return p, Recusa{"a isenção é do Avança"}
+	}
+	if fim < 2026 || fim > 2033 {
+		return p, Recusa{"informe o exercício final da isenção"}
+	}
+	p.IsencaoFim = fim
+	return p, nil
+}
+
+// RegistrarCassacao abre a defesa de 20 dias a partir da ciência.
+func (p Processo) RegistrarCassacao(ciencia time.Time) (Processo, error) {
+	if p.Programa != ProgramaAvanca {
+		return p, Recusa{"a cassação é do Avança"}
+	}
+	if ciencia.IsZero() {
+		return p, Recusa{"informe a ciência da cassação"}
+	}
+	p.CassacaoCiencia = ciencia.In(Cuiaba)
+	return p, nil
 }
 
 // ComCiencia preenche as datas legais do recibo e da exigência.

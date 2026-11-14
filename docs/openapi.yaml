@@ -4694,6 +4694,29 @@ components:
                     type: boolean
             type: object
             x-projeto-nova-generated: true
+        FazendaCertidaoRequest:
+            properties:
+                adquirente:
+                    type: string
+                aliquota:
+                    type: string
+                data_instrumento:
+                    type: string
+                inscricao:
+                    type: string
+                matricula:
+                    type: string
+                transmitente:
+                    type: string
+            required:
+                - adquirente
+                - aliquota
+                - data_instrumento
+                - inscricao
+                - matricula
+                - transmitente
+            type: object
+            x-projeto-nova-generated: true
         FazendaDebito:
             properties:
                 ano:
@@ -4758,6 +4781,14 @@ components:
                     type: boolean
             type: object
             x-projeto-nova-generated: true
+        FazendaIsencaoRequest:
+            properties:
+                fim:
+                    type: integer
+            required:
+                - fim
+            type: object
+            x-projeto-nova-generated: true
         FazendaLinhaDUA:
             properties:
                 adquirente:
@@ -4787,6 +4818,41 @@ components:
             required:
                 - parcelas
                 - total
+            type: object
+            x-projeto-nova-generated: true
+        FazendaPecaArquivo:
+            properties:
+                tipo:
+                    type: string
+                url:
+                    type: string
+            required:
+                - tipo
+            type: object
+            x-projeto-nova-generated: true
+        FazendaPecaGuardar:
+            properties:
+                object_key:
+                    type: string
+                tipo:
+                    type: string
+            required:
+                - object_key
+                - tipo
+            type: object
+            x-projeto-nova-generated: true
+        FazendaPecaPedido:
+            properties:
+                content_type:
+                    type: string
+                nome:
+                    type: string
+                tipo:
+                    type: string
+            required:
+                - content_type
+                - nome
+                - tipo
             type: object
             x-projeto-nova-generated: true
         FazendaPlano:
@@ -4831,6 +4897,12 @@ components:
                     type: integer
                 ano:
                     type: integer
+                cassacao_ciencia:
+                    format: date-time
+                    type: string
+                cassacao_prazo:
+                    format: date-time
+                    type: string
                 certidao:
                     type: string
                 ciencia_exigencia:
@@ -4865,8 +4937,14 @@ components:
                 id:
                     format: uuid
                     type: string
+                isencao_fim:
+                    type: integer
                 numero:
                     type: string
+                pecas:
+                    items:
+                        $ref: '#/components/schemas/FazendaPecaArquivo'
+                    type: array
                 pendencia:
                     type: string
                 programa:
@@ -4874,12 +4952,28 @@ components:
                 recibo_em:
                     format: date-time
                     type: string
+                selo_ate:
+                    type: integer
+                selo_criterios:
+                    type: integer
+                selo_de:
+                    type: integer
+                selo_percentual:
+                    type: integer
                 seq:
                     type: integer
                 situacao:
                     type: string
                 titular:
                     type: string
+                tqc_assinado_em:
+                    format: date-time
+                    type: string
+                tqc_limite:
+                    format: date-time
+                    type: string
+                tqc_sem_efeito:
+                    type: boolean
             required:
                 - ano
                 - codigo
@@ -4935,6 +5029,14 @@ components:
                     type: boolean
             type: object
             x-projeto-nova-generated: true
+        FazendaSeloRequest:
+            properties:
+                criterios:
+                    type: integer
+            required:
+                - criterios
+            type: object
+            x-projeto-nova-generated: true
         FazendaSessaoGovBR:
             properties:
                 email:
@@ -4982,6 +5084,14 @@ components:
                 - itbi
                 - plano
                 - remitido
+            type: object
+            x-projeto-nova-generated: true
+        FazendaTqcRequest:
+            properties:
+                assinado_em:
+                    type: string
+            required:
+                - assinado_em
             type: object
             x-projeto-nova-generated: true
         FazendaTrocaRequest:
@@ -17981,6 +18091,91 @@ paths:
             summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/baixa
             tags:
                 - fazenda
+    /api/v1/fazenda/processos/{id}/cassacao:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postFazendaProcessosIdCassacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/FazendaProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/cassacao
+            tags:
+                - fazenda
+    /api/v1/fazenda/processos/{id}/certidao:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postFazendaProcessosIdCertidao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FazendaCertidaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/FazendaProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/certidao
+            tags:
+                - fazenda
     /api/v1/fazenda/processos/{id}/consulta:
         post:
             operationId: postFazendaProcessosIdConsulta
@@ -18148,6 +18343,52 @@ paths:
             summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/exigencia
             tags:
                 - fazenda
+    /api/v1/fazenda/processos/{id}/isencao:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postFazendaProcessosIdIsencao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FazendaIsencaoRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/FazendaProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/isencao
+            tags:
+                - fazenda
     /api/v1/fazenda/processos/{id}/parcelamento:
         post:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -18192,6 +18433,92 @@ paths:
             security:
                 - bearerAuth: []
             summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/parcelamento
+            tags:
+                - fazenda
+    /api/v1/fazenda/processos/{id}/pecas:
+        post:
+            operationId: postFazendaProcessosIdPecas
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FazendaPecaGuardar'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/FazendaProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/pecas
+            tags:
+                - fazenda
+    /api/v1/fazenda/processos/{id}/pecas/upload:
+        post:
+            operationId: postFazendaProcessosIdPecasUpload
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FazendaPecaPedido'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ModkitUploadTicket'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/pecas/upload
             tags:
                 - fazenda
     /api/v1/fazenda/processos/{id}/recurso:
@@ -18327,6 +18654,98 @@ paths:
             security:
                 - bearerAuth: []
             summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/resposta
+            tags:
+                - fazenda
+    /api/v1/fazenda/processos/{id}/selo:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postFazendaProcessosIdSelo
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FazendaSeloRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/FazendaProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/selo
+            tags:
+                - fazenda
+    /api/v1/fazenda/processos/{id}/tqc:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postFazendaProcessosIdTqc
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FazendaTqcRequest'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/FazendaProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/tqc
             tags:
                 - fazenda
     /api/v1/fazenda/processos/alertas:

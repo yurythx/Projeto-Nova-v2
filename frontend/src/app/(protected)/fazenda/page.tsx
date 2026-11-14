@@ -184,6 +184,25 @@ export default function FazendaPage() {
             {erro}
           </p>
         )}
+        {equipe && (list.data ?? []).length > 0 && (
+          <div className="flex flex-wrap justify-center gap-2">
+            {OPCOES_SITUACAO.map((opcao) => {
+              const quantidade = (list.data ?? []).filter((item) => item.situacao === opcao.value).length;
+              if (quantidade === 0) return null;
+              return (
+                <Button
+                  key={opcao.value}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSituacao(opcao.value)}
+                >
+                  {opcao.label}: {quantidade}
+                </Button>
+              );
+            })}
+          </div>
+        )}
         {equipe && (prazos.data ?? []).length > 0 && (
           <ul className="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface p-4 text-sm">
             {(prazos.data ?? []).map((prazo) => (

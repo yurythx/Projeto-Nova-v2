@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -14,6 +15,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/fazenda/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/govbr"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 	"github.com/yurythx/projeto-nova-v2/pkg/httputil"
 )
 
@@ -39,6 +41,13 @@ type Casos interface {
 	MarcarExecucao(ctx context.Context, quem auth.Identity, id uuid.UUID, emExecucao bool) (domain.Processo, error)
 	Avisar(ctx context.Context, quem auth.Identity, id uuid.UUID, fato, orientacao string) (string, error)
 	ReceberDUA(linhas []domain.LinhaDUA, omitidas int) (domain.ReciboDUA, error)
+	EmitirCertidao(ctx context.Context, quem auth.Identity, id uuid.UUID, dados domain.DadosCertidao) (domain.Processo, error)
+	AssinarTQC(ctx context.Context, quem auth.Identity, id uuid.UUID, assinado time.Time) (domain.Processo, error)
+	GuardarSelo(ctx context.Context, quem auth.Identity, id uuid.UUID, criterios int) (domain.Processo, error)
+	GuardarIsencao(ctx context.Context, quem auth.Identity, id uuid.UUID, fim int) (domain.Processo, error)
+	AbrirCassacao(ctx context.Context, quem auth.Identity, id uuid.UUID) (domain.Processo, error)
+	PedirPeca(ctx context.Context, quem auth.Identity, id uuid.UUID, tipo, nome, contentType string) (modkit.UploadTicket, error)
+	GuardarPeca(ctx context.Context, quem auth.Identity, id uuid.UUID, tipo, objectKey string) (domain.Processo, error)
 }
 
 // Handlers são as rotas do protocolo.
@@ -435,6 +444,182 @@ func (h *Handlers) Avisar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteOK(w, map[string]string{"aviso": out})
+}
+
+type certidaoRequest struct {
+	Adquirente      string `json:"adquirente" validate:"required"`
+	Transmitente    string `json:"transmitente" validate:"required"`
+	Inscricao       string `json:"inscricao" validate:"required"`
+	Matricula       string `json:"matricula" validate:"required"`
+	Aliquota        string `json:"aliquota" validate:"required"`
+	DataInstrumento string `json:"data_instrumento" validate:"required"`
+}
+
+func (h *Handlers) Certidao(w http.ResponseWriter, r *http.Request) {
+	quem, id, ok := h.equipe(w, r)
+	if !ok {
+		return
+	}
+	var req certidaoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	quando, err := time.ParseInLocation("2006-01-02", req.DataInstrumento, domain.Cuiaba)
+	if err != nil {
+		h.fail(w, r, apperrors.Validation("informe a data do instrumento"))
+		return
+	}
+	out, err := h.casos.EmitirCertidao(r.Context(), quem, id, domain.DadosCertidao{
+		Adquirente: req.Adquirente, Transmitente: req.Transmitente, Inscricao: req.Inscricao,
+		Matricula: req.Matricula, Aliquota: req.Aliquota, DataInstrumento: quando,
+	})
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+type tqcRequest struct {
+	AssinadoEm string `json:"assinado_em" validate:"required"`
+}
+
+func (h *Handlers) TQC(w http.ResponseWriter, r *http.Request) {
+	quem, id, ok := h.equipe(w, r)
+	if !ok {
+		return
+	}
+	var req tqcRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	quando, err := time.ParseInLocation("2006-01-02", req.AssinadoEm, domain.Cuiaba)
+	if err != nil {
+		h.fail(w, r, apperrors.Validation("informe a data da assinatura"))
+		return
+	}
+	out, err := h.casos.AssinarTQC(r.Context(), quem, id, quando)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+type seloRequest struct {
+	Criterios int `json:"criterios" validate:"required"`
+}
+
+func (h *Handlers) Selo(w http.ResponseWriter, r *http.Request) {
+	quem, id, ok := h.equipe(w, r)
+	if !ok {
+		return
+	}
+	var req seloRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	out, err := h.casos.GuardarSelo(r.Context(), quem, id, req.Criterios)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+type isencaoRequest struct {
+	Fim int `json:"fim" validate:"required"`
+}
+
+func (h *Handlers) Isencao(w http.ResponseWriter, r *http.Request) {
+	quem, id, ok := h.equipe(w, r)
+	if !ok {
+		return
+	}
+	var req isencaoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	out, err := h.casos.GuardarIsencao(r.Context(), quem, id, req.Fim)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+func (h *Handlers) Cassacao(w http.ResponseWriter, r *http.Request) {
+	quem, id, ok := h.equipe(w, r)
+	if !ok {
+		return
+	}
+	out, err := h.casos.AbrirCassacao(r.Context(), quem, id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+type pecaPedido struct {
+	Tipo        string `json:"tipo" validate:"required"`
+	Nome        string `json:"nome" validate:"required"`
+	ContentType string `json:"content_type" validate:"required"`
+}
+
+func (h *Handlers) PedirPeca(w http.ResponseWriter, r *http.Request) {
+	quem, err := auth.Require(r.Context())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	id, ok := h.id(w, r)
+	if !ok {
+		return
+	}
+	var req pecaPedido
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	out, err := h.casos.PedirPeca(r.Context(), quem, id, req.Tipo, req.Nome, req.ContentType)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+type pecaGuardar struct {
+	Tipo      string `json:"tipo" validate:"required"`
+	ObjectKey string `json:"object_key" validate:"required"`
+}
+
+func (h *Handlers) GuardarPeca(w http.ResponseWriter, r *http.Request) {
+	quem, err := auth.Require(r.Context())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	id, ok := h.id(w, r)
+	if !ok {
+		return
+	}
+	var req pecaGuardar
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	out, err := h.casos.GuardarPeca(r.Context(), quem, id, req.Tipo, req.ObjectKey)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
 }
 
 func (h *Handlers) equipe(w http.ResponseWriter, r *http.Request) (auth.Identity, uuid.UUID, bool) {
