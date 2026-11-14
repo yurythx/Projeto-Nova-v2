@@ -59,7 +59,7 @@ export function mockBackend(routes: Record<string, Route>) {
     // pré-assinada do MinIO): "host/caminho".
     const path =
       url.host === "localhost"
-        ? url.pathname.replace(/^\/api\/backend\//, "")
+        ? url.pathname.replace(/^\/api\/(?:backend|public)\//, "")
         : url.host + url.pathname;
     const method = (init?.method ?? "GET").toUpperCase();
     let body: unknown = undefined;

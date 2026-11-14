@@ -11,6 +11,7 @@ import {
   FolderKanban,
   GitPullRequest,
   LayoutGrid,
+  Landmark,
   Lock,
   Mail,
   MessagesSquare,
@@ -57,6 +58,7 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   bug: Bug,
   "git-pull-request": GitPullRequest,
   wallet: Wallet,
+  landmark: Landmark,
   lock: Lock,
   siren: Siren,
 };

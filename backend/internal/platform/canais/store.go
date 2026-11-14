@@ -114,6 +114,7 @@ func (s *PostgresStore) SalvarContato(ctx context.Context, usuario uuid.UUID, c 
 
 const colunasWhatsApp = `ativo, provedor, meta_numero_id, meta_token_cifrado, meta_modelo, meta_idioma,
 	evolution_url, evolution_instancia, evolution_chave_cifrada, receber, webhook_token_cifrado, meta_app_secret_cifrado,
+	gove_url, gove_client_id, gove_segredo_cifrado, gove_modelo,
 	updated_at, updated_by`
 
 func (s *PostgresStore) WhatsApp(ctx context.Context) (WhatsApp, bool, error) {
@@ -126,22 +127,23 @@ func (s *PostgresStore) WhatsApp(ctx context.Context) (WhatsApp, bool, error) {
 
 func (s *PostgresStore) scanWhatsApp(row interface{ Scan(...any) error }) (WhatsApp, error) {
 	var w WhatsApp
-	var token, chave, webhook, appSecret string
+	var token, chave, webhook, appSecret, goveSegredo string
 	if err := row.Scan(&w.Ativo, &w.Provedor, &w.MetaNumeroID, &token, &w.MetaModelo, &w.MetaIdioma,
-		&w.EvolutionURL, &w.EvolutionInstancia, &chave, &w.Receber, &webhook, &appSecret, &w.UpdatedAt, &w.UpdatedBy); err != nil {
+		&w.EvolutionURL, &w.EvolutionInstancia, &chave, &w.Receber, &webhook, &appSecret,
+		&w.GoveURL, &w.GoveClientID, &goveSegredo, &w.GoveModelo, &w.UpdatedAt, &w.UpdatedBy); err != nil {
 		return w, err
 	}
 	for _, c := range []struct {
 		cifrado string
 		claro   *string
-	}{{token, &w.MetaToken}, {chave, &w.EvolutionChave}, {webhook, &w.WebhookToken}, {appSecret, &w.MetaAppSecret}} {
+	}{{token, &w.MetaToken}, {chave, &w.EvolutionChave}, {webhook, &w.WebhookToken}, {appSecret, &w.MetaAppSecret}, {goveSegredo, &w.GoveSegredo}} {
 		claro, err := s.cipher.Decrypt(c.cifrado)
 		if err != nil {
 			return w, fmt.Errorf("canais: credencial do WhatsApp ilegível (CONFIG_ENCRYPTION_KEY mudou?): %w", err)
 		}
 		*c.claro = claro
 	}
-	w.TemToken, w.TemChave, w.TemAppSecret = w.MetaToken != "", w.EvolutionChave != "", w.MetaAppSecret != ""
+	w.TemToken, w.TemChave, w.TemAppSecret, w.TemSegredoGove = w.MetaToken != "", w.EvolutionChave != "", w.MetaAppSecret != "", w.GoveSegredo != ""
 	return w, nil
 }
 
@@ -156,17 +158,19 @@ func (s *PostgresStore) SalvarWhatsApp(ctx context.Context, w WhatsApp, removerT
 	// mantém o gravado.
 	out, err := s.scanWhatsApp(s.db.QueryRow(ctx, `INSERT INTO canais_whatsapp (id, ativo, provedor, meta_numero_id, meta_token_cifrado,
 			meta_modelo, meta_idioma, evolution_url, evolution_instancia, evolution_chave_cifrada, receber, webhook_token_cifrado,
-			meta_app_secret_cifrado, updated_at, updated_by)
-		VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $13, $14, $15, now(), $12)
+			meta_app_secret_cifrado, gove_url, gove_client_id, gove_segredo_cifrado, gove_modelo, updated_at, updated_by)
+		VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $13, $14, $15, $16, $17, $18, $19, now(), $12)
 		ON CONFLICT (id) DO UPDATE SET ativo = $1, provedor = $2, meta_numero_id = $3, meta_modelo = $5, meta_idioma = $6,
-			evolution_url = $7, evolution_instancia = $8, receber = $13, updated_at = now(), updated_by = $12,
+			evolution_url = $7, evolution_instancia = $8, receber = $13, gove_url = $16, gove_client_id = $17, gove_modelo = $19,
+			updated_at = now(), updated_by = $12,
 			meta_token_cifrado = CASE WHEN $10 THEN '' WHEN $4 <> '' THEN $4 ELSE canais_whatsapp.meta_token_cifrado END,
 			evolution_chave_cifrada = CASE WHEN $11 THEN '' WHEN $9 <> '' THEN $9 ELSE canais_whatsapp.evolution_chave_cifrada END,
 			webhook_token_cifrado = CASE WHEN $14 <> '' THEN $14 ELSE canais_whatsapp.webhook_token_cifrado END,
-			meta_app_secret_cifrado = CASE WHEN $15 <> '' THEN $15 ELSE canais_whatsapp.meta_app_secret_cifrado END
+			meta_app_secret_cifrado = CASE WHEN $15 <> '' THEN $15 ELSE canais_whatsapp.meta_app_secret_cifrado END,
+			gove_segredo_cifrado = CASE WHEN $20 THEN '' WHEN $18 <> '' THEN $18 ELSE canais_whatsapp.gove_segredo_cifrado END
 		RETURNING `+colunasWhatsApp, w.Ativo, w.Provedor, w.MetaNumeroID, cifrar(w.MetaToken), w.MetaModelo, w.MetaIdioma,
 		w.EvolutionURL, w.EvolutionInstancia, cifrar(w.EvolutionChave), removerToken, removerChave, por, w.Receber,
-		cifrar(w.WebhookToken), cifrar(w.MetaAppSecret)))
+		cifrar(w.WebhookToken), cifrar(w.MetaAppSecret), w.GoveURL, w.GoveClientID, cifrar(w.GoveSegredo), w.GoveModelo, w.RemoverSegredoGove))
 	if err != nil {
 		return WhatsApp{}, fmt.Errorf("canais: %w", err)
 	}

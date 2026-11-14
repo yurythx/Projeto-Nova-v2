@@ -73,6 +73,12 @@ func TestValidacaoDoWhatsApp(t *testing.T) {
 		"token longo":    {MetaToken: strings.Repeat("a", 1001)},
 		"meta ligada":    {Ativo: true, MetaNumeroID: "123456"},
 		"evo ligada":     {Ativo: true, Provedor: ProvedorEvolution, EvolutionURL: "http://evo:8080"},
+		"gove url":       {Provedor: ProvedorGove, GoveURL: "ftp://x"},
+		"gove modelo":    {Provedor: ProvedorGove, GoveModelo: "Aviso"},
+		"gove id longo":  {Provedor: ProvedorGove, GoveClientID: strings.Repeat("a", 201)},
+		"gove segredo":   {Provedor: ProvedorGove, GoveSegredo: strings.Repeat("a", 501)},
+		"gove ligada":    {Ativo: true, Provedor: ProvedorGove, GoveClientID: "id"},
+		"gove recebe":    {Ativo: true, Receber: true, Provedor: ProvedorGove, GoveClientID: "id", GoveModelo: "aviso", TemSegredoGove: true},
 	} {
 		var inv InvalidaError
 		if err := w.Normalizar().Validar(); !errors.As(err, &inv) {
@@ -139,6 +145,69 @@ func TestProvedoresDoWhatsApp(t *testing.T) {
 	if err := enviarWhatsApp(ctx, WhatsApp{Provedor: ProvedorEvolution, EvolutionURL: "http://[::1"}, a); err == nil {
 		t.Fatal("endereço inválido")
 	}
+
+	var para string
+	goveSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/oauth/token":
+			_, _ = io.WriteString(w, `{"access_token":"gove-tok"}`)
+		case "/chats/messages/send-template":
+			if r.Header.Get("Authorization") != "Bearer gove-tok" {
+				t.Errorf("bearer gove: %s", r.Header.Get("Authorization"))
+			}
+			var corpo map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&corpo)
+			para, _ = corpo["to"].(string)
+			w.WriteHeader(http.StatusAccepted)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(goveSrv.Close)
+	gove := WhatsApp{Provedor: ProvedorGove, GoveURL: goveSrv.URL, GoveClientID: "id", GoveSegredo: "seg", GoveModelo: "aviso_protocolo"}
+	if err := enviarWhatsApp(ctx, gove, a); err != nil || para != "5566999991234" {
+		t.Fatalf("gove: %v para=%s", err, para)
+	}
+	if err := enviarWhatsApp(ctx, gove, Aviso{Para: "66999991234", Titulo: "T", Mensagem: "M"}); err != nil || para != "5566999991234" {
+		t.Fatalf("prefixo 55: %v para=%s", err, para)
+	}
+	if destinatarioGove("55") != "55" {
+		t.Fatal("55 curto permanece")
+	}
+	gove.GoveURL = goveSrv.URL
+	ruim := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{}`)
+	}))
+	t.Cleanup(ruim.Close)
+	if _, err := tokenGove(ctx, WhatsApp{GoveURL: ruim.URL}); err == nil || !strings.Contains(err.Error(), "access_token") {
+		t.Fatalf("token vazio: %v", err)
+	}
+	if _, err := tokenGove(ctx, WhatsApp{GoveURL: "http://[::1"}); err == nil {
+		t.Fatal("token com endereço inválido")
+	}
+	quebrado := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{`)
+	}))
+	t.Cleanup(quebrado.Close)
+	if _, err := tokenGove(ctx, WhatsApp{GoveURL: quebrado.URL}); err == nil {
+		t.Fatal("token ilegível")
+	}
+	negado := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(negado.Close)
+	if _, err := tokenGove(ctx, WhatsApp{GoveURL: negado.URL}); err == nil {
+		t.Fatal("token recusado")
+	}
+	if err := enviarWhatsApp(ctx, WhatsApp{Provedor: ProvedorGove, GoveURL: negado.URL, GoveClientID: "id", GoveSegredo: "s", GoveModelo: "aviso"}, Aviso{Para: "66999991234"}); err == nil {
+		t.Fatal("envio sem token")
+	}
+	if err := (WhatsApp{Ativo: true, Provedor: ProvedorGove, GoveURL: "https://api.gove.digital/v2", GoveClientID: "id", GoveModelo: "aviso", TemSegredoGove: true}).Normalizar().Validar(); err != nil {
+		t.Fatal(err)
+	}
+	if got := (WhatsApp{Provedor: ProvedorGove, GoveClientID: "  id  ", GoveModelo: " aviso "}).Normalizar(); got.GoveURL != GoveAPI || got.GoveClientID != "id" || got.GoveModelo != "aviso" {
+		t.Fatalf("endereço padrão da Gove: %+v", got)
+	}
 }
 
 func TestServicoDoWhatsApp(t *testing.T) {
@@ -202,6 +271,20 @@ func TestServicoDoWhatsApp(t *testing.T) {
 	}
 	if w, err = s.SalvarWhatsApp(ctx, WhatsApp{Provedor: ProvedorEvolution}, true, true, "bia"); err != nil || w.TemToken || w.TemChave {
 		t.Fatalf("remover credenciais: %+v %v", w, err)
+	}
+	w, err = s.SalvarWhatsApp(ctx, WhatsApp{Ativo: true, Provedor: ProvedorGove, GoveClientID: "gove-id", GoveModelo: "aviso_protocolo", GoveSegredo: "segredo-gove"}, false, false, "bia")
+	if err != nil || !w.TemSegredoGove || w.GoveSegredo != "segredo-gove" || w.Provedor != ProvedorGove {
+		t.Fatalf("salvar Gove: %+v %v", w, err)
+	}
+	if j, _ := json.Marshal(w); strings.Contains(string(j), "segredo-gove") {
+		t.Fatalf("segredo da Gove no JSON: %s", j)
+	}
+	if err := pool.QueryRow(ctx, `SELECT gove_segredo_cifrado FROM canais_whatsapp`).Scan(&cifrado); err != nil || cifrado == "" || strings.Contains(cifrado, "segredo-gove") {
+		t.Fatalf("segredo da Gove em claro: %v %q", err, cifrado)
+	}
+	w, err = s.SalvarWhatsApp(ctx, WhatsApp{Provedor: ProvedorGove, GoveClientID: "gove-id", GoveModelo: "aviso_protocolo", RemoverSegredoGove: true}, false, false, "bia")
+	if err != nil || w.TemSegredoGove || w.GoveSegredo != "" {
+		t.Fatalf("remover segredo da Gove: %+v %v", w, err)
 	}
 
 	// Outra réplica, chave errada e banco fora.

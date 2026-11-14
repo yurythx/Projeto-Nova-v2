@@ -72,6 +72,7 @@ const MENU_PERMISSION: Record<string, string> = {
   catalog: "catalog:manage",
   contact: "contact:read",
   cofre: "cofre:read",
+  fazenda: "fazenda:analisar",
 };
 
 function childrenOf(
@@ -102,7 +103,8 @@ export function buildNav(
       (m) =>
         !MENU_PERMISSION[m.key] ||
         can(MENU_PERMISSION[m.key]!) ||
-        (m.key === "cofre" && can("cofre:manage")),
+        (m.key === "cofre" && can("cofre:manage")) ||
+        (m.key === "fazenda" && (can("fazenda:protocolar") || can("fazenda:analisar") || can("fazenda:decidir"))),
     );
 
   const assistenciaMods: { key: string; item: NavItem }[] = [];

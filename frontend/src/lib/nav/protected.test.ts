@@ -5,6 +5,7 @@ import { isProtectedPath, PROTECTED_PREFIXES } from "./protected";
 describe("rotas protegidas", () => {
   it("a caixa de notificações exige sessão", () => {
     expect(PROTECTED_PREFIXES).toContain("/notificacoes");
+    expect(PROTECTED_PREFIXES).toContain("/fazenda");
     expect(PROTECTED_PREFIXES).toContain("/produtos");
     expect(PROTECTED_PREFIXES).toContain("/atendimento");
     expect(PROTECTED_PREFIXES).toContain("/contratos");

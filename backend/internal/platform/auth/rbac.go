@@ -82,6 +82,10 @@ const (
 	// só do token de máquina, nunca de um perfil.
 	PermIntegracoesManage   Permission = "integracoes:manage"
 	PermIntegracoesConector Permission = "integracoes:conector"
+	// Protocolo da Fazenda (ADR 084). A consulta pública do QR não tem permissão.
+	PermFazendaProtocolar Permission = "fazenda:protocolar"
+	PermFazendaAnalisar   Permission = "fazenda:analisar"
+	PermFazendaDecidir    Permission = "fazenda:decidir"
 )
 
 // HasPermission reporta se identity possui permission, considerando os

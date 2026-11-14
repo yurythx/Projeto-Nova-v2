@@ -19,6 +19,10 @@ const gravado: WhatsAppCanal = {
   evolution_url: "",
   evolution_instancia: "",
   tem_chave: false,
+  gove_url: "",
+  gove_client_id: "",
+  tem_segredo_gove: false,
+  gove_modelo: "",
   receber: false,
   tem_app_secret: false,
   updated_at: "2026-10-28T12:00:00Z",
@@ -65,6 +69,10 @@ describe("WhatsApp dos avisos", () => {
       receber: false,
       meta_app_secret: "",
       novo_webhook: false,
+      gove_url: "",
+      gove_client_id: "",
+      gove_segredo: "",
+      gove_modelo: "",
     });
     await waitFor(() => expect(onSalvo).toHaveBeenCalled());
 

@@ -37,6 +37,7 @@ func (s *Servico) SalvarWhatsApp(ctx context.Context, w WhatsApp, removerToken, 
 	w.TemToken = atual.TemToken && !removerToken
 	w.TemChave = atual.TemChave && !removerChave
 	w.TemAppSecret = atual.TemAppSecret
+	w.TemSegredoGove = atual.TemSegredoGove && !w.RemoverSegredoGove
 	if err := w.Validar(); err != nil {
 		return WhatsApp{}, err
 	}

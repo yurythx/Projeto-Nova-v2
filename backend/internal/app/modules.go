@@ -21,6 +21,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/directory"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/egress"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/example"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/fazenda"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/files"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/iam"
 	iamTransport "github.com/yurythx/projeto-nova-v2/internal/modules/iam/transport"
@@ -142,6 +143,7 @@ func registerPlugins(d *Dependencies) {
 		cofreModule,
 		integracoesModule,
 		riscos.New(deps),
+		fazenda.New(deps),
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

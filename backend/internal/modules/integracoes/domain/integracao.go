@@ -20,7 +20,10 @@ import (
 )
 
 const (
-	TipoGLPI = "glpi"
+	TipoGLPI     = "glpi"
+	TipoConsulta = "consulta_imobiliaria"
+	DonoTI       = "ti"
+	DonoSEFAZ    = "sefaz"
 
 	// ModoDireto: o servidor lê a origem. ModoConector: um programa na
 	// rede do cliente lê e envia.
@@ -120,6 +123,7 @@ type Conexao struct {
 	// Sincronizar extrai e carrega sozinho a cada IntervaloSincronizacao,
 	// até a virada (ADR 081).
 	Sincronizar bool      `json:"sincronizar"`
+	Dono        string    `json:"dono"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	CreatedBy   string    `json:"created_by"`
@@ -136,8 +140,8 @@ func NovaConexao(tipo, nome, modo, endereco, perfil, fuso string) (Conexao, erro
 		c.Fuso = "America/Sao_Paulo"
 	}
 	switch {
-	case c.Tipo != TipoGLPI:
-		return Conexao{}, Recusa{"a origem suportada é o glpi"}
+	case c.Tipo != TipoGLPI && c.Tipo != TipoConsulta:
+		return Conexao{}, Recusa{"a origem suportada é o glpi ou a consulta imobiliária"}
 	case c.Nome == "" || utf8.RuneCountInString(c.Nome) > NomeMax:
 		return Conexao{}, Recusa{"informe o nome da conexão, com até 160 caracteres"}
 	case c.Modo != ModoDireto && c.Modo != ModoConector:
@@ -147,7 +151,11 @@ func NovaConexao(tipo, nome, modo, endereco, perfil, fuso string) (Conexao, erro
 	case len(c.URL) > URLMax:
 		return Conexao{}, Recusa{"o endereço cabe em 500 caracteres"}
 	}
-	if c.URL != "" || c.Modo == ModoDireto {
+	c.Dono = DonoTI
+	if c.Tipo == TipoConsulta {
+		c.Dono = DonoSEFAZ
+	}
+	if c.Tipo != TipoConsulta && (c.URL != "" || c.Modo == ModoDireto) {
 		u, err := url.Parse(c.URL)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
 			return Conexao{}, Recusa{"o endereço da API é http(s)://servidor/apirest.php"}

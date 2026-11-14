@@ -19,7 +19,11 @@ import (
 const (
 	ProvedorMeta      = "meta"
 	ProvedorEvolution = "evolution"
+	ProvedorGove      = "gove"
 )
+
+// GoveAPI é a API V2 da Gove Digital, o mesmo provedor do Protocolo Digital.
+var GoveAPI = "https://api.gove.digital/v2"
 
 // MetaAPI é a Graph API da Meta (Cloud API do WhatsApp).
 var MetaAPI = "https://graph.facebook.com/v21.0"
@@ -45,6 +49,14 @@ type WhatsApp struct {
 	EvolutionInstancia string `json:"evolution_instancia"`
 	EvolutionChave     string `json:"-"`
 	TemChave           bool   `json:"tem_chave"`
+	// Gove: client credentials e o modelo (template_slug). O segredo não sai.
+	GoveURL        string `json:"gove_url"`
+	GoveClientID   string `json:"gove_client_id"`
+	GoveSegredo    string `json:"-"`
+	TemSegredoGove bool   `json:"tem_segredo_gove"`
+	GoveModelo     string `json:"gove_modelo"`
+	// RemoverSegredoGove apaga o segredo gravado.
+	RemoverSegredoGove bool `json:"-"`
 	// Entrada (fase 4): a resposta pelo WhatsApp vira comentário. O
 	// webhook só aceita o token do endereço; na Meta, também a assinatura
 	// com o App Secret.
@@ -79,6 +91,12 @@ func (w WhatsApp) Normalizar() WhatsApp {
 	}
 	w.EvolutionURL = strings.TrimRight(strings.TrimSpace(w.EvolutionURL), "/")
 	w.EvolutionInstancia = strings.TrimSpace(w.EvolutionInstancia)
+	w.GoveURL = strings.TrimRight(strings.TrimSpace(w.GoveURL), "/")
+	if w.Provedor == ProvedorGove && w.GoveURL == "" {
+		w.GoveURL = GoveAPI
+	}
+	w.GoveClientID = strings.TrimSpace(w.GoveClientID)
+	w.GoveModelo = strings.TrimSpace(w.GoveModelo)
 	return w
 }
 
@@ -86,8 +104,8 @@ func (w WhatsApp) Normalizar() WhatsApp {
 // ligado, o provedor escolhido precisa estar completo.
 func (w WhatsApp) Validar() error {
 	switch {
-	case w.Provedor != ProvedorMeta && w.Provedor != ProvedorEvolution:
-		return InvalidaError{"o provedor do WhatsApp é meta ou evolution"}
+	case w.Provedor != ProvedorMeta && w.Provedor != ProvedorEvolution && w.Provedor != ProvedorGove:
+		return InvalidaError{"o provedor do WhatsApp é meta, evolution ou gove"}
 	case w.MetaNumeroID != "" && !metaNumeroID.MatchString(w.MetaNumeroID):
 		return InvalidaError{"o identificador do número (Phone number ID) da Meta é só de dígitos"}
 	case w.MetaModelo != "" && !metaModelo.MatchString(w.MetaModelo):
@@ -98,7 +116,13 @@ func (w WhatsApp) Validar() error {
 		return InvalidaError{"o endereço da Evolution API é http(s)://servidor[:porta]"}
 	case w.EvolutionInstancia != "" && !instancia.MatchString(w.EvolutionInstancia):
 		return InvalidaError{"a instância da Evolution tem letras, dígitos, ponto, hífen e _"}
-	case utf8.RuneCountInString(w.MetaToken) > 1000 || utf8.RuneCountInString(w.EvolutionChave) > 500 || utf8.RuneCountInString(w.MetaAppSecret) > 200:
+	case w.GoveURL != "" && !urlValida(w.GoveURL):
+		return InvalidaError{"o endereço da Gove é http(s)://servidor"}
+	case w.GoveModelo != "" && !metaModelo.MatchString(w.GoveModelo):
+		return InvalidaError{"o modelo da Gove tem letras minúsculas, dígitos e _"}
+	case utf8.RuneCountInString(w.GoveClientID) > 200:
+		return InvalidaError{"o client id da Gove cabe em 200 caracteres"}
+	case utf8.RuneCountInString(w.MetaToken) > 1000 || utf8.RuneCountInString(w.EvolutionChave) > 500 || utf8.RuneCountInString(w.MetaAppSecret) > 200 || utf8.RuneCountInString(w.GoveSegredo) > 500:
 		return InvalidaError{"o token ou a chave está longo demais"}
 	}
 	if w.Ativo {
@@ -111,6 +135,8 @@ func (w WhatsApp) Validar() error {
 		return InvalidaError{"para receber respostas, ligue também o envio: a confirmação volta pelo WhatsApp"}
 	case w.Receber && w.Provedor == ProvedorMeta && w.MetaAppSecret == "" && !w.TemAppSecret:
 		return InvalidaError{"para receber pela API da Meta, informe o App Secret: é com ele que se confere a assinatura"}
+	case w.Receber && w.Provedor == ProvedorGove:
+		return InvalidaError{"a Gove envia o aviso; a resposta do contribuinte entra pela Meta ou pela Evolution"}
 	}
 	return nil
 }
@@ -123,8 +149,14 @@ func (w WhatsApp) completo() error {
 		}
 		return nil
 	}
-	if w.EvolutionURL == "" || w.EvolutionInstancia == "" || (w.EvolutionChave == "" && !w.TemChave) {
-		return errors.New("informe o endereço, a instância e a chave da Evolution API")
+	if w.Provedor == ProvedorEvolution {
+		if w.EvolutionURL == "" || w.EvolutionInstancia == "" || (w.EvolutionChave == "" && !w.TemChave) {
+			return errors.New("informe o endereço, a instância e a chave da Evolution API")
+		}
+		return nil
+	}
+	if w.GoveClientID == "" || w.GoveModelo == "" || (w.GoveSegredo == "" && !w.TemSegredoGove) {
+		return errors.New("informe o client id, o segredo e o modelo da Gove")
 	}
 	return nil
 }
@@ -170,8 +202,51 @@ func enviarWhatsApp(ctx context.Context, w WhatsApp, a Aviso) error {
 		}
 		return postar(ctx, MetaAPI+"/"+url.PathEscape(w.MetaNumeroID)+"/messages", corpo, "Authorization", "Bearer "+w.MetaToken)
 	}
-	return postar(ctx, w.EvolutionURL+"/message/sendText/"+url.PathEscape(w.EvolutionInstancia),
-		map[string]any{"number": numero, "text": a.texto()}, "apikey", w.EvolutionChave)
+	if w.Provedor == ProvedorEvolution {
+		return postar(ctx, w.EvolutionURL+"/message/sendText/"+url.PathEscape(w.EvolutionInstancia),
+			map[string]any{"number": numero, "text": a.texto()}, "apikey", w.EvolutionChave)
+	}
+	numero = destinatarioGove(numero)
+	tok, err := tokenGove(ctx, w)
+	if err != nil {
+		return err
+	}
+	return postar(ctx, w.GoveURL+"/chats/messages/send-template", map[string]any{
+		"template_slug": w.GoveModelo,
+		"to":            numero,
+		"variables":     []string{limitar(a.Titulo, 200), limitar(a.Mensagem, 700), a.Link},
+	}, "Authorization", "Bearer "+tok)
+}
+
+// destinatarioGove manda só dígitos e prefixa 55 quando o número é local.
+func destinatarioGove(numero string) string {
+	var b strings.Builder
+	for _, r := range numero {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	digitos := b.String()
+	if len(digitos) <= 11 && !strings.HasPrefix(digitos, "55") {
+		return "55" + digitos
+	}
+	return digitos
+}
+
+func tokenGove(ctx context.Context, w WhatsApp) (string, error) {
+	corpo, err := postarLendo(ctx, w.GoveURL+"/oauth/token", map[string]any{
+		"grant_type": "client_credentials", "scope": "*", "client_id": w.GoveClientID, "client_secret": w.GoveSegredo,
+	}, "", "")
+	if err != nil {
+		return "", err
+	}
+	var tok struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.Unmarshal(corpo, &tok); err != nil || tok.AccessToken == "" {
+		return "", errors.New("canais: a Gove não devolveu access_token")
+	}
+	return tok.AccessToken, nil
 }
 
 // limitar prepara o parâmetro do modelo: a Meta recusa quebra de linha,
@@ -186,23 +261,30 @@ func limitar(s string, n int) string {
 }
 
 func postar(ctx context.Context, endereco string, corpo any, cabecalho, valor string) error {
+	_, err := postarLendo(ctx, endereco, corpo, cabecalho, valor)
+	return err
+}
+
+func postarLendo(ctx context.Context, endereco string, corpo any, cabecalho, valor string) ([]byte, error) {
 	b, _ := json.Marshal(corpo)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endereco, bytes.NewReader(b))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(cabecalho, valor)
+	if cabecalho != "" {
+		req.Header.Set(cabecalho, valor)
+	}
 	resp, err := clienteHTTP.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode/100 == 2 {
-		return nil
-	}
 	resposta, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-	return fmt.Errorf("canais: o provedor do WhatsApp respondeu %d: %s", resp.StatusCode, motivo(resposta))
+	if resp.StatusCode/100 == 2 {
+		return resposta, nil
+	}
+	return nil, fmt.Errorf("canais: o provedor do WhatsApp respondeu %d: %s", resp.StatusCode, motivo(resposta))
 }
 
 // motivo tira da resposta de erro a mensagem que ajuda (Meta e Evolution

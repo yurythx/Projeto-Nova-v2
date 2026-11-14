@@ -39,19 +39,19 @@ func mapDB(err error) error {
 }
 
 const colunasConexao = `id, tipo, nome, modo, url, perfil, fuso, credenciais <> '', token_hash IS NOT NULL, token_em, extraido_em,
-	created_at, updated_at, created_by, credenciais, sincronizar`
+	created_at, updated_at, created_by, credenciais, sincronizar, dono`
 
 func scanConexao(row pgx.Row) (domain.Conexao, error) {
 	var c domain.Conexao
 	err := row.Scan(&c.ID, &c.Tipo, &c.Nome, &c.Modo, &c.URL, &c.Perfil, &c.Fuso, &c.TemCredenciais, &c.TemToken, &c.TokenEm, &c.ExtraidoEm,
-		&c.CreatedAt, &c.UpdatedAt, &c.CreatedBy, &c.Cifradas, &c.Sincronizar)
+		&c.CreatedAt, &c.UpdatedAt, &c.CreatedBy, &c.Cifradas, &c.Sincronizar, &c.Dono)
 	return c, mapDB(err)
 }
 
 func (r *Repository) InsertConexao(ctx context.Context, db database.DBTX, c domain.Conexao) (domain.Conexao, error) {
-	return scanConexao(db.QueryRow(ctx, `INSERT INTO integracoes_conexoes (id, tipo, nome, modo, url, perfil, fuso, created_at, updated_at, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9) RETURNING `+colunasConexao,
-		c.ID, c.Tipo, c.Nome, c.Modo, c.URL, c.Perfil, c.Fuso, c.CreatedAt, c.CreatedBy))
+	return scanConexao(db.QueryRow(ctx, `INSERT INTO integracoes_conexoes (id, tipo, nome, modo, url, perfil, fuso, created_at, updated_at, created_by, dono)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10) RETURNING `+colunasConexao,
+		c.ID, c.Tipo, c.Nome, c.Modo, c.URL, c.Perfil, c.Fuso, c.CreatedAt, c.CreatedBy, c.Dono))
 }
 
 func (r *Repository) UpdateConexao(ctx context.Context, db database.DBTX, c domain.Conexao) error {

@@ -37,6 +37,17 @@ func TestNovaConexao(t *testing.T) {
 	}
 }
 
+func TestConsultaImobiliaria(t *testing.T) {
+	c, err := NovaConexao("consulta_imobiliaria", "Cadastro", "direto", "", "", "America/Cuiaba")
+	if err != nil || c.Dono != DonoSEFAZ || c.Tipo != TipoConsulta {
+		t.Fatalf("consulta: %+v %v", c, err)
+	}
+	g, err := NovaConexao("glpi", "GLPI", "conector", "", "", "")
+	if err != nil || g.Dono != DonoTI {
+		t.Fatalf("glpi continua da TI: %+v %v", g, err)
+	}
+}
+
 func TestTokenECredenciais(t *testing.T) {
 	token, hash := EmitirToken()
 	if !strings.HasPrefix(token, PrefixoToken) || hash != HashToken(token) || len(hash) != 64 {

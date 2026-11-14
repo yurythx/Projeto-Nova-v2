@@ -29,6 +29,7 @@ export const PROTECTED_PREFIXES = [
   "/ocorrencias",
   "/integracoes",
   "/notificacoes",
+  "/fazenda",
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {

@@ -196,7 +196,7 @@ func (h *Handlers) ObterWhatsApp(w http.ResponseWriter, r *http.Request) {
 
 type whatsAppRequest struct {
 	Ativo              bool   `json:"ativo"`
-	Provedor           string `json:"provedor" validate:"omitempty,oneof=meta evolution"`
+	Provedor           string `json:"provedor" validate:"omitempty,oneof=meta evolution gove"`
 	MetaNumeroID       string `json:"meta_numero_id" validate:"max=32"`
 	MetaToken          string `json:"meta_token" validate:"max=1000"`
 	RemoverToken       bool   `json:"remover_token"`
@@ -206,6 +206,11 @@ type whatsAppRequest struct {
 	EvolutionInstancia string `json:"evolution_instancia" validate:"max=100"`
 	EvolutionChave     string `json:"evolution_chave" validate:"max=500"`
 	RemoverChave       bool   `json:"remover_chave"`
+	GoveURL            string `json:"gove_url" validate:"max=500"`
+	GoveClientID       string `json:"gove_client_id" validate:"max=200"`
+	GoveSegredo        string `json:"gove_segredo" validate:"max=500"`
+	RemoverSegredoGove bool   `json:"remover_segredo_gove"`
+	GoveModelo         string `json:"gove_modelo" validate:"max=512"`
 	Receber            bool   `json:"receber"`
 	MetaAppSecret      string `json:"meta_app_secret" validate:"max=200"`
 	NovoWebhook        bool   `json:"novo_webhook"`
@@ -220,14 +225,15 @@ func (h *Handlers) SalvarWhatsApp(w http.ResponseWriter, r *http.Request) {
 	wa, err := h.svc.SalvarWhatsApp(r.Context(), WhatsApp{Ativo: req.Ativo, Provedor: req.Provedor, MetaNumeroID: req.MetaNumeroID,
 		MetaToken: req.MetaToken, MetaModelo: req.MetaModelo, MetaIdioma: req.MetaIdioma, EvolutionURL: req.EvolutionURL,
 		EvolutionInstancia: req.EvolutionInstancia, EvolutionChave: req.EvolutionChave, Receber: req.Receber,
-		MetaAppSecret: req.MetaAppSecret, NovoWebhook: req.NovoWebhook}, req.RemoverToken, req.RemoverChave, autor(r))
+		MetaAppSecret: req.MetaAppSecret, NovoWebhook: req.NovoWebhook, GoveURL: req.GoveURL, GoveClientID: req.GoveClientID,
+		GoveSegredo: req.GoveSegredo, GoveModelo: req.GoveModelo, RemoverSegredoGove: req.RemoverSegredoGove}, req.RemoverToken, req.RemoverChave, autor(r))
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
 	h.registrar(r, ActionWhatsAppAlterado, map[string]any{"ativo": wa.Ativo, "provedor": wa.Provedor,
 		"meta_numero_id": wa.MetaNumeroID, "meta_modelo": wa.MetaModelo, "evolution_url": wa.EvolutionURL,
-		"evolution_instancia": wa.EvolutionInstancia, "tem_token": wa.TemToken, "tem_chave": wa.TemChave,
+		"evolution_instancia": wa.EvolutionInstancia, "gove_modelo": wa.GoveModelo, "tem_token": wa.TemToken, "tem_chave": wa.TemChave, "tem_segredo_gove": wa.TemSegredoGove,
 		"receber": wa.Receber, "tem_app_secret": wa.TemAppSecret, "novo_webhook": req.NovoWebhook})
 	httputil.WriteOK(w, wa)
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -336,6 +337,14 @@ func TestFalhasDoRepositorio(t *testing.T) {
 	}
 	if err := com().CancelarTarefa(ctx, auth.Identity{}, tf.ID); status(err) != http.StatusForbidden {
 		t.Fatalf("cancelar sem permissão: %v", err)
+	}
+}
+
+func TestConsultaNaoExtraiChamado(t *testing.T) {
+	err := (&Service{}).conferir(context.Background(), domain.Conexao{Tipo: domain.TipoConsulta}, domain.TarefaExtracao)
+	var rec domain.Recusa
+	if !errors.As(err, &rec) || !strings.Contains(rec.Msg, "consulta imobiliária") {
+		t.Fatalf("consulta: %v", err)
 	}
 }
 

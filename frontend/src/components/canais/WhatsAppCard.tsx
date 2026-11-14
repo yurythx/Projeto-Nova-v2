@@ -16,6 +16,7 @@ import type { WhatsAppCanal } from "@/lib/plataforma/canais";
 const PROVEDORES = [
   { value: "meta", label: "API oficial da Meta (recomendada)" },
   { value: "evolution", label: "Evolution API (não oficial)" },
+  { value: "gove", label: "Gove Digital" },
 ];
 
 /** Credencial gravada: em branco mantém; a caixa apaga. */
@@ -101,9 +102,13 @@ export function WhatsAppCard({
             provedor === "evolution" ? texto("evolution_instancia") : whatsapp.evolution_instancia,
           evolution_chave: provedor === "evolution" ? String(fd.get("evolution_chave") ?? "") : "",
           remover_chave: removerChave,
-          receber,
+          receber: provedor === "gove" ? false : receber,
           meta_app_secret: provedor === "meta" ? String(fd.get("meta_app_secret") ?? "") : "",
           novo_webhook: novoWebhook,
+          gove_url: provedor === "gove" ? texto("gove_url") : whatsapp.gove_url,
+          gove_client_id: provedor === "gove" ? texto("gove_client_id") : whatsapp.gove_client_id,
+          gove_segredo: provedor === "gove" ? String(fd.get("gove_segredo") ?? "") : "",
+          gove_modelo: provedor === "gove" ? texto("gove_modelo") : whatsapp.gove_modelo,
         }),
       "Configuração do WhatsApp salva",
     );
@@ -210,7 +215,7 @@ export function WhatsAppCard({
                 título, mensagem e link. Exemplo: “{"{{1}}"} — {"{{2}}"}. Acompanhe: {"{{3}}"}”.
               </p>
             </>
-          ) : (
+          ) : provedor === "evolution" ? (
             <>
               <p
                 role="note"
@@ -245,6 +250,45 @@ export function WhatsAppCard({
                 remover={removerChave}
                 onRemover={setRemoverChave}
               />
+            </>
+          ) : (
+            <>
+              <Input
+                id="whatsapp-gove-url"
+                name="gove_url"
+                label="Endereço da Gove"
+                placeholder="https://api.gove.digital/v2"
+                maxLength={500}
+                defaultValue={whatsapp.gove_url}
+                autoComplete="off"
+              />
+              <Input
+                id="whatsapp-gove-id"
+                name="gove_client_id"
+                label="Client ID"
+                maxLength={200}
+                defaultValue={whatsapp.gove_client_id}
+                autoComplete="off"
+              />
+              <Segredo
+                id="whatsapp-gove-segredo"
+                nome="gove_segredo"
+                rotulo="Client secret"
+                gravado={whatsapp.tem_segredo_gove}
+                remover={false}
+                onRemover={() => undefined}
+              />
+              <Input
+                id="whatsapp-gove-modelo"
+                name="gove_modelo"
+                label="Modelo (template_slug)"
+                maxLength={512}
+                defaultValue={whatsapp.gove_modelo}
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted sm:col-span-2">
+                A Gove envia o aviso. A resposta do contribuinte entra pela Meta ou pela Evolution.
+              </p>
             </>
           )}
           <fieldset className="grid gap-3 rounded-lg border border-surface-border p-3 sm:col-span-2">

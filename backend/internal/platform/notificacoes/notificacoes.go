@@ -211,7 +211,7 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 	if s.correio == nil || s.db == nil {
 		return
 	}
-	ids := doAtendimento(enviadas)
+	ids := saiPorCanal(enviadas)
 	if len(ids) == 0 {
 		return
 	}
@@ -237,7 +237,7 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 		endereco[id] = email
 	}
 	for _, e := range enviadas {
-		if e.Item.Modulo != "atendimento" || endereco[e.Usuario] == "" {
+		if !moduloComCanal(e.Item.Modulo) || endereco[e.Usuario] == "" {
 			continue
 		}
 		corpo := e.Item.Mensagem
@@ -245,8 +245,7 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 			corpo += "\n\nAcompanhe e responda por aqui:\n" + s.baseURL + e.Item.Link
 		}
 		if s.baseURL != "" {
-			corpo += "\n\n--\nAviso automático da Central de Atendimento. Para deixar de receber estes e-mails, " +
-				"desligue o atendimento em " + s.baseURL + "/notificacoes"
+			corpo += rodape(e.Item.Modulo, s.baseURL)
 		}
 		if err := s.correio.Send(ctx, Mensagem{Para: endereco[e.Usuario], Assunto: e.Item.Titulo, Corpo: corpo}); err != nil && s.logger != nil {
 			s.logger.WarnContext(ctx, "notificacoes: e-mail do aviso falhou (o sino permanece)", "error", err)
@@ -254,23 +253,38 @@ func (s *Service) enviarCorreio(ctx context.Context, enviadas []Enviada) {
 	}
 }
 
-// doAtendimento são os destinatários dos avisos do atendimento, os únicos
-// que saem do sino (ADR 049).
-func doAtendimento(enviadas []Enviada) []uuid.UUID {
+// saiPorCanal são os destinatários cujo aviso também sai por e-mail e WhatsApp.
+// O atendimento segue a ADR 049. A Fazenda segue a ADR 084: o domicílio é a área restrita e o e-mail.
+func saiPorCanal(enviadas []Enviada) []uuid.UUID {
 	ids := make([]uuid.UUID, 0, len(enviadas))
 	for _, e := range enviadas {
-		if e.Item.Modulo == "atendimento" {
+		if moduloComCanal(e.Item.Modulo) {
 			ids = append(ids, e.Usuario)
 		}
 	}
 	return ids
 }
 
+func moduloComCanal(modulo string) bool {
+	return modulo == "atendimento" || modulo == "fazenda"
+}
+
+func rodape(modulo, base string) string {
+	switch modulo {
+	case "fazenda":
+		return "\n\n--\nAviso do protocolo da Fazenda. O texto não traz dado fiscal. " +
+			"Para deixar de receber, desligue a Fazenda em " + base + "/notificacoes"
+	default:
+		return "\n\n--\nAviso automático da Central de Atendimento. Para deixar de receber estes e-mails, " +
+			"desligue o atendimento em " + base + "/notificacoes"
+	}
+}
+
 func (s *Service) enviarWhatsApp(ctx context.Context, enviadas []Enviada) {
 	if s.whatsapp == nil || s.db == nil {
 		return
 	}
-	ids := doAtendimento(enviadas)
+	ids := saiPorCanal(enviadas)
 	if len(ids) == 0 {
 		return
 	}
@@ -292,7 +306,7 @@ func (s *Service) enviarWhatsApp(ctx context.Context, enviadas []Enviada) {
 		numero[id] = n
 	}
 	for _, e := range enviadas {
-		if e.Item.Modulo != "atendimento" || numero[e.Usuario] == "" {
+		if !moduloComCanal(e.Item.Modulo) || numero[e.Usuario] == "" {
 			continue
 		}
 		link := ""

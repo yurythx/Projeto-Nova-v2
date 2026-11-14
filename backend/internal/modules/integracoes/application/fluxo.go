@@ -300,6 +300,9 @@ func (s *Service) PedirTarefa(ctx context.Context, identity auth.Identity, id uu
 }
 
 func (s *Service) conferir(ctx context.Context, c domain.Conexao, tipo string) error {
+	if c.Tipo == domain.TipoConsulta {
+		return domain.Recusa{Msg: "a consulta imobiliária responde inscrição, valor venal e débitos quando a SEFAZ confirmar o contrato; ela não extrai chamado"}
+	}
 	if tipo == domain.TarefaExtracao {
 		switch {
 		case c.Modo == domain.ModoConector && !c.TemToken:

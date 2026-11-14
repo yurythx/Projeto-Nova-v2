@@ -55,7 +55,10 @@ escopo AS (
         'cofre:read',
         'cofre:reveal',
         'cofre:manage',
-        'cofre:grant'
+        'cofre:grant',
+        'fazenda:protocolar',
+        'fazenda:analisar',
+        'fazenda:decidir'
     ]) AS perm
 )
 SELECT c.origem, c.quem, c.perfil,

@@ -42,9 +42,24 @@ describe("proxy BFF público (allowlist)", () => {
     const ok = await GET(new NextRequest("http://app/api/public/v1/blog/posts"), params("v1", "blog", "posts"));
     expect(ok.status).toBe(200);
     expect(String(upstream.mock.calls[0]![0])).toBe("http://api:8080/api/v1/blog/posts");
+    const sim = await POST(
+      new NextRequest("http://app/api/public/v1/fazenda/simulador", { method: "POST", body: "{}" }),
+      params("v1", "fazenda", "simulador"),
+    );
+    expect(sim.status).toBe(200);
+    const aut = await GET(
+      new NextRequest("http://app/api/public/v1/fazenda/autenticidade/abc"),
+      params("v1", "fazenda", "autenticidade", "abc"),
+    );
+    expect(aut.status).toBe(200);
+    const interno = await POST(
+      new NextRequest("http://app/api/public/v1/fazenda/processos", { method: "POST", body: "{}" }),
+      params("v1", "fazenda", "processos"),
+    );
+    expect(interno.status).toBe(404);
     const fora = await GET(new NextRequest("http://app/api/public/v1/me"), params("v1", "me"));
     expect(fora.status).toBe(404);
-    expect(upstream).toHaveBeenCalledTimes(1);
+    expect(upstream).toHaveBeenCalledTimes(3);
   });
 
   it("repassa o Range e devolve o 206 com o intervalo", async () => {

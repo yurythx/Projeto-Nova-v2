@@ -30,8 +30,8 @@ func (c *carteiro) SendWhatsApp(_ context.Context, m MensagemWhatsApp) error {
 	return c.err
 }
 
-// Os avisos do atendimento saem pelo e-mail e pelo WhatsApp de cada um; os
-// dos outros módulos ficam só no sino (ADR 049, ADR 078).
+// Atendimento e Fazenda saem pelo e-mail e pelo WhatsApp. Os outros módulos
+// ficam só no sino (ADR 049, ADR 078, ADR 084).
 func TestCanaisDeSaida(t *testing.T) {
 	pool := dbtest.Pool(t)
 	ctx := context.Background()
@@ -67,6 +67,16 @@ func TestCanaisDeSaida(t *testing.T) {
 	if len(c.whatsapp) != 1 || c.whatsapp[0].Para != "+5566999991234" || c.whatsapp[0].Link != "https://nova.gov.br/atendimento/solicitacoes/x" ||
 		c.whatsapp[0].Titulo != aviso.Titulo || c.whatsapp[0].Mensagem != aviso.Mensagem {
 		t.Fatalf("WhatsApp só para quem deixou o número: %+v", c.whatsapp)
+	}
+
+	c.emails, c.whatsapp = nil, nil
+	fazenda := Nova{Modulo: "fazenda", Titulo: "Protocolo da Fazenda", Mensagem: "000001/2026\nhá prazo a vencer\nacompanhe na área restrita",
+		Link: "/fazenda/p", Chave: "fazenda:" + uuid.NewString()}
+	if _, err := s.Enviar(ctx, []uuid.UUID{comContato}, fazenda); err != nil || len(c.emails) != 1 || len(c.whatsapp) != 1 {
+		t.Fatalf("fazenda: %v %+v %+v", err, c.emails, c.whatsapp)
+	}
+	if strings.Contains(c.emails[0].Corpo, "débito") || strings.Contains(c.emails[0].Corpo, "Central de Atendimento") || !strings.Contains(c.emails[0].Corpo, "protocolo da Fazenda") {
+		t.Fatalf("e-mail da fazenda: %+v", c.emails[0])
 	}
 
 	// Outro módulo não sai do sino; sem link, o WhatsApp vai sem ele.

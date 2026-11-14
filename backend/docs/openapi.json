@@ -390,6 +390,17 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoAtivoVinculoRequest": {
+        "properties": {
+          "ativo_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoAvaliacao": {
         "properties": {
           "autor_id": {
@@ -581,6 +592,10 @@
           },
           "ordem": {
             "type": "integer"
+          },
+          "sla_id": {
+            "format": "uuid",
+            "type": "string"
           },
           "updated_at": {
             "format": "date-time",
@@ -1491,6 +1506,17 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoIncidentePaiRequest": {
+        "properties": {
+          "incidente_pai_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoIndicadorIA": {
         "properties": {
           "aceitas": {
@@ -1623,6 +1649,10 @@
           },
           "pendentes": {
             "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
           }
         },
         "required": [
@@ -2560,6 +2590,107 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "AtendimentoSLA": {
+        "properties": {
+          "ativa": {
+            "type": "boolean"
+          },
+          "calendario_tipo": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "pausar_em_espera": {
+            "type": "boolean"
+          },
+          "tempo_resposta_minutos": {
+            "type": "integer"
+          },
+          "tempo_solucao_minutos": {
+            "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativa",
+          "calendario_tipo",
+          "created_at",
+          "descricao",
+          "id",
+          "nome",
+          "pausar_em_espera",
+          "tempo_resposta_minutos",
+          "tempo_solucao_minutos",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoSLARequest": {
+        "properties": {
+          "ativa": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "calendario_tipo": {
+            "enum": [
+              "expediente",
+              "corrido_24x7"
+            ],
+            "type": "string"
+          },
+          "descricao": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "pausar_em_espera": {
+            "type": "boolean"
+          },
+          "tempo_resposta_minutos": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "tempo_solucao_minutos": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "tempo_resposta_minutos",
+          "tempo_solucao_minutos"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "AtendimentoSegredoVinculoRequest": {
         "properties": {
           "segredo_id": {
@@ -2573,6 +2704,13 @@
       },
       "AtendimentoSolicitacao": {
         "properties": {
+          "ativo_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ativo_nome": {
+            "type": "string"
+          },
           "categoria_nome": {
             "type": "string"
           },
@@ -2613,6 +2751,10 @@
           },
           "impacto": {
             "type": "integer"
+          },
+          "incidente_pai_id": {
+            "format": "uuid",
+            "type": "string"
           },
           "meta_resposta_min": {
             "type": "integer"
@@ -2739,6 +2881,9 @@
           },
           "pedida_por": {
             "format": "uuid",
+            "type": "string"
+          },
+          "resolucao": {
             "type": "string"
           },
           "resumo": {
@@ -2884,6 +3029,17 @@
             "type": "string"
           },
           "inicio": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "AtendimentoVincularCategoriaSLARequest": {
+        "properties": {
+          "sla_id": {
+            "format": "uuid",
+            "nullable": true,
             "type": "string"
           }
         },
@@ -4424,6 +4580,15 @@
           "evolution_url": {
             "type": "string"
           },
+          "gove_client_id": {
+            "type": "string"
+          },
+          "gove_modelo": {
+            "type": "string"
+          },
+          "gove_url": {
+            "type": "string"
+          },
           "meta_idioma": {
             "type": "string"
           },
@@ -4445,6 +4610,9 @@
           "tem_chave": {
             "type": "boolean"
           },
+          "tem_segredo_gove": {
+            "type": "boolean"
+          },
           "tem_token": {
             "type": "boolean"
           },
@@ -4463,6 +4631,9 @@
           "ativo",
           "evolution_instancia",
           "evolution_url",
+          "gove_client_id",
+          "gove_modelo",
+          "gove_url",
           "meta_idioma",
           "meta_modelo",
           "meta_numero_id",
@@ -4470,6 +4641,7 @@
           "receber",
           "tem_app_secret",
           "tem_chave",
+          "tem_segredo_gove",
           "tem_token"
         ],
         "type": "object",
@@ -4489,6 +4661,22 @@
             "type": "string"
           },
           "evolution_url": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "gove_client_id": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "gove_modelo": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "gove_segredo": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "gove_url": {
             "maxLength": 500,
             "type": "string"
           },
@@ -4518,7 +4706,8 @@
           "provedor": {
             "enum": [
               "meta",
-              "evolution"
+              "evolution",
+              "gove"
             ],
             "type": "string"
           },
@@ -4526,6 +4715,9 @@
             "type": "boolean"
           },
           "remover_chave": {
+            "type": "boolean"
+          },
+          "remover_segredo_gove": {
             "type": "boolean"
           },
           "remover_token": {
@@ -5695,6 +5887,27 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "DirectoryConfirmarAvatar": {
+        "properties": {
+          "object_key": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "DirectoryPedidoAvatar": {
+        "properties": {
+          "content_type": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "DirectoryPerson": {
         "properties": {
           "bio": {
@@ -6144,6 +6357,530 @@
         ],
         "type": "object"
       },
+      "FazendaAbertura": {
+        "properties": {
+          "data_contrato": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "debito_aberto": {
+            "type": "boolean"
+          },
+          "documentos": {
+            "items": {
+              "$ref": "#/components/schemas/FazendaDocumento"
+            },
+            "type": "array"
+          },
+          "entrada": {
+            "type": "string"
+          },
+          "itbi": {
+            "type": "boolean"
+          },
+          "modulo_a": {
+            "type": "boolean"
+          },
+          "modulo_c": {
+            "type": "boolean"
+          },
+          "programa": {
+            "type": "string"
+          },
+          "tem_cessao": {
+            "type": "boolean"
+          },
+          "tem_contrato": {
+            "type": "boolean"
+          },
+          "titular": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaAutenticidade": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "mensagem": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "valido": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "codigo",
+          "mensagem",
+          "numero",
+          "valido"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaAvisoRequest": {
+        "properties": {
+          "fato": {
+            "type": "string"
+          },
+          "orientacao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fato",
+          "orientacao"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaBaixaRequest": {
+        "properties": {
+          "primeira": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaDebito": {
+        "properties": {
+          "ano": {
+            "type": "integer"
+          },
+          "correcao": {
+            "type": "integer"
+          },
+          "dolo_fraude_simulacao": {
+            "type": "boolean"
+          },
+          "juros": {
+            "type": "integer"
+          },
+          "multa": {
+            "type": "integer"
+          },
+          "principal": {
+            "type": "integer"
+          },
+          "tributo": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaDocumento": {
+        "properties": {
+          "emitida_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "ja_na_base": {
+            "type": "boolean"
+          },
+          "presente": {
+            "type": "boolean"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaDuaRequest": {
+        "properties": {
+          "linhas": {
+            "items": {
+              "$ref": "#/components/schemas/FazendaLinhaDUA"
+            },
+            "type": "array"
+          },
+          "omitidas": {
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaExecucaoRequest": {
+        "properties": {
+          "em_execucao": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaFalhaDUA": {
+        "properties": {
+          "linha": {
+            "type": "integer"
+          },
+          "motivo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "linha",
+          "motivo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaFatoRequest": {
+        "properties": {
+          "fato_novo": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaLinhaDUA": {
+        "properties": {
+          "adquirente": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "documento": {
+            "type": "string"
+          },
+          "endereco": {
+            "type": "string"
+          },
+          "inscricao": {
+            "type": "string"
+          },
+          "matricula": {
+            "type": "string"
+          },
+          "quitacao": {
+            "type": "string"
+          },
+          "situacao": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaParcelaRequest": {
+        "properties": {
+          "parcelas": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "parcelas",
+          "total"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaPlano": {
+        "properties": {
+          "estado": {
+            "type": "string"
+          },
+          "parcelas": {
+            "type": "integer"
+          },
+          "primeiro_vencimento": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "valor": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "estado",
+          "parcelas",
+          "primeiro_vencimento",
+          "valor"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaPrazoPainel": {
+        "properties": {
+          "limite": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "situacao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "limite",
+          "nome",
+          "situacao"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaProcesso": {
+        "properties": {
+          "alerta_limite": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "aliquota": {
+            "type": "integer"
+          },
+          "ano": {
+            "type": "integer"
+          },
+          "certidao": {
+            "type": "string"
+          },
+          "ciencia_exigencia": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "ciencia_recibo": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "consulta_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "despacho_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "destinatario": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "entrada": {
+            "type": "string"
+          },
+          "execucao": {
+            "type": "string"
+          },
+          "exigencia_aberta": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exigencia_prazo": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exigencia_prorrogada": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "pendencia": {
+            "type": "string"
+          },
+          "programa": {
+            "type": "string"
+          },
+          "recibo_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "seq": {
+            "type": "integer"
+          },
+          "situacao": {
+            "type": "string"
+          },
+          "titular": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ano",
+          "codigo",
+          "entrada",
+          "id",
+          "numero",
+          "programa",
+          "recibo_em",
+          "seq",
+          "situacao",
+          "titular"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaReciboDUA": {
+        "properties": {
+          "falhas": {
+            "items": {
+              "$ref": "#/components/schemas/FazendaFalhaDUA"
+            },
+            "type": "array"
+          },
+          "linhas": {
+            "type": "integer"
+          },
+          "multa": {
+            "type": "integer"
+          },
+          "recibo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "falhas",
+          "linhas",
+          "multa",
+          "recibo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaReducaoRequest": {
+        "properties": {
+          "condicoes": {
+            "type": "integer"
+          },
+          "milessimos": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "condicoes",
+          "milessimos"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaRespostaRequest": {
+        "properties": {
+          "respondeu": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaRitoRequest": {
+        "properties": {
+          "rito_entregue": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaSessaoGovBR": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "sub": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "nome",
+          "sub"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaSimulacao": {
+        "properties": {
+          "aliquota_milessimos": {
+            "type": "integer"
+          },
+          "base_itbi": {
+            "type": "integer"
+          },
+          "condicoes_itbi": {
+            "type": "integer"
+          },
+          "debitos": {
+            "items": {
+              "$ref": "#/components/schemas/FazendaDebito"
+            },
+            "type": "array"
+          },
+          "inscricao": {
+            "type": "string"
+          },
+          "parcelas": {
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaSimulado": {
+        "properties": {
+          "devido": {
+            "type": "integer"
+          },
+          "itbi": {
+            "type": "integer"
+          },
+          "plano": {
+            "$ref": "#/components/schemas/FazendaPlano"
+          },
+          "remitido": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "devido",
+          "itbi",
+          "plano",
+          "remitido"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "FazendaTrocaRequest": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "verifier": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "verifier"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "FeatureFlag": {
         "description": "Uma feature flag alterável em tempo de execução (§ Feature Flags \u0026 Configuração Dinâmica).",
         "properties": {
@@ -6483,6 +7220,34 @@
         "required": [
           "file",
           "upload"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "GovbrDesafio": {
+        "properties": {
+          "code_challenge": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "verifier": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code_challenge",
+          "nonce",
+          "state",
+          "url",
+          "verifier"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -7796,6 +8561,9 @@
           "created_by": {
             "type": "string"
           },
+          "dono": {
+            "type": "string"
+          },
           "extraido_em": {
             "format": "date-time",
             "type": "string"
@@ -7843,6 +8611,7 @@
         "required": [
           "created_at",
           "created_by",
+          "dono",
           "fuso",
           "id",
           "modo",
@@ -9820,6 +10589,73 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "ProjetosAnexo": {
+        "properties": {
+          "autor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "autor_nome": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "tamanho": {
+            "type": "integer"
+          },
+          "tarefa_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "autor_nome",
+          "content_type",
+          "created_at",
+          "id",
+          "nome",
+          "tamanho",
+          "tarefa_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosAnexoRequest": {
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "object_key": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosAnexoUploadRequest": {
+        "properties": {
+          "content_type": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "ProjetosApontamento": {
         "properties": {
           "created_at": {
@@ -9907,6 +10743,120 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "ProjetosAtualizacao": {
+        "properties": {
+          "autor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "autor_nome": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "tarefa_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "autor_nome",
+          "created_at",
+          "id",
+          "tarefa_id",
+          "texto"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosCancelamento": {
+        "properties": {
+          "aprovador_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "aprovador_nome": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "aprovador_id",
+          "aprovador_nome",
+          "created_at",
+          "id",
+          "motivo",
+          "projeto_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosCargaPessoa": {
+        "properties": {
+          "abertas": {
+            "type": "integer"
+          },
+          "atrasadas": {
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "abertas",
+          "atrasadas",
+          "id",
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosCartaRequest": {
+        "properties": {
+          "centro_custo": {
+            "type": "string"
+          },
+          "metodologia": {
+            "type": "string"
+          },
+          "onde": {
+            "type": "string"
+          },
+          "patrocinador": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "ProjetosEstadoRequest": {
         "properties": {
           "estado": {
@@ -9940,8 +10890,188 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "ProjetosMarco": {
+        "properties": {
+          "acao": {
+            "type": "string"
+          },
+          "autor_nome": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "quando": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "acao",
+          "id",
+          "quando",
+          "texto"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosMovimento": {
+        "properties": {
+          "autor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "autor_nome": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estado_antes": {
+            "type": "string"
+          },
+          "estado_depois": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_antes_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_antes_nome": {
+            "type": "string"
+          },
+          "responsavel_depois_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_depois_nome": {
+            "type": "string"
+          },
+          "tarefa_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "autor_nome",
+          "created_at",
+          "estado_antes",
+          "estado_depois",
+          "id",
+          "responsavel_antes_nome",
+          "responsavel_depois_nome",
+          "tarefa_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosPessoa": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "papel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosPessoaInput": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "papel": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosPrazoAgenda": {
+        "properties": {
+          "data_limite": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pai_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pessoas": {
+            "items": {
+              "$ref": "#/components/schemas/ProjetosPessoa"
+            },
+            "type": "array"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "projeto_numero": {
+            "type": "integer"
+          },
+          "projeto_titulo": {
+            "type": "string"
+          },
+          "responsavel_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_nome": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data_limite",
+          "estado",
+          "id",
+          "projeto_id",
+          "projeto_numero",
+          "projeto_titulo",
+          "responsavel_nome",
+          "titulo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "ProjetosProjeto": {
         "properties": {
+          "cancelamento": {
+            "$ref": "#/components/schemas/ProjetosCancelamento"
+          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -9988,6 +11118,9 @@
           "orcamento": {
             "type": "number"
           },
+          "pode_reabrir": {
+            "type": "boolean"
+          },
           "prioridade": {
             "type": "string"
           },
@@ -10001,11 +11134,20 @@
             },
             "type": "array"
           },
+          "reabertura": {
+            "$ref": "#/components/schemas/ProjetosReabertura"
+          },
           "tarefas": {
             "items": {
               "$ref": "#/components/schemas/ProjetosTarefa"
             },
             "type": "array"
+          },
+          "tarefas_concluidas": {
+            "type": "integer"
+          },
+          "tarefas_total": {
+            "type": "integer"
           },
           "titulo": {
             "type": "string"
@@ -10036,6 +11178,8 @@
           "orcamento",
           "prioridade",
           "proximos",
+          "tarefas_concluidas",
+          "tarefas_total",
           "titulo",
           "updated_at"
         ],
@@ -10044,6 +11188,14 @@
       },
       "ProjetosProjetoRequest": {
         "properties": {
+          "carta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjetosCartaRequest"
+              }
+            ],
+            "nullable": true
+          },
           "data_fim_planejada": {
             "format": "date-time",
             "nullable": true,
@@ -10067,6 +11219,12 @@
           "descricao": {
             "maxLength": 4000,
             "type": "string"
+          },
+          "etapas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "gerente_id": {
             "format": "uuid",
@@ -10114,6 +11272,59 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "ProjetosReabertura": {
+        "properties": {
+          "aprovador_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "aprovador_nome": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "aprovador_id",
+          "aprovador_nome",
+          "created_at",
+          "id",
+          "motivo",
+          "projeto_id"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosResponsavel": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "ProjetosResumoHorasProjeto": {
         "properties": {
           "por_usuario": {
@@ -10134,6 +11345,54 @@
           "total_custo",
           "total_horas"
         ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosSalvarCartaRequest": {
+        "properties": {
+          "centro_custo": {
+            "type": "string"
+          },
+          "data_fim_planejada": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "data_inicio_planejada": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "gerente_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "gerente_nome": {
+            "type": "string"
+          },
+          "metodologia": {
+            "type": "string"
+          },
+          "objetivo": {
+            "type": "string"
+          },
+          "onde": {
+            "type": "string"
+          },
+          "orcamento": {
+            "type": "number"
+          },
+          "patrocinador": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -10160,7 +11419,31 @@
           "ordem": {
             "type": "integer"
           },
+          "origem": {
+            "type": "string"
+          },
+          "pai_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pessoas": {
+            "items": {
+              "$ref": "#/components/schemas/ProjetosPessoa"
+            },
+            "type": "array"
+          },
+          "predecessora_id": {
+            "format": "uuid",
+            "type": "string"
+          },
           "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "relato": {
+            "type": "string"
+          },
+          "responsavel_id": {
             "format": "uuid",
             "type": "string"
           },
@@ -10182,6 +11465,96 @@
           "id",
           "ordem",
           "projeto_id",
+          "relato",
+          "responsavel_nome",
+          "titulo",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosTarefaMinha": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "data_limite": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "origem": {
+            "type": "string"
+          },
+          "pai_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pessoas": {
+            "items": {
+              "$ref": "#/components/schemas/ProjetosPessoa"
+            },
+            "type": "array"
+          },
+          "predecessora_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "projeto_estado": {
+            "type": "string"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "projeto_numero": {
+            "type": "integer"
+          },
+          "projeto_titulo": {
+            "type": "string"
+          },
+          "relato": {
+            "type": "string"
+          },
+          "responsavel_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_nome": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "descricao",
+          "estado",
+          "id",
+          "ordem",
+          "projeto_estado",
+          "projeto_id",
+          "projeto_numero",
+          "projeto_titulo",
+          "relato",
           "responsavel_nome",
           "titulo",
           "updated_at"
@@ -10207,6 +11580,32 @@
           },
           "ordem": {
             "type": "integer"
+          },
+          "pai_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "pessoas": {
+            "items": {
+              "$ref": "#/components/schemas/ProjetosPessoaInput"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "predecessora_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "relato": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "responsavel_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
           },
           "responsavel_nome": {
             "maxLength": 200,
@@ -10286,6 +11685,95 @@
         "required": [
           "alvo_id",
           "tipo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProjetosVisaoCarta": {
+        "properties": {
+          "centro_custo": {
+            "type": "string"
+          },
+          "custo_realizado": {
+            "type": "number"
+          },
+          "data_fim_planejada": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "data_inicio_planejada": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "etapas_how": {
+            "type": "integer"
+          },
+          "etapas_how_concluidas": {
+            "type": "integer"
+          },
+          "existe": {
+            "type": "boolean"
+          },
+          "gerente_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "gerente_nome": {
+            "type": "string"
+          },
+          "horas_chamados": {
+            "type": "number"
+          },
+          "metodologia": {
+            "type": "string"
+          },
+          "objetivo": {
+            "type": "string"
+          },
+          "onde": {
+            "type": "string"
+          },
+          "orcamento": {
+            "type": "number"
+          },
+          "patrocinador": {
+            "type": "string"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "centro_custo",
+          "custo_realizado",
+          "descricao",
+          "etapas_how",
+          "etapas_how_concluidas",
+          "existe",
+          "gerente_nome",
+          "horas_chamados",
+          "metodologia",
+          "objetivo",
+          "onde",
+          "orcamento",
+          "patrocinador",
+          "projeto_id",
+          "titulo"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -10404,6 +11892,213 @@
           "de",
           "nome"
         ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "RiscosCelulaHeatmap": {
+        "properties": {
+          "impacto": {
+            "type": "integer"
+          },
+          "probabilidade": {
+            "type": "integer"
+          },
+          "quantidade": {
+            "type": "integer"
+          },
+          "severidade": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "impacto",
+          "probabilidade",
+          "quantidade",
+          "severidade"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "RiscosResumoHeatmap": {
+        "properties": {
+          "altos": {
+            "type": "integer"
+          },
+          "baixos": {
+            "type": "integer"
+          },
+          "criticos": {
+            "type": "integer"
+          },
+          "matriz": {
+            "items": {
+              "$ref": "#/components/schemas/RiscosCelulaHeatmap"
+            },
+            "type": "array"
+          },
+          "medios": {
+            "type": "integer"
+          },
+          "total_riscos": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "altos",
+          "baixos",
+          "criticos",
+          "matriz",
+          "medios",
+          "total_riscos"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "RiscosRisco": {
+        "properties": {
+          "ativo_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "estrategia": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "impacto": {
+            "type": "integer"
+          },
+          "mudanca_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "plano_mitigacao": {
+            "type": "string"
+          },
+          "probabilidade": {
+            "type": "integer"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_nome": {
+            "type": "string"
+          },
+          "severidade": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "categoria",
+          "codigo",
+          "created_at",
+          "descricao",
+          "estrategia",
+          "id",
+          "impacto",
+          "plano_mitigacao",
+          "probabilidade",
+          "responsavel_nome",
+          "severidade",
+          "status",
+          "titulo",
+          "unidade_id",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "RiscosRiscoEntrada": {
+        "properties": {
+          "ativo_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "estrategia": {
+            "type": "string"
+          },
+          "impacto": {
+            "type": "integer"
+          },
+          "mudanca_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "plano_mitigacao": {
+            "type": "string"
+          },
+          "probabilidade": {
+            "type": "integer"
+          },
+          "projeto_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "responsavel_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "responsavel_nome": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -12457,6 +14152,88 @@
         ]
       }
     },
+    "/api/v1/atendimento/categorias/{id}/sla": {
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putAtendimentoCategoriasIdSla",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoVincularCategoriaSLARequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Salvar /atendimento/categorias/{id}/sla",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/contratos-de-apoio": {
       "get": {
         "description": "Contratos vigentes do plug-in Contratos que servem às unidades que quem consulta atende, e os institucionais, com o prazo de atendimento do fornecedor (ADR 071). 503 com o plug-in Contratos desligado.",
@@ -13316,6 +15093,16 @@
           },
           {
             "in": "query",
+            "name": "ativo_id",
+            "required": false,
+            "schema": {
+              "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
             "name": "aberta_de",
             "required": false,
             "schema": {
@@ -13877,6 +15664,16 @@
           {
             "in": "query",
             "name": "categoria",
+            "required": false,
+            "schema": {
+              "maxLength": 36,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "ativo_id",
             "required": false,
             "schema": {
               "maxLength": 36,
@@ -15238,6 +17035,331 @@
         ]
       }
     },
+    "/api/v1/atendimento/slas": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtendimentoSlas",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unidade_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoSLA"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Listar/consultar /atendimento/slas",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtendimentoSlas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoSLARequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoSLA"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Criar /atendimento/slas",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/slas/{id}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteAtendimentoSlasId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Excluir /atendimento/slas/{id}",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtendimentoSlasId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoSLA"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Obter /atendimento/slas/{id}",
+        "tags": [
+          "atendimento"
+        ]
+      },
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putAtendimentoSlasId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoSLARequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoSLA"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Salvar /atendimento/slas/{id}",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/solicitacoes": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -15648,6 +17770,85 @@
         ]
       }
     },
+    "/api/v1/atendimento/solicitacoes/{id}/ativo": {
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putAtendimentoSolicitacoesIdAtivo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoAtivoVinculoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoDetalhe"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Salvar /atendimento/solicitacoes/{id}/ativo",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/solicitacoes/{id}/avaliacao": {
       "post": {
         "operationId": "postAtendimentoSolicitacoesIdAvaliacao",
@@ -16031,6 +18232,74 @@
         ]
       }
     },
+    "/api/v1/atendimento/solicitacoes/{id}/filhos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtendimentoSolicitacoesIdFilhos",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtendimentoSolicitacao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Listar/consultar /atendimento/solicitacoes/{id}/filhos",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/solicitacoes/{id}/ia/classificacao": {
       "post": {
         "description": "A IA sugere impacto e urgência (1 a 3) com o motivo, a partir de oferta, título e descrição. O chamado não muda; a sugestão e o pedido ficam registrados e auditados. 503 sem IA configurada (FEATURE_DISABLED) ou quando ela não responde no formato pedido (ADR 065).",
@@ -16102,6 +18371,74 @@
         ]
       }
     },
+    "/api/v1/atendimento/solicitacoes/{id}/ia/resolucao": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtendimentoSolicitacoesIdIaResolucao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoSugestao"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Executar ação /atendimento/solicitacoes/{id}/ia/resolucao",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
     "/api/v1/atendimento/solicitacoes/{id}/ia/resumo": {
       "post": {
         "description": "Até 5 linhas: o problema, o que já foi feito e o que falta, a partir da conversa (inclusive notas internas, porque só a equipe vê). Sem nomes de pessoas na pergunta. 503 sem IA ou sem resposta aproveitável (ADR 065).",
@@ -16168,6 +18505,85 @@
           }
         ],
         "summary": "Atendimento — Pedir à IA o resumo do chamado",
+        "tags": [
+          "atendimento"
+        ]
+      }
+    },
+    "/api/v1/atendimento/solicitacoes/{id}/incidente-pai": {
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putAtendimentoSolicitacoesIdIncidentePai",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoIncidentePaiRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtendimentoDetalhe"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atendimento — Salvar /atendimento/solicitacoes/{id}/incidente-pai",
         "tags": [
           "atendimento"
         ]
@@ -22969,6 +25385,47 @@
         ]
       }
     },
+    "/api/v1/directory/avatars/{id}": {
+      "get": {
+        "operationId": "getDirectoryAvatarsId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Diretório — Obter /directory/avatars/{id}",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
     "/api/v1/directory/me": {
       "get": {
         "operationId": "getDirectoryMe",
@@ -23080,6 +25537,151 @@
           }
         ],
         "summary": "Diretório — Salvar /directory/me",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/api/v1/directory/me/avatar": {
+      "delete": {
+        "operationId": "deleteDirectoryMeAvatar",
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Diretório — Excluir /directory/me/avatar",
+        "tags": [
+          "directory"
+        ]
+      },
+      "put": {
+        "operationId": "putDirectoryMeAvatar",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectoryConfirmarAvatar"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Diretório — Salvar /directory/me/avatar",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/api/v1/directory/me/avatar/uploads": {
+      "post": {
+        "operationId": "postDirectoryMeAvatarUploads",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectoryPedidoAvatar"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ModkitUploadTicket"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Diretório — Criar /directory/me/avatar/uploads",
         "tags": [
           "directory"
         ]
@@ -24117,6 +26719,1360 @@
         "summary": "Detalhe de um item de exemplo",
         "tags": [
           "example"
+        ]
+      }
+    },
+    "/api/v1/fazenda/autenticidade/{codigo}": {
+      "get": {
+        "operationId": "getFazendaAutenticidadeCodigo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaAutenticidade"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolo da Fazenda — Obter /fazenda/autenticidade/{codigo}",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/govbr": {
+      "get": {
+        "operationId": "getFazendaGovbr",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/GovbrDesafio"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolo da Fazenda — Listar/consultar /fazenda/govbr",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/govbr/sessao": {
+      "post": {
+        "operationId": "postFazendaGovbrSessao",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaTrocaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaSessaoGovBR"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolo da Fazenda — Criar /fazenda/govbr/sessao",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos": {
+      "get": {
+        "operationId": "getFazendaProcessos",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/FazendaProcesso"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Listar/consultar /fazenda/processos",
+        "tags": [
+          "fazenda"
+        ]
+      },
+      "post": {
+        "operationId": "postFazendaProcessos",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaAbertura"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Criar /fazenda/processos",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/alertas": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosAlertas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "publicadas": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "publicadas"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Criar /fazenda/processos/alertas",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/dua": {
+      "post": {
+        "operationId": "postFazendaProcessosDua",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaDuaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaReciboDUA"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Criar /fazenda/processos/dua",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/painel": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getFazendaProcessosPainel",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/FazendaPrazoPainel"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Listar/consultar /fazenda/processos/painel",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}": {
+      "get": {
+        "operationId": "getFazendaProcessosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Obter /fazenda/processos/{id}",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/aviso": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdAviso",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaAvisoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/aviso",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/baixa": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdBaixa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaBaixaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/baixa",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/consulta": {
+      "post": {
+        "operationId": "postFazendaProcessosIdConsulta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/consulta",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/decisao": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdDecisao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/decisao",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/execucao": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdExecucao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaExecucaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/execucao",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/exigencia": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdExigencia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaFatoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/exigencia",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/parcelamento": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdParcelamento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaParcelaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaPlano"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/parcelamento",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/recurso": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdRecurso",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaRitoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/recurso",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/reducao": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postFazendaProcessosIdReducao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaReducaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/reducao",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/processos/{id}/resposta": {
+      "post": {
+        "operationId": "postFazendaProcessosIdResposta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaRespostaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaProcesso"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/resposta",
+        "tags": [
+          "fazenda"
+        ]
+      }
+    },
+    "/api/v1/fazenda/simulador": {
+      "post": {
+        "operationId": "postFazendaSimulador",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FazendaSimulacao"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FazendaSimulado"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolo da Fazenda — Criar /fazenda/simulador",
+        "tags": [
+          "fazenda"
         ]
       }
     },
@@ -30753,6 +34709,16 @@
           },
           {
             "in": "query",
+            "name": "ativo_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
             "name": "estado",
             "required": false,
             "schema": {
@@ -31815,6 +35781,26 @@
         "parameters": [
           {
             "in": "query",
+            "name": "produto_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "alvo_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
             "name": "estado",
             "required": false,
             "schema": {
@@ -31829,6 +35815,16 @@
             "required": false,
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "alvo_tipo",
+            "required": false,
+            "schema": {
+              "maxLength": 20,
               "type": "string"
             },
             "x-projeto-nova-generated": true
@@ -31954,6 +35950,192 @@
           }
         ],
         "summary": "Projetos — Criar /projetos",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/carga": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosCarga",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosCargaPessoa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/carga",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/minhas": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosMinhas",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosTarefaMinha"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/minhas",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/prazos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosPrazos",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "schema": {
+              "maxLength": 7,
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosPrazoAgenda"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/prazos",
         "tags": [
           "projetos"
         ]
@@ -32304,6 +36486,247 @@
         ]
       }
     },
+    "/api/v1/projetos/{id}/cancelamento": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProjetosIdCancelamento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "motivo": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/ProjetosProjeto"
+                            }
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Executar ação /projetos/{id}/cancelamento",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/carta": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdCarta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/ProjetosVisaoCarta"
+                            }
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/carta",
+        "tags": [
+          "projetos"
+        ]
+      },
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putProjetosIdCarta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjetosSalvarCartaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/ProjetosVisaoCarta"
+                            }
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Salvar /projetos/{id}/carta",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
     "/api/v1/projetos/{id}/estado": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -32383,6 +36806,461 @@
           }
         ],
         "summary": "Projetos — Executar ação /projetos/{id}/estado",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/historico": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdHistorico",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosMarco"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/historico",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/participantes": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdParticipantes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosPessoa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/participantes",
+        "tags": [
+          "projetos"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProjetosIdParticipantes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosPessoa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Executar ação /projetos/{id}/participantes",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/participantes/{pessoaId}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteProjetosIdParticipantesPessoaId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pessoaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosPessoa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Excluir /projetos/{id}/participantes/{pessoaId}",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/reabertura": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProjetosIdReabertura",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "motivo": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/ProjetosProjeto"
+                            }
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Executar ação /projetos/{id}/reabertura",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/responsaveis": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdResponsaveis",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosResponsavel"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/responsaveis",
         "tags": [
           "projetos"
         ]
@@ -32554,6 +37432,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "confirmar",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
           }
         ],
         "responses": {
@@ -32673,6 +37560,590 @@
           }
         ],
         "summary": "Projetos — Salvar /projetos/{id}/tarefas/{tarefaId}",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/anexos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdTarefasTarefaIdAnexos",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosAnexo"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/tarefas/{tarefaId}/anexos",
+        "tags": [
+          "projetos"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProjetosIdTarefasTarefaIdAnexos",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjetosAnexoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/ProjetosAnexo"
+                            }
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Executar ação /projetos/{id}/tarefas/{tarefaId}/anexos",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/anexos/uploads": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProjetosIdTarefasTarefaIdAnexosUploads",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjetosAnexoUploadRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ModkitUploadTicket"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Executar ação /projetos/{id}/tarefas/{tarefaId}/anexos/uploads",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/anexos/{anexoId}": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdTarefasTarefaIdAnexosAnexoId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Obter /projetos/{id}/tarefas/{tarefaId}/anexos/{anexoId}",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/atualizacoes": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdTarefasTarefaIdAtualizacoes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosAtualizacao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/tarefas/{tarefaId}/atualizacoes",
+        "tags": [
+          "projetos"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProjetosIdTarefasTarefaIdAtualizacoes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "texto": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/ProjetosAtualizacao"
+                            }
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Executar ação /projetos/{id}/tarefas/{tarefaId}/atualizacoes",
+        "tags": [
+          "projetos"
+        ]
+      }
+    },
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/movimentos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProjetosIdTarefasTarefaIdMovimentos",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tarefaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProjetosMovimento"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Projetos — Listar/consultar /projetos/{id}/tarefas/{tarefaId}/movimentos",
         "tags": [
           "projetos"
         ]
@@ -33096,6 +38567,416 @@
         "summary": "Colunas dos quadros — Salvar /quadros/{quadro}/{chave}",
         "tags": [
           "quadros"
+        ]
+      }
+    },
+    "/api/v1/riscos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getRiscos",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unidade_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/RiscosRisco"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Riscos (ISO 27001) — Listar/consultar /riscos",
+        "tags": [
+          "riscos"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postRiscos",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiscosRiscoEntrada"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RiscosRisco"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Riscos (ISO 27001) — Criar /riscos",
+        "tags": [
+          "riscos"
+        ]
+      }
+    },
+    "/api/v1/riscos/heatmap": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getRiscosHeatmap",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unidade_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RiscosResumoHeatmap"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Riscos (ISO 27001) — Listar/consultar /riscos/heatmap",
+        "tags": [
+          "riscos"
+        ]
+      }
+    },
+    "/api/v1/riscos/{id}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteRiscosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Riscos (ISO 27001) — Excluir /riscos/{id}",
+        "tags": [
+          "riscos"
+        ]
+      },
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getRiscosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RiscosRisco"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Riscos (ISO 27001) — Obter /riscos/{id}",
+        "tags": [
+          "riscos"
+        ]
+      },
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putRiscosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiscosRiscoEntrada"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RiscosRisco"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Riscos (ISO 27001) — Salvar /riscos/{id}",
+        "tags": [
+          "riscos"
         ]
       }
     },
@@ -36645,6 +42526,10 @@
       "name": "example"
     },
     {
+      "description": "Protocolo da Fazenda. Plug-in — Avança e Regulariza Rondonópolis. Desligado até a SEFAZ ativar.",
+      "name": "fazenda"
+    },
+    {
       "description": "Arquivos. Plug-in — Pastas de trabalho no MinIO (ACL por perfil, grupo do AD ou unidade).",
       "name": "files"
     },
@@ -36706,6 +42591,10 @@
     {
       "description": "Colunas dos quadros. Plug-in — Nome, cor e ordem das colunas dos quadros kanban. A chave continua sendo o estado do registro.",
       "name": "quadros"
+    },
+    {
+      "description": "Riscos (ISO 27001). Plug-in — Matriz de Riscos de TI, Continuidade e Segurança da Informação conforme a norma ISO/IEC 27001 e conformidade LGPD.",
+      "name": "riscos"
     },
     {
       "description": "Busca Global. Plug-in — Busca unificada sobre os módulos ativos.",

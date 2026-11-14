@@ -29,7 +29,7 @@ export function formatarWhatsApp(numero: string): string {
 /** Configuração do WhatsApp dos avisos (ADR 078). As credenciais nunca vêm. */
 export interface WhatsAppCanal {
   ativo: boolean;
-  provedor: "meta" | "evolution";
+  provedor: "meta" | "evolution" | "gove";
   meta_numero_id: string;
   tem_token: boolean;
   meta_modelo: string;
@@ -37,6 +37,10 @@ export interface WhatsAppCanal {
   evolution_url: string;
   evolution_instancia: string;
   tem_chave: boolean;
+  gove_url: string;
+  gove_client_id: string;
+  tem_segredo_gove: boolean;
+  gove_modelo: string;
   /** Entrada (fase 4): a resposta pelo WhatsApp vira comentário. */
   receber: boolean;
   webhook_url?: string;
