@@ -50,8 +50,12 @@ func TestErrosDoBanco(t *testing.T) {
 		func(db database.DBTX) error { _, err := r.ListarResponsaveis(ctx, db); return err },
 		func(db database.DBTX) error { _, err := r.ResponsavelAtivo(ctx, db, "1"); return err },
 		func(db database.DBTX) error { return r.InserirAgendamento(ctx, db, domain.Agendamento{ID: id}) },
+		func(db database.DBTX) error {
+			return r.AtualizarAgendamento(ctx, db, domain.Agendamento{ID: id, Status: "falta"})
+		},
 		func(db database.DBTX) error { _, err := r.BuscarAgendamento(ctx, db, id); return err },
 		func(db database.DBTX) error { _, err := r.ContarAgendamentos(ctx, db, id, "2026-11-16"); return err },
+		func(db database.DBTX) error { _, err := r.ListarHoras(ctx, db, id, "2026-11-16"); return err },
 		func(db database.DBTX) error { _, _, err := r.LerFaltas(ctx, db, "1"); return err },
 		func(db database.DBTX) error { return r.SomarFalta(ctx, db, "1", time.Now()) },
 	}

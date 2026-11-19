@@ -52,7 +52,7 @@ func (f falso) CadastrarResponsavel(context.Context, string, string, uuid.UUID) 
 func (f falso) ListarResponsaveis(context.Context) ([]domain.ResponsavelTecnico, error) {
 	return []domain.ResponsavelTecnico{{Nome: "Ana"}}, f.erro
 }
-func (f falso) RegistrarFalta(context.Context, string, uuid.UUID) error { return f.erro }
+func (f falso) RegistrarFalta(context.Context, uuid.UUID) error { return f.erro }
 func (f falso) Abrir(context.Context, application.Abertura, bool) (domain.Pedido, error) {
 	return domain.Pedido{Numero: "SEMA202600001"}, f.erro
 }
@@ -71,7 +71,13 @@ func (f falso) BuscarPedido(context.Context, uuid.UUID) (application.Ficha, erro
 func (f falso) Complementar(context.Context, uuid.UUID, string) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusComplementacao}, f.erro
 }
-func (f falso) Responder(context.Context, uuid.UUID) (domain.Pedido, error) {
+func (f falso) Responder(context.Context, uuid.UUID, string) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) Anotar(context.Context, uuid.UUID, string) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) Editar(context.Context, uuid.UUID, string, map[string]any) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
 func (f falso) Avancar(context.Context, uuid.UUID) (domain.Pedido, error) {
@@ -110,7 +116,7 @@ func TestRotas(t *testing.T) {
 		{h.ListarServicos, http.MethodGet, "", ""},
 		{h.Responsavel, http.MethodPost, `{"nome":"Ana Lima","cpf":"12345678900","unidade_id":"` + un + `"}`, ""},
 		{h.ListarResponsaveis, http.MethodGet, "", ""},
-		{h.Falta, http.MethodPost, `{"cpf":"12345678900","unidade_id":"` + un + `"}`, ""},
+		{h.Falta, http.MethodPost, `{"pedido_id":"` + id + `"}`, ""},
 		{h.AbrirPublico, http.MethodPost, `{"nome":"Maria","cpf":"12345678900"}`, id},
 		{h.AbrirBalcao, http.MethodPost, `{"servico_id":"` + id + `","nome":"Maria","cpf":"12345678900"}`, ""},
 		{h.Carta, http.MethodGet, "", ""},
@@ -123,7 +129,9 @@ func TestRotas(t *testing.T) {
 		{h.ListarPedidos, http.MethodGet, "", ""},
 		{h.BuscarPedido, http.MethodGet, "", id},
 		{h.Complementar, http.MethodPost, `{"mensagem":"envie"}`, id},
-		{h.Responder, http.MethodPost, "", id},
+		{h.Responder, http.MethodPost, `{"mensagem":"recebido no balcão"}`, id},
+		{h.Anotar, http.MethodPost, `{"mensagem":"ligou e confirmou"}`, id},
+		{h.Editar, http.MethodPost, `{"justificativa":"endereço corrigido","respostas":{}}`, id},
 		{h.Avancar, http.MethodPost, "", id},
 		{h.Cancelar, http.MethodPost, "", id},
 		{h.Concluir, http.MethodPost, `{"decisao":"favoravel","justificativa":"ok"}`, id},
@@ -169,7 +177,7 @@ func TestRotas(t *testing.T) {
 		{ruim.ListarServicos, http.MethodGet, "", ""},
 		{ruim.Responsavel, http.MethodPost, `{"nome":"Ana Lima","cpf":"12345678900","unidade_id":"` + un + `"}`, ""},
 		{ruim.ListarResponsaveis, http.MethodGet, "", ""},
-		{ruim.Falta, http.MethodPost, `{"cpf":"12345678900","unidade_id":"` + un + `"}`, ""},
+		{ruim.Falta, http.MethodPost, `{"pedido_id":"` + id + `"}`, ""},
 		{ruim.AbrirPublico, http.MethodPost, `{"nome":"Maria","cpf":"12345678900"}`, id},
 		{ruim.AbrirBalcao, http.MethodPost, `{"servico_id":"` + id + `","nome":"Maria","cpf":"12345678900"}`, ""},
 		{ruim.Carta, http.MethodGet, "", ""},
@@ -182,7 +190,9 @@ func TestRotas(t *testing.T) {
 		{ruim.ListarPedidos, http.MethodGet, "", ""},
 		{ruim.BuscarPedido, http.MethodGet, "", id},
 		{ruim.Complementar, http.MethodPost, `{"mensagem":"envie"}`, id},
-		{ruim.Responder, http.MethodPost, "", id},
+		{ruim.Responder, http.MethodPost, `{"mensagem":"recebido no balcão"}`, id},
+		{ruim.Anotar, http.MethodPost, `{"mensagem":"ligou e confirmou"}`, id},
+		{ruim.Editar, http.MethodPost, `{"justificativa":"endereço corrigido","respostas":{}}`, id},
 		{ruim.Avancar, http.MethodPost, "", id},
 		{ruim.Cancelar, http.MethodPost, "", id},
 		{ruim.Concluir, http.MethodPost, `{"decisao":"favoravel","justificativa":"ok"}`, id},
@@ -213,7 +223,10 @@ func TestRotas(t *testing.T) {
 		{h.LinkArquivo, "", "nao"},
 		{h.BuscarPedido, "", "nao"},
 		{h.Complementar, `{"mensagem":"x"}`, "nao"},
+		{h.Responder, "{", id},
 		{h.Responder, "", "nao"},
+		{h.Anotar, "{", id},
+		{h.Editar, "{", id},
 		{h.Avancar, "", "nao"},
 		{h.Cancelar, "", "nao"},
 		{h.Concluir, `{"decisao":"favoravel","justificativa":"ok"}`, "nao"},

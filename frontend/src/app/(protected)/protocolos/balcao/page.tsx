@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { CampoInput, oculto, respostasVisiveis, type Campo } from "@/components/protocolos/CamposDoPedido";
+import {
+  CampoInput,
+  oculto,
+  respostasVisiveis,
+  type Campo,
+} from "@/components/protocolos/CamposDoPedido";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { useAction } from "@/components/plataforma/useAction";
 import { Button, buttonClass } from "@/components/ui/Button";
@@ -42,6 +47,7 @@ export default function BalcaoPage() {
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [item, setItem] = useState<CartaItem | null>(null);
   const [servicoId, setServicoId] = useState("");
+  const [servicoCarregado, setServicoCarregado] = useState("");
   const [respostas, setRespostas] = useState<Record<string, unknown>>({});
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [erro, setErro] = useState("");
@@ -61,14 +67,15 @@ export default function BalcaoPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!servicoId) {
-      setItem(null);
-      return;
-    }
-    let vivo = true;
+  if (servicoCarregado !== servicoId) {
+    setServicoCarregado(servicoId);
     setItem(null);
     setRespostas({});
+  }
+
+  useEffect(() => {
+    if (!servicoId) return;
+    let vivo = true;
     publicFetch<CartaItem>(`v1/protocolos/carta/${servicoId}`)
       .then((carta) => {
         if (vivo) setItem(carta);
@@ -92,7 +99,11 @@ export default function BalcaoPage() {
       await putToTicket(ticket, arquivo);
       setRespostas((atual) => ({ ...atual, [campo]: ticket.object_key }));
     } catch (err) {
-      setErro(err instanceof ApiError || err instanceof Error ? err.message : "Não foi possível enviar o arquivo.");
+      setErro(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Não foi possível enviar o arquivo.",
+      );
     } finally {
       setSubindo(false);
     }
@@ -162,14 +173,30 @@ export default function BalcaoPage() {
                 value={servicoId}
                 options={servicos.map((servico) => ({
                   value: servico.id,
-                  label: servico.categoria ? `${servico.nome} · ${servico.categoria}` : servico.nome,
+                  label: servico.categoria
+                    ? `${servico.nome} · ${servico.categoria}`
+                    : servico.nome,
                 }))}
                 onChange={(e) => setServicoId(e.target.value)}
               />
               {item && (
                 <>
-                  <Input id="nome" name="nome" label="Nome completo *" required minLength={2} maxLength={200} />
-                  <Input id="cpf" name="cpf" label="CPF *" required inputMode="numeric" maxLength={14} />
+                  <Input
+                    id="nome"
+                    name="nome"
+                    label="Nome completo *"
+                    required
+                    minLength={2}
+                    maxLength={200}
+                  />
+                  <Input
+                    id="cpf"
+                    name="cpf"
+                    label="CPF *"
+                    required
+                    inputMode="numeric"
+                    maxLength={14}
+                  />
                   <Input id="email" name="email" label="E-mail" type="email" maxLength={200} />
                   <Input id="telefone" name="telefone" label="Telefone" maxLength={20} />
                   <Select
@@ -196,7 +223,9 @@ export default function BalcaoPage() {
                         key={campo.id}
                         campo={campo}
                         valor={respostas[campo.id]}
-                        onChange={(valor) => setRespostas((atual) => ({ ...atual, [campo.id]: valor }))}
+                        onChange={(valor) =>
+                          setRespostas((atual) => ({ ...atual, [campo.id]: valor }))
+                        }
                         onArquivo={(arquivo) => void enviarArquivo(campo.id, arquivo)}
                       />
                     ),

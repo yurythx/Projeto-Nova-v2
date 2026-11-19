@@ -279,6 +279,30 @@ func (m *mem) InserirAgendamento(_ context.Context, _ database.DBTX, a domain.Ag
 	m.agenda = append(m.agenda, a)
 	return nil
 }
+func (m *mem) AtualizarAgendamento(_ context.Context, _ database.DBTX, a domain.Agendamento) error {
+	if err := m.erra("atualizar-agenda"); err != nil {
+		return err
+	}
+	for i := range m.agenda {
+		if m.agenda[i].ID == a.ID {
+			m.agenda[i] = a
+			return nil
+		}
+	}
+	return domain.ErrNaoEncontrado
+}
+func (m *mem) ListarHoras(_ context.Context, _ database.DBTX, servico uuid.UUID, dia string) ([]string, error) {
+	if err := m.erra("horas"); err != nil {
+		return nil, err
+	}
+	out := []string{}
+	for _, a := range m.agenda {
+		if a.ServicoID == servico && a.Data == dia && (a.Status == domain.HorarioAgendado || a.Status == domain.HorarioConfirmado || a.Status == domain.HorarioFalta) {
+			out = append(out, a.Hora)
+		}
+	}
+	return out, nil
+}
 func (m *mem) BuscarAgendamento(_ context.Context, _ database.DBTX, pedido uuid.UUID) (domain.Agendamento, error) {
 	if err := m.erra("buscar-agenda"); err != nil {
 		return domain.Agendamento{}, err
@@ -302,8 +326,13 @@ func (m *mem) LerFaltas(context.Context, database.DBTX, string) (int, time.Time,
 	}
 	return m.faltas, m.ultima, nil
 }
-func (m *mem) SomarFalta(context.Context, database.DBTX, string, time.Time) error {
-	return m.erra("somar")
+func (m *mem) SomarFalta(_ context.Context, _ database.DBTX, _ string, quando time.Time) error {
+	if err := m.erra("somar"); err != nil {
+		return err
+	}
+	m.faltas++
+	m.ultima = quando
+	return nil
 }
 
 type stubTx struct {

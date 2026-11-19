@@ -204,17 +204,31 @@ func TestServicoWorkflowAgenda(t *testing.T) {
 	if _, ok := curta.HorarioLivre(0); ok {
 		t.Fatal("não cabe")
 	}
-	dia, hora, err := ProcurarVaga(ag, time.Date(2026, 11, 14, 18, 0, 0, 0, Cuiaba), func(string) (int, error) { return 0, nil })
+	dia, hora, err := ProcurarVaga(ag, time.Date(2026, 11, 14, 18, 0, 0, 0, Cuiaba), func(string) ([]string, error) { return nil, nil })
 	if err != nil || dia != "2026-11-16" || hora != "08:00" {
 		t.Fatalf("vaga: %s %s %v", dia, hora, err)
+	}
+	dia, hora, err = ProcurarVaga(ag, time.Date(2026, 11, 14, 18, 0, 0, 0, Cuiaba), func(string) ([]string, error) {
+		return []string{"08:00"}, nil
+	})
+	if err != nil || dia != "2026-11-16" || hora != "08:30" {
+		t.Fatalf("próxima vaga: %s %s %v", dia, hora, err)
+	}
+	if ag.HoraNaGrade("08:30") != true || ag.HoraNaGrade("03:00") || ag.HoraNaGrade("08:15") {
+		t.Fatal(ag.Grade())
+	}
+	if NormalizarHora("09:00:00") != "09:00" || NormalizarHora("9h") != "" {
+		t.Fatal(NormalizarHora("09:00:00"))
 	}
 	if _, _, err := ProcurarVaga(Agenda{}, agora, nil); err == nil {
 		t.Fatal("agenda inválida")
 	}
-	if _, _, err := ProcurarVaga(ag, agora, func(string) (int, error) { return 0, errors.New("falha") }); err == nil {
+	if _, _, err := ProcurarVaga(ag, agora, func(string) ([]string, error) { return nil, errors.New("falha") }); err == nil {
 		t.Fatal("contagem")
 	}
-	if _, _, err := ProcurarVaga(ag, agora, func(string) (int, error) { return 99, nil }); !errors.Is(err, ErrSemVaga) {
+	if _, _, err := ProcurarVaga(ag, agora, func(string) ([]string, error) {
+		return []string{"08:00", "08:30", "09:00", "09:30"}, nil
+	}); !errors.Is(err, ErrSemVaga) {
 		t.Fatal(err)
 	}
 	st, err := StatusDoHorario("2026-11-16", "2026-11-16")
@@ -503,11 +517,24 @@ func TestDiaUtilMapaEConsulta(t *testing.T) {
 	if err != nil || aberto.PrazoEm == nil || aberto.PrazoEm.In(Cuiaba).Format("2006-01-02") != "2026-11-16" {
 		t.Fatal(aberto.PrazoEm, err)
 	}
-	consulta := Publico(Pedido{Numero: "N", Status: StatusComplementacao, Nome: "Maria"}, "", []Historico{{
-		Descricao: "falta", Anexos: []string{"protocolos/complemento/x/a.pdf"}, Status: StatusComplementacao,
-	}}, nil)
-	if consulta.StatusRotulo != "Em complementação" || len(consulta.Historico) != 1 || consulta.Historico[0].Anexos != nil {
+	consulta := Publico(Pedido{Numero: "N", Status: StatusComplementacao, Nome: "Maria"}, "", []Historico{
+		{Descricao: "falta", Anexos: []string{"protocolos/complemento/x/a.pdf"}, Status: StatusComplementacao},
+		{Acao: AcaoNota, Descricao: "só a mesa vê"},
+		{Acao: AcaoEdicao, Descricao: "corrigi o endereço interno"},
+	}, nil)
+	if consulta.StatusRotulo != "Em complementação" || len(consulta.Historico) != 2 || consulta.Historico[0].Anexos != nil || consulta.Historico[1].Descricao != "pedido atualizado" {
 		t.Fatal(consulta)
+	}
+	if _, err := TextoInterno("  ", 20); err == nil {
+		t.Fatal("texto vazio")
+	}
+	editado, err := aberto.Editar(map[string]any{}, sexta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	editado.Status = StatusConcluido
+	if _, err := editado.Editar(map[string]any{}, sexta); !errors.Is(err, ErrEstadoFinal) {
+		t.Fatal(err)
 	}
 	if RotuloStatus("desconhecido") != "desconhecido" {
 		t.Fatal(RotuloStatus("desconhecido"))

@@ -50,3 +50,52 @@ export function etapaLegivel(etapa: string) {
   if (!texto) return "Sem etapa";
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
+
+export interface FiltroMesa {
+  prazo: string;
+  busca: string;
+  servico: string;
+  status: string;
+  prioridade: string;
+}
+
+export interface PedidoFiltravel {
+  numero: string;
+  nome: string;
+  cpf?: string;
+  servico_id: string;
+  servico_nome: string;
+  status: string;
+  situacao_prazo?: string;
+  prioridade: string;
+}
+
+export function filtrarPedidos<T extends PedidoFiltravel>(pedidos: T[], filtro: FiltroMesa): T[] {
+  const termo = filtro.busca.trim().toLowerCase();
+  const digitos = termo.replace(/\D/g, "");
+  return pedidos.filter((pedido) => {
+    if (filtro.prazo !== "todos" && (pedido.situacao_prazo || "no_prazo") !== filtro.prazo)
+      return false;
+    if (filtro.servico && pedido.servico_id !== filtro.servico) return false;
+    if (filtro.status && pedido.status !== filtro.status) return false;
+    if (filtro.prioridade && pedido.prioridade !== filtro.prioridade) return false;
+    if (!termo) return true;
+    const cpf = (pedido.cpf ?? "").replace(/\D/g, "");
+    return (
+      `${pedido.numero} ${pedido.nome} ${pedido.servico_nome}`.toLowerCase().includes(termo) ||
+      (digitos.length >= 3 && cpf.includes(digitos))
+    );
+  });
+}
+
+export function paginar<T>(itens: T[], pagina: number, tamanho: number) {
+  const paginas = Math.max(1, Math.ceil(itens.length / tamanho));
+  const atual = Math.min(Math.max(1, pagina), paginas);
+  const inicio = (atual - 1) * tamanho;
+  return {
+    itens: itens.slice(inicio, inicio + tamanho),
+    pagina: atual,
+    paginas,
+    total: itens.length,
+  };
+}

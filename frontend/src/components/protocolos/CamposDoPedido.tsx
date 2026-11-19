@@ -109,7 +109,11 @@ export function CampoInput({
               className="h-4 w-4 accent-primary"
               checked={marcados.includes(opcao)}
               onChange={(e) =>
-                onChange(e.target.checked ? [...marcados, opcao] : marcados.filter((item) => item !== opcao))
+                onChange(
+                  e.target.checked
+                    ? [...marcados, opcao]
+                    : marcados.filter((item) => item !== opcao),
+                )
               }
             />
             {opcao}
@@ -127,12 +131,21 @@ export function CampoInput({
       type={tipoHtml(campo.tipo)}
       inputMode={campo.tipo === "number" ? "decimal" : undefined}
       value={valor == null ? "" : String(valor)}
-      onChange={(e) => onChange(campo.tipo === "number" && e.target.value !== "" ? Number(e.target.value) : e.target.value)}
+      onChange={(e) =>
+        onChange(
+          campo.tipo === "number" && e.target.value !== ""
+            ? Number(e.target.value)
+            : e.target.value,
+        )
+      }
     />
   );
 }
 
-export function respostasVisiveis(campos: Campo[], respostas: Record<string, unknown>): Record<string, unknown> {
+export function respostasVisiveis(
+  campos: Campo[],
+  respostas: Record<string, unknown>,
+): Record<string, unknown> {
   const preenchido: Record<string, unknown> = {};
   for (const campo of campos) {
     if (campo.tipo === "page" || oculto(campos, respostas, campo.id)) continue;
@@ -144,7 +157,8 @@ export function respostasVisiveis(campos: Campo[], respostas: Record<string, unk
 
 export function oculto(campos: Campo[], respostas: Record<string, unknown>, id: string): boolean {
   return campos.some(
-    (campo) => campo.tipo === "boolean" && (campo.revela ?? []).includes(id) && respostas[campo.id] !== true,
+    (campo) =>
+      campo.tipo === "boolean" && (campo.revela ?? []).includes(id) && respostas[campo.id] !== true,
   );
 }
 
@@ -182,17 +196,42 @@ function CampoMapa({
     );
   }
 
-  const mapa = lat && lng ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}` : "";
+  const mapa =
+    lat && lng ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}` : "";
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="text-sm font-medium">{label}</legend>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input id={`${campo.id}-lat`} label={area ? "Latitude do primeiro ponto" : "Latitude"} inputMode="decimal" value={lat} onChange={(e) => gravar(e.target.value, lng)} />
-        <Input id={`${campo.id}-lng`} label={area ? "Longitude do primeiro ponto" : "Longitude"} inputMode="decimal" value={lng} onChange={(e) => gravar(lat, e.target.value)} />
+        <Input
+          id={`${campo.id}-lat`}
+          label={area ? "Latitude do primeiro ponto" : "Latitude"}
+          inputMode="decimal"
+          value={lat}
+          onChange={(e) => gravar(e.target.value, lng)}
+        />
+        <Input
+          id={`${campo.id}-lng`}
+          label={area ? "Longitude do primeiro ponto" : "Longitude"}
+          inputMode="decimal"
+          value={lng}
+          onChange={(e) => gravar(lat, e.target.value)}
+        />
         {area && (
           <>
-            <Input id={`${campo.id}-lat2`} label="Latitude do segundo ponto" inputMode="decimal" value={lat2} onChange={(e) => gravar(lat, lng, e.target.value, lng2)} />
-            <Input id={`${campo.id}-lng2`} label="Longitude do segundo ponto" inputMode="decimal" value={lng2} onChange={(e) => gravar(lat, lng, lat2, e.target.value)} />
+            <Input
+              id={`${campo.id}-lat2`}
+              label="Latitude do segundo ponto"
+              inputMode="decimal"
+              value={lat2}
+              onChange={(e) => gravar(lat, lng, e.target.value, lng2)}
+            />
+            <Input
+              id={`${campo.id}-lng2`}
+              label="Longitude do segundo ponto"
+              inputMode="decimal"
+              value={lng2}
+              onChange={(e) => gravar(lat, lng, lat2, e.target.value)}
+            />
           </>
         )}
       </div>
@@ -201,7 +240,12 @@ function CampoMapa({
           Usar minha localização
         </Button>
         {mapa && (
-          <a className="text-sm text-primary underline" href={mapa} target="_blank" rel="noreferrer">
+          <a
+            className="text-sm text-primary underline"
+            href={mapa}
+            target="_blank"
+            rel="noreferrer"
+          >
             Ver no mapa
           </a>
         )}
@@ -221,7 +265,14 @@ function juntar(lat: string, lng: string): string {
 }
 
 function tipoHtml(tipo: string): string {
-  if (tipo === "email" || tipo === "password" || tipo === "url" || tipo === "date" || tipo === "time") return tipo;
+  if (
+    tipo === "email" ||
+    tipo === "password" ||
+    tipo === "url" ||
+    tipo === "date" ||
+    tipo === "time"
+  )
+    return tipo;
   if (tipo === "phone") return "tel";
   return "text";
 }

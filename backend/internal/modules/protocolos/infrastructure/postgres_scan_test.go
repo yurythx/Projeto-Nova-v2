@@ -240,6 +240,12 @@ func TestLeituras(t *testing.T) {
 	if n, err := r.ContarAgendamentos(ctx, banco{row: valores{[]any{1}}}, id, "2026-11-17"); err != nil || n != 1 {
 		t.Fatal(err)
 	}
+	if horas, err := r.ListarHoras(ctx, banco{rows: &grade{linhas: [][]any{{"08:00"}, {"08:30"}}}}, id, "2026-11-17"); err != nil || len(horas) != 2 || horas[0] != "08:00" {
+		t.Fatal(horas, err)
+	}
+	if err := r.AtualizarAgendamento(ctx, banco{}, domain.Agendamento{ID: id, Status: "falta"}); err != nil {
+		t.Fatal(err)
+	}
 	if n, quando, err := r.LerFaltas(ctx, banco{row: valores{[]any{2, agora}}}, "1"); err != nil || n != 2 || quando.IsZero() {
 		t.Fatal(err)
 	}

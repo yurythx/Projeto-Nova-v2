@@ -88,6 +88,26 @@ export interface paths {
         patch: operations["patchAdminModulesKey"];
         trace?: never;
     };
+    "/api/v1/atendimento/aprovacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — pedidos aguardando a minha aprovação
+         * @description Os pedidos cuja etapa atual a pessoa aprova, dos mais antigos. Não exige permissão de atendimento: quem aprova pode ser a chefia, que não atende a fila.
+         */
+        get: operations["getAtendimentoAprovacoes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atendimento/candidatos": {
         parameters: {
             query?: never;
@@ -120,6 +140,114 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         get: operations["getAtendimentoCatalogo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/catalogo/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — categorias do catálogo
+         * @description As categorias ativas do catálogo em blocos da central do solicitante (ADR 078), em ordem e por nome. Exige atendimento:abrir.
+         */
+        get: operations["getAtendimentoCatalogoCategorias"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — listar as categorias
+         * @description Todas as categorias do catálogo, ativas ou não, para quem gere ofertas em alguma unidade (atendimento:manage).
+         */
+        get: operations["getAtendimentoCategorias"];
+        put?: never;
+        /**
+         * Atendimento — criar uma categoria
+         * @description Cria a categoria do catálogo em blocos: nome (até 80, único), descrição (até 300), ícone (até 40 letras minúsculas, dígitos e hífens) e ordem (0 a 999). A categoria é da instituição: exige atendimento:manage em toda ela.
+         */
+        post: operations["postAtendimentoCategorias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/categorias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atendimento — alterar uma categoria
+         * @description Altera nome, descrição, ícone, ordem e se está ativa. Inativa, a categoria some da central, e as ofertas dela continuam no cadastro. Exige atendimento:manage em toda a instituição.
+         */
+        put: operations["putAtendimentoCategoriasId"];
+        post?: never;
+        /**
+         * Atendimento — apagar uma categoria
+         * @description Apaga a categoria. As ofertas dela não são apagadas: aparecem em "Outros" na central. Exige atendimento:manage em toda a instituição.
+         */
+        delete: operations["deleteAtendimentoCategoriasId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/categorias/{id}/sla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atendimento — Salvar /atendimento/categorias/{id}/sla
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putAtendimentoCategoriasIdSla"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/contratos-de-apoio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — contratos de apoio que o chamado pode apontar
+         * @description Contratos vigentes do plug-in Contratos que servem às unidades que quem consulta atende, e os institucionais, com o prazo de atendimento do fornecedor (ADR 071). 503 com o plug-in Contratos desligado.
+         */
+        get: operations["getAtendimentoContratosDeApoio"];
         put?: never;
         post?: never;
         delete?: never;
@@ -189,6 +317,50 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         put: operations["putAtendimentoEquipesId"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/eventos/alertmanager": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — webhook do Alertmanager
+         * @description Sem sessão de pessoa: Authorization: Bearer com o token de ATENDIMENTO_EVENTOS_TOKEN (404 sem token configurado, 401 com token errado). Cada alerta (fingerprint) abre um incidente na oferta escolhida; o reenvio e a volta ao normal viram nota interna, e o chamado não é concluído sozinho. 409 sem oferta escolhida: o Alertmanager tenta de novo (ADR 067).
+         */
+        post: operations["postAtendimentoEventosAlertmanager"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/eventos/configuracao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — oferta dos alertas
+         * @description A oferta de incidente em que os alertas do monitoramento abrem chamado (null = nenhuma). Só quem gere o atendimento em toda a instituição.
+         */
+        get: operations["getAtendimentoEventosConfiguracao"];
+        /**
+         * Atendimento — escolher a oferta dos alertas
+         * @description Precisa ser oferta de incidente e ativa; null desliga a abertura. Só quem gere o atendimento em toda a instituição; auditado.
+         */
+        put: operations["putAtendimentoEventosConfiguracao"];
         post?: never;
         delete?: never;
         options?: never;
@@ -320,6 +492,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atendimento/ia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — IA assistiva disponível?
+         * @description Diz se a função de IA atendimento.assistente tem conexão (ADR 065). Só quem atende alguma unidade recebe true; a tela usa isto para mostrar os botões.
+         */
+        get: operations["getAtendimentoIa"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/ia/indicadores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — Sugestões da IA nos últimos 30 dias
+         * @description Por tarefa (classificacao, resumo): quantas sugestões houve no escopo de quem consulta, quantas foram aceitas, recusadas e ficaram sem decisão (ADR 065).
+         */
+        get: operations["getAtendimentoIaIndicadores"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/ia/sugestoes/{id}/decisao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — Decidir sobre a sugestão da IA
+         * @description Quem atende a unidade do chamado registra se aceitou ou recusou a sugestão. Uma decisão só (409 na segunda). Aceitar não muda o chamado: a classificação segue por PUT .../classificacao (ADR 065).
+         */
+        post: operations["postAtendimentoIaSugestoesIdDecisao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atendimento/minhas": {
         parameters: {
             query?: never;
@@ -388,6 +620,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atendimento/ofertas/{id}/etapas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — etapas de aprovação da oferta
+         * @description Etapas em ordem, cada uma com nome e aprovadores; vazio = a oferta não pede aprovação (ADR 068).
+         */
+        get: operations["getAtendimentoOfertasIdEtapas"];
+        /**
+         * Atendimento — trocar as etapas de aprovação
+         * @description Só requisição; até 5 etapas, cada uma com 1 a 20 aprovadores ativos. Vale para os pedidos novos; lista vazia tira a aprovação. Auditado.
+         */
+        put: operations["putAtendimentoOfertasIdEtapas"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atendimento/ofertas/{id}/respostas": {
         parameters: {
             query?: never;
@@ -402,6 +658,30 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         put: operations["putAtendimentoOfertasIdRespostas"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/ofertas/{id}/tarefas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — modelo de tarefas da oferta
+         * @description Tarefas que cada requisição desta oferta recebe ao chegar à fila, cada uma com a equipe que a faz (ADR 068). Quem gere a unidade da oferta.
+         */
+        get: operations["getAtendimentoOfertasIdTarefas"];
+        /**
+         * Atendimento — trocar o modelo de tarefas da oferta
+         * @description Até 20 tarefas, cada uma com título (até 120) e uma equipe ao alcance de quem gere. Lista vazia tira as tarefas. Vale para os pedidos que chegarem à fila daqui em diante; as tarefas já criadas não mudam. Só oferta de requisição (422).
+         */
+        put: operations["putAtendimentoOfertasIdTarefas"];
         post?: never;
         delete?: never;
         options?: never;
@@ -521,6 +801,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atendimento/relatorio/secretarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — relatório por secretaria e OLA das equipes
+         * @description Nos últimos ?dias= (padrão 90, teto 366), no escopo de quem atende: volume (abertas, concluídas, canceladas), resolução, prazo, primeiro contato e a experiência de quem pediu (ADR 069), por secretaria (a unidade de topo da árvore; o pedido de um departamento conta para a sua secretaria) e no total. Traz também o OLA de cada equipe: tarefas concluídas no prazo da equipe, mediana e pendentes atrasadas (ADR 070). Acima do teto da amostra, ficam as mais recentes e truncado vem verdadeiro.
+         */
+        get: operations["getAtendimentoRelatorioSecretarias"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/slas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — Listar/consultar /atendimento/slas
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtendimentoSlas"];
+        put?: never;
+        /**
+         * Atendimento — Criar /atendimento/slas
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtendimentoSlas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/slas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — Obter /atendimento/slas/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtendimentoSlasId"];
+        /**
+         * Atendimento — Salvar /atendimento/slas/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putAtendimentoSlasId"];
+        post?: never;
+        /**
+         * Atendimento — Excluir /atendimento/slas/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        delete: operations["deleteAtendimentoSlasId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atendimento/solicitacoes": {
         parameters: {
             query?: never;
@@ -599,6 +951,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atendimento/solicitacoes/{id}/aprovacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — aprovar ou recusar a etapa atual
+         * @description Basta um aprovador por etapa; quem pediu não aprova o próprio pedido (403). A última aprovação entrega o pedido à fila e avisa a equipe; recusar exige motivo (até 1000) e cancela, com o motivo como resposta a quem pediu. 409 quando o pedido não espera aprovação.
+         */
+        post: operations["postAtendimentoSolicitacoesIdAprovacao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/ativo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atendimento — Salvar /atendimento/solicitacoes/{id}/ativo
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putAtendimentoSolicitacoesIdAtivo"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atendimento/solicitacoes/{id}/avaliacao": {
         parameters: {
             query?: never;
@@ -653,6 +1045,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atendimento/solicitacoes/{id}/contrato": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atendimento — apontar o contrato de apoio do chamado
+         * @description Quem atende aponta o contrato do fornecedor que o chamado espera, ou limpa com contrato_id nulo. O rótulo e o prazo são copiados agora: a medição usa o combinado quando o chamado foi ao fornecedor. O tempo em aguardando terceiro se mede contra esse prazo no relatório. Quem pediu não vê o contrato. 422 para contrato fora de vigência ou do alcance; 409 com o chamado encerrado.
+         */
+        put: operations["putAtendimentoSolicitacoesIdContrato"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atendimento/solicitacoes/{id}/estado": {
         parameters: {
             query?: never;
@@ -664,6 +1076,106 @@ export interface paths {
         put?: never;
         /** Atendimento — Executar ação /atendimento/solicitacoes/{id}/estado */
         post: operations["postAtendimentoSolicitacoesIdEstado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/filhos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — Listar/consultar /atendimento/solicitacoes/{id}/filhos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtendimentoSolicitacoesIdFilhos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/ia/classificacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — Pedir à IA impacto e urgência
+         * @description A IA sugere impacto e urgência (1 a 3) com o motivo, a partir de oferta, título e descrição. O chamado não muda; a sugestão e o pedido ficam registrados e auditados. 503 sem IA configurada (FEATURE_DISABLED) ou quando ela não responde no formato pedido (ADR 065).
+         */
+        post: operations["postAtendimentoSolicitacoesIdIaClassificacao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/ia/resolucao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — Executar ação /atendimento/solicitacoes/{id}/ia/resolucao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtendimentoSolicitacoesIdIaResolucao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/ia/resumo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — Pedir à IA o resumo do chamado
+         * @description Até 5 linhas: o problema, o que já foi feito e o que falta, a partir da conversa (inclusive notas internas, porque só a equipe vê). Sem nomes de pessoas na pergunta. 503 sem IA ou sem resposta aproveitável (ADR 065).
+         */
+        post: operations["postAtendimentoSolicitacoesIdIaResumo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/incidente-pai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atendimento — Salvar /atendimento/solicitacoes/{id}/incidente-pai
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putAtendimentoSolicitacoesIdIncidentePai"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -724,6 +1236,26 @@ export interface paths {
          */
         put: operations["putAtendimentoSolicitacoesIdSegredo"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/solicitacoes/{id}/tarefas/{tarefaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atendimento — concluir ou dispensar uma tarefa do pedido
+         * @description Concluir é de quem é da equipe da tarefa (403 para os demais); dispensar é de quem atende o chamado e exige observação como motivo (até 1000). 409 quando a tarefa já foi feita. Enquanto houver tarefa pendente, o pedido não passa a atendido (409).
+         */
+        post: operations["postAtendimentoSolicitacoesIdTarefasTarefaId"];
         delete?: never;
         options?: never;
         head?: never;
@@ -860,6 +1392,30 @@ export interface paths {
         /** Atendimento — Obter /atendimento/visitas/{id}/evidencias/{evidencia} */
         get: operations["getAtendimentoVisitasIdEvidenciasEvidencia"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atendimento/xla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atendimento — metas de experiência (XLA)
+         * @description Metas da instituição para a experiência de quem pede (ADR 069): nota mínima, facilidade mínima, reabertura máxima (%), idas e voltas máximas e espera máxima (horas corridas da abertura à conclusão). Nula = sem meta. Para quem atende.
+         */
+        get: operations["getAtendimentoXla"];
+        /**
+         * Atendimento — trocar as metas de experiência (XLA)
+         * @description Só a gestão do atendimento em toda a instituição (403 para gestão de unidade). Troca a linha inteira: campo ausente fica sem meta. A troca vai para a auditoria.
+         */
+        put: operations["putAtendimentoXla"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1495,6 +2051,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/canais/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Canais — configuração do e-mail
+         * @description O SMTP dos avisos (ADR 078): servidor, porta, usuário, remetente, se está ligado e de onde vem (tela, ambiente ou nenhuma). A senha nunca sai: tem_senha diz se há. Exige canais:manage.
+         */
+        get: operations["getCanaisEmail"];
+        /**
+         * Canais — salvar o e-mail
+         * @description Grava a configuração do SMTP. Senha vazia mantém a gravada; remover_senha a apaga. Ligado, exige servidor e remetente. A senha fica cifrada, e a troca vai para a auditoria (sem a senha). Exige canais:manage.
+         */
+        put: operations["putCanaisEmail"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canais/email/testar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Canais — testar o e-mail
+         * @description Manda uma mensagem de teste para o endereço informado com a configuração gravada, ligada ou não. A falha do servidor volta em 200 com ok false e a mensagem dele. Exige canais:manage.
+         */
+        post: operations["postCanaisEmailTestar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canais/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Canais — configuração do WhatsApp
+         * @description O WhatsApp dos avisos (ADR 078): o provedor ativo (API oficial da Meta ou Evolution API), os dados de cada um, se envia, se recebe respostas e o endereço do webhook a cadastrar no provedor. Token, chave e App Secret nunca saem: tem_token, tem_chave e tem_app_secret dizem se há. Exige canais:manage.
+         */
+        get: operations["getCanaisWhatsapp"];
+        /**
+         * Canais — salvar o WhatsApp
+         * @description Grava a configuração. Credencial vazia mantém a gravada; remover_token e remover_chave apagam. Ligado, o provedor escolhido precisa estar completo (na Meta, o modelo aprovado de três variáveis: título, mensagem e link). Receber exige o envio ligado e, na Meta, o App Secret. O endereço do webhook nasce na primeira vez que a entrada liga; novo_webhook troca o token e invalida o antigo. As credenciais ficam cifradas, e a troca vai para a auditoria (sem elas). Exige canais:manage.
+         */
+        put: operations["putCanaisWhatsapp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canais/whatsapp/testar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Canais — testar o WhatsApp
+         * @description Manda um aviso de teste para o número informado com a configuração gravada, ligada ou não (na Meta, pelo modelo aprovado). A recusa do provedor volta em 200 com ok false e a mensagem dele. Exige canais:manage.
+         */
+        post: operations["postCanaisWhatsappTestar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canais/whatsapp/webhook/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Canais — desafio do webhook da Meta
+         * @description Público: a Meta chama ao cadastrar o endereço, com hub.mode=subscribe, hub.verify_token (o mesmo token do endereço) e hub.challenge, que volta em texto. Token errado ou entrada desligada: 404.
+         */
+        get: operations["getCanaisWhatsappWebhookToken"];
+        put?: never;
+        /**
+         * Canais — mensagens recebidas pelo WhatsApp
+         * @description Público: o provedor entrega as mensagens. Só aceita o token secreto do endereço; na Meta, também a assinatura X-Hub-Signature-256 feita com o App Secret (401 se não confere). A mensagem de texto de quem deixou o número vira comentário no chamado de que ela fala ("#N" ou o único em andamento) e recebe a confirmação. A mesma mensagem entra uma vez só. Erro ao gravar: 500, para o provedor tentar de novo.
+         */
+        post: operations["postCanaisWhatsappWebhookToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/admin/services": {
         parameters: {
             query?: never;
@@ -1959,6 +2627,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contratos/contratos/{id}/prazo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Contratos — prazo de atendimento do fornecedor
+         * @description Prazo, em horas corridas (1 a 8760), que o fornecedor assume para atender: é o contrato de apoio que o atendimento mede (ADR 071). Nulo tira o prazo. Vale para os chamados vinculados depois.
+         */
+        put: operations["putContratosContratosIdPrazo"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contratos/fornecedores": {
         parameters: {
             query?: never;
@@ -2047,6 +2735,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/directory/avatars/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Diretório — Obter /directory/avatars/{id} */
+        get: operations["getDirectoryAvatarsId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/directory/me": {
         parameters: {
             query?: never;
@@ -2059,6 +2764,41 @@ export interface paths {
         /** Diretório — Salvar /directory/me */
         put: operations["putDirectoryMe"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/directory/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Diretório — Salvar /directory/me/avatar */
+        put: operations["putDirectoryMeAvatar"];
+        post?: never;
+        /** Diretório — Excluir /directory/me/avatar */
+        delete: operations["deleteDirectoryMeAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/directory/me/avatar/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Diretório — Criar /directory/me/avatar/uploads */
+        post: operations["postDirectoryMeAvatarUploads"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2274,6 +3014,494 @@ export interface paths {
         get: operations["getExampleItem"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/autenticidade/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolo da Fazenda — Obter /fazenda/autenticidade/{codigo} */
+        get: operations["getFazendaAutenticidadeCodigo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/govbr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolo da Fazenda — Listar/consultar /fazenda/govbr */
+        get: operations["getFazendaGovbr"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/govbr/sessao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Criar /fazenda/govbr/sessao */
+        post: operations["postFazendaGovbrSessao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolo da Fazenda — Listar/consultar /fazenda/processos */
+        get: operations["getFazendaProcessos"];
+        put?: never;
+        /** Protocolo da Fazenda — Criar /fazenda/processos */
+        post: operations["postFazendaProcessos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/alertas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Criar /fazenda/processos/alertas
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosAlertas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/dua": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Criar /fazenda/processos/dua */
+        post: operations["postFazendaProcessosDua"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/painel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protocolo da Fazenda — Listar/consultar /fazenda/processos/painel
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getFazendaProcessosPainel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolo da Fazenda — Obter /fazenda/processos/{id} */
+        get: operations["getFazendaProcessosId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/aviso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/aviso
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdAviso"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/baixa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/baixa
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdBaixa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/cassacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/cassacao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdCassacao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/certidao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/certidao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdCertidao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/consulta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/consulta */
+        post: operations["postFazendaProcessosIdConsulta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/decisao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/decisao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdDecisao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/execucao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/execucao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdExecucao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/exigencia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/exigencia
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdExigencia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/isencao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/isencao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdIsencao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/parcelamento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/parcelamento
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdParcelamento"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/pecas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/pecas */
+        post: operations["postFazendaProcessosIdPecas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/pecas/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/pecas/upload */
+        post: operations["postFazendaProcessosIdPecasUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/recurso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/recurso
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdRecurso"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/reducao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/reducao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdReducao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/resposta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/resposta */
+        post: operations["postFazendaProcessosIdResposta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/selo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/selo
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdSelo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/processos/{id}/tqc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolo da Fazenda — Executar ação /fazenda/processos/{id}/tqc
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postFazendaProcessosIdTqc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fazenda/simulador": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolo da Fazenda — Criar /fazenda/simulador */
+        post: operations["postFazendaSimulador"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2744,6 +3972,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/iam/sso/sincronizacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * IAM — estado da sincronização com o SSO
+         * @description Diz se há uma sincronização com o SSO em andamento nesta réplica e devolve a última terminada (de qualquer réplica ou do worker), com o momento e o relatório: lidos, criados, atualizados, desativados e conflitos. Exige users:manage global.
+         */
+        get: operations["getIamSsoSincronizacao"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/iam/sso/sincronizar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * IAM — sincronizar as pessoas do SSO
+         * @description Começa em segundo plano a leitura de todas as pessoas do realm pela API de administração do Keycloak (ADR 077), com a conta de serviço do client: cria ou atualiza pelo keycloak_subject, desativa quem foi desativado no SSO e lista em conflitos quem tem o usuário ou o e-mail de uma conta local. Responde 202 na hora; o resultado sai em GET /api/v1/iam/sso/sincronizacao. 409 se já há uma em andamento; 422 sem client e segredo. Exige users:manage global; o worker repete todo dia.
+         */
+        post: operations["postIamSsoSincronizar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/iam/unidades": {
         parameters: {
             query?: never;
@@ -2784,6 +4052,330 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         delete: operations["deleteIamUnidadesId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conector/itens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Conector — enviar um lote
+         * @description Só com o token do conector. De 1 a 200 itens (chamado, pessoa, categoria, entidade, sla), cada um com até 900 KB.
+         */
+        post: operations["postIntegracoesConectorItens"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conector/tarefa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Conector — pegar a extração pedida
+         * @description Só com o token do conector. Devolve a extração pedida na tela, marcada em andamento, ou 204 se não houver.
+         */
+        post: operations["postIntegracoesConectorTarefa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conector/tarefas/{id}/fim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Conector — encerrar a extração
+         * @description Só com o token do conector. O resumo, ou o erro que interrompeu a extração.
+         */
+        post: operations["postIntegracoesConectorTarefasIdFim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conector/tarefas/{id}/progresso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Conector — informar o andamento
+         * @description Só com o token do conector. Devolve o estado da tarefa: cancelada diz para parar.
+         */
+        post: operations["postIntegracoesConectorTarefasIdProgresso"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conector/versoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conector — o que já foi extraído
+         * @description Só com o token do conector. A versão de cada chamado e as pessoas já na área de preparo: a extração traz só o que mudou.
+         */
+        get: operations["getIntegracoesConectorVersoes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Integrações — listar as conexões
+         * @description Conexões com as ferramentas de origem (GLPI). Exige integracoes:manage com alcance global.
+         */
+        get: operations["getIntegracoesConexoes"];
+        put?: never;
+        /**
+         * Integrações — criar uma conexão
+         * @description Tipo glpi; modo direto (o servidor lê a origem, pela URL da API) ou conector (um programa na rede da origem envia os dados).
+         */
+        post: operations["postIntegracoesConexoes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Integrações — obter a conexão
+         * @description A conexão, sem as credenciais: tem_credenciais e tem_token dizem só se existem.
+         */
+        get: operations["getIntegracoesConexoesId"];
+        /**
+         * Integrações — editar a conexão
+         * @description Nome, endereço, perfil e fuso. Tipo e modo não mudam.
+         */
+        put: operations["putIntegracoesConexoesId"];
+        post?: never;
+        /**
+         * Integrações — encerrar a conexão
+         * @description Apaga a conexão com a área de preparo, a tabela de-para e as tarefas. O que já foi carregado fica.
+         */
+        delete: operations["deleteIntegracoesConexoesId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/credenciais": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Integrações — definir as credenciais da origem
+         * @description Só no modo direto. Token de usuário, ou login e senha; ficam cifradas e a API nunca as devolve.
+         */
+        put: operations["putIntegracoesConexoesIdCredenciais"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/inventario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Integrações — inventário da área de preparo
+         * @description Quantos itens foram extraídos, os chamados por secretaria e categoria (com o prazo que tiveram na origem) e os prazos da origem com a prioridade sugerida.
+         */
+        get: operations["getIntegracoesConexoesIdInventario"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/sincronizacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Integrações — Salvar /integracoes/conexoes/{id}/sincronizacao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putIntegracoesConexoesIdSincronizacao"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/tabela": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Integrações — tabela de-para
+         * @description Para cada secretaria e categoria da origem (-1 é qualquer outra): a unidade, a oferta, o tipo e a prioridade daqui (ADR 075).
+         */
+        get: operations["getIntegracoesConexoesIdTabela"];
+        /**
+         * Integrações — salvar a tabela de-para
+         * @description Troca a tabela inteira pela revisada. Uma linha por secretaria e categoria.
+         */
+        put: operations["putIntegracoesConexoesIdTabela"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/tabela/sugestao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Integrações — sugerir a tabela de-para
+         * @description Monta a tabela a partir do inventário e a grava, levando cada secretaria à unidade informada.
+         */
+        post: operations["postIntegracoesConexoesIdTabelaSugestao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/tarefas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Integrações — tarefas da conexão
+         * @description As últimas extrações, simulações e cargas, com o andamento e o relatório.
+         */
+        get: operations["getIntegracoesConexoesIdTarefas"];
+        put?: never;
+        /**
+         * Integrações — pedir uma tarefa
+         * @description extracao, simulacao, carga, desfazer_simulacao ou desfazer. Uma por conexão de cada vez; o que falta para rodar é recusado com 422. A extração do modo conector espera o conector. O desfazer (ADR 079) remove o que a carga trouxe e ninguém mexeu depois, e pede confirmacao igual ao nome da conexão.
+         */
+        post: operations["postIntegracoesConexoesIdTarefas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/conexoes/{id}/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Integrações — emitir o token do conector
+         * @description Só no modo conector. O token aparece só nesta resposta; um novo substitui o anterior.
+         */
+        post: operations["postIntegracoesConexoesIdToken"];
+        /**
+         * Integrações — revogar o token do conector
+         * @description O conector da conexão deixa de entrar.
+         */
+        delete: operations["deleteIntegracoesConexoesIdToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integracoes/tarefas/{id}/cancelar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Integrações — cancelar a tarefa
+         * @description Para a tarefa pendente ou em andamento; quem executa percebe no próximo andamento.
+         */
+        post: operations["postIntegracoesTarefasIdCancelar"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2919,6 +4511,30 @@ export interface paths {
          */
         get: operations["getCurrentUser"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/contato": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Canais — meu contato para avisos
+         * @description O e-mail e o WhatsApp em que a própria pessoa recebe os avisos, se já respondeu e o e-mail que veio do login (quando é real).
+         */
+        get: operations["getMeContato"];
+        /**
+         * Canais — salvar meu contato
+         * @description Grava o e-mail e o WhatsApp (formato internacional; sem DDI, vale o do Brasil) da própria pessoa. Vazio também é resposta: ela preferiu não deixar e não é perguntada de novo. Deixar o contato é o consentimento para receber os avisos (LGPD).
+         */
+        put: operations["putMeContato"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3273,6 +4889,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ocorrencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ocorrências — painel da coordenação
+         * @description Abertas primeiro (a mais antiga sem notícia no topo), depois as resolvidas mais recentes, até 50, com a linha do tempo.
+         */
+        get: operations["getOcorrencias"];
+        put?: never;
+        /**
+         * Ocorrências — declarar incidente grave
+         * @description Abre em investigando, com a primeira notícia ao público. Título e serviços são escritos para o público, não copiados do chamado. Quem declara coordena. Evento ocorrencias.declarada e auditoria na mesma transação.
+         */
+        post: operations["postOcorrencias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ocorrencias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ocorrências — detalhe
+         * @description A ocorrência com a linha do tempo, o coordenador e a revisão interna.
+         */
+        get: operations["getOcorrenciasId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ocorrencias/{id}/atualizacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ocorrências — publicar atualização
+         * @description Novo estado, impacto e texto ao público. resolvido encerra e registra o fim; a resolvida não recebe atualização (409).
+         */
+        post: operations["postOcorrenciasIdAtualizacoes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ocorrencias/{id}/coordenador": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Ocorrências — trocar o coordenador
+         * @description Só enquanto aberta (409 depois de resolvida); a pessoa precisa existir (422).
+         */
+        put: operations["putOcorrenciasIdCoordenador"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ocorrencias/{id}/revisao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Ocorrências — revisão pós-incidente
+         * @description Causa, o que funcionou e o que fazer. Só depois de resolver (409 antes); é interna e nunca vai para a página pública.
+         */
+        put: operations["putOcorrenciasIdRevisao"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/problemas": {
         parameters: {
             query?: never;
@@ -3492,6 +5212,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projetos/carga": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/carga
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosCarga"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/minhas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/minhas
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosMinhas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/prazos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/prazos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosPrazos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projetos/{id}": {
         parameters: {
             query?: never;
@@ -3554,6 +5334,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projetos/{id}/cancelamento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Projetos — Executar ação /projetos/{id}/cancelamento
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProjetosIdCancelamento"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/carta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/carta
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdCarta"];
+        /**
+         * Projetos — Salvar /projetos/{id}/carta
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putProjetosIdCarta"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projetos/{id}/estado": {
         parameters: {
             query?: never;
@@ -3568,6 +5392,110 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         post: operations["postProjetosIdEstado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/historico": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/historico
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdHistorico"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/participantes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/participantes
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdParticipantes"];
+        put?: never;
+        /**
+         * Projetos — Executar ação /projetos/{id}/participantes
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProjetosIdParticipantes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/participantes/{pessoaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Projetos — Excluir /projetos/{id}/participantes/{pessoaId}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        delete: operations["deleteProjetosIdParticipantesPessoaId"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/reabertura": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Projetos — Executar ação /projetos/{id}/reabertura
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProjetosIdReabertura"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/responsaveis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/responsaveis
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdResponsaveis"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3619,6 +5547,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/anexos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/tarefas/{tarefaId}/anexos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdTarefasTarefaIdAnexos"];
+        put?: never;
+        /**
+         * Projetos — Executar ação /projetos/{id}/tarefas/{tarefaId}/anexos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProjetosIdTarefasTarefaIdAnexos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/anexos/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Projetos — Executar ação /projetos/{id}/tarefas/{tarefaId}/anexos/uploads
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProjetosIdTarefasTarefaIdAnexosUploads"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/anexos/{anexoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Obter /projetos/{id}/tarefas/{tarefaId}/anexos/{anexoId}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdTarefasTarefaIdAnexosAnexoId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/atualizacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/tarefas/{tarefaId}/atualizacoes
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdTarefasTarefaIdAtualizacoes"];
+        put?: never;
+        /**
+         * Projetos — Executar ação /projetos/{id}/tarefas/{tarefaId}/atualizacoes
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProjetosIdTarefasTarefaIdAtualizacoes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projetos/{id}/tarefas/{tarefaId}/movimentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projetos — Listar/consultar /projetos/{id}/tarefas/{tarefaId}/movimentos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProjetosIdTarefasTarefaIdMovimentos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projetos/{id}/vinculos": {
         parameters: {
             query?: never;
@@ -3660,6 +5696,431 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/protocolos/balcao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Criar /protocolos/balcao
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosBalcao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/carta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Listar/consultar /protocolos/carta */
+        get: operations["getProtocolosCarta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/carta/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Obter /protocolos/carta/{id} */
+        get: operations["getProtocolosCartaId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/carta/{id}/arquivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolos — Executar ação /protocolos/carta/{id}/arquivo */
+        post: operations["postProtocolosCartaIdArquivo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/carta/{id}/pedido": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/carta/{id}/pedido
+         * @description Abre o pedido na carta. A hora precisa estar na grade do serviço e ainda estar livre.
+         */
+        post: operations["postProtocolosCartaIdPedido"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/consulta/{numero}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Obter /protocolos/consulta/{numero} */
+        get: operations["getProtocolosConsultaNumero"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/consulta/{numero}/arquivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolos — Executar ação /protocolos/consulta/{numero}/arquivo */
+        post: operations["postProtocolosConsultaNumeroArquivo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/consulta/{numero}/resposta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Protocolos — Executar ação /protocolos/consulta/{numero}/resposta */
+        post: operations["postProtocolosConsultaNumeroResposta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/faltas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Criar /protocolos/faltas
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A falta vale para o pedido informado e só conta uma vez naquele horário.
+         */
+        post: operations["postProtocolosFaltas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/formularios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protocolos — Listar/consultar /protocolos/formularios
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProtocolosFormularios"];
+        put?: never;
+        /**
+         * Protocolos — Criar /protocolos/formularios
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosFormularios"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Listar/consultar /protocolos/pedidos */
+        get: operations["getProtocolosPedidos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Obter /protocolos/pedidos/{id} */
+        get: operations["getProtocolosPedidosId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/arquivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Listar/consultar /protocolos/pedidos/{id}/arquivo */
+        get: operations["getProtocolosPedidosIdArquivo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/avancar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/avancar
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosPedidosIdAvancar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/cancelar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/cancelar
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosPedidosIdCancelar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/complemento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/complemento
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosPedidosIdComplemento"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/concluir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/concluir
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosPedidosIdConcluir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/editar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/editar
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A edição exige justificativa. A consulta pública mostra apenas que o pedido foi atualizado.
+         */
+        post: operations["postProtocolosPedidosIdEditar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/nota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/nota
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A nota fica no histórico da mesa e não aparece na consulta pública.
+         */
+        post: operations["postProtocolosPedidosIdNota"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/resposta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/resposta
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A mesa registra o texto recebido. Sem texto o pedido continua em complementação.
+         */
+        post: operations["postProtocolosPedidosIdResposta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/responsaveis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protocolos — Listar/consultar /protocolos/responsaveis
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProtocolosResponsaveis"];
+        put?: never;
+        /**
+         * Protocolos — Criar /protocolos/responsaveis
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosResponsaveis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/servicos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protocolos — Listar/consultar /protocolos/servicos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProtocolosServicos"];
+        put?: never;
+        /**
+         * Protocolos — Criar /protocolos/servicos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosServicos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quadros/{quadro}": {
         parameters: {
             query?: never;
@@ -3693,6 +6154,78 @@ export interface paths {
         put: operations["putQuadrosQuadroChave"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/riscos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Riscos (ISO 27001) — Listar/consultar /riscos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getRiscos"];
+        put?: never;
+        /**
+         * Riscos (ISO 27001) — Criar /riscos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postRiscos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/riscos/heatmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Riscos (ISO 27001) — Listar/consultar /riscos/heatmap
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getRiscosHeatmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/riscos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Riscos (ISO 27001) — Obter /riscos/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getRiscosId"];
+        /**
+         * Riscos (ISO 27001) — Salvar /riscos/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putRiscosId"];
+        post?: never;
+        /**
+         * Riscos (ISO 27001) — Excluir /riscos/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        delete: operations["deleteRiscosId"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3827,6 +6360,26 @@ export interface paths {
         };
         /** Signum — Obter /signum/verify/{id} */
         get: operations["getSignumVerifyId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Página de status pública
+         * @description Sem login, com limite por IP e Cache-Control de 30 s. Situação geral (o pior impacto em aberto, ou operacional), as ocorrências abertas e as resolvidas nos últimos 7 dias, só com campos públicos: sem coordenador, autor, chamado ou revisão (ADR 066).
+         */
+        get: operations["getStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4585,6 +7138,21 @@ export interface components {
             };
             titulo: string;
         };
+        AtendimentoAlerta: {
+            annotations?: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            endsAt?: string;
+            fingerprint?: string;
+            generatorURL?: string;
+            labels?: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            startsAt?: string;
+            status?: string;
+        };
         AtendimentoAmostra: {
             com_prazo_concluido: number;
             concluidas: number;
@@ -4612,6 +7180,25 @@ export interface components {
             descricao: string;
             horas: number;
         };
+        AtendimentoAprovacao: {
+            /** Format: uuid */
+            aprovador_id?: string;
+            aprovador_nome?: string;
+            /** Format: date-time */
+            created_at: string;
+            decisao: string;
+            etapa: number;
+            etapa_nome: string;
+            /** Format: uuid */
+            id: string;
+            motivo?: string;
+            /** Format: uuid */
+            solicitacao_id: string;
+        };
+        AtendimentoAtivoVinculoRequest: {
+            /** Format: uuid */
+            ativo_id?: string | null;
+        };
         AtendimentoAvaliacao: {
             /** Format: uuid */
             autor_id: string;
@@ -4619,6 +7206,7 @@ export interface components {
             comentario: string;
             /** Format: date-time */
             created_at: string;
+            facilidade?: number;
             /** Format: uuid */
             id: string;
             nota: number;
@@ -4629,6 +7217,7 @@ export interface components {
         };
         AtendimentoAvaliacaoRequest: {
             comentario?: string;
+            facilidade?: number | null;
             nota: number;
         };
         AtendimentoCSAT: {
@@ -4654,6 +7243,28 @@ export interface components {
             /** Format: uuid */
             id: string;
             nome: string;
+        };
+        AtendimentoCategoria: {
+            ativa: boolean;
+            /** Format: date-time */
+            created_at: string;
+            descricao: string;
+            icone: string;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            ordem: number;
+            /** Format: uuid */
+            sla_id?: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AtendimentoCategoriaRequest: {
+            ativa?: boolean | null;
+            descricao?: string;
+            icone?: string;
+            nome: string;
+            ordem?: number;
         };
         AtendimentoCelula: {
             impacto: number;
@@ -4703,6 +7314,11 @@ export interface components {
             impacto: number;
             urgencia: number;
         };
+        AtendimentoClassificacaoSugerida: {
+            impacto: number;
+            motivo: string;
+            urgencia: number;
+        };
         AtendimentoComentario: {
             /** Format: uuid */
             autor_id?: string;
@@ -4719,6 +7335,32 @@ export interface components {
         AtendimentoComentarioRequest: {
             interno?: boolean;
             texto: string;
+        };
+        AtendimentoConfiguracaoEventos: {
+            /** Format: uuid */
+            oferta_id: string | null;
+        };
+        AtendimentoConfiguracaoEventosRequest: {
+            /** Format: uuid */
+            oferta_id?: string | null;
+        };
+        AtendimentoContratoApoioRequest: {
+            /** Format: uuid */
+            contrato_id?: string | null;
+        };
+        AtendimentoContratoDeApoio: {
+            fornecedor: string;
+            /** Format: uuid */
+            id: string;
+            prazo_horas: number | null;
+            rotulo: string;
+        };
+        AtendimentoDecisaoAprovacaoRequest: {
+            aprovar: boolean | null;
+            motivo?: string;
+        };
+        AtendimentoDecisaoRequest: {
+            aceita: boolean | null;
         };
         AtendimentoDeflexao: {
             sem_pedido: number;
@@ -4740,12 +7382,16 @@ export interface components {
             raio_m?: number;
         };
         AtendimentoDetalhe: {
+            aprovacoes: components["schemas"]["AtendimentoAprovacao"][];
             avaliacao?: components["schemas"]["AtendimentoAvaliacao"];
             comentarios: components["schemas"]["AtendimentoComentario"][];
+            espelho?: boolean;
+            etapa_atual?: string;
             papeis: string[];
             passagens: components["schemas"]["AtendimentoPassagem"][];
             proximos: string[];
             solicitacao: components["schemas"]["AtendimentoSolicitacao"];
+            tarefas: components["schemas"]["AtendimentoTarefa"][];
             visitas: components["schemas"]["AtendimentoVisita"][];
         };
         AtendimentoEquipe: {
@@ -4755,6 +7401,7 @@ export interface components {
             id: string;
             membros: string[];
             nome: string;
+            ola_horas?: number;
             /** Format: uuid */
             unidade_id?: string;
             /** Format: date-time */
@@ -4763,11 +7410,27 @@ export interface components {
         AtendimentoEquipeRequest: {
             membros?: string[];
             nome: string;
+            ola_horas?: number | null;
             /** Format: uuid */
             unidade_id?: string | null;
         };
+        AtendimentoEstadoIA: {
+            disponivel: boolean;
+        };
         AtendimentoEstadoRequest: {
             estado: string;
+        };
+        AtendimentoEtapaAprovacao: {
+            aprovadores: string[];
+            nome: string;
+            ordem: number;
+        };
+        AtendimentoEtapaRequest: {
+            aprovadores: string[];
+            nome: string;
+        };
+        AtendimentoEtapasRequest: {
+            etapas?: components["schemas"]["AtendimentoEtapaRequest"][];
         };
         AtendimentoEvidencia: {
             /** Format: uuid */
@@ -4794,6 +7457,13 @@ export interface components {
             content_type: string;
             nome: string;
         };
+        AtendimentoExperiencia: {
+            csat: components["schemas"]["AtendimentoMedidaXLA"];
+            espera_horas: components["schemas"]["AtendimentoMedidaXLA"];
+            facilidade: components["schemas"]["AtendimentoMedidaXLA"];
+            idas_e_voltas: components["schemas"]["AtendimentoMedidaXLA"];
+            reabertura: components["schemas"]["AtendimentoMedidaXLA"];
+        };
         AtendimentoFeriado: {
             /** Format: date-time */
             created_at: string;
@@ -4817,10 +7487,76 @@ export interface components {
             amostra: components["schemas"]["AtendimentoAmostra"];
             csat?: components["schemas"]["AtendimentoCSAT"];
             deflexao?: components["schemas"]["AtendimentoDeflexao"];
+            experiencia?: components["schemas"]["AtendimentoExperiencia"];
             fcr_percentual: number | null;
             mtbf_horas: number | null;
             mttr_horas: number | null;
             sla_percentual: number | null;
+        };
+        AtendimentoIncidentePaiRequest: {
+            /** Format: uuid */
+            incidente_pai_id?: string | null;
+        };
+        AtendimentoIndicadorIA: {
+            aceitas: number;
+            pendentes: number;
+            recusadas: number;
+            tipo: string;
+            total: number;
+        };
+        AtendimentoLinhaContrato: {
+            atrasados: number;
+            com_fornecedor: number;
+            /** Format: uuid */
+            contrato_id: string;
+            mediana_horas: number | null;
+            medidos: number;
+            no_prazo: number;
+            no_prazo_percentual: number | null;
+            pedidos: number;
+            prazo_horas: number | null;
+            rotulo: string;
+        };
+        AtendimentoLinhaEquipe: {
+            atrasadas: number;
+            chamados: number;
+            chamados_atrasados: number;
+            chamados_mediana_horas: number | null;
+            chamados_no_prazo: number;
+            chamados_no_prazo_percentual: number | null;
+            com_a_equipe: number;
+            concluidas: number;
+            /** Format: uuid */
+            equipe_id: string;
+            mediana_horas: number | null;
+            no_prazo: number;
+            no_prazo_percentual: number | null;
+            nome: string;
+            ola_horas: number | null;
+            pendentes: number;
+            /** Format: uuid */
+            unidade_id?: string;
+        };
+        AtendimentoLinhaSecretaria: {
+            abertas: number;
+            canceladas: number;
+            concluidas: number;
+            experiencia: components["schemas"]["AtendimentoExperiencia"];
+            fcr_percentual: number | null;
+            mttr_horas: number | null;
+            nome: string;
+            sigla?: string;
+            sla_percentual: number | null;
+            total: number;
+            /** Format: uuid */
+            unidade_id?: string;
+        };
+        AtendimentoMedidaXLA: {
+            amostra: number;
+            atingida: boolean | null;
+            maior_melhor: boolean;
+            meta: number | null;
+            valor: number | null;
         };
         AtendimentoMeta: {
             prioridade: string;
@@ -4832,17 +7568,56 @@ export interface components {
             resposta_min?: number;
             solucao_min?: number;
         };
+        AtendimentoMetasXLA: {
+            csat_min: number | null;
+            espera_max_horas: number | null;
+            facilidade_min: number | null;
+            idas_max: number | null;
+            reabertura_max: number | null;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        AtendimentoMetasXLARequest: {
+            csat_min?: number | null;
+            espera_max_horas?: number | null;
+            facilidade_min?: number | null;
+            idas_max?: number | null;
+            reabertura_max?: number | null;
+        };
+        AtendimentoModeloRequest: {
+            tarefas?: components["schemas"]["AtendimentoModeloTarefaRequest"][];
+        };
+        AtendimentoModeloTarefa: {
+            /** Format: uuid */
+            equipe_id: string;
+            equipe_nome?: string;
+            ordem: number;
+            titulo: string;
+        };
+        AtendimentoModeloTarefaRequest: {
+            /** Format: uuid */
+            equipe_id: string;
+            titulo: string;
+        };
         AtendimentoOferta: {
             ativa: boolean;
             campos: components["schemas"]["AtendimentoCampo"][];
+            /** Format: uuid */
+            categoria_id?: string;
             /** Format: date-time */
             created_at: string;
             descricao: string;
+            icone: string;
             /** Format: uuid */
             id: string;
             nome: string;
+            ordem: number;
             /** Format: uuid */
             produto_id?: string;
+            /** Format: uuid */
+            secretaria_id?: string;
+            secretaria_nome?: string;
+            secretaria_sigla?: string;
             tipo: string;
             /** Format: uuid */
             unidade_id?: string;
@@ -4852,8 +7627,11 @@ export interface components {
         AtendimentoOfertaRequest: {
             ativa?: boolean | null;
             campos?: components["schemas"]["AtendimentoCampoInput"][] | null;
+            categoria_id?: string | null;
             descricao?: string;
+            icone?: string | null;
             nome: string;
+            ordem?: number | null;
             /** Format: uuid */
             produto_id?: string | null;
             /** @enum {string} */
@@ -4954,6 +7732,16 @@ export interface components {
             /** Format: uuid */
             unidade_solicitante_id?: string | null;
         };
+        AtendimentoRelatorio: {
+            contratos: components["schemas"]["AtendimentoLinhaContrato"][];
+            /** Format: date-time */
+            desde: string;
+            dias: number;
+            equipes: components["schemas"]["AtendimentoLinhaEquipe"][];
+            secretarias: components["schemas"]["AtendimentoLinhaSecretaria"][];
+            total: components["schemas"]["AtendimentoLinhaSecretaria"];
+            truncado: boolean;
+        };
         AtendimentoRelogio: {
             estado: string;
             meta_min: number;
@@ -4977,6 +7765,11 @@ export interface components {
             interna?: string;
             publico?: string;
         };
+        AtendimentoResultadoEventos: {
+            abertos: number;
+            anotados: number;
+            ignorados: number;
+        };
         AtendimentoResumoApontamentos: {
             apontamentos: components["schemas"]["AtendimentoApontamento"][];
             total_horas: number;
@@ -4991,22 +7784,62 @@ export interface components {
             sla_percentual: number | null;
             truncado: boolean;
         };
+        AtendimentoSLA: {
+            ativa: boolean;
+            calendario_tipo: string;
+            /** Format: date-time */
+            created_at: string;
+            descricao: string;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            pausar_em_espera: boolean;
+            tempo_resposta_minutos: number;
+            tempo_solucao_minutos: number;
+            /** Format: uuid */
+            unidade_id?: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AtendimentoSLARequest: {
+            ativa?: boolean | null;
+            /** @enum {string} */
+            calendario_tipo?: "expediente" | "corrido_24x7";
+            descricao?: string;
+            nome: string;
+            pausar_em_espera?: boolean;
+            tempo_resposta_minutos: number;
+            tempo_solucao_minutos: number;
+            /** Format: uuid */
+            unidade_id?: string | null;
+        };
         AtendimentoSegredoVinculoRequest: {
             /** Format: uuid */
             segredo_id?: string | null;
         };
         AtendimentoSolicitacao: {
             /** Format: uuid */
+            ativo_id?: string;
+            ativo_nome?: string;
+            categoria_nome?: string;
+            /** Format: uuid */
             cofre_segredo_id?: string;
+            contrato_apoio?: string;
+            /** Format: uuid */
+            contrato_apoio_id?: string;
+            contrato_prazo_horas?: number;
             /** Format: date-time */
             created_at: string;
             descricao: string;
             /** Format: date-time */
             encerrada_em?: string;
             estado: string;
+            etapa_atual?: number;
             /** Format: uuid */
             id: string;
             impacto: number;
+            /** Format: uuid */
+            incidente_pai_id?: string;
             meta_resposta_min?: number;
             meta_solucao_min?: number;
             numero: number;
@@ -5033,9 +7866,55 @@ export interface components {
             titulo: string;
             /** Format: uuid */
             unidade_id?: string;
+            unidade_nome?: string;
             /** Format: date-time */
             updated_at: string;
             urgencia: number;
+        };
+        AtendimentoSugestao: {
+            classificacao?: components["schemas"]["AtendimentoClassificacaoSugerida"];
+            conexao: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            decidida_em?: string;
+            /** Format: uuid */
+            decidida_por?: string;
+            decisao?: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pedida_por?: string;
+            resolucao?: string;
+            resumo?: string;
+            /** Format: uuid */
+            solicitacao_id: string;
+            tipo: string;
+        };
+        AtendimentoTarefa: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            equipe_id?: string;
+            equipe_nome: string;
+            estado: string;
+            /** Format: date-time */
+            feita_em?: string;
+            /** Format: uuid */
+            feita_por?: string;
+            feita_por_nome?: string;
+            /** Format: uuid */
+            id: string;
+            minha: boolean;
+            observacao?: string;
+            ordem: number;
+            /** Format: uuid */
+            solicitacao_id: string;
+            titulo: string;
+        };
+        AtendimentoTarefaRequest: {
+            concluir: boolean | null;
+            observacao?: string;
         };
         AtendimentoTopicosResponse: {
             topicos: string[];
@@ -5049,6 +7928,10 @@ export interface components {
             dia?: number;
             fim?: string;
             inicio?: string;
+        };
+        AtendimentoVincularCategoriaSLARequest: {
+            /** Format: uuid */
+            sla_id?: string | null;
         };
         AtendimentoVisita: {
             assinante_nome: string;
@@ -5113,6 +7996,24 @@ export interface components {
             unidade_id?: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        AtendimentoWebhookAlertmanager: {
+            alerts: components["schemas"]["AtendimentoAlerta"][];
+            commonAnnotations?: {
+                [key: string]: string;
+            };
+            commonLabels?: {
+                [key: string]: string;
+            };
+            externalURL?: string;
+            groupKey?: string;
+            groupLabels?: {
+                [key: string]: string;
+            };
+            receiver?: string;
+            status?: string;
+            truncatedAlerts?: number;
+            version?: string;
         };
         AtivosAtivo: {
             /** Format: date-time */
@@ -5439,6 +8340,88 @@ export interface components {
             /** Format: uuid */
             unidade_id?: string | null;
         };
+        CanaisContato: {
+            email: string;
+            email_do_sso?: string;
+            respondido: boolean;
+            /** Format: date-time */
+            respondido_em?: string;
+            whatsapp: string;
+        };
+        CanaisContatoRequest: {
+            email?: string;
+            whatsapp?: string;
+        };
+        CanaisEmail: {
+            ativo: boolean;
+            host: string;
+            origem: string;
+            porta: number;
+            remetente: string;
+            tem_senha: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+            updated_by?: string;
+            usuario: string;
+        };
+        CanaisEmailRequest: {
+            ativo?: boolean;
+            host?: string;
+            porta?: number;
+            remetente?: string;
+            remover_senha?: boolean;
+            senha?: string;
+            usuario?: string;
+        };
+        CanaisTesteRequest: {
+            para: string;
+        };
+        CanaisTesteWhatsAppRequest: {
+            para: string;
+        };
+        CanaisWhatsApp: {
+            ativo: boolean;
+            evolution_instancia: string;
+            evolution_url: string;
+            gove_client_id: string;
+            gove_modelo: string;
+            gove_url: string;
+            meta_idioma: string;
+            meta_modelo: string;
+            meta_numero_id: string;
+            provedor: string;
+            receber: boolean;
+            tem_app_secret: boolean;
+            tem_chave: boolean;
+            tem_segredo_gove: boolean;
+            tem_token: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+            updated_by?: string;
+            webhook_url?: string;
+        };
+        CanaisWhatsAppRequest: {
+            ativo?: boolean;
+            evolution_chave?: string;
+            evolution_instancia?: string;
+            evolution_url?: string;
+            gove_client_id?: string;
+            gove_modelo?: string;
+            gove_segredo?: string;
+            gove_url?: string;
+            meta_app_secret?: string;
+            meta_idioma?: string;
+            meta_modelo?: string;
+            meta_numero_id?: string;
+            meta_token?: string;
+            novo_webhook?: boolean;
+            /** @enum {string} */
+            provedor?: "meta" | "evolution" | "gove";
+            receber?: boolean;
+            remover_chave?: boolean;
+            remover_segredo_gove?: boolean;
+            remover_token?: boolean;
+        };
         CatalogCategory: {
             count: number;
             name: string;
@@ -5692,6 +8675,7 @@ export interface components {
             /** Format: date-time */
             inicio: string;
             numero: string;
+            prazo_horas?: number;
             titulo: string;
             /** Format: uuid */
             unidade_id?: string;
@@ -5762,10 +8746,20 @@ export interface components {
             /** Format: uuid */
             unidade_id?: string | null;
         };
+        ContratosPrazoRequest: {
+            prazo_horas?: number | null;
+        };
         ContratosUso: {
             com_inventario: number;
             instalados: number;
             parcial: boolean;
+        };
+        DirectoryConfirmarAvatar: {
+            object_key?: string;
+        };
+        DirectoryPedidoAvatar: {
+            content_type?: string;
+            filename?: string;
         };
         DirectoryPerson: {
             bio: string;
@@ -5903,6 +8897,209 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        FazendaAbertura: {
+            /** Format: date-time */
+            data_contrato?: string;
+            debito_aberto?: boolean;
+            documentos?: components["schemas"]["FazendaDocumento"][];
+            entrada?: string;
+            itbi?: boolean;
+            modulo_a?: boolean;
+            modulo_c?: boolean;
+            programa?: string;
+            tem_cessao?: boolean;
+            tem_contrato?: boolean;
+            titular?: string;
+        };
+        FazendaAutenticidade: {
+            codigo: string;
+            mensagem: string;
+            numero: string;
+            valido: boolean;
+        };
+        FazendaAvisoRequest: {
+            fato: string;
+            orientacao: string;
+        };
+        FazendaBaixaRequest: {
+            primeira?: boolean;
+        };
+        FazendaCertidaoRequest: {
+            adquirente: string;
+            aliquota: string;
+            data_instrumento: string;
+            inscricao: string;
+            matricula: string;
+            transmitente: string;
+        };
+        FazendaDebito: {
+            ano?: number;
+            correcao?: number;
+            dolo_fraude_simulacao?: boolean;
+            juros?: number;
+            multa?: number;
+            principal?: number;
+            tributo?: string;
+        };
+        FazendaDocumento: {
+            /** Format: date-time */
+            emitida_em?: string;
+            ja_na_base?: boolean;
+            presente?: boolean;
+            tipo?: string;
+        };
+        FazendaDuaRequest: {
+            linhas?: components["schemas"]["FazendaLinhaDUA"][];
+            omitidas?: number;
+        };
+        FazendaExecucaoRequest: {
+            em_execucao?: boolean;
+        };
+        FazendaFalhaDUA: {
+            linha: number;
+            motivo: string;
+        };
+        FazendaFatoRequest: {
+            fato_novo?: boolean;
+        };
+        FazendaIsencaoRequest: {
+            fim: number;
+        };
+        FazendaLinhaDUA: {
+            adquirente?: string;
+            data?: string;
+            documento?: string;
+            endereco?: string;
+            inscricao?: string;
+            matricula?: string;
+            quitacao?: string;
+            situacao?: string;
+        };
+        FazendaParcelaRequest: {
+            parcelas: number;
+            total: number;
+        };
+        FazendaPecaArquivo: {
+            tipo: string;
+            url?: string;
+        };
+        FazendaPecaGuardar: {
+            object_key: string;
+            tipo: string;
+        };
+        FazendaPecaPedido: {
+            content_type: string;
+            nome: string;
+            tipo: string;
+        };
+        FazendaPlano: {
+            estado: string;
+            parcelas: number;
+            /** Format: date-time */
+            primeiro_vencimento: string;
+            valor: number;
+        };
+        FazendaPrazoPainel: {
+            /** Format: date-time */
+            limite: string;
+            nome: string;
+            situacao: string;
+        };
+        FazendaProcesso: {
+            /** Format: date-time */
+            alerta_limite?: string;
+            aliquota?: number;
+            ano: number;
+            /** Format: date-time */
+            cassacao_ciencia?: string;
+            /** Format: date-time */
+            cassacao_prazo?: string;
+            certidao?: string;
+            /** Format: date-time */
+            ciencia_exigencia?: string;
+            /** Format: date-time */
+            ciencia_recibo?: string;
+            codigo: string;
+            /** Format: date-time */
+            consulta_em?: string;
+            /** Format: date-time */
+            despacho_em?: string;
+            /** Format: uuid */
+            destinatario?: string;
+            entrada: string;
+            execucao?: string;
+            /** Format: date-time */
+            exigencia_aberta?: string;
+            /** Format: date-time */
+            exigencia_prazo?: string;
+            exigencia_prorrogada?: boolean;
+            /** Format: uuid */
+            id: string;
+            isencao_fim?: number;
+            numero: string;
+            pecas?: components["schemas"]["FazendaPecaArquivo"][];
+            pendencia?: string;
+            programa: string;
+            /** Format: date-time */
+            recibo_em: string;
+            selo_ate?: number;
+            selo_criterios?: number;
+            selo_de?: number;
+            selo_percentual?: number;
+            seq: number;
+            situacao: string;
+            titular: string;
+            /** Format: date-time */
+            tqc_assinado_em?: string;
+            /** Format: date-time */
+            tqc_limite?: string;
+            tqc_sem_efeito?: boolean;
+        };
+        FazendaReciboDUA: {
+            falhas: components["schemas"]["FazendaFalhaDUA"][];
+            linhas: number;
+            multa: number;
+            recibo: string;
+        };
+        FazendaReducaoRequest: {
+            condicoes: number;
+            milessimos: number;
+        };
+        FazendaRespostaRequest: {
+            respondeu?: boolean;
+        };
+        FazendaRitoRequest: {
+            rito_entregue?: boolean;
+        };
+        FazendaSeloRequest: {
+            criterios: number;
+        };
+        FazendaSessaoGovBR: {
+            email: string;
+            nome: string;
+            sub: string;
+        };
+        FazendaSimulacao: {
+            aliquota_milessimos?: number;
+            base_itbi?: number;
+            condicoes_itbi?: number;
+            debitos?: components["schemas"]["FazendaDebito"][];
+            inscricao?: string;
+            parcelas?: number;
+        };
+        FazendaSimulado: {
+            devido: number;
+            itbi: number;
+            plano: components["schemas"]["FazendaPlano"];
+            remitido: number;
+        };
+        FazendaTqcRequest: {
+            assinado_em: string;
+        };
+        FazendaTrocaRequest: {
+            code: string;
+            verifier: string;
+        };
         /** @description Uma feature flag alterável em tempo de execução (§ Feature Flags & Configuração Dinâmica). */
         FeatureFlag: {
             description: string;
@@ -5998,6 +9195,13 @@ export interface components {
         FilesUploadResult: {
             file: components["schemas"]["FilesFile"];
             upload: components["schemas"]["ModkitUploadTicket"];
+        };
+        GovbrDesafio: {
+            code_challenge: string;
+            nonce: string;
+            state: string;
+            url: string;
+            verifier: string;
         };
         IaconfigConexaoPublica: {
             chave_final: string;
@@ -6142,6 +9346,10 @@ export interface components {
             sigla?: string;
             slug?: string;
         };
+        IamEstadoSSO: {
+            andamento: boolean;
+            ultima?: components["schemas"]["IamSincronizacaoSSO"];
+        };
         IamLotacao: {
             /** Format: date-time */
             created_at: string;
@@ -6266,6 +9474,18 @@ export interface components {
             description: string;
             key: string;
         };
+        IamSincronizacaoSSO: {
+            /** Format: date-time */
+            batida_em: string;
+            /** Format: date-time */
+            em: string;
+            erro?: string;
+            /** Format: uuid */
+            id: string;
+            relatorio: unknown;
+            /** Format: date-time */
+            terminada_em?: string;
+        };
         IamUnidade: {
             ad_group: string;
             ativo: boolean;
@@ -6346,6 +9566,118 @@ export interface components {
             lotacoes: components["schemas"]["IamLotacao"][];
             roles: string[];
             username: string;
+        };
+        IntegracoesConexao: {
+            /** Format: date-time */
+            created_at: string;
+            created_by: string;
+            dono: string;
+            /** Format: date-time */
+            extraido_em?: string;
+            fuso: string;
+            /** Format: uuid */
+            id: string;
+            modo: string;
+            nome: string;
+            perfil: string;
+            sincronizar: boolean;
+            tem_credenciais: boolean;
+            tem_token: boolean;
+            tipo: string;
+            /** Format: date-time */
+            token_em?: string;
+            /** Format: date-time */
+            updated_at: string;
+            url: string;
+        };
+        IntegracoesConexaoRequest: {
+            fuso?: string;
+            modo?: string;
+            nome: string;
+            perfil?: string;
+            tipo?: string;
+            url?: string;
+        };
+        IntegracoesCredenciaisRequest: {
+            app_token?: string;
+            login?: string;
+            senha?: string;
+            user_token?: string;
+        };
+        IntegracoesFimRequest: {
+            erro?: string;
+            relatorio?: unknown;
+        };
+        IntegracoesItem: {
+            categoria?: number;
+            classe?: string;
+            dados?: unknown;
+            data?: string;
+            entidade?: number;
+            id?: number;
+            minutos?: number;
+            nome?: string;
+            sla?: number;
+            tipo?: string;
+            versao?: string;
+        };
+        IntegracoesItensRequest: {
+            itens?: components["schemas"]["IntegracoesItem"][];
+        };
+        IntegracoesLinha: {
+            catalogo?: string;
+            categoria?: number;
+            categoria_nome?: string;
+            chamados?: number;
+            com_prazo?: number;
+            nivel?: string;
+            oferta?: string;
+            prioridade?: string;
+            secretaria?: string;
+            tipo?: string;
+            /** Format: uuid */
+            unidade_id?: string | null;
+            unidade_nome?: string;
+        };
+        IntegracoesProgressoRequest: {
+            feitos?: number;
+            total?: number;
+        };
+        IntegracoesSincronizacaoRequest: {
+            ligada?: boolean;
+        };
+        IntegracoesSugestaoRequest: {
+            unidades?: {
+                [key: string]: string;
+            };
+        };
+        IntegracoesTabelaRequest: {
+            linhas?: components["schemas"]["IntegracoesLinha"][];
+        };
+        IntegracoesTarefa: {
+            /** Format: date-time */
+            batida_em?: string;
+            /** Format: uuid */
+            conexao_id: string;
+            /** Format: date-time */
+            criada_em: string;
+            erro?: string;
+            estado: string;
+            feitos: number;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            iniciada_em?: string;
+            pedida_por: string;
+            relatorio?: unknown;
+            /** Format: date-time */
+            terminada_em?: string;
+            tipo: string;
+            total: number;
+        };
+        IntegracoesTarefaRequest: {
+            confirmacao?: string;
+            tipo: string;
         };
         Integration: {
             enabled?: boolean;
@@ -6645,6 +9977,90 @@ export interface components {
             ativo?: boolean;
             modulo: string;
         };
+        OcorrenciasAtualizacao: {
+            /** Format: uuid */
+            autor_id?: string;
+            autor_nome?: string;
+            /** Format: date-time */
+            created_at: string;
+            estado: string;
+            /** Format: uuid */
+            id: string;
+            impacto: string;
+            /** Format: uuid */
+            ocorrencia_id: string;
+            texto: string;
+        };
+        OcorrenciasAtualizacaoPublica: {
+            /** Format: date-time */
+            em: string;
+            estado: string;
+            texto: string;
+        };
+        OcorrenciasAtualizacaoRequest: {
+            /** @enum {string} */
+            estado: "investigando" | "identificado" | "monitorando" | "resolvido";
+            /** @enum {string} */
+            impacto: "degradado" | "parcial" | "fora";
+            texto: string;
+        };
+        OcorrenciasCoordenadorRequest: {
+            /** Format: uuid */
+            user_id: string;
+        };
+        OcorrenciasDeclaracaoRequest: {
+            /** Format: uuid */
+            chamado_id?: string | null;
+            /** @enum {string} */
+            impacto: "degradado" | "parcial" | "fora";
+            servicos: string[];
+            texto: string;
+            titulo: string;
+        };
+        OcorrenciasOcorrencia: {
+            atualizacoes: components["schemas"]["OcorrenciasAtualizacao"][];
+            /** Format: uuid */
+            chamado_id?: string;
+            /** Format: uuid */
+            coordenador_id?: string;
+            coordenador_nome?: string;
+            estado: string;
+            /** Format: uuid */
+            id: string;
+            impacto: string;
+            /** Format: date-time */
+            iniciada_em: string;
+            /** Format: date-time */
+            resolvida_em?: string;
+            /** Format: date-time */
+            revisada_em?: string;
+            revisao?: string;
+            servicos: string[];
+            titulo: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        OcorrenciasPublica: {
+            atualizacoes: components["schemas"]["OcorrenciasAtualizacaoPublica"][];
+            estado: string;
+            /** Format: uuid */
+            id: string;
+            impacto: string;
+            /** Format: date-time */
+            iniciada_em: string;
+            /** Format: date-time */
+            resolvida_em?: string;
+            servicos: string[];
+            titulo: string;
+        };
+        OcorrenciasRevisaoRequest: {
+            texto: string;
+        };
+        OcorrenciasSituacao: {
+            abertas: components["schemas"]["OcorrenciasPublica"][];
+            geral: string;
+            recentes: components["schemas"]["OcorrenciasPublica"][];
+        };
         OutboxCounts: {
             failed: number;
             pending: number;
@@ -6750,6 +10166,28 @@ export interface components {
             unidade_id?: string | null;
             utilidade?: string;
         };
+        ProjetosAnexo: {
+            /** Format: uuid */
+            autor_id?: string;
+            autor_nome: string;
+            content_type: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            tamanho: number;
+            /** Format: uuid */
+            tarefa_id: string;
+        };
+        ProjetosAnexoRequest: {
+            nome?: string;
+            object_key?: string;
+        };
+        ProjetosAnexoUploadRequest: {
+            content_type?: string;
+            nome?: string;
+        };
         ProjetosApontamento: {
             /** Format: date-time */
             created_at: string;
@@ -6777,6 +10215,43 @@ export interface components {
             /** Format: uuid */
             tarefa_id?: string | null;
         };
+        ProjetosAtualizacao: {
+            /** Format: uuid */
+            autor_id?: string;
+            autor_nome: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tarefa_id: string;
+            texto: string;
+        };
+        ProjetosCancelamento: {
+            /** Format: uuid */
+            aprovador_id: string;
+            aprovador_nome: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            motivo: string;
+            /** Format: uuid */
+            projeto_id: string;
+        };
+        ProjetosCargaPessoa: {
+            abertas: number;
+            atrasadas: number;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+        };
+        ProjetosCartaRequest: {
+            centro_custo?: string;
+            metodologia?: string;
+            onde?: string;
+            patrocinador?: string;
+        };
         ProjetosEstadoRequest: {
             estado: string;
         };
@@ -6784,7 +10259,66 @@ export interface components {
             items: components["schemas"]["ProjetosApontamento"][];
             resumo: components["schemas"]["ProjetosResumoHorasProjeto"];
         };
+        ProjetosMarco: {
+            acao: string;
+            autor_nome?: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            quando: string;
+            texto: string;
+        };
+        ProjetosMovimento: {
+            /** Format: uuid */
+            autor_id?: string;
+            autor_nome: string;
+            /** Format: date-time */
+            created_at: string;
+            estado_antes: string;
+            estado_depois: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            responsavel_antes_id?: string;
+            responsavel_antes_nome: string;
+            /** Format: uuid */
+            responsavel_depois_id?: string;
+            responsavel_depois_nome: string;
+            /** Format: uuid */
+            tarefa_id: string;
+        };
+        ProjetosPessoa: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            papel?: string;
+        };
+        ProjetosPessoaInput: {
+            /** Format: uuid */
+            id?: string;
+            nome?: string;
+            papel?: string;
+        };
+        ProjetosPrazoAgenda: {
+            /** Format: date-time */
+            data_limite: string;
+            estado: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pai_id?: string;
+            pessoas?: components["schemas"]["ProjetosPessoa"][];
+            /** Format: uuid */
+            projeto_id: string;
+            projeto_numero: number;
+            projeto_titulo: string;
+            /** Format: uuid */
+            responsavel_id?: string;
+            responsavel_nome: string;
+            titulo: string;
+        };
         ProjetosProjeto: {
+            cancelamento?: components["schemas"]["ProjetosCancelamento"];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -6805,11 +10339,15 @@ export interface components {
             numero: number;
             objetivo: string;
             orcamento: number;
+            pode_reabrir?: boolean;
             prioridade: string;
             /** Format: uuid */
             produto_id?: string;
             proximos: string[];
+            reabertura?: components["schemas"]["ProjetosReabertura"];
             tarefas?: components["schemas"]["ProjetosTarefa"][];
+            tarefas_concluidas: number;
+            tarefas_total: number;
             titulo: string;
             /** Format: uuid */
             unidade_id?: string;
@@ -6818,6 +10356,7 @@ export interface components {
             vinculos?: components["schemas"]["ProjetosVinculo"][];
         };
         ProjetosProjetoRequest: {
+            carta?: components["schemas"]["ProjetosCartaRequest"] | null;
             /** Format: date-time */
             data_fim_planejada?: string | null;
             /** Format: date-time */
@@ -6827,6 +10366,7 @@ export interface components {
             /** Format: date-time */
             data_inicio_real?: string | null;
             descricao?: string;
+            etapas?: string[];
             /** Format: uuid */
             gerente_id?: string | null;
             gerente_nome?: string;
@@ -6840,12 +10380,46 @@ export interface components {
             /** Format: uuid */
             unidade_id?: string | null;
         };
+        ProjetosReabertura: {
+            /** Format: uuid */
+            aprovador_id: string;
+            aprovador_nome: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            motivo: string;
+            /** Format: uuid */
+            projeto_id: string;
+        };
+        ProjetosResponsavel: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+        };
         ProjetosResumoHorasProjeto: {
             por_usuario: {
                 [key: string]: number;
             };
             total_custo: number;
             total_horas: number;
+        };
+        ProjetosSalvarCartaRequest: {
+            centro_custo?: string;
+            /** Format: date-time */
+            data_fim_planejada?: string | null;
+            /** Format: date-time */
+            data_inicio_planejada?: string | null;
+            descricao?: string;
+            /** Format: uuid */
+            gerente_id?: string | null;
+            gerente_nome?: string;
+            metodologia?: string;
+            objetivo?: string;
+            onde?: string;
+            orcamento?: number;
+            patrocinador?: string;
+            titulo?: string;
         };
         ProjetosTarefa: {
             /** Format: date-time */
@@ -6857,17 +10431,65 @@ export interface components {
             /** Format: uuid */
             id: string;
             ordem: number;
+            origem?: string;
+            /** Format: uuid */
+            pai_id?: string;
+            pessoas?: components["schemas"]["ProjetosPessoa"][];
+            /** Format: uuid */
+            predecessora_id?: string;
             /** Format: uuid */
             projeto_id: string;
+            relato: string;
+            /** Format: uuid */
+            responsavel_id?: string;
+            responsavel_nome: string;
+            titulo: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ProjetosTarefaMinha: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            data_limite?: string;
+            descricao: string;
+            estado: string;
+            /** Format: uuid */
+            id: string;
+            ordem: number;
+            origem?: string;
+            /** Format: uuid */
+            pai_id?: string;
+            pessoas?: components["schemas"]["ProjetosPessoa"][];
+            /** Format: uuid */
+            predecessora_id?: string;
+            projeto_estado: string;
+            /** Format: uuid */
+            projeto_id: string;
+            projeto_numero: number;
+            projeto_titulo: string;
+            relato: string;
+            /** Format: uuid */
+            responsavel_id?: string;
             responsavel_nome: string;
             titulo: string;
             /** Format: date-time */
             updated_at: string;
         };
         ProjetosTarefaRequest: {
+            /** Format: date-time */
+            data_limite?: string | null;
             descricao?: string;
             estado?: string;
             ordem?: number;
+            /** Format: uuid */
+            pai_id?: string | null;
+            pessoas?: components["schemas"]["ProjetosPessoaInput"][] | null;
+            /** Format: uuid */
+            predecessora_id?: string | null;
+            relato?: string;
+            /** Format: uuid */
+            responsavel_id?: string | null;
             responsavel_nome?: string;
             titulo: string;
         };
@@ -6890,6 +10512,332 @@ export interface components {
             rotulo?: string;
             /** @enum {string} */
             tipo: "mudanca" | "problema" | "ativo" | "solicitacao";
+        };
+        ProjetosVisaoCarta: {
+            centro_custo: string;
+            custo_realizado: number;
+            /** Format: date-time */
+            data_fim_planejada?: string;
+            /** Format: date-time */
+            data_inicio_planejada?: string;
+            descricao: string;
+            etapas_how: number;
+            etapas_how_concluidas: number;
+            existe: boolean;
+            /** Format: uuid */
+            gerente_id?: string;
+            gerente_nome: string;
+            horas_chamados: number;
+            metodologia: string;
+            objetivo: string;
+            onde: string;
+            orcamento: number;
+            patrocinador: string;
+            /** Format: uuid */
+            projeto_id: string;
+            titulo: string;
+            /** Format: uuid */
+            unidade_id?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        ProtocolosAbrirBody: {
+            cpf?: string;
+            data?: string;
+            email?: string;
+            hora?: string;
+            nome?: string;
+            prioridade?: string;
+            respostas?: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            servico_id?: string;
+            telefone?: string;
+        };
+        ProtocolosAgenda: {
+            dias: number[];
+            duracao_min: number;
+            fim: string;
+            inicio: string;
+            vagas_dia: number;
+        };
+        ProtocolosAgendaInput: {
+            dias?: number[];
+            duracao_min?: number;
+            fim?: string;
+            inicio?: string;
+            vagas_dia?: number;
+        };
+        ProtocolosAgendamento: {
+            data: string;
+            hora: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pedido_id: string;
+            /** Format: uuid */
+            servico_id: string;
+            status: string;
+        };
+        ProtocolosArquivoBody: {
+            content_type?: string;
+            nome?: string;
+        };
+        ProtocolosArquivoConsulta: {
+            content_type?: string;
+            cpf?: string;
+            nome?: string;
+        };
+        ProtocolosCampo: {
+            id: string;
+            obrigatorio: boolean;
+            opcoes?: string[];
+            placeholder?: string;
+            revela?: string[];
+            rotulo: string;
+            tipo: string;
+        };
+        ProtocolosCampoInput: {
+            id?: string;
+            obrigatorio?: boolean;
+            opcoes?: string[];
+            placeholder?: string;
+            revela?: string[];
+            rotulo?: string;
+            tipo?: string;
+        };
+        ProtocolosCartaItem: {
+            formulario: components["schemas"]["ProtocolosFormulario"];
+            servico: components["schemas"]["ProtocolosServico"];
+        };
+        ProtocolosConclusaoBody: {
+            decisao?: string;
+            justificativa?: string;
+        };
+        ProtocolosConsulta: {
+            agendamento?: components["schemas"]["ProtocolosAgendamento"];
+            complemento?: string;
+            /** Format: date-time */
+            criado_em: string;
+            historico: components["schemas"]["ProtocolosHistorico"][];
+            nome: string;
+            numero: string;
+            /** Format: date-time */
+            prazo_em?: string;
+            prioridade: string;
+            servico: string;
+            status: string;
+            status_rotulo: string;
+            unidade: string;
+        };
+        ProtocolosEditarBody: {
+            justificativa?: string;
+            respostas?: {
+                [key: string]: unknown;
+            };
+        };
+        ProtocolosEtapa: {
+            id: string;
+            ordem: number;
+            prazo_dias: number;
+            responsavel_id: string;
+            responsavel_tipo: string;
+            status: string;
+        };
+        ProtocolosEtapaInput: {
+            id?: string;
+            ordem?: number;
+            prazo_dias?: number;
+            responsavel_id?: string;
+            responsavel_tipo?: string;
+            status?: string;
+        };
+        ProtocolosFaltaBody: {
+            /** Format: uuid */
+            pedido_id?: string;
+        };
+        ProtocolosFicha: {
+            agendamento?: components["schemas"]["ProtocolosAgendamento"];
+            historico: components["schemas"]["ProtocolosHistorico"][];
+            pedido: components["schemas"]["ProtocolosPedido"];
+        };
+        ProtocolosFormulario: {
+            ativo: boolean;
+            campos: components["schemas"]["ProtocolosCampo"][];
+            /** Format: date-time */
+            created_at: string;
+            descricao: string;
+            /** Format: uuid */
+            id: string;
+            instrucao: string;
+            titulo: string;
+            /** Format: uuid */
+            unidade_id: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ProtocolosFormularioBody: {
+            ativo?: boolean;
+            campos?: components["schemas"]["ProtocolosCampoInput"][];
+            descricao?: string;
+            /** Format: uuid */
+            id?: string;
+            instrucao?: string;
+            titulo?: string;
+            /** Format: uuid */
+            unidade_id?: string;
+        };
+        ProtocolosHistorico: {
+            acao: string;
+            anexos?: string[];
+            /** Format: date-time */
+            created_at: string;
+            descricao: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pedido_id: string;
+            status: string;
+            /** Format: uuid */
+            usuario_id?: string;
+        };
+        ProtocolosOrientacao: {
+            obrigatorio: boolean;
+            texto: string;
+            titulo: string;
+        };
+        ProtocolosOrientacaoInput: {
+            obrigatorio?: boolean;
+            texto?: string;
+            titulo?: string;
+        };
+        ProtocolosPedido: {
+            campos?: components["schemas"]["ProtocolosCampo"][];
+            complemento: string;
+            cpf?: string;
+            /** Format: date-time */
+            created_at: string;
+            decisao: string;
+            /** Format: uuid */
+            departamento_id?: string;
+            email?: string;
+            etapa_id: string;
+            /** Format: uuid */
+            formulario_id: string;
+            /** Format: uuid */
+            id: string;
+            justificativa: string;
+            nome: string;
+            numero: string;
+            /** Format: date-time */
+            prazo_em?: string;
+            prioridade: string;
+            /** Format: uuid */
+            responsavel_id?: string;
+            respostas?: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            servico_id: string;
+            servico_nome: string;
+            situacao_prazo?: string;
+            status: string;
+            telefone?: string;
+            /** Format: uuid */
+            unidade_id: string;
+            unidade_nome?: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            usuario_id?: string;
+        };
+        ProtocolosResponsavelBody: {
+            cpf?: string;
+            nome?: string;
+            /** Format: uuid */
+            unidade_id?: string;
+        };
+        ProtocolosResponsavelTecnico: {
+            ativo: boolean;
+            cpf: string;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+        };
+        ProtocolosRespostaPublica: {
+            arquivos?: string[];
+            cpf?: string;
+            mensagem?: string;
+        };
+        ProtocolosServico: {
+            agenda: components["schemas"]["ProtocolosAgenda"];
+            aprova_sozinho: boolean;
+            ativo: boolean;
+            campo_anonimo: string;
+            categoria: string;
+            /** Format: date-time */
+            created_at: string;
+            descricao: string;
+            destaque: boolean;
+            documentos: components["schemas"]["ProtocolosOrientacao"][];
+            exige_agendamento: boolean;
+            /** Format: uuid */
+            formulario_id: string;
+            /** Format: uuid */
+            id: string;
+            impedir_cpf_aberto: boolean;
+            nome: string;
+            prazo_dias: number;
+            requisitos: components["schemas"]["ProtocolosOrientacao"][];
+            so_responsavel_tecnico: boolean;
+            taxa_centavos: number;
+            /** Format: uuid */
+            unidade_id: string;
+            unidade_nome?: string;
+            /** Format: date-time */
+            updated_at: string;
+            workflow: components["schemas"]["ProtocolosWorkflow"];
+        };
+        ProtocolosServicoInput: {
+            agenda?: components["schemas"]["ProtocolosAgendaInput"];
+            aprova_sozinho?: boolean;
+            ativo?: boolean;
+            campo_anonimo?: string;
+            categoria?: string;
+            /** Format: date-time */
+            created_at?: string;
+            descricao?: string;
+            destaque?: boolean;
+            documentos?: components["schemas"]["ProtocolosOrientacaoInput"][];
+            exige_agendamento?: boolean;
+            /** Format: uuid */
+            formulario_id?: string;
+            /** Format: uuid */
+            id?: string;
+            impedir_cpf_aberto?: boolean;
+            nome?: string;
+            prazo_dias?: number;
+            requisitos?: components["schemas"]["ProtocolosOrientacaoInput"][];
+            so_responsavel_tecnico?: boolean;
+            taxa_centavos?: number;
+            /** Format: uuid */
+            unidade_id?: string;
+            unidade_nome?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            workflow?: components["schemas"]["ProtocolosWorkflowInput"];
+        };
+        ProtocolosTextoBody: {
+            mensagem?: string;
+        };
+        ProtocolosWorkflow: {
+            etapas: components["schemas"]["ProtocolosEtapa"][];
+            ligado: boolean;
+        };
+        ProtocolosWorkflowInput: {
+            etapas?: components["schemas"]["ProtocolosEtapaInput"][];
+            ligado?: boolean;
         };
         QuadrosAtualizarRequest: {
             ativa?: boolean | null;
@@ -6915,6 +10863,71 @@ export interface components {
             nome: string;
             ordem?: number;
             para?: string[];
+        };
+        RiscosCelulaHeatmap: {
+            impacto: number;
+            probabilidade: number;
+            quantidade: number;
+            severidade: number;
+        };
+        RiscosResumoHeatmap: {
+            altos: number;
+            baixos: number;
+            criticos: number;
+            matriz: components["schemas"]["RiscosCelulaHeatmap"][];
+            medios: number;
+            total_riscos: number;
+        };
+        RiscosRisco: {
+            /** Format: uuid */
+            ativo_id?: string;
+            categoria: string;
+            codigo: string;
+            /** Format: date-time */
+            created_at: string;
+            descricao: string;
+            estrategia: string;
+            /** Format: uuid */
+            id: string;
+            impacto: number;
+            /** Format: uuid */
+            mudanca_id?: string;
+            plano_mitigacao: string;
+            probabilidade: number;
+            /** Format: uuid */
+            projeto_id?: string;
+            /** Format: uuid */
+            responsavel_id?: string;
+            responsavel_nome: string;
+            severidade: number;
+            status: string;
+            titulo: string;
+            /** Format: uuid */
+            unidade_id: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RiscosRiscoEntrada: {
+            /** Format: uuid */
+            ativo_id?: string | null;
+            categoria?: string;
+            codigo?: string;
+            descricao?: string;
+            estrategia?: string;
+            impacto?: number;
+            /** Format: uuid */
+            mudanca_id?: string | null;
+            plano_mitigacao?: string;
+            probabilidade?: number;
+            /** Format: uuid */
+            projeto_id?: string | null;
+            /** Format: uuid */
+            responsavel_id?: string | null;
+            responsavel_nome?: string;
+            status?: string;
+            titulo?: string;
+            /** Format: uuid */
+            unidade_id?: string;
         };
         SearchResult: {
             id: string;
@@ -7586,6 +11599,32 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtendimentoAprovacoes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSolicitacao"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtendimentoCandidatos: {
         parameters: {
             query?: {
@@ -7632,6 +11671,229 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["AtendimentoOferta"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoCatalogoCategorias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoCategoria"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoCategorias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoCategoria"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtendimentoCategorias: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoCategoriaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoCategoria"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoCategoriasId: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoCategoriaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoCategoria"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteAtendimentoCategoriasId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoCategoriasIdSla: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoVincularCategoriaSLARequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoContratosDeApoio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoContratoDeApoio"][];
                     };
                 };
             };
@@ -7807,6 +12069,115 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    postAtendimentoEventosAlertmanager: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoWebhookAlertmanager"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoResultadoEventos"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description Nenhuma oferta escolhida para os alertas. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoEventosConfiguracao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoConfiguracaoEventos"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoEventosConfiguracao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoConfiguracaoEventosRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoConfiguracaoEventos"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtendimentoFeriados: {
         parameters: {
             query?: {
@@ -7907,6 +12278,15 @@ export interface operations {
                 tipo?: string;
                 estado?: string;
                 responsavel?: string;
+                q?: string;
+                prioridade?: string;
+                unidade?: string;
+                categoria?: string;
+                ativo_id?: string;
+                aberta_de?: string;
+                aberta_ate?: string;
+                ordem?: string;
+                sentido?: string;
             };
             header?: never;
             path?: never;
@@ -8016,6 +12396,108 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtendimentoIa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoEstadoIA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoIaIndicadores: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoIndicadorIA"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtendimentoIaSugestoesIdDecisao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoDecisaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSugestao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description A sugestão já foi decidida. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtendimentoMinhas: {
         parameters: {
             query?: {
@@ -8025,6 +12507,15 @@ export interface operations {
                 tipo?: string;
                 estado?: string;
                 responsavel?: string;
+                q?: string;
+                prioridade?: string;
+                unidade?: string;
+                categoria?: string;
+                ativo_id?: string;
+                aberta_de?: string;
+                aberta_ate?: string;
+                ordem?: string;
+                sentido?: string;
             };
             header?: never;
             path?: never;
@@ -8183,6 +12674,74 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtendimentoOfertasIdEtapas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoEtapaAprovacao"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoOfertasIdEtapas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoEtapasRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoEtapaAprovacao"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtendimentoOfertasIdRespostas: {
         parameters: {
             query?: never;
@@ -8240,6 +12799,74 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["AtendimentoRespostaPronta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoOfertasIdTarefas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoModeloTarefa"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoOfertasIdTarefas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoModeloRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoModeloTarefa"][];
                     };
                 };
             };
@@ -8494,6 +13121,194 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtendimentoRelatorioSecretarias: {
+        parameters: {
+            query?: {
+                dias?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoRelatorio"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoSlas: {
+        parameters: {
+            query?: {
+                unidade_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSLA"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtendimentoSlas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoSLARequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSLA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoSlasId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSLA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoSlasId: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoSLARequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSLA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteAtendimentoSlasId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postAtendimentoSolicitacoes: {
         parameters: {
             query?: never;
@@ -8652,6 +13467,92 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    postAtendimentoSolicitacoesIdAprovacao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoDecisaoAprovacaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSolicitacao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description O pedido não espera aprovação. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoSolicitacoesIdAtivo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoAtivoVinculoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoDetalhe"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postAtendimentoSolicitacoesIdAvaliacao: {
         parameters: {
             query?: never;
@@ -8767,6 +13668,45 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    putAtendimentoSolicitacoesIdContrato: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoContratoApoioRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoDetalhe"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postAtendimentoSolicitacoesIdEstado: {
         parameters: {
             query?: never;
@@ -8800,6 +13740,181 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoSolicitacoesIdFilhos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSolicitacao"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtendimentoSolicitacoesIdIaClassificacao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSugestao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["IntegrationUnavailable"];
+        };
+    };
+    postAtendimentoSolicitacoesIdIaResolucao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSugestao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtendimentoSolicitacoesIdIaResumo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoSugestao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["IntegrationUnavailable"];
+        };
+    };
+    putAtendimentoSolicitacoesIdIncidentePai: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoIncidentePaiRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoDetalhe"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["ModuleDisabledOrNotFound"];
             422: components["responses"]["ValidationError"];
             429: components["responses"]["TooManyRequests"];
@@ -8891,6 +14006,46 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AtendimentoSegredoVinculoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoDetalhe"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtendimentoSolicitacoesIdTarefasTarefaId: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoTarefaRequest"];
             };
         };
         responses: {
@@ -9154,6 +14309,70 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtendimentoXla: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoMetasXLA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtendimentoXla: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtendimentoMetasXLARequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtendimentoMetasXLA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["ModuleDisabledOrNotFound"];
             422: components["responses"]["ValidationError"];
             429: components["responses"]["TooManyRequests"];
@@ -10544,6 +15763,248 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getCanaisEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["CanaisEmail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putCanaisEmail: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanaisEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["CanaisEmail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postCanaisEmailTestar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanaisTesteRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getCanaisWhatsapp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["CanaisWhatsApp"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putCanaisWhatsapp: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanaisWhatsAppRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["CanaisWhatsApp"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postCanaisWhatsappTestar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanaisTesteWhatsAppRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getCanaisWhatsappWebhookToken: {
+        parameters: {
+            query?: {
+                "hub.mode"?: string;
+                "hub.verify_token"?: string;
+                "hub.challenge"?: string;
+            };
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Success"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postCanaisWhatsappWebhookToken: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Success"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getCatalogAdminServices: {
         parameters: {
             query?: {
@@ -11570,6 +17031,41 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    putContratosContratosIdPrazo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContratosPrazoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getContratosFornecedores: {
         parameters: {
             query?: never;
@@ -11748,6 +17244,24 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getDirectoryAvatarsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Success"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getDirectoryMe: {
         parameters: {
             query?: never;
@@ -11801,6 +17315,96 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["DirectoryPerson"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putDirectoryMeAvatar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectoryConfirmarAvatar"];
+            };
+        };
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteDirectoryMeAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postDirectoryMeAvatarUploads: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectoryPedidoAvatar"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ModkitUploadTicket"];
                     };
                 };
             };
@@ -12309,6 +17913,965 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getFazendaAutenticidadeCodigo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaAutenticidade"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getFazendaGovbr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["GovbrDesafio"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaGovbrSessao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaTrocaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaSessaoGovBR"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getFazendaProcessos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessos: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaAbertura"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosAlertas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            publicadas: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosDua: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaDuaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaReciboDUA"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getFazendaProcessosPainel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaPrazoPainel"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getFazendaProcessosId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdAviso: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaAvisoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdBaixa: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaBaixaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdCassacao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdCertidao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaCertidaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdConsulta: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdDecisao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdExecucao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaExecucaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdExigencia: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaFatoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdIsencao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaIsencaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdParcelamento: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaParcelaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaPlano"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdPecas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaPecaGuardar"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdPecasUpload: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaPecaPedido"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ModkitUploadTicket"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdRecurso: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaRitoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdReducao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaReducaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdResposta: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaRespostaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdSelo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaSeloRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaProcessosIdTqc: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaTqcRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postFazendaSimulador: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FazendaSimulacao"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["FazendaSimulado"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getFilesBrowse: {
@@ -13509,6 +20072,68 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getIamSsoSincronizacao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["IamEstadoSSO"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIamSsoSincronizar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getIamUnidades: {
         parameters: {
             query?: {
@@ -13639,6 +20264,710 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConectorItens: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesItensRequest"];
+            };
+        };
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConectorTarefa: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["IntegracoesTarefa"];
+                    };
+                };
+            };
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConectorTarefasIdFim: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesFimRequest"];
+            };
+        };
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConectorTarefasIdProgresso: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesProgressoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getIntegracoesConectorVersoes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getIntegracoesConexoes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConexoes: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesConexaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["IntegracoesConexao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getIntegracoesConexoesId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putIntegracoesConexoesId: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesConexaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteIntegracoesConexoesId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putIntegracoesConexoesIdCredenciais: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesCredenciaisRequest"];
+            };
+        };
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getIntegracoesConexoesIdInventario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putIntegracoesConexoesIdSincronizacao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesSincronizacaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["IntegracoesConexao"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getIntegracoesConexoesIdTabela: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putIntegracoesConexoesIdTabela: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesTabelaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConexoesIdTabelaSugestao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesSugestaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getIntegracoesConexoesIdTarefas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConexoesIdTarefas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegracoesTarefaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["IntegracoesTarefa"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesConexoesIdToken: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteIntegracoesConexoesIdToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postIntegracoesTarefasIdCancelar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 id: string;
             };
@@ -13845,6 +21174,66 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getMeContato: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["CanaisContato"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putMeContato: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanaisContatoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["CanaisContato"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     postMercurioDirect: {
@@ -14686,10 +22075,248 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getOcorrencias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasOcorrencia"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postOcorrencias: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OcorrenciasDeclaracaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasOcorrencia"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getOcorrenciasId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasOcorrencia"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postOcorrenciasIdAtualizacoes: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OcorrenciasAtualizacaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasOcorrencia"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description A ocorrência já foi resolvida, ou a revisão veio antes de resolver. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putOcorrenciasIdCoordenador: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OcorrenciasCoordenadorRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasOcorrencia"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description A ocorrência já foi resolvida, ou a revisão veio antes de resolver. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putOcorrenciasIdRevisao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OcorrenciasRevisaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasOcorrencia"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description A ocorrência já foi resolvida, ou a revisão veio antes de resolver. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getProblemas: {
         parameters: {
             query?: {
                 solicitacao_id?: string;
+                ativo_id?: string;
                 estado?: string;
                 q?: string;
             };
@@ -15192,8 +22819,11 @@ export interface operations {
     getProjetos: {
         parameters: {
             query?: {
+                produto_id?: string;
+                alvo_id?: string;
                 estado?: string;
                 q?: string;
+                alvo_tipo?: string;
             };
             header?: never;
             path?: never;
@@ -15245,6 +22875,89 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["ProjetosProjeto"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosCarga: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosCargaPessoa"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosMinhas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosTarefaMinha"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosPrazos: {
+        parameters: {
+            query?: {
+                mes?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosPrazoAgenda"][];
                     };
                 };
             };
@@ -15415,6 +23128,115 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    postProjetosIdCancelamento: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    motivo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosProjeto"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdCarta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosVisaoCarta"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putProjetosIdCarta: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjetosSalvarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosVisaoCarta"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postProjetosIdEstado: {
         parameters: {
             query?: never;
@@ -15444,6 +23266,206 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["ProjetosProjeto"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdHistorico: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosMarco"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdParticipantes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosPessoa"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProjetosIdParticipantes: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosPessoa"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteProjetosIdParticipantesPessoaId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                pessoaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosPessoa"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProjetosIdReabertura: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    motivo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosProjeto"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdResponsaveis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosResponsavel"][];
                     };
                 };
             };
@@ -15563,7 +23585,9 @@ export interface operations {
     };
     deleteProjetosIdTarefasTarefaId: {
         parameters: {
-            query?: never;
+            query?: {
+                confirmar?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -15579,6 +23603,251 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdTarefasTarefaIdAnexos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosAnexo"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProjetosIdTarefasTarefaIdAnexos: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjetosAnexoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosAnexo"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProjetosIdTarefasTarefaIdAnexosUploads: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjetosAnexoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ModkitUploadTicket"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdTarefasTarefaIdAnexosAnexoId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tarefaId: string;
+                anexoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdTarefasTarefaIdAtualizacoes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosAtualizacao"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProjetosIdTarefasTarefaIdAtualizacoes: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    texto?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosAtualizacao"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProjetosIdTarefasTarefaIdMovimentos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tarefaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProjetosMovimento"][];
+                    };
+                };
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -15672,6 +23941,872 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosBalcao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosAbrirBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosCarta: {
+        parameters: {
+            query?: {
+                unidade?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosServico"][];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosCartaId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosCartaItem"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosCartaIdArquivo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosArquivoBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ModkitUploadTicket"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosCartaIdPedido: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosAbrirBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description O horário pedido não está livre. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosConsultaNumero: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                numero: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosConsulta"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosConsultaNumeroArquivo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                numero: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosArquivoConsulta"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ModkitUploadTicket"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosConsultaNumeroResposta: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                numero: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosRespostaPublica"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosConsulta"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosFaltas: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosFaltaBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            /** @description A falta deste horário já foi registrada. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosFormularios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosFormulario"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosFormularios: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosFormularioBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosFormulario"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosPedidos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosPedidosId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosFicha"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosPedidosIdArquivo: {
+        parameters: {
+            query?: {
+                campo?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdAvancar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdCancelar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdComplemento: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosTextoBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdConcluir: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosConclusaoBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdEditar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosEditarBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdNota: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosTextoBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosPedidosIdResposta: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosTextoBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPedido"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosResponsaveis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosResponsavelTecnico"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosResponsaveis: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosResponsavelBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosResponsavelTecnico"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosServicos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosServico"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosServicos: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosServicoInput"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosServico"];
+                    };
+                };
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -15780,6 +24915,196 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getRiscos: {
+        parameters: {
+            query?: {
+                unidade_id?: string;
+                categoria?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["RiscosRisco"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postRiscos: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiscosRiscoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["RiscosRisco"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getRiscosHeatmap: {
+        parameters: {
+            query?: {
+                unidade_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["RiscosResumoHeatmap"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getRiscosId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["RiscosRisco"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putRiscosId: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiscosRiscoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["RiscosRisco"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteRiscosId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["ModuleDisabledOrNotFound"];
             422: components["responses"]["ValidationError"];
             429: components["responses"]["TooManyRequests"];
@@ -16073,6 +25398,31 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["SignumVerification"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["OcorrenciasSituacao"];
                     };
                 };
             };

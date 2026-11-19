@@ -27,6 +27,8 @@ var (
 	ErrCPFCadastrado  = errors.New("protocolos: CPF já cadastrado como responsável técnico")
 	ErrBloqueio       = errors.New("protocolos: agendamento bloqueado por faltas")
 	ErrSemVaga        = errors.New("protocolos: sem horário nos próximos 30 dias")
+	ErrVaga           = errors.New("protocolos: horário indisponível")
+	ErrFalta          = errors.New("protocolos: falta já registrada neste horário")
 )
 
 // Cuiaba é o fuso do recibo, do prazo e do agendamento (UTC−4, sem horário de verão).
@@ -158,6 +160,11 @@ const (
 	DecisaoFavoravel       = "favoravel"
 	DecisaoDesfavoravel    = "desfavoravel"
 	LimiteBuscaAgendamento = 30
+	HorarioAgendado        = "agendado"
+	HorarioConfirmado      = "confirmado"
+	HorarioFalta           = "falta"
+	AcaoNota               = "nota"
+	AcaoEdicao             = "edicao"
 )
 
 var (
@@ -692,8 +699,53 @@ func minutos(hhmm string) int {
 	return h*60 + m
 }
 
-// ProcurarVaga anda até 30 dias a partir de amanhã em Cuiabá.
-func ProcurarVaga(a Agenda, agora time.Time, ocupados func(dia string) (int, error)) (string, string, error) {
+// NormalizarHora aceita HH:MM e HH:MM:SS. Fora disso, devolve vazio.
+func NormalizarHora(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) >= 8 && s[5] == ':' {
+		s = s[:5]
+	}
+	if horaMinuto.MatchString(s) {
+		return s
+	}
+	return ""
+}
+
+// Grade são os horários do dia, do início até o fim, no passo da duração, até as vagas.
+func (a Agenda) Grade() []string {
+	var out []string
+	for i := 0; i < a.VagasDia; i++ {
+		hora, ok := a.HorarioLivre(i)
+		if !ok {
+			break
+		}
+		out = append(out, hora)
+	}
+	return out
+}
+
+// HoraNaGrade diz se o horário pedido é um intervalo da grade.
+func (a Agenda) HoraNaGrade(hora string) bool {
+	return slices.Contains(a.Grade(), NormalizarHora(hora))
+}
+
+func (a Agenda) primeiraLivre(tomadas []string) string {
+	ocupada := map[string]bool{}
+	for _, hora := range tomadas {
+		if n := NormalizarHora(hora); n != "" {
+			ocupada[n] = true
+		}
+	}
+	for _, hora := range a.Grade() {
+		if !ocupada[hora] {
+			return hora
+		}
+	}
+	return ""
+}
+
+// ProcurarVaga anda até 30 dias a partir de amanhã em Cuiabá e pula horário já tomado.
+func ProcurarVaga(a Agenda, agora time.Time, ocupadas func(dia string) ([]string, error)) (string, string, error) {
 	if err := a.Validar(); err != nil {
 		return "", "", err
 	}
@@ -705,11 +757,11 @@ func ProcurarVaga(a Agenda, agora time.Time, ocupados func(dia string) (int, err
 			continue
 		}
 		chave := dia.Format("2006-01-02")
-		n, err := ocupados(chave)
+		tomadas, err := ocupadas(chave)
 		if err != nil {
 			return "", "", err
 		}
-		if hora, ok := a.HorarioLivre(n); ok {
+		if hora := a.primeiraLivre(tomadas); hora != "" {
 			return chave, hora, nil
 		}
 	}
@@ -972,6 +1024,22 @@ func (p Pedido) Concluir(decisao, justificativa string, agora time.Time) (Pedido
 	return p, nil
 }
 
+// Editar troca as respostas do pedido aberto. O arquivo permanece o que já foi guardado.
+func (p Pedido) Editar(respostas map[string]any, agora time.Time) (Pedido, error) {
+	if err := p.aberto(); err != nil {
+		return Pedido{}, err
+	}
+	if err := RespostasValidas(p.Campos, respostas); err != nil {
+		return Pedido{}, err
+	}
+	if respostas == nil {
+		respostas = map[string]any{}
+	}
+	p.Respostas = respostas
+	p.UpdatedAt = agora
+	return p, nil
+}
+
 // Cancelar encerra o pedido.
 func (p Pedido) Cancelar(agora time.Time) (Pedido, error) {
 	if err := p.aberto(); err != nil {
@@ -991,10 +1059,16 @@ func Publico(p Pedido, campoAnonimo string, historico []Historico, agenda *Agend
 	if historico == nil {
 		historico = []Historico{}
 	}
-	publico := make([]Historico, len(historico))
-	for i, h := range historico {
+	publico := make([]Historico, 0, len(historico))
+	for _, h := range historico {
+		if h.Acao == AcaoNota {
+			continue
+		}
 		h.Anexos = nil
-		publico[i] = h
+		if h.Acao == AcaoEdicao {
+			h.Descricao = "pedido atualizado"
+		}
+		publico = append(publico, h)
 	}
 	historico = publico
 	var comp string
@@ -1006,6 +1080,15 @@ func Publico(p Pedido, campoAnonimo string, historico []Historico, agenda *Agend
 		Servico: p.ServicoNome, Unidade: p.UnidadeNome, CriadoEm: p.CreatedAt,
 		PrazoEm: p.PrazoEm, Complemento: comp, Historico: historico, Agendamento: agenda,
 	}
+}
+
+// TextoInterno é a nota, a resposta da mesa ou a justificativa da edição.
+func TextoInterno(mensagem string, max int) (string, error) {
+	mensagem = strings.TrimSpace(mensagem)
+	if mensagem == "" || max < 1 || utf8.RuneCountInString(mensagem) > max {
+		return "", ErrInvalido
+	}
+	return mensagem, nil
 }
 
 // Aviso é o texto que pode sair do sistema: número, fato e orientação.

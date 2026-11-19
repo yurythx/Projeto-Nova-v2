@@ -8791,6 +8791,16 @@ components:
                     type: string
             type: object
             x-projeto-nova-generated: true
+        ProtocolosArquivoConsulta:
+            properties:
+                content_type:
+                    type: string
+                cpf:
+                    type: string
+                nome:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
         ProtocolosCampo:
             properties:
                 id:
@@ -8885,6 +8895,8 @@ components:
                     type: string
                 status:
                     type: string
+                status_rotulo:
+                    type: string
                 unidade:
                     type: string
             required:
@@ -8895,7 +8907,17 @@ components:
                 - prioridade
                 - servico
                 - status
+                - status_rotulo
                 - unidade
+            type: object
+            x-projeto-nova-generated: true
+        ProtocolosEditarBody:
+            properties:
+                justificativa:
+                    type: string
+                respostas:
+                    additionalProperties: {}
+                    type: object
             type: object
             x-projeto-nova-generated: true
         ProtocolosEtapa:
@@ -8939,9 +8961,7 @@ components:
             x-projeto-nova-generated: true
         ProtocolosFaltaBody:
             properties:
-                cpf:
-                    type: string
-                unidade_id:
+                pedido_id:
                     format: uuid
                     type: string
             type: object
@@ -9025,6 +9045,10 @@ components:
             properties:
                 acao:
                     type: string
+                anexos:
+                    items:
+                        type: string
+                    type: array
                 created_at:
                     format: date-time
                     type: string
@@ -9124,6 +9148,8 @@ components:
                     type: string
                 servico_nome:
                     type: string
+                situacao_prazo:
+                    type: string
                 status:
                     type: string
                 telefone:
@@ -9186,6 +9212,18 @@ components:
                 - nome
             type: object
             x-projeto-nova-generated: true
+        ProtocolosRespostaPublica:
+            properties:
+                arquivos:
+                    items:
+                        type: string
+                    type: array
+                cpf:
+                    type: string
+                mensagem:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
         ProtocolosServico:
             properties:
                 agenda:
@@ -9233,6 +9271,8 @@ components:
                     type: integer
                 unidade_id:
                     format: uuid
+                    type: string
+                unidade_nome:
                     type: string
                 updated_at:
                     format: date-time
@@ -9310,6 +9350,8 @@ components:
                     type: integer
                 unidade_id:
                     format: uuid
+                    type: string
+                unidade_nome:
                     type: string
                 updated_at:
                     format: date-time
@@ -25718,6 +25760,53 @@ paths:
             summary: Protocolos — Executar ação /protocolos/carta/{id}/arquivo
             tags:
                 - protocolos
+    /api/v1/protocolos/carta/{id}/pedido:
+        post:
+            description: Abre o pedido na carta. A hora precisa estar na grade do serviço e ainda estar livre.
+            operationId: postProtocolosCartaIdPedido
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosAbrirBody'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosPedido'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: O horário pedido não está livre.
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Protocolos — Executar ação /protocolos/carta/{id}/pedido
+            tags:
+                - protocolos
     /api/v1/protocolos/consulta/{numero}:
         get:
             operationId: getProtocolosConsultaNumero
@@ -25750,9 +25839,89 @@ paths:
             summary: Protocolos — Obter /protocolos/consulta/{numero}
             tags:
                 - protocolos
+    /api/v1/protocolos/consulta/{numero}/arquivo:
+        post:
+            operationId: postProtocolosConsultaNumeroArquivo
+            parameters:
+                - in: path
+                  name: numero
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosArquivoConsulta'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ModkitUploadTicket'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Protocolos — Executar ação /protocolos/consulta/{numero}/arquivo
+            tags:
+                - protocolos
+    /api/v1/protocolos/consulta/{numero}/resposta:
+        post:
+            operationId: postProtocolosConsultaNumeroResposta
+            parameters:
+                - in: path
+                  name: numero
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosRespostaPublica'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosConsulta'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Protocolos — Executar ação /protocolos/consulta/{numero}/resposta
+            tags:
+                - protocolos
     /api/v1/protocolos/faltas:
         post:
-            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A falta vale para o pedido informado e só conta uma vez naquele horário.
             operationId: postProtocolosFaltas
             parameters:
                 - $ref: '#/components/parameters/IdempotencyKey'
@@ -25784,6 +25953,12 @@ paths:
                     $ref: '#/components/responses/Forbidden'
                 "404":
                     $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Envelope'
+                    description: A falta deste horário já foi registrada.
                 "422":
                     $ref: '#/components/responses/ValidationError'
                 "429":
@@ -26146,9 +26321,101 @@ paths:
             summary: Protocolos — Executar ação /protocolos/pedidos/{id}/concluir
             tags:
                 - protocolos
+    /api/v1/protocolos/pedidos/{id}/editar:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A edição exige justificativa. A consulta pública mostra apenas que o pedido foi atualizado.
+            operationId: postProtocolosPedidosIdEditar
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosEditarBody'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosPedido'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolos — Executar ação /protocolos/pedidos/{id}/editar
+            tags:
+                - protocolos
+    /api/v1/protocolos/pedidos/{id}/nota:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A nota fica no histórico da mesa e não aparece na consulta pública.
+            operationId: postProtocolosPedidosIdNota
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosTextoBody'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosPedido'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolos — Executar ação /protocolos/pedidos/{id}/nota
+            tags:
+                - protocolos
     /api/v1/protocolos/pedidos/{id}/resposta:
         post:
-            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A mesa registra o texto recebido. Sem texto o pedido continua em complementação.
             operationId: postProtocolosPedidosIdResposta
             parameters:
                 - in: path
@@ -26157,6 +26424,13 @@ paths:
                   schema:
                     type: string
                 - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosTextoBody'
+                required: true
+                x-projeto-nova-generated: true
             responses:
                 "200":
                     content:
@@ -26186,6 +26460,39 @@ paths:
             tags:
                 - protocolos
     /api/v1/protocolos/responsaveis:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getProtocolosResponsaveis
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/ProtocolosResponsavelTecnico'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolos — Listar/consultar /protocolos/responsaveis
+            tags:
+                - protocolos
         post:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
             operationId: postProtocolosResponsaveis

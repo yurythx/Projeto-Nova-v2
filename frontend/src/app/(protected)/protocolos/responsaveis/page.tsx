@@ -26,7 +26,9 @@ export default function ResponsaveisPage() {
   const { can } = usePlataforma();
   const { run, pending } = useAction();
   const [ultimo, setUltimo] = useState<Responsavel | null>(null);
-  const lista = useApiQuery<Responsavel[]>(can("protocolos:gerir") ? "v1/protocolos/responsaveis" : null);
+  const lista = useApiQuery<Responsavel[]>(
+    can("protocolos:gerir") ? "v1/protocolos/responsaveis" : null,
+  );
 
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -68,7 +70,14 @@ export default function ResponsaveisPage() {
             <form onSubmit={(e) => void salvar(e)} className="grid gap-3 sm:grid-cols-2">
               <UnidadeDonaSelect id="unidade-responsavel" permission="protocolos:gerir" exigir />
               <Input id="nome" name="nome" label="Nome *" required minLength={2} maxLength={200} />
-              <Input id="cpf" name="cpf" label="CPF *" required inputMode="numeric" maxLength={14} />
+              <Input
+                id="cpf"
+                name="cpf"
+                label="CPF *"
+                required
+                inputMode="numeric"
+                maxLength={14}
+              />
               <div className="sm:col-span-2">
                 <Button type="submit" loading={pending}>
                   Cadastrar
@@ -77,7 +86,8 @@ export default function ResponsaveisPage() {
             </form>
             {ultimo && (
               <p className="mt-4 text-sm">
-                {ultimo.nome} ficou ativo ({ultimo.cpf}). O serviço exclusivo confere o CPF na abertura do pedido.
+                {ultimo.nome} ficou ativo ({ultimo.cpf}). O serviço exclusivo confere o CPF na
+                abertura do pedido.
               </p>
             )}
           </CardContent>

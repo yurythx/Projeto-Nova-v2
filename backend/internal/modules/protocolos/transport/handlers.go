@@ -29,14 +29,16 @@ type Casos interface {
 	LinkArquivo(ctx context.Context, pedido uuid.UUID, campo string) (string, error)
 	CadastrarResponsavel(ctx context.Context, nome, cpf string, unidade uuid.UUID) (domain.ResponsavelTecnico, error)
 	ListarResponsaveis(ctx context.Context) ([]domain.ResponsavelTecnico, error)
-	RegistrarFalta(ctx context.Context, cpf string, unidade uuid.UUID) error
+	RegistrarFalta(ctx context.Context, pedido uuid.UUID) error
 	Abrir(ctx context.Context, in application.Abertura, balcao bool) (domain.Pedido, error)
 	Consultar(ctx context.Context, numero string) (domain.Consulta, error)
 	ResponderPublico(ctx context.Context, numero, cpf, mensagem string, arquivos []string) (domain.Consulta, error)
 	ListarPedidos(ctx context.Context) ([]domain.Pedido, error)
 	BuscarPedido(ctx context.Context, id uuid.UUID) (application.Ficha, error)
 	Complementar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
-	Responder(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
+	Responder(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
+	Anotar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
+	Editar(ctx context.Context, id uuid.UUID, justificativa string, respostas map[string]any) (domain.Pedido, error)
 	Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
 	Concluir(ctx context.Context, id uuid.UUID, decisao, justificativa string) (domain.Pedido, error)
 	Cancelar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
@@ -147,8 +149,7 @@ func (h *Handlers) ListarResponsaveis(w http.ResponseWriter, r *http.Request) {
 }
 
 type faltaBody struct {
-	CPF       string    `json:"cpf"`
-	UnidadeID uuid.UUID `json:"unidade_id"`
+	PedidoID uuid.UUID `json:"pedido_id"`
 }
 
 func (h *Handlers) Falta(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +158,11 @@ func (h *Handlers) Falta(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	if err := h.casos.RegistrarFalta(r.Context(), body.CPF, body.UnidadeID); err != nil {
+	if body.PedidoID == uuid.Nil {
+		h.fail(w, r, apperrors.BadRequest("pedido inválido"))
+		return
+	}
+	if err := h.casos.RegistrarFalta(r.Context(), body.PedidoID); err != nil {
 		h.fail(w, r, err)
 		return
 	}
@@ -377,7 +382,65 @@ func (h *Handlers) Complementar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) Responder(w http.ResponseWriter, r *http.Request) {
-	h.simples(w, r, h.casos.Responder)
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		h.fail(w, r, apperrors.BadRequest("pedido inválido"))
+		return
+	}
+	var body textoBody
+	if err := httputil.Bind(w, r, &body); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	p, err := h.casos.Responder(r.Context(), id, body.Mensagem)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, p)
+}
+
+func (h *Handlers) Anotar(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		h.fail(w, r, apperrors.BadRequest("pedido inválido"))
+		return
+	}
+	var body textoBody
+	if err := httputil.Bind(w, r, &body); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	p, err := h.casos.Anotar(r.Context(), id, body.Mensagem)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, p)
+}
+
+type editarBody struct {
+	Justificativa string         `json:"justificativa"`
+	Respostas     map[string]any `json:"respostas"`
+}
+
+func (h *Handlers) Editar(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		h.fail(w, r, apperrors.BadRequest("pedido inválido"))
+		return
+	}
+	var body editarBody
+	if err := httputil.Bind(w, r, &body); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	p, err := h.casos.Editar(r.Context(), id, body.Justificativa, body.Respostas)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, p)
 }
 func (h *Handlers) Avancar(w http.ResponseWriter, r *http.Request) { h.simples(w, r, h.casos.Avancar) }
 func (h *Handlers) Cancelar(w http.ResponseWriter, r *http.Request) {

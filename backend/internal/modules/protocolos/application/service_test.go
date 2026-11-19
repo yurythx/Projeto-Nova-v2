@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,7 +33,7 @@ func ctxGestao(un uuid.UUID) context.Context {
 func TestMapErrorESorteio(t *testing.T) {
 	casos := []error{
 		domain.ErrNaoEncontrado, domain.ErrInvalido, domain.ErrEstadoFinal, domain.ErrComplemento,
-		domain.ErrNumeroRepetido, domain.ErrCPFAberto, domain.ErrResponsavel, domain.ErrCPFCadastrado, domain.ErrBloqueio, domain.ErrSemVaga,
+		domain.ErrNumeroRepetido, domain.ErrCPFAberto, domain.ErrResponsavel, domain.ErrCPFCadastrado, domain.ErrBloqueio, domain.ErrSemVaga, domain.ErrVaga, domain.ErrFalta,
 	}
 	for _, err := range casos {
 		if MapError(err) == err {
@@ -124,7 +125,7 @@ func TestFluxoDoPedido(t *testing.T) {
 		t.Fatal(consulta, err)
 	}
 	lista, err := s.ListarPedidos(ctx)
-	if err != nil || len(lista) < 2 || lista[0].SituacaoPrazo == "" {
+	if err != nil || len(lista) < 2 || lista[0].SituacaoPrazo == "" || lista[0].Respostas != nil || lista[0].Campos != nil {
 		t.Fatal(len(lista), lista, err)
 	}
 	ficha, err := s.BuscarPedido(ctx, ped.ID)
@@ -137,8 +138,15 @@ func TestFluxoDoPedido(t *testing.T) {
 	if _, err := s.Avancar(ctx, ped.ID); !errors.Is(err, domain.ErrComplemento) {
 		t.Fatal(err)
 	}
-	if _, err := s.Responder(ctx, ped.ID); err != nil {
+	if _, err := s.Responder(ctx, ped.ID, "  "); !errors.Is(err, domain.ErrInvalido) {
 		t.Fatal(err)
+	}
+	if _, err := s.Responder(ctx, ped.ID, "recebido no balcão"); err != nil {
+		t.Fatal(err)
+	}
+	ficha, err = s.BuscarPedido(ctx, ped.ID)
+	if err != nil || ficha.Historico[len(ficha.Historico)-1].Descricao != "recebido no balcão" {
+		t.Fatal(ficha.Historico, err)
 	}
 	if _, err := s.Concluir(ctx, ped.ID, domain.DecisaoFavoravel, "deferido"); err != nil {
 		t.Fatal(err)
@@ -146,7 +154,7 @@ func TestFluxoDoPedido(t *testing.T) {
 	if _, err := s.Cancelar(ctx, balcao.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.RegistrarFalta(ctx, "12345678900", un); err != nil {
+	if err := s.RegistrarFalta(ctx, ped.ID); !errors.Is(err, domain.ErrInvalido) {
 		t.Fatal(err)
 	}
 	outro := uuid.New()
@@ -247,7 +255,10 @@ func TestAgendamentoEFalhas(t *testing.T) {
 		t.Fatal(marcado, err)
 	}
 	m.resp["11122233344"] = true
-	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Pedro Alves", CPF: "11122233344", Data: "2026-11-16", Hora: "09:00", Respostas: map[string]any{"nome": "Pedro"}}, false); err != nil && !errors.Is(err, domain.ErrSemVaga) && !errors.Is(err, domain.ErrInvalido) {
+	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Pedro Alves", CPF: "11122233344", Data: "2026-11-16", Hora: "09:00", Respostas: map[string]any{"nome": "Pedro"}}, false); !errors.Is(err, domain.ErrVaga) {
+		t.Fatal(err)
+	}
+	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Pedro Alves", CPF: "11122233344", Data: "2026-11-16", Hora: "03:00", Respostas: map[string]any{"nome": "Pedro"}}, false); !errors.Is(err, domain.ErrInvalido) {
 		t.Fatal(err)
 	}
 	m.faltas, m.ultima = 2, s.agora()
@@ -315,8 +326,8 @@ func TestRecusasDeCadastro(t *testing.T) {
 	if _, err := s.CadastrarResponsavel(ctx, "A", "1", un); err == nil {
 		t.Fatal("responsável")
 	}
-	if err := s.RegistrarFalta(ctx, "123", un); err == nil {
-		t.Fatal("cpf")
+	if err := s.RegistrarFalta(ctx, uuid.Nil); err == nil {
+		t.Fatal("pedido")
 	}
 	if _, err := s.SalvarFormulario(context.Background(), domain.Formulario{UnidadeID: un, Titulo: "Ok"}); err == nil {
 		t.Fatal("sessão")
@@ -416,7 +427,7 @@ func TestListasEErros(t *testing.T) {
 	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "M", CPF: "12345678900"}, false); err == nil {
 		t.Fatal("nome")
 	}
-	for _, falha := range []string{"buscar-serv", "buscar-form", "resp-ativo", "unidade", "inserir-pedido", "hist", "faltas", "contar"} {
+	for _, falha := range []string{"buscar-serv", "buscar-form", "resp-ativo", "unidade", "inserir-pedido", "hist", "faltas", "horas"} {
 		m.falha = falha
 		_, _ = s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Data: "2026-11-15", Hora: "09:00"}, true)
 	}
@@ -429,7 +440,7 @@ func TestListasEErros(t *testing.T) {
 		_, _ = s.BuscarPedido(ctx, ped.ID)
 	}
 	m.falha = "somar"
-	_ = s.RegistrarFalta(ctx, "12345678900", un)
+	_ = s.RegistrarFalta(ctx, uuid.New())
 	m.falha = "resp"
 	_, _ = s.CadastrarResponsavel(ctx, "Ana Lima", "12345678900", un)
 	m.falha = "listar-gestao"
@@ -480,13 +491,13 @@ func TestRamosRestantes(t *testing.T) {
 	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900"}, false); err == nil {
 		t.Fatal("faltas")
 	}
-	m.falha = "contar"
+	m.falha = "horas"
 	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Data: "2026-11-17", Hora: "08:00"}, false); err == nil {
-		t.Fatal("contar")
+		t.Fatal("horas")
 	}
 	m.falha = ""
-	m.agenda = []domain.Agendamento{{}}
-	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Data: "2026-11-17", Hora: "08:00"}, false); !errors.Is(err, domain.ErrSemVaga) {
+	m.agenda = []domain.Agendamento{{ServicoID: serv.ID, Data: "2026-11-17", Hora: "08:00", Status: domain.HorarioAgendado}}
+	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Data: "2026-11-17", Hora: "08:00"}, false); !errors.Is(err, domain.ErrVaga) {
 		t.Fatal(err)
 	}
 	m.agenda = nil
@@ -566,15 +577,15 @@ func TestRamosRestantes(t *testing.T) {
 	if _, err := s.CadastrarResponsavel(ctx, "A", "12345678900", un); err == nil {
 		t.Fatal("nome")
 	}
-	if err := s.RegistrarFalta(ctx, "1", un); err == nil {
-		t.Fatal("cpf")
+	if err := s.RegistrarFalta(ctx, uuid.Nil); err == nil {
+		t.Fatal("pedido")
 	}
-	if err := s.RegistrarFalta(context.Background(), "12345678900", un); err == nil {
+	if err := s.RegistrarFalta(context.Background(), uuid.Nil); err == nil {
 		t.Fatal("sessão")
 	}
 	s.sorteio = func() int { return 9 }
 	m.agenda = nil
-	outro, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Data: "2026-11-17", Hora: "08:30"}, true)
+	outro, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Data: "2026-11-17", Hora: "08:00"}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -686,7 +697,7 @@ func TestFechaRamos(t *testing.T) {
 	marcado.ExigeAgendamento = true
 	marcado.Agenda = domain.Agenda{Dias: []int{0}, Inicio: "08:00", Fim: "12:00", DuracaoMin: 30, VagasDia: 1}
 	m.servs[serv.ID] = marcado
-	m.falha = "contar"
+	m.falha = "horas"
 	if _, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900"}, false); err == nil {
 		t.Fatal("busca")
 	}
@@ -731,5 +742,87 @@ func TestFechaRamos(t *testing.T) {
 	}
 	if _, err := s.Cancelar(alheio, ped.ID); err == nil {
 		t.Fatal("tratar")
+	}
+}
+
+func TestNotaFaltaEEdicao(t *testing.T) {
+	m := novoMem()
+	s := servicoTeste(m)
+	un := uuid.New()
+	ctx := ctxGestao(un)
+	form, err := s.SalvarFormulario(ctx, domain.Formulario{
+		UnidadeID: un, Titulo: "Visita",
+		Campos: []domain.Campo{{ID: "nome", Tipo: "text", Rotulo: "Nome", Obrigatorio: true}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	serv, err := s.SalvarServico(ctx, domain.Servico{
+		UnidadeID: un, FormularioID: form.ID, Nome: "Visita", ExigeAgendamento: true,
+		Agenda: domain.Agenda{Dias: []int{1, 2, 3, 4, 5}, Inicio: "08:00", Fim: "12:00", DuracaoMin: 30, VagasDia: 4},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ped, err := s.Abrir(ctx, Abertura{ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Respostas: map[string]any{"nome": "Maria"}}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.falha = "somar"
+	if err := s.RegistrarFalta(ctx, ped.ID); err == nil {
+		t.Fatal("somar")
+	}
+	m.falha = ""
+	m.agenda[0].Status = domain.HorarioAgendado
+	m.faltas = 0
+	if err := s.RegistrarFalta(ctx, ped.ID); err != nil || m.faltas != 1 || m.agenda[0].Status != domain.HorarioFalta {
+		t.Fatalf("falta %v %d %+v", err, m.faltas, m.agenda)
+	}
+	if err := s.RegistrarFalta(ctx, ped.ID); !errors.Is(err, domain.ErrFalta) || m.faltas != 1 {
+		t.Fatal(err, m.faltas)
+	}
+	if _, err := s.Anotar(ctx, ped.ID, "  "); !errors.Is(err, domain.ErrInvalido) {
+		t.Fatal(err)
+	}
+	if _, err := s.Anotar(ctx, ped.ID, "conferir o documento na pasta"); err != nil {
+		t.Fatal(err)
+	}
+	editado, err := s.Editar(ctx, ped.ID, "o nome veio abreviado", map[string]any{"nome": "Maria da Silva"})
+	if err != nil || editado.Respostas["nome"] != "Maria da Silva" {
+		t.Fatal(editado.Respostas, err)
+	}
+	consulta, err := s.Consultar(ctx, ped.Numero)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range consulta.Historico {
+		if item.Acao == domain.AcaoNota || strings.Contains(item.Descricao, "abreviado") {
+			t.Fatal(item)
+		}
+	}
+	var viuEdicao bool
+	for _, item := range consulta.Historico {
+		if item.Acao == domain.AcaoEdicao && item.Descricao == "pedido atualizado" {
+			viuEdicao = true
+		}
+	}
+	if !viuEdicao {
+		t.Fatal(consulta.Historico)
+	}
+	ficha, err := s.BuscarPedido(ctx, ped.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var viuNota, viuJustificativa bool
+	for _, item := range ficha.Historico {
+		if item.Acao == domain.AcaoNota && item.Descricao == "conferir o documento na pasta" {
+			viuNota = true
+		}
+		if item.Acao == domain.AcaoEdicao && item.Descricao == "o nome veio abreviado" {
+			viuJustificativa = true
+		}
+	}
+	if !viuNota || !viuJustificativa {
+		t.Fatal(ficha.Historico)
 	}
 }

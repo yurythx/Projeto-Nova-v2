@@ -18,9 +18,28 @@ import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 const TIPOS = [
-  "text", "number", "email", "phone", "date", "time", "password", "url",
-  "cpf", "cnpj", "cep", "textarea", "select", "checkbox", "checkbox_group",
-  "radio", "boolean", "file", "map", "map_area", "ambulante", "page",
+  "text",
+  "number",
+  "email",
+  "phone",
+  "date",
+  "time",
+  "password",
+  "url",
+  "cpf",
+  "cnpj",
+  "cep",
+  "textarea",
+  "select",
+  "checkbox",
+  "checkbox_group",
+  "radio",
+  "boolean",
+  "file",
+  "map",
+  "map_area",
+  "ambulante",
+  "page",
 ].map((tipo) => ({ value: tipo, label: tipo }));
 
 interface Campo {
@@ -91,10 +110,18 @@ export default function FormulariosPage() {
               <UnidadeDonaSelect id="unidade-form" permission="protocolos:gerir" exigir />
               <Input id="titulo" name="titulo" label="Título *" required maxLength={200} />
               <Textarea id="descricao" name="descricao" label="Descrição" maxLength={4000} />
-              <Textarea id="instrucao" name="instrucao" label="Instrução ao cidadão" maxLength={4000} />
+              <Textarea
+                id="instrucao"
+                name="instrucao"
+                label="Instrução ao cidadão"
+                maxLength={4000}
+              />
               <ul className="flex flex-col gap-3">
                 {campos.map((campo, indice) => (
-                  <li key={indice} className="grid gap-3 rounded-lg border border-surface-border p-3 sm:grid-cols-4">
+                  <li
+                    key={indice}
+                    className="grid gap-3 rounded-lg border border-surface-border p-3 sm:grid-cols-4"
+                  >
                     <Input
                       id={`campo-id-${indice}`}
                       label="Identificador *"
@@ -122,7 +149,10 @@ export default function FormulariosPage() {
                       defaultValue={(campo.opcoes ?? []).join(", ")}
                       onChange={(e) =>
                         atualizar(setCampos, indice, {
-                          opcoes: e.target.value.split(",").map((item) => item.trim()).filter(Boolean),
+                          opcoes: e.target.value
+                            .split(",")
+                            .map((item) => item.trim())
+                            .filter(Boolean),
                         })
                       }
                     />
@@ -131,7 +161,9 @@ export default function FormulariosPage() {
                         type="checkbox"
                         className="h-4 w-4 accent-primary"
                         checked={campo.obrigatorio}
-                        onChange={(e) => atualizar(setCampos, indice, { obrigatorio: e.target.checked })}
+                        onChange={(e) =>
+                          atualizar(setCampos, indice, { obrigatorio: e.target.checked })
+                        }
                       />
                       Obrigatório
                     </label>
@@ -142,7 +174,10 @@ export default function FormulariosPage() {
                         defaultValue={(campo.revela ?? []).join(", ")}
                         onChange={(e) =>
                           atualizar(setCampos, indice, {
-                            revela: e.target.value.split(",").map((item) => item.trim()).filter(Boolean),
+                            revela: e.target.value
+                              .split(",")
+                              .map((item) => item.trim())
+                              .filter(Boolean),
                           })
                         }
                       />
@@ -161,7 +196,12 @@ export default function FormulariosPage() {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => setCampos((atual) => [...atual, { id: "", tipo: "text", rotulo: "", obrigatorio: false }])}
+                  onClick={() =>
+                    setCampos((atual) => [
+                      ...atual,
+                      { id: "", tipo: "text", rotulo: "", obrigatorio: false },
+                    ])
+                  }
                 >
                   Campo
                 </Button>

@@ -36,6 +36,9 @@ func traduz(err error) error {
 	if errors.As(err, &pg) && pg.Code == "23505" && pg.ConstraintName == "protocolos_responsaveis_cpf_key" {
 		return domain.ErrCPFCadastrado
 	}
+	if errors.As(err, &pg) && pg.Code == "23505" && pg.ConstraintName == "protocolos_agendamentos_vaga_key" {
+		return domain.ErrVaga
+	}
 	return err
 }
 
@@ -483,7 +486,18 @@ func (r *PostgresRepository) InserirAgendamento(ctx context.Context, db database
 	_, err := db.Exec(ctx, `INSERT INTO protocolos_agendamentos (id, pedido_id, servico_id, data, hora, status) VALUES ($1,$2,$3,$4,$5,$6)`,
 		a.ID, a.PedidoID, a.ServicoID, a.Data, a.Hora, a.Status)
 	if err != nil {
-		return fmt.Errorf("protocolos.InserirAgendamento: %w", err)
+		return fmt.Errorf("protocolos.InserirAgendamento: %w", traduz(err))
+	}
+	return nil
+}
+
+func (r *PostgresRepository) AtualizarAgendamento(ctx context.Context, db database.DBTX, a domain.Agendamento) error {
+	tag, err := db.Exec(ctx, `UPDATE protocolos_agendamentos SET status=$2 WHERE id=$1`, a.ID, a.Status)
+	if err != nil {
+		return fmt.Errorf("protocolos.AtualizarAgendamento: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNaoEncontrado
 	}
 	return nil
 }
@@ -502,11 +516,29 @@ func (r *PostgresRepository) BuscarAgendamento(ctx context.Context, db database.
 
 func (r *PostgresRepository) ContarAgendamentos(ctx context.Context, db database.DBTX, servico uuid.UUID, dia string) (int, error) {
 	var n int
-	err := db.QueryRow(ctx, `SELECT count(*) FROM protocolos_agendamentos WHERE servico_id=$1 AND data=$2 AND status IN ('agendado','confirmado')`, servico, dia).Scan(&n)
+	err := db.QueryRow(ctx, `SELECT count(*) FROM protocolos_agendamentos WHERE servico_id=$1 AND data=$2 AND status IN ('agendado','confirmado','falta')`, servico, dia).Scan(&n)
 	if err != nil {
 		return 0, fmt.Errorf("protocolos.ContarAgendamentos: %w", err)
 	}
 	return n, nil
+}
+
+func (r *PostgresRepository) ListarHoras(ctx context.Context, db database.DBTX, servico uuid.UUID, dia string) ([]string, error) {
+	rows, err := db.Query(ctx, `SELECT hora FROM protocolos_agendamentos
+		WHERE servico_id=$1 AND data=$2 AND status IN ('agendado','confirmado','falta')`, servico, dia)
+	if err != nil {
+		return nil, fmt.Errorf("protocolos.ListarHoras: %w", err)
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var hora string
+		if err := rows.Scan(&hora); err != nil {
+			return nil, fmt.Errorf("protocolos.ListarHoras: %w", err)
+		}
+		out = append(out, hora)
+	}
+	return out, rows.Err()
 }
 
 func (r *PostgresRepository) LerFaltas(ctx context.Context, db database.DBTX, cpf string) (int, time.Time, error) {

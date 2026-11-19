@@ -35,8 +35,10 @@ type Repository interface {
 	ListarResponsaveis(ctx context.Context, db database.DBTX) ([]ResponsavelTecnico, error)
 	ResponsavelAtivo(ctx context.Context, db database.DBTX, cpf string) (bool, error)
 	InserirAgendamento(ctx context.Context, db database.DBTX, a Agendamento) error
+	AtualizarAgendamento(ctx context.Context, db database.DBTX, a Agendamento) error
 	BuscarAgendamento(ctx context.Context, db database.DBTX, pedido uuid.UUID) (Agendamento, error)
 	ContarAgendamentos(ctx context.Context, db database.DBTX, servico uuid.UUID, dia string) (int, error)
+	ListarHoras(ctx context.Context, db database.DBTX, servico uuid.UUID, dia string) ([]string, error)
 	LerFaltas(ctx context.Context, db database.DBTX, cpf string) (int, time.Time, error)
 	SomarFalta(ctx context.Context, db database.DBTX, cpf string, quando time.Time) error
 }

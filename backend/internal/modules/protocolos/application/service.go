@@ -30,6 +30,8 @@ const (
 	EventoConclusao   = "protocolos.pedido.concluido"
 	EventoCancelado   = "protocolos.pedido.cancelado"
 	EventoFalta       = "protocolos.falta.registrada"
+	EventoNota        = "protocolos.pedido.nota"
+	EventoEdicao      = "protocolos.pedido.editado"
 	EventoFormulario  = "protocolos.formulario.salvo"
 	EventoServico     = "protocolos.servico.salvo"
 )
@@ -118,6 +120,10 @@ func MapError(err error) error {
 		return apperrors.Conflict("agendamento bloqueado por faltas")
 	case errors.Is(err, domain.ErrSemVaga):
 		return apperrors.Conflict("sem horário nos próximos 30 dias")
+	case errors.Is(err, domain.ErrVaga):
+		return apperrors.Conflict("horário indisponível")
+	case errors.Is(err, domain.ErrFalta):
+		return apperrors.Conflict("falta já registrada neste horário")
 	default:
 		return err
 	}
@@ -380,21 +386,38 @@ func (s *Service) CadastrarResponsavel(ctx context.Context, nome, cpf string, un
 	return r, err
 }
 
-// RegistrarFalta soma uma falta do CPF e pode bloquear o próximo horário.
-func (s *Service) RegistrarFalta(ctx context.Context, cpf string, unidade uuid.UUID) error {
-	if err := s.exigir(ctx, auth.PermProtocolosTratar, unidade); err != nil {
+// RegistrarFalta marca o horário do pedido e soma uma falta do CPF. A segunda chamada não soma.
+func (s *Service) RegistrarFalta(ctx context.Context, pedido uuid.UUID) error {
+	p, err := s.repo.BuscarPedido(ctx, s.db, pedido)
+	if err != nil {
 		return err
 	}
-	cpf = domain.DigitosCPF(cpf)
-	if len(cpf) != 11 {
+	if err := s.exigir(ctx, auth.PermProtocolosTratar, p.UnidadeID); err != nil {
+		return err
+	}
+	ag, err := s.repo.BuscarAgendamento(ctx, s.db, p.ID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNaoEncontrado) {
+			return domain.ErrInvalido
+		}
+		return err
+	}
+	if ag.Status == domain.HorarioFalta {
+		return domain.ErrFalta
+	}
+	if ag.Status != domain.HorarioAgendado && ag.Status != domain.HorarioConfirmado {
 		return domain.ErrInvalido
 	}
+	ag.Status = domain.HorarioFalta
 	quando := s.agora()
 	return s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
-		if err := s.repo.SomarFalta(ctx, tx, cpf, quando); err != nil {
+		if err := s.repo.AtualizarAgendamento(ctx, tx, ag); err != nil {
 			return err
 		}
-		return s.gravar(ctx, tx, EventoFalta, "protocolos_falta", uuid.NewString(), nil, map[string]string{"quando": quando.Format(time.RFC3339)}, map[string]string{
+		if err := s.repo.SomarFalta(ctx, tx, p.CPF, quando); err != nil {
+			return err
+		}
+		return s.gravar(ctx, tx, EventoFalta, "protocolos_falta", ag.ID.String(), nil, map[string]string{"quando": quando.Format(time.RFC3339)}, map[string]string{
 			"fato": "falta registrada", "orientacao": "dois registros bloqueiam novos horários por 30 dias",
 		})
 	})

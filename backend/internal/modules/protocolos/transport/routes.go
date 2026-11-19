@@ -40,6 +40,8 @@ func RegisterAuthed(r chi.Router, h *Handlers, logger *slog.Logger) {
 		r.Get("/{id}/arquivo", h.LinkArquivo)
 		r.With(tratar).Post("/{id}/complemento", h.Complementar)
 		r.With(tratar).Post("/{id}/resposta", h.Responder)
+		r.With(tratar).Post("/{id}/nota", h.Anotar)
+		r.With(tratar).Post("/{id}/editar", h.Editar)
 		r.With(tratar).Post("/{id}/avancar", h.Avancar)
 		r.With(tratar).Post("/{id}/concluir", h.Concluir)
 		r.With(tratar).Post("/{id}/cancelar", h.Cancelar)

@@ -139,25 +139,25 @@ func (s *Service) horario(ctx context.Context, serv domain.Servico, in Abertura,
 		return nil, domain.ErrBloqueio
 	}
 	hoje := agora.In(domain.Cuiaba).Format("2006-01-02")
-	data, hora := in.Data, in.Hora
-	if data == "" || hora == "" {
-		data, hora, err = domain.ProcurarVaga(serv.Agenda, agora, func(dia string) (int, error) {
-			return s.repo.ContarAgendamentos(ctx, s.db, serv.ID, dia)
+	data, hora := in.Data, domain.NormalizarHora(in.Hora)
+	if in.Data == "" || in.Hora == "" {
+		data, hora, err = domain.ProcurarVaga(serv.Agenda, agora, func(dia string) ([]string, error) {
+			return s.repo.ListarHoras(ctx, s.db, serv.ID, dia)
 		})
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		dia, err := time.ParseInLocation("2006-01-02", data, domain.Cuiaba)
-		if err != nil || !serv.Agenda.Cabe(dia) {
+		if err != nil || !serv.Agenda.Cabe(dia) || !serv.Agenda.HoraNaGrade(hora) {
 			return nil, domain.ErrInvalido
 		}
-		n, err := s.repo.ContarAgendamentos(ctx, s.db, serv.ID, data)
+		tomadas, err := s.repo.ListarHoras(ctx, s.db, serv.ID, data)
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := serv.Agenda.HorarioLivre(n); !ok {
-			return nil, domain.ErrSemVaga
+		if horaTomada(tomadas, hora) {
+			return nil, domain.ErrVaga
 		}
 	}
 	status, err := domain.StatusDoHorario(data, hoje)
@@ -165,6 +165,15 @@ func (s *Service) horario(ctx context.Context, serv domain.Servico, in Abertura,
 		return nil, err
 	}
 	return &domain.Agendamento{ID: uuid.New(), ServicoID: serv.ID, Data: data, Hora: hora, Status: status}, nil
+}
+
+func horaTomada(tomadas []string, hora string) bool {
+	for _, item := range tomadas {
+		if domain.NormalizarHora(item) == hora {
+			return true
+		}
+	}
+	return false
 }
 
 // Consultar devolve o recorte público. CPF e respostas não saem.
@@ -203,6 +212,12 @@ func (s *Service) ListarPedidos(ctx context.Context) ([]domain.Pedido, error) {
 	}
 	if err == nil {
 		s.marcarPrazos(lista)
+		for i := range lista {
+			lista[i].Respostas = nil
+			lista[i].Campos = nil
+			lista[i].Email = ""
+			lista[i].Telefone = ""
+		}
 	}
 	return lista, err
 }
@@ -252,7 +267,7 @@ func (s *Service) ver(ctx context.Context, unidade uuid.UUID) error {
 	return domain.ErrNaoEncontrado
 }
 
-func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
+func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato, descricao string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
 	atual, err := s.repo.BuscarPedido(ctx, s.db, id)
 	if err != nil {
 		return domain.Pedido{}, err
@@ -270,12 +285,15 @@ func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato st
 		return domain.Pedido{}, err
 	}
 	quem, _ := auth.IdentityFromContext(ctx)
+	if strings.TrimSpace(descricao) == "" {
+		descricao = fato
+	}
 	err = s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		if err := s.repo.AtualizarPedido(ctx, tx, prox); err != nil {
 			return err
 		}
 		if err := s.repo.InserirHistorico(ctx, tx, domain.Historico{
-			ID: uuid.New(), PedidoID: prox.ID, Acao: acao, Descricao: fato,
+			ID: uuid.New(), PedidoID: prox.ID, Acao: acao, Descricao: descricao,
 			Status: prox.Status, UsuarioID: &quem.UserID, CreatedAt: s.agora(),
 		}); err != nil {
 			return err
@@ -297,7 +315,7 @@ func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato st
 
 // Complementar pede informação e trava o avanço.
 func (s *Service) Complementar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoComplemento, "complemento", "há complementação", func(p domain.Pedido) (domain.Pedido, error) {
+	return s.mudar(ctx, id, EventoComplemento, "complemento", "há complementação", strings.TrimSpace(mensagem), func(p domain.Pedido) (domain.Pedido, error) {
 		return p.Complementar(mensagem, s.agora())
 	})
 }
@@ -365,16 +383,77 @@ func (s *Service) pedidoDoCidadao(ctx context.Context, numero, cpf string) (doma
 	return p, nil
 }
 
-// Responder devolve o pedido ao andamento.
-func (s *Service) Responder(ctx context.Context, id uuid.UUID) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoResposta, "resposta", "complementação respondida", func(p domain.Pedido) (domain.Pedido, error) {
+// Responder devolve o pedido ao andamento e guarda o texto recebido na mesa.
+func (s *Service) Responder(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error) {
+	mensagem, err := domain.TextoInterno(mensagem, 2000)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	return s.mudar(ctx, id, EventoResposta, "resposta", "complementação respondida", mensagem, func(p domain.Pedido) (domain.Pedido, error) {
 		return p.ResponderComplemento(s.agora())
 	})
 }
 
+// Anotar grava um texto que a consulta pública não mostra.
+func (s *Service) Anotar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error) {
+	mensagem, err := domain.TextoInterno(mensagem, 2000)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	atual, err := s.repo.BuscarPedido(ctx, s.db, id)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	if err := s.exigir(ctx, auth.PermProtocolosTratar, atual.UnidadeID); err != nil {
+		return domain.Pedido{}, err
+	}
+	if domain.EstadoFinal(atual.Status) {
+		return domain.Pedido{}, domain.ErrEstadoFinal
+	}
+	quem, _ := auth.IdentityFromContext(ctx)
+	err = s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		if err := s.repo.InserirHistorico(ctx, tx, domain.Historico{
+			ID: uuid.New(), PedidoID: atual.ID, Acao: domain.AcaoNota, Descricao: mensagem,
+			Status: atual.Status, UsuarioID: &quem.UserID, CreatedAt: s.agora(),
+		}); err != nil {
+			return err
+		}
+		return s.gravar(ctx, tx, EventoNota, "protocolos_pedido", atual.ID.String(), nil, map[string]string{"acao": domain.AcaoNota}, map[string]string{
+			"numero": atual.Numero, "fato": "nota interna", "orientacao": "a nota fica na mesa",
+		})
+	})
+	return atual, err
+}
+
+// Editar troca as respostas e guarda a justificativa só na mesa.
+func (s *Service) Editar(ctx context.Context, id uuid.UUID, justificativa string, respostas map[string]any) (domain.Pedido, error) {
+	justificativa, err := domain.TextoInterno(justificativa, 4000)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	return s.mudar(ctx, id, EventoEdicao, domain.AcaoEdicao, "pedido atualizado", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
+		return p.Editar(preservarArquivos(p, respostas), s.agora())
+	})
+}
+
+func preservarArquivos(p domain.Pedido, respostas map[string]any) map[string]any {
+	if respostas == nil {
+		respostas = map[string]any{}
+	}
+	for _, campo := range p.Campos {
+		if campo.Tipo != "file" {
+			continue
+		}
+		if atual, ok := p.Respostas[campo.ID]; ok {
+			respostas[campo.ID] = atual
+		}
+	}
+	return respostas
+}
+
 // Avancar passa à etapa seguinte do serviço.
 func (s *Service) Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoAvanco, "avanco", "pedido avançou de etapa", func(p domain.Pedido) (domain.Pedido, error) {
+	return s.mudar(ctx, id, EventoAvanco, "avanco", "pedido avançou de etapa", "", func(p domain.Pedido) (domain.Pedido, error) {
 		serv, err := s.repo.BuscarServico(ctx, s.db, p.ServicoID)
 		if err != nil {
 			return domain.Pedido{}, err
@@ -385,14 +464,14 @@ func (s *Service) Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, err
 
 // Concluir grava a decisão.
 func (s *Service) Concluir(ctx context.Context, id uuid.UUID, decisao, justificativa string) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoConclusao, "conclusao", "pedido concluído", func(p domain.Pedido) (domain.Pedido, error) {
+	return s.mudar(ctx, id, EventoConclusao, "conclusao", "pedido concluído", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
 		return p.Concluir(decisao, justificativa, s.agora())
 	})
 }
 
 // Cancelar encerra o pedido.
 func (s *Service) Cancelar(ctx context.Context, id uuid.UUID) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoCancelado, "cancelado", "pedido cancelado", func(p domain.Pedido) (domain.Pedido, error) {
+	return s.mudar(ctx, id, EventoCancelado, "cancelado", "pedido cancelado", "", func(p domain.Pedido) (domain.Pedido, error) {
 		return p.Cancelar(s.agora())
 	})
 }
