@@ -59,7 +59,8 @@ func bytesDoPonto(ponto string) int64 {
 		return 0
 	}
 	// Um tamanho que não cabe em int64 é leitura errada: fica sem amostra.
-	if st.Blocks > uint64(math.MaxInt64/st.Frsize) {
+	// Frsize já é maior que zero, então o quociente cabe em uint64.
+	if st.Blocks > uint64(math.MaxInt64/st.Frsize) { // #nosec G115 -- Frsize > 0, conferido acima
 		return 0
 	}
 	return st.Frsize * int64(st.Blocks) // #nosec G115 -- limite conferido acima
