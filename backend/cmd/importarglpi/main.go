@@ -102,7 +102,7 @@ func rodar(ctx context.Context, op opcoes, saida io.Writer) error {
 
 // lerMapa lê a tabela, casando o nome de cada unidade com as daqui.
 func lerMapa(ctx context.Context, pool *pgxpool.Pool, caminho string) (*glpi.Mapa, error) {
-	f, err := os.Open(caminho)
+	f, err := os.Open(caminho) // #nosec G304 -- caminho é o arquivo que o operador passou em --mapa
 	if err != nil {
 		return nil, fmt.Errorf("--mapa: %w", err)
 	}

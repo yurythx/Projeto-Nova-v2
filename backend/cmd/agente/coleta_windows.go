@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"strings"
 	"unicode/utf16"
@@ -91,18 +92,21 @@ type memoryStatusEx struct {
 func memoriaWindows() int64 {
 	proc := windows.NewLazySystemDLL("kernel32.dll").NewProc("GlobalMemoryStatusEx")
 	var mem memoryStatusEx
-	mem.Length = uint32(unsafe.Sizeof(mem))
-	r, _, _ := proc.Call(uintptr(unsafe.Pointer(&mem)))
+	mem.Length = uint32(unsafe.Sizeof(mem))             // #nosec G115 -- o tamanho da struct cabe em uint32
+	r, _, _ := proc.Call(uintptr(unsafe.Pointer(&mem))) // #nosec G103 -- a API do Windows pede o ponteiro da struct
 	if r == 0 {
 		return 0
 	}
-	return int64(mem.TotalPhys)
+	if mem.TotalPhys > uint64(math.MaxInt64) {
+		return math.MaxInt64
+	}
+	return int64(mem.TotalPhys) // #nosec G115 -- limite conferido acima
 }
 
 func discosFixos() []disco {
 	buf := make([]uint16, 254)
-	n, err := windows.GetLogicalDriveStrings(uint32(len(buf)), &buf[0])
-	if err != nil || n == 0 || int(n) > len(buf) {
+	n, err := windows.GetLogicalDriveStrings(254, &buf[0])
+	if err != nil || n == 0 || n > 254 {
 		return nil
 	}
 	var out []disco

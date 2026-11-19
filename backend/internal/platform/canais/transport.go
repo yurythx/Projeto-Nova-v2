@@ -282,7 +282,14 @@ func (h *Handlers) VerificarWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	_, _ = w.Write([]byte(desafio))
+	for i := 0; i < len(desafio); i++ {
+		c := desafio[i]
+		if c < 0x20 || c > 0x7e {
+			h.falhaWebhook(w, r, ErrWebhookDesconhecido)
+			return
+		}
+	}
+	_, _ = w.Write([]byte(desafio)) // #nosec G705 -- desafio da Meta, só ASCII imprimível e text/plain
 }
 
 // ReceberWebhook grava as mensagens que o provedor mandou.
