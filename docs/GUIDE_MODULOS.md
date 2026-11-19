@@ -226,3 +226,12 @@ export default function FinanceiroPage() {
     entra em [`docs/REGRAS_DE_NEGOCIO.md`](REGRAS_DE_NEGOCIO.md) junto com
     o código. Não consultar o Typesense do browser (a busca passa sempre
     pela API, que aplica as permissões).
+11. **OWASP na superfície de todo plugin.** `TestTodoModuloCumpreOWASP`
+    percorre as rotas que o módulo registra, como o teste de ativação.
+    Rota autenticada sem sessão ou com token inválido responde 401 (A01,
+    A07). Entrada hostil não devolve 500 nem segredo nem pilha (A02, A03,
+    A08). Toda resposta leva os cabeçalhos de segurança da API e
+    `X-Request-ID` (A05, A09). Módulo desligado continua no teste de
+    ativação (A04). Componente vulnerável é o `govulncheck` do CI (A06).
+    Saída HTTP passa pelo `netguard` (A10). Permissão `recurso:ação` fica
+    no middleware, nunca só na tela.

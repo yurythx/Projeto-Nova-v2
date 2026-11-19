@@ -13,7 +13,10 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 )
 
-type route struct{ method, path string }
+type route struct {
+	method, path string
+	publica      bool
+}
 
 // pluginRoutes descobre TODAS as rotas que um plugin registra (públicas e
 // autenticadas), montando-o isoladamente — nenhuma lista mantida à mão.
@@ -26,14 +29,14 @@ func pluginRoutes(t *testing.T, p kernel.Plugin) []route {
 	pub, authed := chi.NewRouter(), chi.NewRouter()
 	rp.RegisterRoutes(kernel.Routes{Public: pub, Authed: authed})
 	var out []route
-	walk := func(r chi.Router) {
+	walk := func(r chi.Router, publica bool) {
 		_ = chi.Walk(r, func(method, path string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
-			out = append(out, route{method, "/api/v1" + strings.TrimSuffix(path, "/")})
+			out = append(out, route{method, "/api/v1" + strings.TrimSuffix(path, "/"), publica})
 			return nil
 		})
 	}
-	walk(pub)
-	walk(authed)
+	walk(pub, true)
+	walk(authed, false)
 	sort.Slice(out, func(i, j int) bool { return out[i].method+out[i].path < out[j].method+out[j].path })
 	return out
 }
