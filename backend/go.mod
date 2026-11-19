@@ -2,7 +2,7 @@ module github.com/yurythx/projeto-nova-v2
 
 go 1.26.0
 
-toolchain go1.26.9
+toolchain go1.26.11
 
 require (
 	github.com/alicebob/miniredis/v2 v2.39.0
