@@ -329,7 +329,11 @@ func TestRespostaComOpcoesNosDoisProvedores(t *testing.T) {
 	for i := range muitas.Opcoes {
 		muitas.Opcoes[i] = Opcao{ID: "id", Titulo: "Item", Descricao: "detalhe"}
 	}
+	muitas.Opcoes[3].Titulo = ""
 	if err := responder(ctx, WhatsApp{Provedor: ProvedorMeta, MetaNumeroID: "1", MetaToken: "tk"}, "+556699991234", muitas); err != nil {
+		t.Fatal(err)
+	}
+	if err := responder(ctx, WhatsApp{Provedor: ProvedorMeta, MetaNumeroID: "1", MetaToken: "tk"}, "+556699991234", Resposta{Texto: "Recebido."}); err != nil {
 		t.Fatal(err)
 	}
 }

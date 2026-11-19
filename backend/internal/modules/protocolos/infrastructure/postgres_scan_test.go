@@ -216,11 +216,17 @@ func TestLeituras(t *testing.T) {
 	if _, err := r.ListarHistorico(ctx, banco{rows: dbtest.BadRows()}, id); err == nil {
 		t.Fatal("histórico")
 	}
+	if _, err := r.ListarHistorico(ctx, banco{rows: &grade{linhas: [][]any{{id, id, "criado", "Pedido aberto", "novo", []byte("{"), &id, agora}}}}, id); err == nil {
+		t.Fatal("anexo")
+	}
 	if err := r.InserirHistorico(ctx, banco{}, domain.Historico{ID: id}); err != nil {
 		t.Fatal(err)
 	}
 	if lista, err := r.ListarResponsaveis(ctx, banco{rows: &grade{linhas: [][]any{{id, "12345678900", "Ana Lima", true}}}}); err != nil || len(lista) != 1 {
 		t.Fatal(err)
+	}
+	if _, err := r.ListarResponsaveis(ctx, banco{rows: dbtest.BadRows()}); err == nil {
+		t.Fatal("responsável")
 	}
 	if err := r.InserirResponsavel(ctx, banco{}, domain.ResponsavelTecnico{ID: id}); err != nil {
 		t.Fatal(err)
@@ -243,7 +249,13 @@ func TestLeituras(t *testing.T) {
 	if horas, err := r.ListarHoras(ctx, banco{rows: &grade{linhas: [][]any{{"08:00"}, {"08:30"}}}}, id, "2026-11-17"); err != nil || len(horas) != 2 || horas[0] != "08:00" {
 		t.Fatal(horas, err)
 	}
+	if _, err := r.ListarHoras(ctx, banco{rows: dbtest.BadRows()}, id, "2026-11-17"); err == nil {
+		t.Fatal("hora")
+	}
 	if err := r.AtualizarAgendamento(ctx, banco{}, domain.Agendamento{ID: id, Status: "falta"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.AtualizarAgendamento(ctx, dbtest.ScanFail{}, domain.Agendamento{ID: id, Status: "falta"}); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Fatal(err)
 	}
 	if n, quando, err := r.LerFaltas(ctx, banco{row: valores{[]any{2, agora}}}, "1"); err != nil || n != 2 || quando.IsZero() {

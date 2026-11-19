@@ -258,6 +258,9 @@ func (m *mem) InserirResponsavel(_ context.Context, _ database.DBTX, r domain.Re
 	return nil
 }
 func (m *mem) ListarResponsaveis(context.Context, database.DBTX) ([]domain.ResponsavelTecnico, error) {
+	if m.falha == "nulo" {
+		return nil, nil
+	}
 	if err := m.erra("listar-resp"); err != nil {
 		return nil, err
 	}

@@ -88,6 +88,9 @@ func TestErrosDoBanco(t *testing.T) {
 	if !errors.Is(traduz(&pgconn.PgError{Code: "23505", ConstraintName: "protocolos_pedidos_numero_key"}), domain.ErrNumeroRepetido) {
 		t.Fatal("número")
 	}
+	if !errors.Is(traduz(&pgconn.PgError{Code: "23505", ConstraintName: "protocolos_agendamentos_vaga_key"}), domain.ErrVaga) {
+		t.Fatal("vaga")
+	}
 	if !errors.Is(traduz(&pgconn.PgError{Code: "23505", ConstraintName: "protocolos_responsaveis_cpf_key"}), domain.ErrCPFCadastrado) {
 		t.Fatal("cpf")
 	}
