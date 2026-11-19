@@ -72,8 +72,8 @@ type Solicitacao struct {
 	AtivoNome string     `json:"ativo_nome,omitempty"`
 	// IncidentePaiID aponta para o incidente pai correlato (AIOps).
 	IncidentePaiID *uuid.UUID `json:"incidente_pai_id,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt          time.Time  `json:"updated_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 
 	OfertaNome      string `json:"oferta_nome"`
 	SolicitanteNome string `json:"solicitante_nome"`

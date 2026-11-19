@@ -137,4 +137,3 @@ func (h *Handlers) Excluir(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteNoContent(w)
 }
-

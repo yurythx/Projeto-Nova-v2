@@ -39,10 +39,10 @@ type Importador struct {
 	// (ADR 081). Desligado, o já importado não se toca.
 	Sincronizar bool
 
-	categorias  map[int]string
-	secretarias map[int]string // entidade do GLPI -> secretaria
-	slas        []SLA
-	metas       map[int]int // SLA do GLPI -> minutos
+	categorias     map[int]string
+	secretarias    map[int]string // entidade do GLPI -> secretaria
+	slas           []SLA
+	metas          map[int]int // SLA do GLPI -> minutos
 	ofertas        map[string]uuid.UUID
 	catalogo       map[string]uuid.UUID // categorias do catálogo, pelo nome
 	equipesUnidade map[uuid.UUID]uuid.UUID

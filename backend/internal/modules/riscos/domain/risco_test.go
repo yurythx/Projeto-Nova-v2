@@ -46,4 +46,3 @@ func TestNovoRisco(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrRiscoInvalido)
 	})
 }
-

@@ -143,4 +143,3 @@ func (s *Service) AssociarCategoriaSLA(ctx context.Context, identity auth.Identi
 	})
 	return MapError(err)
 }
-

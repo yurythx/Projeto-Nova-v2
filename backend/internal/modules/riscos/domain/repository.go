@@ -23,4 +23,3 @@ type Repository interface {
 	UpdateRisco(ctx context.Context, db database.DBTX, r Risco) (Risco, error)
 	DeleteRisco(ctx context.Context, db database.DBTX, id uuid.UUID) error
 }
-

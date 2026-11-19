@@ -321,7 +321,6 @@ func (h *Handlers) Governanca(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, g)
 }
 
-
 type IncidentePaiRequest struct {
 	IncidentePaiID *uuid.UUID `json:"incidente_pai_id"`
 }

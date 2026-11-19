@@ -1,4 +1,4 @@
-﻿package application_test
+package application_test
 
 import (
 	"context"
@@ -312,12 +312,12 @@ func TestHandlersDaIA(t *testing.T) {
 		espera int
 	}{
 		"classificaÃ§Ã£o com id invÃ¡lido": {chama(h.SugerirClassificacao, http.MethodPost, "x", nil, c.tecnico), http.StatusBadRequest},
-		"resumo com id invÃ¡lido":        {chama(h.Resumir, http.MethodPost, "x", nil, c.tecnico), http.StatusBadRequest},
-		"decisÃ£o com id invÃ¡lido":       {chama(h.DecidirSugestao, http.MethodPost, "x", map[string]any{"aceita": true}, c.tecnico), http.StatusBadRequest},
-		"decisÃ£o sem o campo":           {chama(h.DecidirSugestao, http.MethodPost, criada.Data.ID, map[string]any{}, c.tecnico), http.StatusUnprocessableEntity},
-		"quem abriu pede resumo":        {chama(h.Resumir, http.MethodPost, sol.ID.String(), nil, c.servidor), http.StatusForbidden},
-		"quem abriu pede classificaÃ§Ã£o": {chama(h.SugerirClassificacao, http.MethodPost, sol.ID.String(), nil, c.servidor), http.StatusForbidden},
-		"indicadores fora do escopo":    {chama(h.IndicadoresIA, http.MethodGet, "", nil, c.servidor), http.StatusForbidden},
+		"resumo com id invÃ¡lido":          {chama(h.Resumir, http.MethodPost, "x", nil, c.tecnico), http.StatusBadRequest},
+		"decisÃ£o com id invÃ¡lido":        {chama(h.DecidirSugestao, http.MethodPost, "x", map[string]any{"aceita": true}, c.tecnico), http.StatusBadRequest},
+		"decisÃ£o sem o campo":             {chama(h.DecidirSugestao, http.MethodPost, criada.Data.ID, map[string]any{}, c.tecnico), http.StatusUnprocessableEntity},
+		"quem abriu pede resumo":           {chama(h.Resumir, http.MethodPost, sol.ID.String(), nil, c.servidor), http.StatusForbidden},
+		"quem abriu pede classificaÃ§Ã£o":  {chama(h.SugerirClassificacao, http.MethodPost, sol.ID.String(), nil, c.servidor), http.StatusForbidden},
+		"indicadores fora do escopo":       {chama(h.IndicadoresIA, http.MethodGet, "", nil, c.servidor), http.StatusForbidden},
 	} {
 		if k.rec.Code != k.espera {
 			t.Errorf("%s: %d %s", nome, k.rec.Code, k.rec.Body.String())

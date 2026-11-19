@@ -46,4 +46,3 @@ func (m *Module) Manifest() kernel.Manifest {
 func (m *Module) RegisterRoutes(r kernel.Routes) {
 	m.handlers.RegisterRoutes(r.Authed)
 }
-

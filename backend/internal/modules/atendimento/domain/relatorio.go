@@ -53,12 +53,12 @@ type LinhaEquipe struct {
 	Nome              string     `json:"nome"`
 	UnidadeID         *uuid.UUID `json:"unidade_id,omitempty"`
 	OLAHoras          *int       `json:"ola_horas"`
-	Concluidas        int       `json:"concluidas"`
-	NoPrazo           int       `json:"no_prazo"`
-	NoPrazoPercentual *float64  `json:"no_prazo_percentual"`
-	MedianaHoras      *float64  `json:"mediana_horas"`
-	Pendentes         int       `json:"pendentes"`
-	Atrasadas         int       `json:"atrasadas"`
+	Concluidas        int        `json:"concluidas"`
+	NoPrazo           int        `json:"no_prazo"`
+	NoPrazoPercentual *float64   `json:"no_prazo_percentual"`
+	MedianaHoras      *float64   `json:"mediana_horas"`
+	Pendentes         int        `json:"pendentes"`
+	Atrasadas         int        `json:"atrasadas"`
 	// Chamados são os trechos já encerrados (o chamado foi concluído ou
 	// passou para outra equipe); ComAEquipe, os que ainda estão com ela.
 	Chamados                  int      `json:"chamados"`

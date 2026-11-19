@@ -49,4 +49,3 @@ func TestNovaSLA(t *testing.T) {
 		assert.Equal(t, 60, *sol.MetaSolucaoMin)
 	})
 }
-

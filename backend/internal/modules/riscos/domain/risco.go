@@ -15,12 +15,12 @@ const (
 	TextoMax  = 4000
 
 	// Categorias ISO 27001 / GRC
-	CategoriaSeguranca     = "seguranca_informacao"
-	CategoriaInfra         = "infraestrutura"
-	CategoriaFornecedores  = "fornecedores"
-	CategoriaContinuidade  = "continuidade"
-	CategoriaLGPD          = "conformidade_lgpd"
-	CategoriaOperacional   = "operacional"
+	CategoriaSeguranca    = "seguranca_informacao"
+	CategoriaInfra        = "infraestrutura"
+	CategoriaFornecedores = "fornecedores"
+	CategoriaContinuidade = "continuidade"
+	CategoriaLGPD         = "conformidade_lgpd"
+	CategoriaOperacional  = "operacional"
 
 	// Estratégias de Tratamento
 	EstrategiaMitigar    = "mitigar"
@@ -131,4 +131,3 @@ func (r Risco) Aplicar(codigo, titulo, descricao, categoria string, unidadeID uu
 	r.UpdatedAt = time.Now().UTC()
 	return r, nil
 }
-

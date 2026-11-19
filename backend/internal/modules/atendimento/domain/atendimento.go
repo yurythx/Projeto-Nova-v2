@@ -50,11 +50,11 @@ var (
 	ErrOfertaInativa       = errors.New("atendimento: oferta inativa")
 	ErrAvaliacaoInvalida   = errors.New("atendimento: avaliação inválida")
 	ErrAvaliacaoForaDeHora = errors.New("atendimento: só se avalia o atendimento concluído")
-	ErrAvaliacaoAlheia       = errors.New("atendimento: só quem abriu avalia o atendimento")
-	ErrAvaliacaoExistente    = errors.New("atendimento: esta solicitação já foi avaliada")
-	ErrAtivosDesligado       = errors.New("atendimento: cadastro de ativos desligado")
-	ErrAtivoAusente          = errors.New("atendimento: ativo não encontrado")
-	ErrAtivoDeOutraUnidade   = errors.New("atendimento: o ativo precisa ser da mesma unidade da solicitação")
+	ErrAvaliacaoAlheia     = errors.New("atendimento: só quem abriu avalia o atendimento")
+	ErrAvaliacaoExistente  = errors.New("atendimento: esta solicitação já foi avaliada")
+	ErrAtivosDesligado     = errors.New("atendimento: cadastro de ativos desligado")
+	ErrAtivoAusente        = errors.New("atendimento: ativo não encontrado")
+	ErrAtivoDeOutraUnidade = errors.New("atendimento: o ativo precisa ser da mesma unidade da solicitação")
 )
 
 // Produtos é a porta do plugin de produtos. Não há import entre plugins:

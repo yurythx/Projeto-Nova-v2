@@ -1,4 +1,4 @@
-﻿// Package transport expÃµe o atendimento: cadastro, abertura e fila.
+// Package transport expÃµe o atendimento: cadastro, abertura e fila.
 package transport
 
 import (

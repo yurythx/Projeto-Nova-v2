@@ -122,4 +122,3 @@ func (r *Repository) DeleteRisco(ctx context.Context, db database.DBTX, id uuid.
 	_, err := db.Exec(ctx, `DELETE FROM riscos WHERE id = $1`, id)
 	return mapDB(err)
 }
-

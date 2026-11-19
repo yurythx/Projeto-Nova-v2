@@ -149,4 +149,3 @@ func (h *Handlers) VincularCategoriaSLA(w http.ResponseWriter, r *http.Request) 
 	}
 	httputil.WriteOK(w, map[string]string{"status": "ok"})
 }
-

@@ -86,4 +86,3 @@ func (s Solicitacao) AplicarSLA(sla *SLA) Solicitacao {
 	s.MetaSolucaoMin = &sla.TempoSolucaoMinutos
 	return s
 }
-
