@@ -41,7 +41,7 @@ type Visao = "lista" | "kanban";
 
 export default function ProtocolosPage() {
   const lista = useApiQuery<Pedido[]>("v1/protocolos/pedidos");
-  const pedidos = lista.data ?? [];
+  const pedidos = useMemo(() => lista.data ?? [], [lista.data]);
   const [visao, setVisao] = useState<Visao>("lista");
   const [prazo, setPrazo] = useState("todos");
   const [busca, setBusca] = useState("");
