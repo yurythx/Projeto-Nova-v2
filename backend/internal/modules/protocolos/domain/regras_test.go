@@ -536,8 +536,39 @@ func TestDiaUtilMapaEConsulta(t *testing.T) {
 	if _, err := editado.Editar(map[string]any{}, sexta); !errors.Is(err, ErrEstadoFinal) {
 		t.Fatal(err)
 	}
-	if RotuloStatus("desconhecido") != "desconhecido" {
-		t.Fatal(RotuloStatus("desconhecido"))
+	for status, rotulo := range map[string]string{
+		StatusNovo: "Novo", StatusAndamento: "Em andamento", StatusPendente: "Pendente",
+		StatusAnalise: "Em análise", StatusAguardando: "Aguardando aprovação", StatusAprovado: "Aprovado",
+		StatusRejeitado: "Rejeitado", StatusConcluido: "Concluído", StatusCancelado: "Cancelado",
+		"desconhecido": "desconhecido",
+	} {
+		if RotuloStatus(status) != rotulo {
+			t.Fatalf("%s: %s", status, RotuloStatus(status))
+		}
+	}
+	if err := RespostasValidas([]Campo{{ID: "a", Tipo: "map_area", Rotulo: "Área", Obrigatorio: true}}, map[string]any{"a": "1,2"}); err == nil {
+		t.Fatal("área")
+	}
+	if NormalizarHora("08:00:00") != "08:00" || (Agenda{Inicio: "08:00", Fim: "08:00", DuracaoMin: 30, VagasDia: 3}).Grade() != nil && len((Agenda{Inicio: "18:00", Fim: "08:00", DuracaoMin: 30, VagasDia: 3}).Grade()) != 0 {
+		t.Fatal("grade")
+	}
+	if _, err := aberto.Editar(nil, sexta); err != nil {
+		t.Fatal(err)
+	}
+	comCampo := aberto
+	comCampo.Campos = []Campo{{ID: "nome", Tipo: "text", Rotulo: "Nome", Obrigatorio: true}}
+	if _, err := comCampo.Editar(map[string]any{"nome": "  "}, sexta); err == nil {
+		t.Fatal("resposta")
+	}
+	if diasUteisFechado(sexta, sexta.AddDate(0, 0, -1)) != 0 {
+		t.Fatal("intervalo invertido")
+	}
+	antes := sexta.AddDate(0, 0, -3)
+	if SituacaoPrazo(StatusNovo, sexta, &antes, antes) != PrazoNoPrazo {
+		t.Fatal("prazo anterior")
+	}
+	if Coordenada("abc,1") {
+		t.Fatal("coordenada inválida")
 	}
 	if CPFMascarado("123.456.789-00") != "***.456.789-00" || CPFMascarado("123") != "" {
 		t.Fatal(CPFMascarado("123.456.789-00"))

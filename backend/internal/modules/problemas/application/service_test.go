@@ -329,6 +329,41 @@ func TestConcluirPorMudanca(t *testing.T) {
 	}
 }
 
+type passagens struct{ err error }
+
+func (p passagens) Mapa(context.Context, database.DBTX, string) (map[string][]string, error) {
+	return nil, p.err
+}
+
+func TestPassagensComFalha(t *testing.T) {
+	ctx := context.Background()
+	u := uuid.New()
+	p := domain.Problema{UnidadeID: &u, Estado: "registrado"}
+	svc := application.NewService(nil, repo{p: p}, eventos{}, application.Portas{})
+	svc.ComPassagens(passagens{err: errFalha})
+	if _, err := svc.Listar(ctx, admin(), application.FiltroEntrada{}); err == nil {
+		t.Fatal("listar")
+	}
+	if _, err := svc.Obter(ctx, admin(), uuid.New()); err == nil {
+		t.Fatal("obter")
+	}
+	t.Run("transicao", func(t *testing.T) {
+		svc := application.NewService(dbtest.Pool(t), repo{p: p}, eventos{}, application.Portas{})
+		svc.ComPassagens(passagens{err: errFalha})
+		if _, err := svc.Transicionar(ctx, admin(), uuid.New(), "em_analise"); err == nil {
+			t.Fatal("transicionar")
+		}
+	})
+	h := transport.NewHandlers(svc, slog.New(slog.DiscardHandler))
+	req := httptest.NewRequest(http.MethodGet, "/problemas?ativo_id=nao-e-uuid", nil)
+	req = req.WithContext(auth.WithIdentity(req.Context(), admin()))
+	rec := httptest.NewRecorder()
+	h.Listar(rec, req)
+	if rec.Code < 400 {
+		t.Fatalf("ativo_id: %d", rec.Code)
+	}
+}
+
 func TestHandlersComFalha(t *testing.T) {
 	r := repo{falha: map[string]bool{"List": true}}
 	h := transport.NewHandlers(application.NewService(nil, r, eventos{}, application.Portas{Incidentes: incidentes{rerr: errFalha}}), slog.New(slog.DiscardHandler))

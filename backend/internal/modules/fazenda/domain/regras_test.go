@@ -804,4 +804,37 @@ func TestCertidaoEAtos(t *testing.T) {
 	if err != nil || cassacao.ComAtos(em(2026, 3, 1, 0, 0)).CassacaoPrazo.Day() != 21 {
 		t.Fatal("cassação")
 	}
+	if !(Processo{}).CienciaDo(time.Time{}).IsZero() {
+		t.Fatal("ciência sem envio")
+	}
+	if _, err := (Processo{}).EmitirAnexoV(DadosCertidao{}); err == nil {
+		t.Fatal("certidão de outro programa")
+	}
+	if _, err := (Processo{Programa: ProgramaRegulariza}).EmitirAnexoV(DadosCertidao{}); err == nil {
+		t.Fatal("certidão antes da decisão")
+	}
+	if _, err := (Processo{}).RegistrarTQC(em(2026, 1, 5, 0, 0)); err == nil {
+		t.Fatal("TQC de outro programa")
+	}
+	if _, err := avanca.RegistrarTQC(time.Time{}); err == nil {
+		t.Fatal("TQC sem data")
+	}
+	if _, err := (Processo{}).RegistrarSelo(2); err == nil {
+		t.Fatal("selo de outro programa")
+	}
+	if _, err := avanca.RegistrarSelo(0); err == nil {
+		t.Fatal("selo sem critério")
+	}
+	if _, err := (Processo{}).RegistrarIsencao(2028); err == nil {
+		t.Fatal("isenção de outro programa")
+	}
+	if _, err := avanca.RegistrarIsencao(2020); err == nil {
+		t.Fatal("exercício")
+	}
+	if _, err := (Processo{}).RegistrarCassacao(em(2026, 3, 1, 0, 0)); err == nil {
+		t.Fatal("cassação de outro programa")
+	}
+	if _, err := avanca.RegistrarCassacao(time.Time{}); err == nil {
+		t.Fatal("cassação sem ciência")
+	}
 }

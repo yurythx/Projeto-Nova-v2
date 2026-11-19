@@ -15,6 +15,8 @@ func TestLimpar(t *testing.T) {
 		{"LUCAS DOS SANTOS", "DOS SANTOS SETE", "LUCAS DOS SANTOS SETE"},
 		{"BRUNO MARQUES DA", "MARQUES DA SILVA", "BRUNO MARQUES DA SILVA"},
 		{"", "", ""},
+		{"", "Souza", "Souza"},
+		{"Souza", "Ana Souza", "Ana Souza"},
 	}
 	for _, c := range casos {
 		if got := Limpar(c.primeiro, c.ultimo); got != c.esperado {
@@ -39,5 +41,8 @@ func TestSemRepeticaoDoQueJaFoiGravado(t *testing.T) {
 		if got := SemRepeticao(in); got != esperado {
 			t.Errorf("SemRepeticao(%q) = %q, esperado %q", in, got, esperado)
 		}
+	}
+	if iguais([]string{"Ana"}, []string{"Ana", "Souza"}) {
+		t.Fatal("tamanhos diferentes não são o mesmo nome")
 	}
 }

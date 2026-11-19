@@ -55,6 +55,24 @@ func TestRepositorioPropagaFalha(t *testing.T) {
 	if _, err := r.Listar(ctx, &dbtest.Seq{Queries: []dbtest.QueryResult{{Rows: dbtest.NoRows()}}}, ""); err != nil {
 		t.Fatal(err)
 	}
+	if err := r.GuardarPeca(ctx, dbtest.Fail{}, id, "matricula", "k"); !errors.Is(err, dbtest.ErrInjected) {
+		t.Fatal(err)
+	}
+	if err := r.GuardarPeca(ctx, okExec{}, id, "matricula", "k"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.ListarPecas(ctx, dbtest.Fail{}, id); err == nil {
+		t.Fatal("peças")
+	}
+	if _, err := r.ListarPecas(ctx, &dbtest.Seq{Queries: []dbtest.QueryResult{{Rows: dbtest.BadRows()}}}, id); err == nil {
+		t.Fatal("scan")
+	}
+	if _, err := r.ListarPecas(ctx, &dbtest.Seq{Queries: []dbtest.QueryResult{{Rows: dbtest.ErrRows()}}}, id); err == nil {
+		t.Fatal("rows")
+	}
+	if pecas, err := r.ListarPecas(ctx, &dbtest.Seq{Queries: []dbtest.QueryResult{{Rows: &duas{}}}}, id); err != nil || len(pecas) != 1 || pecas[0].Chave != "k" {
+		t.Fatalf("%+v %v", pecas, err)
+	}
 }
 
 func TestRepositorioLeProcesso(t *testing.T) {
@@ -132,6 +150,9 @@ func (r processoRow) Scan(dest ...any) error {
 		*(dest[17].(**time.Time)) = &quando
 		quem := r.id
 		*(dest[18].(**uuid.UUID)) = &quem
+		*(dest[19].(**time.Time)) = &quando
+		*(dest[20].(**time.Time)) = &quando
+		*(dest[23].(**time.Time)) = &quando
 	}
 	*(dest[15].(*bool)) = r.comPrazo
 	return nil
@@ -157,6 +178,28 @@ func (u *uma) Next() bool {
 	return true
 }
 func (u *uma) Scan(dest ...any) error { return u.row.Scan(dest...) }
+
+type duas struct{ viu bool }
+
+func (d *duas) Close()                                       {}
+func (d *duas) Err() error                                   { return nil }
+func (d *duas) CommandTag() pgconn.CommandTag                { return pgconn.CommandTag{} }
+func (d *duas) FieldDescriptions() []pgconn.FieldDescription { return nil }
+func (d *duas) Values() ([]any, error)                       { return nil, nil }
+func (d *duas) RawValues() [][]byte                          { return nil }
+func (d *duas) Conn() *pgx.Conn                              { return nil }
+func (d *duas) Next() bool {
+	if d.viu {
+		return false
+	}
+	d.viu = true
+	return true
+}
+func (d *duas) Scan(dest ...any) error {
+	*(dest[0].(*string)) = "matricula"
+	*(dest[1].(*string)) = "k"
+	return nil
+}
 
 type okExec struct{}
 

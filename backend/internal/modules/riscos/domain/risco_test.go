@@ -44,5 +44,15 @@ func TestNovoRisco(t *testing.T) {
 
 		_, err = domain.NovoRisco("RSK-999", "Titulo valido", "desc", domain.CategoriaInfra, uID, 6, 2, domain.EstrategiaMitigar, "", nil, "")
 		assert.ErrorIs(t, err, domain.ErrRiscoInvalido)
+
+		_, err = domain.NovoRisco("RSK-998", "Titulo valido", string(make([]byte, 4001)), domain.CategoriaInfra, uID, 1, 1, domain.EstrategiaMitigar, "", nil, "")
+		assert.ErrorIs(t, err, domain.ErrRiscoInvalido)
+
+		_, err = domain.NovoRisco("RSK-997", "Titulo valido", "desc", domain.CategoriaInfra, uuid.Nil, 1, 1, domain.EstrategiaMitigar, "", nil, "")
+		assert.ErrorIs(t, err, domain.ErrRiscoInvalido)
+
+		baixo, err := domain.NovoRisco("RSK-996", "Titulo valido", "desc", domain.CategoriaInfra, uID, 1, 1, domain.EstrategiaMitigar, "", nil, "")
+		require.NoError(t, err)
+		assert.Equal(t, "baixo", baixo.NivelSeveridade())
 	})
 }

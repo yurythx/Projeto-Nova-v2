@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/govbr"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/outbox"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/storage"
 )
 
 type mem struct {
@@ -28,6 +30,7 @@ type mem struct {
 	codigo   map[string]uuid.UUID
 	falha    string
 	semLista bool
+	pecas    []domain.PecaArquivo
 }
 
 func (m *mem) Inserir(_ context.Context, _ database.DBTX, p domain.Processo) error {
@@ -85,11 +88,17 @@ func (m *mem) Proximo(_ context.Context, _ database.DBTX, _ int) (int, error) {
 }
 
 func (m *mem) GuardarPeca(context.Context, database.DBTX, uuid.UUID, string, string) error {
+	if m.falha == "guardar" {
+		return errors.New("guardar")
+	}
 	return nil
 }
 
 func (m *mem) ListarPecas(context.Context, database.DBTX, uuid.UUID) ([]domain.PecaArquivo, error) {
-	return nil, nil
+	if m.falha == "pecas" {
+		return nil, errors.New("pecas")
+	}
+	return m.pecas, nil
 }
 
 func (m *mem) PorCodigo(_ context.Context, _ database.DBTX, codigo string) (domain.Processo, error) {
@@ -406,7 +415,7 @@ func TestAbrirListarEBuscar(t *testing.T) {
 }
 
 func TestAtos(t *testing.T) {
-	s, m, _ := novo(t)
+	s, m, tr := novo(t)
 	fiscal := fiscal()
 	cid := cidadao("ana")
 	p, err := s.Abrir(context.Background(), cid, domain.Abertura{Programa: domain.ProgramaAvanca, Entrada: domain.EntradaGovBR, TemContrato: true, Documentos: docsAvanca()})
@@ -533,6 +542,163 @@ func TestAtos(t *testing.T) {
 	if _, err := s.Simular(domain.Simulacao{}); err == nil {
 		t.Fatal("simulação")
 	}
+
+	m.falha = ""
+	if _, err := s.EmitirCertidao(ctx, cid, p.ID, domain.DadosCertidao{}); err == nil {
+		t.Fatal("certidão da pessoa")
+	}
+	if _, err := s.AssinarTQC(ctx, cid, p.ID, time.Time{}); err == nil {
+		t.Fatal("TQC da pessoa")
+	}
+	if _, err := s.GuardarSelo(ctx, cid, p.ID, 2); err == nil {
+		t.Fatal("selo da pessoa")
+	}
+	if _, err := s.GuardarIsencao(ctx, cid, p.ID, 2028); err == nil {
+		t.Fatal("isenção da pessoa")
+	}
+	if _, err := s.AbrirCassacao(ctx, cid, p.ID); err == nil {
+		t.Fatal("cassação da pessoa")
+	}
+	if _, err := s.EmitirCertidao(ctx, fiscal, p.ID, domain.DadosCertidao{Adquirente: "Ana", Transmitente: "Bia", Inscricao: "1", Matricula: "2", Aliquota: "1%", DataInstrumento: time.Date(2026, 1, 2, 0, 0, 0, 0, domain.Cuiaba)}); err == nil {
+		t.Fatal("certidão do avança")
+	}
+	if _, err := s.AssinarTQC(ctx, fiscal, p.ID, time.Time{}); err == nil {
+		t.Fatal("TQC sem data")
+	}
+	if _, err := s.AssinarTQC(ctx, fiscal, p.ID, time.Date(2026, 6, 2, 0, 0, 0, 0, domain.Cuiaba)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GuardarSelo(ctx, fiscal, p.ID, 0); err == nil {
+		t.Fatal("selo inválido")
+	}
+	if _, err := s.GuardarSelo(ctx, fiscal, p.ID, 2); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GuardarIsencao(ctx, fiscal, p.ID, 2020); err == nil {
+		t.Fatal("exercício")
+	}
+	if _, err := s.GuardarIsencao(ctx, fiscal, p.ID, 2028); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AbrirCassacao(ctx, fiscal, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RegistrarConsulta(ctx, fiscal, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	m.falha = "buscar"
+	if _, err := s.RegistrarConsulta(ctx, fiscal, p.ID); err == nil {
+		t.Fatal("consulta sem processo")
+	}
+	m.falha = ""
+	quem := cid
+	quem.UserID = uuid.New()
+	item := m.itens[p.ID]
+	item.Destinatario = quem.UserID
+	m.itens[p.ID] = item
+	if _, err := s.RegistrarConsulta(ctx, quem, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	m.falha = "atualizar"
+	if _, err := s.RegistrarConsulta(ctx, quem, p.ID); err == nil {
+		t.Fatal("consulta")
+	}
+	m.falha = "pecas"
+	if _, err := s.Buscar(ctx, fiscal, p.ID); err == nil {
+		t.Fatal("peças")
+	}
+	m.falha = ""
+	loja := &lojaPecas{objs: map[string]storage.ObjectInfo{}}
+	s.ComArquivos(Arquivos{Store: loja, Bucket: "pecas", MaxBytes: 5 << 20, Expiry: time.Minute})
+	m.pecas = []domain.PecaArquivo{{Tipo: "matricula", Chave: ""}, {Tipo: "matricula", Chave: "a"}, {Tipo: "instrumento", Chave: "b"}}
+	if visto, err := s.Buscar(ctx, fiscal, p.ID); err != nil || len(visto.Pecas) != 3 || visto.Pecas[2].URL == "" {
+		t.Fatalf("links: %+v %v", visto.Pecas, err)
+	}
+	if _, err := s.PedirPeca(ctx, fiscal, p.ID, "foto", "a.pdf", "application/pdf"); err == nil {
+		t.Fatal("tipo")
+	}
+	if _, err := s.PedirPeca(ctx, fiscal, p.ID, "matricula", "  ", "application/pdf"); err == nil {
+		t.Fatal("nome")
+	}
+	m.falha = "buscar"
+	if _, err := s.PedirPeca(ctx, fiscal, p.ID, "matricula", "a.pdf", "application/pdf"); err == nil {
+		t.Fatal("pedido sem processo")
+	}
+	m.falha = ""
+	ticket, err := s.PedirPeca(ctx, fiscal, p.ID, "matricula", "a.pdf", "application/pdf")
+	if err != nil || ticket.ObjectKey == "" {
+		t.Fatal(err)
+	}
+	if _, err := s.GuardarPeca(ctx, fiscal, p.ID, "foto", ticket.ObjectKey); err == nil {
+		t.Fatal("guardar tipo")
+	}
+	if _, err := s.GuardarPeca(ctx, fiscal, p.ID, "matricula", "../x"); err == nil {
+		t.Fatal("chave")
+	}
+	m.falha = "buscar"
+	if _, err := s.GuardarPeca(ctx, fiscal, p.ID, "matricula", "fazenda/pecas/"+p.ID.String()+"/x.pdf"); err == nil {
+		t.Fatal("guardar sem processo")
+	}
+	m.falha = ""
+	loja.objs[ticket.ObjectKey] = storage.ObjectInfo{Size: 4, ContentType: "application/pdf"}
+	m.falha = "guardar"
+	if _, err := s.GuardarPeca(ctx, fiscal, p.ID, "matricula", ticket.ObjectKey); err == nil {
+		t.Fatal("guardar")
+	}
+	m.falha = ""
+	tr.falha = true
+	if _, err := s.GuardarPeca(ctx, fiscal, p.ID, "matricula", ticket.ObjectKey); err == nil {
+		t.Fatal("trilha")
+	}
+	tr.falha = false
+	if _, err := s.GuardarPeca(ctx, fiscal, p.ID, "matricula", ticket.ObjectKey); err != nil {
+		t.Fatal(err)
+	}
+	sem := NewService(nil, m, tr, govbr.Config{}, nil)
+	if _, err := sem.PedirPeca(ctx, fiscal, p.ID, "matricula", "a.pdf", "application/pdf"); err == nil {
+		t.Fatal("armazenamento")
+	}
+	if _, err := sem.GuardarPeca(ctx, fiscal, p.ID, "matricula", ticket.ObjectKey); err == nil {
+		t.Fatal("armazenamento")
+	}
+}
+
+type lojaPecas struct {
+	objs map[string]storage.ObjectInfo
+	n    int
+}
+
+func (l *lojaPecas) garantir() {
+	if l.objs == nil {
+		l.objs = map[string]storage.ObjectInfo{}
+	}
+}
+
+func (l *lojaPecas) Ping(context.Context) error { return nil }
+func (l *lojaPecas) Put(context.Context, string, string, io.Reader, int64, string) error {
+	return nil
+}
+func (l *lojaPecas) Get(context.Context, string, string) (io.ReadCloser, error) {
+	return io.NopCloser(strings.NewReader("")), nil
+}
+func (l *lojaPecas) Delete(context.Context, string, string) error { return nil }
+func (l *lojaPecas) PresignedPutURL(context.Context, string, string, time.Duration) (string, error) {
+	return "http://pecas/enviar", nil
+}
+func (l *lojaPecas) PresignedGetURL(context.Context, string, string, time.Duration) (string, error) {
+	l.n++
+	if l.n == 1 {
+		return "", errors.New("url")
+	}
+	return "http://pecas/ver", nil
+}
+func (l *lojaPecas) Stat(_ context.Context, _, key string) (storage.ObjectInfo, error) {
+	l.garantir()
+	info, ok := l.objs[key]
+	if !ok {
+		return storage.ObjectInfo{}, storage.ErrObjectNotFound
+	}
+	return info, nil
 }
 
 type txFalsa struct{ falha bool }

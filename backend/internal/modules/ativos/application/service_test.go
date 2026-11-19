@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ func gestor(u uuid.UUID) auth.Identity {
 type repo struct {
 	ativo                     domain.Ativo
 	get, list, insert, update error
+	ident                     error
 }
 
 func (r repo) List(context.Context, database.DBTX, domain.Filtro) ([]domain.Ativo, error) {
@@ -57,6 +59,9 @@ func (r repo) FechaCiclo(context.Context, database.DBTX, uuid.UUID, uuid.UUID) (
 	return false, nil
 }
 func (r repo) PorIdentificador(context.Context, database.DBTX, string) (domain.Ativo, error) {
+	if r.ident != nil {
+		return domain.Ativo{}, r.ident
+	}
 	return domain.Ativo{}, domain.ErrNaoEncontrado
 }
 func (r repo) InsertCredencial(context.Context, database.DBTX, domain.Credencial) error { return nil }
@@ -182,5 +187,14 @@ func TestHandlersComFalha(t *testing.T) {
 	h.Listar(rec, req)
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("status %d", rec.Code)
+	}
+	h = transport.NewHandlers(application.NewService(nil, repo{ident: errFalha}, eventos{}, nil), slog.New(slog.DiscardHandler))
+	inv := httptest.NewRequest(http.MethodPost, "/ativos/inventario", strings.NewReader(`{"identificador":"PC-1","nome":"PC","tipo":"hardware"}`))
+	inv.Header.Set("Content-Type", "application/json")
+	inv = inv.WithContext(auth.WithIdentity(inv.Context(), admin()))
+	rec = httptest.NewRecorder()
+	h.Inventariar(rec, inv)
+	if rec.Code < 400 {
+		t.Fatalf("inventário: %d %s", rec.Code, rec.Body.String())
 	}
 }

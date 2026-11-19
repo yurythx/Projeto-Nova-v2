@@ -316,6 +316,22 @@ func TestRespostaComOpcoesNosDoisProvedores(t *testing.T) {
 	if interativo["type"] != "list" {
 		t.Fatalf("a Meta lista quando passa de três: %v", interativo)
 	}
+
+	curta := Resposta{Texto: "", Opcoes: []Opcao{{ID: "a", Titulo: "", Descricao: "setor"}}}
+	if err := responder(ctx, WhatsApp{Provedor: ProvedorMeta, MetaNumeroID: "1", MetaToken: "tk"}, "+556699991234", curta); err != nil {
+		t.Fatal(err)
+	}
+	longa := Resposta{Texto: strings.Repeat("a", 4000), Opcoes: []Opcao{{ID: "a", Titulo: "Um", Descricao: "dois"}}}
+	if err := responder(ctx, WhatsApp{Provedor: ProvedorEvolution, EvolutionURL: srv.URL, EvolutionInstancia: "c", EvolutionChave: "ch"}, "556699991234", longa); err != nil {
+		t.Fatal(err)
+	}
+	muitas := Resposta{Texto: "Lista", Opcoes: make([]Opcao, 11)}
+	for i := range muitas.Opcoes {
+		muitas.Opcoes[i] = Opcao{ID: "id", Titulo: "Item", Descricao: "detalhe"}
+	}
+	if err := responder(ctx, WhatsApp{Provedor: ProvedorMeta, MetaNumeroID: "1", MetaToken: "tk"}, "+556699991234", muitas); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestRotasDoWebhook(t *testing.T) {
@@ -348,6 +364,9 @@ func TestRotasDoWebhook(t *testing.T) {
 	if rr := chamar(http.MethodGet, caminho+"?hub.mode=subscribe&hub.verify_token="+w.WebhookToken+"&hub.challenge=42", "", nil); rr.Code != http.StatusOK ||
 		rr.Body.String() != "42" || !strings.HasPrefix(rr.Header().Get("Content-Type"), "text/plain") {
 		t.Fatalf("desafio: %d %s", rr.Code, rr.Body.String())
+	}
+	if rr := chamar(http.MethodGet, caminho+"?hub.mode=subscribe&hub.verify_token="+w.WebhookToken+"&hub.challenge=42%7F", "", nil); rr.Code == http.StatusOK {
+		t.Fatal("desafio fora do ASCII imprimível")
 	}
 	if rr := chamar(http.MethodGet, caminho+"?hub.mode=subscribe&hub.verify_token=x", "", nil); rr.Code != http.StatusUnauthorized {
 		t.Fatalf("verificação errada: %d", rr.Code)

@@ -139,4 +139,11 @@ func TestAvisarContato(t *testing.T) {
 	if len(c.emails)+len(c.whatsapp) != 0 {
 		t.Fatal("módulo sem canal")
 	}
+
+	c.err = errors.New("fora")
+	s.AvisarContato(context.Background(), "maria@exemplo.gov.br", "+5566999991234", aviso)
+	s.AvisarContato(context.Background(), "maria@exemplo.invalid", "abc", aviso)
+	s.AvisarContato(context.Background(), "maria @x.gov.br", "+12", aviso)
+	soCorreio := NewService(pool, nil, slog.New(slog.NewTextHandler(&bytes.Buffer{}, nil))).WithCorreio(c, "")
+	soCorreio.AvisarContato(context.Background(), "maria@exemplo.gov.br", "66999991234", aviso)
 }
