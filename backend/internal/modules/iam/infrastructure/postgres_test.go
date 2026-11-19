@@ -97,6 +97,16 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 	if _, err := r.CreateLotacao(ctx, &firstExecOK{}, domain.Lotacao{Principal: true}); !errors.Is(err, dbtest.ErrInjected) {
 		t.Errorf("CreateLotacao com falha ao inserir: %v", err)
 	}
+	pessoa := domain.UsuarioSSO{Subject: "kc-falha", Username: "falha", Email: "falha@x.test"}
+	if _, err := r.UpsertSSO(ctx, dbtest.Fail{}, pessoa); !errors.Is(err, dbtest.ErrInjected) {
+		t.Errorf("UpsertSSO com a trava fora: %v", err)
+	}
+	if _, err := r.UpsertSSO(ctx, execOK{}, pessoa); !errors.Is(err, dbtest.ErrInjected) {
+		t.Errorf("UpsertSSO com a consulta fora: %v", err)
+	}
+	if _, err := r.UpsertSSO(ctx, &ssoAteOInsert{}, pessoa); !errors.Is(err, dbtest.ErrInjected) {
+		t.Errorf("UpsertSSO com a gravação fora: %v", err)
+	}
 
 	// Consistência do escopo: departamento e unidade inexistentes, e
 	// níveis que não batem.
@@ -158,3 +168,43 @@ type firstExecOK struct{ dbtest.Fail }
 func (*firstExecOK) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
 	return pgconn.NewCommandTag("UPDATE 1"), nil
 }
+
+// execOK deixa o comando passar e falha na consulta.
+type execOK struct{ dbtest.Fail }
+
+func (execOK) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.NewCommandTag("SELECT 1"), nil
+}
+
+// ssoAteOInsert passa as travas e a consulta de ocupação, e falha ao gravar.
+type ssoAteOInsert struct {
+	dbtest.Fail
+	consultas int
+}
+
+func (s *ssoAteOInsert) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.NewCommandTag("SELECT 1"), nil
+}
+
+func (s *ssoAteOInsert) QueryRow(context.Context, string, ...any) pgx.Row {
+	s.consultas++
+	if s.consultas == 1 {
+		return boolRow{false}
+	}
+	return scanFail{}
+}
+
+type boolRow struct{ v bool }
+
+func (b boolRow) Scan(dest ...any) error {
+	p, ok := dest[0].(*bool)
+	if !ok {
+		return dbtest.ErrInjected
+	}
+	*p = b.v
+	return nil
+}
+
+type scanFail struct{}
+
+func (scanFail) Scan(...any) error { return dbtest.ErrInjected }
