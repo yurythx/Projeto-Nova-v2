@@ -11937,6 +11937,924 @@
         "type": "object",
         "x-projeto-nova-generated": true
       },
+      "ProtocolosAbrirBody": {
+        "properties": {
+          "cpf": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "hora": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prioridade": {
+            "type": "string"
+          },
+          "respostas": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "servico_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosAgenda": {
+        "properties": {
+          "dias": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "duracao_min": {
+            "type": "integer"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "inicio": {
+            "type": "string"
+          },
+          "vagas_dia": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dias",
+          "duracao_min",
+          "fim",
+          "inicio",
+          "vagas_dia"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosAgendaInput": {
+        "properties": {
+          "dias": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "duracao_min": {
+            "type": "integer"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "inicio": {
+            "type": "string"
+          },
+          "vagas_dia": {
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosAgendamento": {
+        "properties": {
+          "data": {
+            "type": "string"
+          },
+          "hora": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pedido_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "servico_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "hora",
+          "id",
+          "pedido_id",
+          "servico_id",
+          "status"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosArquivoBody": {
+        "properties": {
+          "content_type": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosCampo": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "opcoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "revela": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "obrigatorio",
+          "rotulo",
+          "tipo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosCampoInput": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "opcoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "revela": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosCartaItem": {
+        "properties": {
+          "formulario": {
+            "$ref": "#/components/schemas/ProtocolosFormulario"
+          },
+          "servico": {
+            "$ref": "#/components/schemas/ProtocolosServico"
+          }
+        },
+        "required": [
+          "formulario",
+          "servico"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosConclusaoBody": {
+        "properties": {
+          "decisao": {
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosConsulta": {
+        "properties": {
+          "agendamento": {
+            "$ref": "#/components/schemas/ProtocolosAgendamento"
+          },
+          "complemento": {
+            "type": "string"
+          },
+          "criado_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "historico": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosHistorico"
+            },
+            "type": "array"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "prazo_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "prioridade": {
+            "type": "string"
+          },
+          "servico": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "unidade": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "criado_em",
+          "historico",
+          "nome",
+          "numero",
+          "prioridade",
+          "servico",
+          "status",
+          "unidade"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosEtapa": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "prazo_dias": {
+            "type": "integer"
+          },
+          "responsavel_id": {
+            "type": "string"
+          },
+          "responsavel_tipo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ordem",
+          "prazo_dias",
+          "responsavel_id",
+          "responsavel_tipo",
+          "status"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosEtapaInput": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ordem": {
+            "type": "integer"
+          },
+          "prazo_dias": {
+            "type": "integer"
+          },
+          "responsavel_id": {
+            "type": "string"
+          },
+          "responsavel_tipo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosFaltaBody": {
+        "properties": {
+          "cpf": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosFicha": {
+        "properties": {
+          "agendamento": {
+            "$ref": "#/components/schemas/ProtocolosAgendamento"
+          },
+          "historico": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosHistorico"
+            },
+            "type": "array"
+          },
+          "pedido": {
+            "$ref": "#/components/schemas/ProtocolosPedido"
+          }
+        },
+        "required": [
+          "historico",
+          "pedido"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosFormulario": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "campos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosCampo"
+            },
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instrucao": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativo",
+          "campos",
+          "created_at",
+          "descricao",
+          "id",
+          "instrucao",
+          "titulo",
+          "unidade_id",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosFormularioBody": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "campos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosCampoInput"
+            },
+            "type": "array"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instrucao": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosHistorico": {
+        "properties": {
+          "acao": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pedido_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "usuario_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "acao",
+          "created_at",
+          "descricao",
+          "id",
+          "pedido_id",
+          "status"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosOrientacao": {
+        "properties": {
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "obrigatorio",
+          "texto",
+          "titulo"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosOrientacaoInput": {
+        "properties": {
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosPedido": {
+        "properties": {
+          "campos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosCampo"
+            },
+            "type": "array"
+          },
+          "complemento": {
+            "type": "string"
+          },
+          "cpf": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decisao": {
+            "type": "string"
+          },
+          "departamento_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "etapa_id": {
+            "type": "string"
+          },
+          "formulario_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "prazo_em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "prioridade": {
+            "type": "string"
+          },
+          "responsavel_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "respostas": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "servico_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "servico_nome": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unidade_nome": {
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "usuario_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "complemento",
+          "created_at",
+          "decisao",
+          "etapa_id",
+          "formulario_id",
+          "id",
+          "justificativa",
+          "nome",
+          "numero",
+          "prioridade",
+          "servico_id",
+          "servico_nome",
+          "status",
+          "unidade_id",
+          "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosResponsavelBody": {
+        "properties": {
+          "cpf": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosResponsavelTecnico": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "cpf": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativo",
+          "cpf",
+          "id",
+          "nome"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosServico": {
+        "properties": {
+          "agenda": {
+            "$ref": "#/components/schemas/ProtocolosAgenda"
+          },
+          "aprova_sozinho": {
+            "type": "boolean"
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "campo_anonimo": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "destaque": {
+            "type": "boolean"
+          },
+          "documentos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosOrientacao"
+            },
+            "type": "array"
+          },
+          "exige_agendamento": {
+            "type": "boolean"
+          },
+          "formulario_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "impedir_cpf_aberto": {
+            "type": "boolean"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prazo_dias": {
+            "type": "integer"
+          },
+          "requisitos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosOrientacao"
+            },
+            "type": "array"
+          },
+          "so_responsavel_tecnico": {
+            "type": "boolean"
+          },
+          "taxa_centavos": {
+            "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/ProtocolosWorkflow"
+          }
+        },
+        "required": [
+          "agenda",
+          "aprova_sozinho",
+          "ativo",
+          "campo_anonimo",
+          "categoria",
+          "created_at",
+          "descricao",
+          "destaque",
+          "documentos",
+          "exige_agendamento",
+          "formulario_id",
+          "id",
+          "impedir_cpf_aberto",
+          "nome",
+          "prazo_dias",
+          "requisitos",
+          "so_responsavel_tecnico",
+          "taxa_centavos",
+          "unidade_id",
+          "updated_at",
+          "workflow"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosServicoInput": {
+        "properties": {
+          "agenda": {
+            "$ref": "#/components/schemas/ProtocolosAgendaInput"
+          },
+          "aprova_sozinho": {
+            "type": "boolean"
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "campo_anonimo": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "destaque": {
+            "type": "boolean"
+          },
+          "documentos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosOrientacaoInput"
+            },
+            "type": "array"
+          },
+          "exige_agendamento": {
+            "type": "boolean"
+          },
+          "formulario_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "impedir_cpf_aberto": {
+            "type": "boolean"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prazo_dias": {
+            "type": "integer"
+          },
+          "requisitos": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosOrientacaoInput"
+            },
+            "type": "array"
+          },
+          "so_responsavel_tecnico": {
+            "type": "boolean"
+          },
+          "taxa_centavos": {
+            "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/ProtocolosWorkflowInput"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosTextoBody": {
+        "properties": {
+          "mensagem": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosWorkflow": {
+        "properties": {
+          "etapas": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosEtapa"
+            },
+            "type": "array"
+          },
+          "ligado": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "etapas",
+          "ligado"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosWorkflowInput": {
+        "properties": {
+          "etapas": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosEtapaInput"
+            },
+            "type": "array"
+          },
+          "ligado": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
       "QuadrosAtualizarRequest": {
         "properties": {
           "ativa": {
@@ -39042,6 +39960,1260 @@
         ]
       }
     },
+    "/api/v1/protocolos/balcao": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosBalcao",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosAbrirBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Criar /protocolos/balcao",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/carta": {
+      "get": {
+        "operationId": "getProtocolosCarta",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unidade",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProtocolosServico"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolos — Listar/consultar /protocolos/carta",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/carta/{id}": {
+      "get": {
+        "operationId": "getProtocolosCartaId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosCartaItem"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolos — Obter /protocolos/carta/{id}",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/carta/{id}/arquivo": {
+      "post": {
+        "operationId": "postProtocolosCartaIdArquivo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosArquivoBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ModkitUploadTicket"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolos — Executar ação /protocolos/carta/{id}/arquivo",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/consulta/{numero}": {
+      "get": {
+        "operationId": "getProtocolosConsultaNumero",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "numero",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosConsulta"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Protocolos — Obter /protocolos/consulta/{numero}",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/faltas": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosFaltas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosFaltaBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {
+                            "type": "boolean"
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Criar /protocolos/faltas",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/formularios": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProtocolosFormularios",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProtocolosFormulario"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Listar/consultar /protocolos/formularios",
+        "tags": [
+          "protocolos"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosFormularios",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosFormularioBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosFormulario"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Criar /protocolos/formularios",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos": {
+      "get": {
+        "operationId": "getProtocolosPedidos",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProtocolosPedido"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Listar/consultar /protocolos/pedidos",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}": {
+      "get": {
+        "operationId": "getProtocolosPedidosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosFicha"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Obter /protocolos/pedidos/{id}",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/arquivo": {
+      "get": {
+        "operationId": "getProtocolosPedidosIdArquivo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "campo",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-projeto-nova-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Listar/consultar /protocolos/pedidos/{id}/arquivo",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/avancar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdAvancar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/avancar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/cancelar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdCancelar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/cancelar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/complemento": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdComplemento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosTextoBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/complemento",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/concluir": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdConcluir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosConclusaoBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/concluir",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/resposta": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdResposta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/resposta",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/responsaveis": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosResponsaveis",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosResponsavelBody"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosResponsavelTecnico"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Criar /protocolos/responsaveis",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/servicos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getProtocolosServicos",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProtocolosServico"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Listar/consultar /protocolos/servicos",
+        "tags": [
+          "protocolos"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosServicos",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolosServicoInput"
+              }
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosServico"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Criar /protocolos/servicos",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
     "/api/v1/quadros/{quadro}": {
       "get": {
         "operationId": "getQuadrosQuadro",
@@ -43280,6 +45452,10 @@
     {
       "description": "Projetos. Plug-in — Gestão de projetos e planos de ação da organização.",
       "name": "projetos"
+    },
+    {
+      "description": "Protocolos. Plug-in — Carta de serviços, formulário e pedido do cidadão.",
+      "name": "protocolos"
     },
     {
       "description": "Colunas dos quadros. Plug-in — Nome, cor e ordem das colunas dos quadros kanban. A chave continua sendo o estado do registro.",

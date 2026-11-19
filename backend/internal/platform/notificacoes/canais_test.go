@@ -30,8 +30,8 @@ func (c *carteiro) SendWhatsApp(_ context.Context, m MensagemWhatsApp) error {
 	return c.err
 }
 
-// Atendimento e Fazenda saem pelo e-mail e pelo WhatsApp. Os outros módulos
-// ficam só no sino (ADR 049, ADR 078, ADR 084).
+// Atendimento, Fazenda e Protocolos saem pelo e-mail e pelo WhatsApp. Os outros
+// módulos ficam só no sino (ADR 049, ADR 078, ADR 084, ADR 085).
 func TestCanaisDeSaida(t *testing.T) {
 	pool := dbtest.Pool(t)
 	ctx := context.Background()
@@ -113,4 +113,30 @@ func TestCanaisDeSaida(t *testing.T) {
 	sem := NewService(pool, nil, nil).WithCorreio(c, "").WithWhatsApp(c)
 	sem.db = dbtest.Fail{}
 	sem.Entregar(ctx, enviadas)
+}
+
+func TestAvisarContato(t *testing.T) {
+	pool := dbtest.Pool(t)
+	c := &carteiro{}
+	s := NewService(pool, nil, slog.New(slog.NewTextHandler(&bytes.Buffer{}, nil))).WithCorreio(c, "https://nova.gov.br").WithWhatsApp(c)
+	aviso := Nova{Modulo: "protocolos", Titulo: "Pedido SEMA202600001", Mensagem: "Acompanhe pelo número.", Link: "/carta", Chave: "c:" + uuid.NewString()}
+	s.AvisarContato(context.Background(), "maria@exemplo.gov.br", "(66) 99999-1234", aviso)
+	if len(c.emails) != 1 || c.emails[0].Para != "maria@exemplo.gov.br" || !strings.Contains(c.emails[0].Corpo, "protocolo de serviços") ||
+		!strings.Contains(c.emails[0].Corpo, "https://nova.gov.br/carta") {
+		t.Fatalf("e-mail: %+v", c.emails)
+	}
+	if len(c.whatsapp) != 1 || c.whatsapp[0].Para != "+5566999991234" || c.whatsapp[0].Link != "https://nova.gov.br/carta" {
+		t.Fatalf("WhatsApp: %+v", c.whatsapp)
+	}
+	c.emails, c.whatsapp = nil, nil
+	s.AvisarContato(context.Background(), "sem-arroba", "123", aviso)
+	if len(c.emails)+len(c.whatsapp) != 0 {
+		t.Fatal("contato inválido saiu")
+	}
+	outro := aviso
+	outro.Modulo = "wiki"
+	s.AvisarContato(context.Background(), "maria@exemplo.gov.br", "66999991234", outro)
+	if len(c.emails)+len(c.whatsapp) != 0 {
+		t.Fatal("módulo sem canal")
+	}
 }

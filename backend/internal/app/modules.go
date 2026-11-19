@@ -31,6 +31,7 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/modules/ocorrencias"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/problemas"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/produtos"
+	"github.com/yurythx/projeto-nova-v2/internal/modules/protocolos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/projetos"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/quadros"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/riscos"
@@ -144,6 +145,7 @@ func registerPlugins(d *Dependencies) {
 		integracoesModule,
 		riscos.New(deps),
 		fazenda.New(deps),
+		protocolos.New(deps),
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

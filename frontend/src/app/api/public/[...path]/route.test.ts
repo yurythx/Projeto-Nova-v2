@@ -132,6 +132,37 @@ describe("proxy BFF público (allowlist)", () => {
     expect(upstream.mock.calls[0]![1].headers["X-Forwarded-For"]).toBeUndefined();
   });
 
+  it("o ticket do arquivo da carta passa; o POST da lista, não", async () => {
+    const ticket = await POST(
+      new NextRequest("http://app/x", { method: "POST", body: "{}" }),
+      params("v1", "protocolos", "carta", "11111111-1111-1111-1111-111111111111", "arquivo"),
+    );
+    expect(ticket.status).toBe(200);
+    expect(String(upstream.mock.calls[0]![0])).toBe(
+      "http://api:8080/api/v1/protocolos/carta/11111111-1111-1111-1111-111111111111/arquivo",
+    );
+    const lista = await POST(
+      new NextRequest("http://app/x", { method: "POST", body: "{}" }),
+      params("v1", "protocolos", "carta"),
+    );
+    expect(lista.status).toBe(404);
+    const abertura = await POST(
+      new NextRequest("http://app/x", { method: "POST", body: "{}" }),
+      params("v1", "protocolos", "carta", "11111111-1111-1111-1111-111111111111", "pedido"),
+    );
+    expect(abertura.status).toBe(200);
+    const mesa = await POST(
+      new NextRequest("http://app/x", { method: "POST", body: "{}" }),
+      params("v1", "protocolos", "pedidos"),
+    );
+    expect(mesa.status).toBe(404);
+    const resposta = await POST(
+      new NextRequest("http://app/x", { method: "POST", body: "{}" }),
+      params("v1", "protocolos", "consulta", "SEMA202600001", "resposta"),
+    );
+    expect(resposta.status).toBe(200);
+  });
+
   it("fora da allowlist (rota, método ou '..') responde 404", async () => {
     const cases: [string, string[]][] = [
       ["GET", ["v1", "me"]],

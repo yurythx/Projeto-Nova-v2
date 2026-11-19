@@ -86,6 +86,10 @@ const (
 	PermFazendaProtocolar Permission = "fazenda:protocolar"
 	PermFazendaAnalisar   Permission = "fazenda:analisar"
 	PermFazendaDecidir    Permission = "fazenda:decidir"
+	// Protocolo de serviços (ADR 085). A carta e a consulta pelo número não têm permissão.
+	PermProtocolosGerir  Permission = "protocolos:gerir"
+	PermProtocolosTratar Permission = "protocolos:tratar"
+	PermProtocolosAbrir  Permission = "protocolos:abrir"
 )
 
 // HasPermission reporta se identity possui permission, considerando os

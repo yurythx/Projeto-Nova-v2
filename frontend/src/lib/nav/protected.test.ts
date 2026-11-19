@@ -14,6 +14,8 @@ describe("rotas protegidas", () => {
     expect(isProtectedPath("/atendimento/ofertas")).toBe(true);
     expect(isProtectedPath("/notificacoes")).toBe(true);
     expect(isProtectedPath("/tramite/p1")).toBe(true);
+    expect(isProtectedPath("/protocolos")).toBe(true);
+    expect(isProtectedPath("/protocolos/servicos")).toBe(true);
   });
 
   it("o site público não pede login", () => {
@@ -21,5 +23,7 @@ describe("rotas protegidas", () => {
     expect(isProtectedPath("/sobre")).toBe(false);
     expect(isProtectedPath("/faq")).toBe(false);
     expect(isProtectedPath("/login")).toBe(false);
+    expect(isProtectedPath("/carta")).toBe(false);
+    expect(isProtectedPath("/carta/servico")).toBe(false);
   });
 });

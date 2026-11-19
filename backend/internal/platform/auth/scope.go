@@ -37,6 +37,7 @@ var ScopedPermissions = []Permission{
 	PermProjetosRead, PermProjetosManage, PermContratosManage,
 	PermCofreRead, PermCofreReveal, PermCofreManage, PermCofreGrant,
 	PermFazendaProtocolar, PermFazendaAnalisar, PermFazendaDecidir,
+	PermProtocolosGerir, PermProtocolosTratar, PermProtocolosAbrir,
 }
 
 // IsScoped reporta se a permissão (concreta, sem curinga) vale com escopo.

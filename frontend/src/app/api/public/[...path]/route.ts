@@ -23,6 +23,10 @@ const ALLOW: { method: string; prefix: string }[] = [
   { method: "GET", prefix: "v1/fazenda/autenticidade/" },
   { method: "GET", prefix: "v1/fazenda/govbr" },
   { method: "POST", prefix: "v1/fazenda/govbr/sessao" },
+  { method: "GET", prefix: "v1/protocolos/carta" },
+  { method: "POST", prefix: "v1/protocolos/carta/" },
+  { method: "GET", prefix: "v1/protocolos/consulta/" },
+  { method: "POST", prefix: "v1/protocolos/consulta/" },
 ];
 
 async function forward(req: NextRequest, path: string[]): Promise<NextResponse> {

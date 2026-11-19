@@ -60,3 +60,4 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [080](080-lista-de-chamados-como-o-glpi.md) | Lista de chamados como a do GLPI: busca, filtros recolhidos, colunas que ordenam e a última atualização do GLPI | Aceito e implementado |
 | [081](081-sincronizar-com-o-glpi-ate-a-virada.md) | Sincronizar com o GLPI a cada 15 minutos até a virada, com os importados só para leitura | Aceito e implementado |
 | [084](084-protocolo-da-fazenda.md) | Protocolo da Fazenda: módulo próprio, gov.br, Gove como provedor e integrações com dono | Aceito e em implementação |
+| [085](085-protocolo-de-servicos.md) | Protocolo de serviços: carta, formulário e pedido num plug-in desligado | Aceito e em implementação |

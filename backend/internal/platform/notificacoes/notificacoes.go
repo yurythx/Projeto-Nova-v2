@@ -132,7 +132,7 @@ func NewService(pool *pgxpool.Pool, hub Publisher, logger *slog.Logger) *Service
 	return &Service{pool: pool, db: pool, hub: hub, logger: logger}
 }
 
-// WithCorreio manda por e-mail os avisos do atendimento, depois do sino.
+// WithCorreio manda por e-mail os avisos do atendimento, da Fazenda e do protocolo, depois do sino.
 // Os outros módulos continuam só no sino. baseURL prefixa o caminho.
 func (s *Service) WithCorreio(c Correio, baseURL string) *Service {
 	s.correio = c
@@ -266,7 +266,7 @@ func saiPorCanal(enviadas []Enviada) []uuid.UUID {
 }
 
 func moduloComCanal(modulo string) bool {
-	return modulo == "atendimento" || modulo == "fazenda"
+	return modulo == "atendimento" || modulo == "fazenda" || modulo == "protocolos"
 }
 
 func rodape(modulo, base string) string {
@@ -274,6 +274,8 @@ func rodape(modulo, base string) string {
 	case "fazenda":
 		return "\n\n--\nAviso do protocolo da Fazenda. O texto não traz dado fiscal. " +
 			"Para deixar de receber, desligue a Fazenda em " + base + "/notificacoes"
+	case "protocolos":
+		return "\n\n--\nAviso do protocolo de serviços. Acompanhe pelo número na carta pública."
 	default:
 		return "\n\n--\nAviso automático da Central de Atendimento. Para deixar de receber estes e-mails, " +
 			"desligue o atendimento em " + base + "/notificacoes"
@@ -318,6 +320,73 @@ func (s *Service) enviarWhatsApp(ctx context.Context, enviadas []Enviada) {
 			s.logger.WarnContext(ctx, "notificacoes: WhatsApp do aviso falhou (o sino permanece)", "error", err)
 		}
 	}
+}
+
+// AvisarContato manda o aviso para o e-mail e o celular informados no pedido.
+// Não grava sino: quem abriu o pedido pode não ter usuário na plataforma.
+// Canal desligado ou falha de envio não interrompe quem chamou.
+func (s *Service) AvisarContato(ctx context.Context, email, telefone string, n Nova) {
+	if s == nil || n.Validar() != nil || !moduloComCanal(n.Modulo) {
+		return
+	}
+	email = strings.TrimSpace(email)
+	if s.correio != nil && emailValido(email) {
+		corpo := n.Mensagem
+		if n.Link != "" && s.baseURL != "" {
+			corpo += "\n\nAcompanhe pelo número em:\n" + s.baseURL + n.Link
+		}
+		if s.baseURL != "" {
+			corpo += rodape(n.Modulo, s.baseURL)
+		}
+		if err := s.correio.Send(ctx, Mensagem{Para: email, Assunto: n.Titulo, Corpo: corpo}); err != nil && s.logger != nil {
+			s.logger.WarnContext(ctx, "notificacoes: e-mail do contato falhou", "error", err)
+		}
+	}
+	if s.whatsapp == nil {
+		return
+	}
+	numero := telefoneE164(telefone)
+	if numero == "" {
+		return
+	}
+	link := ""
+	if n.Link != "" && s.baseURL != "" {
+		link = s.baseURL + n.Link
+	}
+	if err := s.whatsapp.SendWhatsApp(ctx, MensagemWhatsApp{Para: numero, Titulo: n.Titulo, Mensagem: n.Mensagem, Link: link}); err != nil && s.logger != nil {
+		s.logger.WarnContext(ctx, "notificacoes: WhatsApp do contato falhou", "error", err)
+	}
+}
+
+func emailValido(email string) bool {
+	if email == "" || strings.ContainsAny(email, " <>") || strings.HasSuffix(strings.ToLower(email), ".invalid") {
+		return false
+	}
+	arroba := strings.Index(email, "@")
+	return arroba > 0 && strings.Contains(email[arroba+1:], ".")
+}
+
+func telefoneE164(telefone string) string {
+	var b strings.Builder
+	for _, r := range telefone {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	digitos := b.String()
+	if digitos == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.TrimSpace(telefone), "+") {
+		if len(digitos) < 8 || len(digitos) > 15 {
+			return ""
+		}
+		return "+" + digitos
+	}
+	if len(digitos) < 10 || len(digitos) > 11 {
+		return ""
+	}
+	return "+55" + digitos
 }
 
 // Enviar grava (transação própria) e entrega.

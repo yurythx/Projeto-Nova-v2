@@ -58,7 +58,10 @@ escopo AS (
         'cofre:grant',
         'fazenda:protocolar',
         'fazenda:analisar',
-        'fazenda:decidir'
+        'fazenda:decidir',
+        'protocolos:gerir',
+        'protocolos:tratar',
+        'protocolos:abrir'
     ]) AS perm
 )
 SELECT c.origem, c.quem, c.perfil,

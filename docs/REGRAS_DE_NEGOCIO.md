@@ -171,6 +171,7 @@ saúde, filial, sede.
 | Ativos / Problemas | `ativos:manage`, `problemas:read`, `problemas:manage` |
 | Mudanças | `mudancas:manage`, `mudancas:aprovar` |
 | Módulo Modelo | `example:manage` |
+| Protocolos | `protocolos:gerir`, `protocolos:tratar`, `protocolos:abrir` |
 
 O que **não** exige permissão, só estar autenticado:
 - ler Blog e Wiki, criar e editar páginas da Wiki;
@@ -1049,6 +1050,20 @@ necessário para processo restrito fora da lotação.
      - Manutenção e Serviços Gerais $\rightarrow$ `wrench` ou `building-2`.
      - Dúvidas e Conhecimento $\rightarrow$ `circle-help` ou `headset`.
    - O ícone padrão para pedidos gerais de atendimento é `headset` (Suporte ITSM).
+
+## Protocolo de serviços
+
+Plug-in `protocolos`, desligado até a ativação em Configurações → Módulos. É a carta de serviços e o pedido do cidadão. O Trâmite segue como processo interno. O Atendimento segue como chamado. A Fazenda segue como rito dos decretos.
+
+- **Unidade dona.** Serviço, formulário e pedido pertencem a uma unidade ativa. `protocolos:gerir` desenha formulário e serviço nessa unidade. `protocolos:tratar` aceita complemento, avanço, conclusão, cancelamento e falta na unidade atual do pedido. `protocolos:abrir` abre no balcão. Fora da unidade, agir devolve 403 e ler devolve 404.
+- **Formulário.** Campos: texto, número, e-mail, telefone, data, hora, senha, URL, CPF, CNPJ, CEP, texto longo, seleção, caixa, grupo de caixas, opção, sim/não, arquivo, ponto, área, ambulante e divisor de página. O sim/não revela os campos listados só quando a resposta é sim. Ponto, área e ambulante guardam coordenadas (`latitude,longitude`; a área, dois pontos separados por `;`). Identificadores não se repetem. O pedido guarda as respostas e a cópia dos campos daquele momento. O arquivo sobe direto ao MinIO por URL pré-assinada, no prefixo do serviço, e o pedido guarda a chave. Sem armazenamento, a resposta do arquivo continua o nome informado.
+- **Serviço.** Nome, categoria, prazo em dias úteis, taxa em centavos, destaque, formulário, requisitos, documentos esperados e workflow. Sábado e domingo não contam. O feriado municipal não entra neste plug-in. Requisitos e documentos são orientação. O workflow só anda com a marca de ligado. Cada etapa tem identificador, ordem, status, prazo em dias úteis e responsável (unidade, departamento ou usuário). Sem etapa com prazo, o prazo do serviço vale na abertura. Aprovar sozinho grava `aprovado` quando não há etapa inicial. Serviço de unidade inativa some da carta e recusa pedido.
+- **Pedido.** Número: sigla da unidade, ou as iniciais do nome (até quatro letras), mais o ano e cinco dígitos. Status: `novo`, `em_andamento`, `pendente`, `em_analise`, `em_complementacao`, `pending_approval`, `aprovado`, `rejeitado`, `concluido`, `cancelado`. `concluido`, `aprovado`, `rejeitado` e `cancelado` recusam mudança. Complemento exige texto, põe `em_complementacao` e trava o avanço até a resposta, que volta a `em_andamento`. A resposta do cidadão exige o CPF do pedido e um texto. O arquivo dessa resposta sobe no prefixo do pedido e fica no histórico da mesa. Conclusão exige decisão `favoravel` ou `desfavoravel` e justificativa. Prioridade: `baixa`, `normal`, `alta`, `urgente`.
+- **CPF, anonimato e responsável técnico.** Serviço com a marca de CPF aberto recusa outro pedido do mesmo CPF naquele serviço enquanto o anterior não está num estado final. O campo de anonimato, quando a resposta é sim, troca o nome na consulta pública por denúncia anônima. Serviço só de responsável técnico exige cadastro ativo com o mesmo CPF. O CPF do responsável não se repete: o segundo cadastro é recusado. A lista é municipal e só sai para quem tem `protocolos:gerir`; o CPF nela aparece mascarado. A abertura no balcão usa a sessão de quem tem `protocolos:abrir` na unidade do serviço e grava esse usuário no pedido.
+- **Agendamento.** Serviço com hora exige dias, início, fim, duração e vagas. Sem data escolhida, a busca começa no dia seguinte, em Cuiabá, e anda até 30 dias. No dia, o horário nasce confirmado; nos demais, agendado. Duas faltas bloqueiam novo horário por 30 dias a partir da última.
+- **Consulta pública.** Pelo número, sem sessão. Devolve o status em português, prioridade, datas, nome, serviço, unidade, histórico e agendamento. CPF, telefone, respostas e a chave do arquivo ficam de fora. Em complementação, o cidadão responde por essa mesma consulta.
+- **Aviso.** O evento `protocolos.pedido.aberto` (e os de complemento, resposta, avanço, conclusão, cancelamento e falta) sai na mesma transação do pedido, com número, fato e orientação. Quem tem usuário na plataforma recebe o sino. E-mail e WhatsApp saem pelos Canais para o e-mail e o celular informados no pedido, se o canal estiver ligado. Falha de canal não desfaz o pedido.
+
 
 ### Gestão de Riscos de TI conforme a ISO/IEC 27001 (GRC) e Agrupamento de Incidentes (AIOps)
 

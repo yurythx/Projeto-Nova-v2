@@ -14,5 +14,6 @@ mudancas                 90.7
 platform/config          97.3
 platform/mail            75.6
 problemas                98.7
+protocolos               98.8
 projetos                 91.2
 quadros                  54.8
