@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { FormEvent } from "react";
 
+import { rotuloPrazo, rotuloStatus, tomPrazo } from "@/components/protocolos/painel";
 import { DataState } from "@/components/plataforma/DataState";
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
@@ -34,6 +35,7 @@ interface Pedido {
   unidade_id: string;
   unidade_nome?: string;
   status: string;
+  situacao_prazo?: string;
   prioridade: string;
   complemento: string;
   decisao: string;
@@ -105,7 +107,8 @@ export default function FichaPage() {
             <Card>
               <CardHeader>
                 <CardTitle as="h2">
-                  {pedido.nome} <Badge>{pedido.status}</Badge>
+                  {pedido.nome} <Badge>{rotuloStatus(pedido.status)}</Badge>
+                  {pedido.situacao_prazo && <Badge tone={tomPrazo(pedido.situacao_prazo)}>{rotuloPrazo(pedido.situacao_prazo)}</Badge>}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 pb-5 text-sm">

@@ -133,8 +133,9 @@ func TestLeituras(t *testing.T) {
 		t.Fatal(err)
 	}
 	serv := linhaServico(id, agora, []byte(`{}`), []byte(`{}`), []byte(`[]`), []byte(`[]`))
-	if _, err := r.BuscarServico(ctx, banco{row: valores{serv}}, id); err != nil {
-		t.Fatal(err)
+	lidoServ, err := r.BuscarServico(ctx, banco{row: valores{serv}}, id)
+	if err != nil || lidoServ.UnidadeNome != "Meio Ambiente" {
+		t.Fatal(lidoServ.UnidadeNome, err)
 	}
 	if _, err := r.BuscarServico(ctx, banco{row: valores{linhaServico(id, agora, []byte("{"), []byte(`{}`), []byte(`[]`), []byte(`[]`))}}, id); err == nil {
 		t.Fatal("workflow")
@@ -251,7 +252,7 @@ func TestLeituras(t *testing.T) {
 }
 
 func linhaServico(id uuid.UUID, agora time.Time, w, a, req, docs []byte) []any {
-	return []any{id, id, id, "Alvará", "", "licenca", 10, 0, true, true, false, false, false, false, "", w, a, req, docs, agora, agora}
+	return []any{id, id, id, "Alvará", "", "licenca", 10, 0, true, true, false, false, false, false, "", w, a, req, docs, agora, agora, "Meio Ambiente"}
 }
 
 func linhaPedido(id uuid.UUID, agora time.Time, resp, campos []byte) []any {

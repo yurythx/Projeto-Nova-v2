@@ -77,6 +77,58 @@ func RotuloStatus(status string) string {
 	}
 }
 
+const (
+	PrazoNoPrazo    = "no_prazo"
+	PrazoAtencao    = "atencao"
+	PrazoAtrasado   = "atrasado"
+	PrazoFinalizado = "finalizado"
+)
+
+// SituacaoPrazo classifica a mesa. Estado final encerra a conta. Sem data,
+// o pedido fica no prazo. Passou o dia do prazo, está atrasado. A partir de
+// três quartos dos dias úteis entre a abertura e o prazo, fica em atenção.
+func SituacaoPrazo(status string, criado time.Time, prazo *time.Time, agora time.Time) string {
+	if EstadoFinal(status) {
+		return PrazoFinalizado
+	}
+	if prazo == nil || prazo.IsZero() {
+		return PrazoNoPrazo
+	}
+	limite := prazo.In(Cuiaba)
+	hoje := agora.In(Cuiaba)
+	if diaCivil(hoje).After(diaCivil(limite)) {
+		return PrazoAtrasado
+	}
+	total := diasUteisFechado(criado.In(Cuiaba), limite)
+	if total <= 0 {
+		return PrazoNoPrazo
+	}
+	if diasUteisFechado(criado.In(Cuiaba), hoje)*4 > total*3 {
+		return PrazoAtencao
+	}
+	return PrazoNoPrazo
+}
+
+func diaCivil(t time.Time) time.Time {
+	ano, mes, dia := t.In(Cuiaba).Date()
+	return time.Date(ano, mes, dia, 0, 0, 0, 0, Cuiaba)
+}
+
+func diasUteisFechado(inicio, fim time.Time) int {
+	a, b := diaCivil(inicio), diaCivil(fim)
+	if b.Before(a) {
+		return 0
+	}
+	n := 0
+	for !a.After(b) {
+		if a.Weekday() != time.Saturday && a.Weekday() != time.Sunday {
+			n++
+		}
+		a = a.AddDate(0, 0, 1)
+	}
+	return n
+}
+
 // Coordenada aceita "latitude,longitude" dentro dos limites do mapa.
 func Coordenada(s string) bool {
 	partes := strings.Split(strings.TrimSpace(s), ",")
@@ -191,6 +243,7 @@ type Agenda struct {
 type Servico struct {
 	ID                   uuid.UUID    `json:"id"`
 	UnidadeID            uuid.UUID    `json:"unidade_id"`
+	UnidadeNome          string       `json:"unidade_nome,omitempty"`
 	FormularioID         uuid.UUID    `json:"formulario_id"`
 	Nome                 string       `json:"nome"`
 	Descricao            string       `json:"descricao"`
@@ -229,6 +282,7 @@ type Pedido struct {
 	Respostas      map[string]any `json:"respostas,omitempty"`
 	Campos         []Campo        `json:"campos,omitempty"`
 	Status         string         `json:"status"`
+	SituacaoPrazo  string         `json:"situacao_prazo,omitempty"`
 	EtapaID        string         `json:"etapa_id"`
 	Prioridade     string         `json:"prioridade"`
 	PrazoEm        *time.Time     `json:"prazo_em,omitempty"`

@@ -24,6 +24,7 @@ interface CartaItem {
     id: string;
     nome: string;
     descricao: string;
+    unidade_nome?: string;
     exige_agendamento: boolean;
     prazo_dias: number;
     taxa_centavos: number;
@@ -33,12 +34,12 @@ interface CartaItem {
   formulario: { titulo: string; instrucao: string; campos: Campo[] };
 }
 
-export function AbrirPedido({ id }: { id: string }) {
+export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirInicial?: boolean }) {
   const [item, setItem] = useState<CartaItem | null>(null);
   const [erro, setErro] = useState("");
   const [numero, setNumero] = useState("");
   const [respostas, setRespostas] = useState<Record<string, unknown>>({});
-  const [pedir, setPedir] = useState(false);
+  const [pedir, setPedir] = useState(pedirInicial);
   const [enviando, setEnviando] = useState(false);
   const [subindo, setSubindo] = useState(false);
 
@@ -114,6 +115,7 @@ export function AbrirPedido({ id }: { id: string }) {
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-14">
       <h1 className="text-2xl font-bold">{item?.servico.nome ?? "Abrir pedido"}</h1>
+      {item?.servico.unidade_nome && <p className="text-sm text-muted">{item.servico.unidade_nome}</p>}
       {item?.servico.descricao && <p className="text-sm text-muted">{item.servico.descricao}</p>}
       {item?.formulario.instrucao && <p className="text-sm text-muted">{item.formulario.instrucao}</p>}
       {item && <p className="text-sm">Prazo de {item.servico.prazo_dias} dias úteis.</p>}

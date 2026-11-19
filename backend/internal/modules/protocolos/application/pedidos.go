@@ -201,7 +201,17 @@ func (s *Service) ListarPedidos(ctx context.Context) ([]domain.Pedido, error) {
 	if lista == nil {
 		lista = []domain.Pedido{}
 	}
+	if err == nil {
+		s.marcarPrazos(lista)
+	}
 	return lista, err
+}
+
+func (s *Service) marcarPrazos(lista []domain.Pedido) {
+	agora := s.agora()
+	for i := range lista {
+		lista[i].SituacaoPrazo = domain.SituacaoPrazo(lista[i].Status, lista[i].CreatedAt, lista[i].PrazoEm, agora)
+	}
 }
 
 // BuscarPedido devolve a ficha para quem trata a unidade atual.
@@ -213,6 +223,7 @@ func (s *Service) BuscarPedido(ctx context.Context, id uuid.UUID) (Ficha, error)
 	if err := s.ver(ctx, p.UnidadeID); err != nil {
 		return Ficha{}, err
 	}
+	p.SituacaoPrazo = domain.SituacaoPrazo(p.Status, p.CreatedAt, p.PrazoEm, s.agora())
 	hist, err := s.repo.ListarHistorico(ctx, s.db, p.ID)
 	if err != nil {
 		return Ficha{}, err

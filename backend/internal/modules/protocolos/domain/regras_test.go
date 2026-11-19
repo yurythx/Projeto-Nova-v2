@@ -461,6 +461,23 @@ func TestDiaUtilMapaEConsulta(t *testing.T) {
 	if SomarDiasUteis(sexta, 0).Format("2006-01-02") != "2026-11-13" {
 		t.Fatal("zero")
 	}
+	prazo := SomarDiasUteis(sexta, 1)
+	if SituacaoPrazo(StatusNovo, sexta, &prazo, sexta) != PrazoNoPrazo {
+		t.Fatal("no prazo")
+	}
+	if SituacaoPrazo(StatusNovo, sexta, &prazo, prazo) != PrazoAtencao {
+		t.Fatal("atenção")
+	}
+	terca := time.Date(2026, 11, 17, 9, 0, 0, 0, Cuiaba)
+	if SituacaoPrazo(StatusNovo, sexta, &prazo, terca) != PrazoAtrasado {
+		t.Fatal("atrasado")
+	}
+	if SituacaoPrazo(StatusConcluido, sexta, &prazo, terca) != PrazoFinalizado {
+		t.Fatal("finalizado")
+	}
+	if SituacaoPrazo(StatusNovo, sexta, nil, sexta) != PrazoNoPrazo {
+		t.Fatal("sem prazo")
+	}
 	if !Coordenada("-16.47, -54.63") || Coordenada("91,0") || Coordenada("ponto") {
 		t.Fatal("coordenada")
 	}

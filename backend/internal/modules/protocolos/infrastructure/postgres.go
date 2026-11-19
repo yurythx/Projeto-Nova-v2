@@ -204,7 +204,7 @@ func scanServico(row pgx.Row) (domain.Servico, error) {
 	var w, a, req, docs []byte
 	err := row.Scan(&s.ID, &s.UnidadeID, &s.FormularioID, &s.Nome, &s.Descricao, &s.Categoria, &s.PrazoDias, &s.TaxaCentavos,
 		&s.Destaque, &s.Ativo, &s.AprovaSozinho, &s.ExigeAgendamento, &s.SoResponsavelTecnico, &s.ImpedirCPFAberto, &s.CampoAnonimo,
-		&w, &a, &req, &docs, &s.CreatedAt, &s.UpdatedAt)
+		&w, &a, &req, &docs, &s.CreatedAt, &s.UpdatedAt, &s.UnidadeNome)
 	if err != nil {
 		return domain.Servico{}, traduz(err)
 	}
@@ -231,7 +231,8 @@ func scanServico(row pgx.Row) (domain.Servico, error) {
 
 const colsServico = `id, unidade_id, formulario_id, nome, descricao, categoria, prazo_dias, taxa_centavos, destaque, ativo,
 	aprova_sozinho, exige_agendamento, so_responsavel_tecnico, impedir_cpf_aberto, campo_anonimo,
-	workflow, agenda, requisitos, documentos, created_at, updated_at`
+	workflow, agenda, requisitos, documentos, created_at, updated_at,
+	(SELECT nome FROM unidades WHERE id = protocolos_servicos.unidade_id)`
 
 func (r *PostgresRepository) BuscarServico(ctx context.Context, db database.DBTX, id uuid.UUID) (domain.Servico, error) {
 	s, err := scanServico(db.QueryRow(ctx, `SELECT `+colsServico+` FROM protocolos_servicos WHERE id=$1`, id))
@@ -244,7 +245,7 @@ func (r *PostgresRepository) BuscarServico(ctx context.Context, db database.DBTX
 func (r *PostgresRepository) ListarServicos(ctx context.Context, db database.DBTX, soAtivos bool, unidade *uuid.UUID) ([]domain.Servico, error) {
 	rows, err := db.Query(ctx, `SELECT `+colsServico+` FROM protocolos_servicos
 		WHERE ($1::bool = false OR ativo) AND ($2::uuid IS NULL OR unidade_id = $2)
-		ORDER BY destaque DESC, nome`, soAtivos, unidade)
+		ORDER BY protocolos_servicos.destaque DESC, protocolos_servicos.nome`, soAtivos, unidade)
 	if err != nil {
 		return nil, fmt.Errorf("protocolos.ListarServicos: %w", err)
 	}
@@ -255,7 +256,7 @@ func (r *PostgresRepository) ListarServicos(ctx context.Context, db database.DBT
 func (r *PostgresRepository) ListarServicosDaGestao(ctx context.Context, db database.DBTX, v domain.Visao) ([]domain.Servico, error) {
 	rows, err := db.Query(ctx, `SELECT t.id, t.unidade_id, t.formulario_id, t.nome, t.descricao, t.categoria, t.prazo_dias, t.taxa_centavos,
 		t.destaque, t.ativo, t.aprova_sozinho, t.exige_agendamento, t.so_responsavel_tecnico, t.impedir_cpf_aberto, t.campo_anonimo,
-		t.workflow, t.agenda, t.requisitos, t.documentos, t.created_at, t.updated_at
+		t.workflow, t.agenda, t.requisitos, t.documentos, t.created_at, t.updated_at, u.nome
 		FROM protocolos_servicos t JOIN unidades u ON u.id = t.unidade_id
 		WHERE `+filtro+` ORDER BY t.nome`, v.Tudo, v.Unidades, v.Entidades)
 	if err != nil {

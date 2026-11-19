@@ -124,8 +124,8 @@ func TestFluxoDoPedido(t *testing.T) {
 		t.Fatal(consulta, err)
 	}
 	lista, err := s.ListarPedidos(ctx)
-	if err != nil || len(lista) < 2 {
-		t.Fatal(len(lista), err)
+	if err != nil || len(lista) < 2 || lista[0].SituacaoPrazo == "" {
+		t.Fatal(len(lista), lista, err)
 	}
 	ficha, err := s.BuscarPedido(ctx, ped.ID)
 	if err != nil || len(ficha.Historico) == 0 {

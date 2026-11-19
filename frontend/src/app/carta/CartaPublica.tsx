@@ -7,6 +7,7 @@ import { fmtDateTime } from "@/components/plataforma/useAction";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { ApiError } from "@/lib/api/client";
 import { publicFetch, publicPost } from "@/lib/api/publicClient";
@@ -21,6 +22,8 @@ interface Servico {
   prazo_dias: number;
   destaque: boolean;
   taxa_centavos: number;
+  unidade_id: string;
+  unidade_nome?: string;
 }
 
 interface Historico {
@@ -56,6 +59,7 @@ const PRIORIDADE: Record<string, string> = {
 export function CartaPublica() {
   const [servicos, setServicos] = useState<Servico[] | null>(null);
   const [filtro, setFiltro] = useState("");
+  const [unidade, setUnidade] = useState("");
   const [consulta, setConsulta] = useState<Consulta | null>(null);
   const [erro, setErro] = useState("");
 
@@ -73,13 +77,20 @@ export function CartaPublica() {
     };
   }, []);
 
+  const secretarias = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const servico of servicos ?? []) mapa.set(servico.unidade_id, servico.unidade_nome || "Secretaria");
+    return [...mapa.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [servicos]);
+
   const visiveis = useMemo(() => {
     const termo = filtro.trim().toLowerCase();
     return (servicos ?? []).filter((servico) => {
+      if (unidade && servico.unidade_id !== unidade) return false;
       if (!termo) return true;
-      return `${servico.nome} ${servico.categoria} ${servico.descricao}`.toLowerCase().includes(termo);
+      return `${servico.nome} ${servico.categoria} ${servico.descricao} ${servico.unidade_nome ?? ""}`.toLowerCase().includes(termo);
     });
-  }, [servicos, filtro]);
+  }, [servicos, filtro, unidade]);
 
   async function consultar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -128,12 +139,22 @@ export function CartaPublica() {
 
       <section id="abrir" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Abrir protocolo</h2>
-        <Input
-          id="filtro"
-          label="Filtrar por nome ou categoria"
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            id="filtro"
+            label="Filtrar por nome ou categoria"
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+          />
+          <Select
+            id="secretaria"
+            label="Secretaria"
+            placeholder="Todas as secretarias"
+            value={unidade}
+            onChange={(e) => setUnidade(e.target.value)}
+            options={secretarias}
+          />
+        </div>
         {servicos && visiveis.length === 0 && <p className="text-sm text-muted">Nenhum serviço encontrado.</p>}
         <ul className="flex flex-col gap-3">
           {visiveis.map((servico) => (
@@ -142,14 +163,20 @@ export function CartaPublica() {
                 <CardHeader>
                   <CardTitle as="h3">{servico.nome}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-end justify-between gap-3 pb-5">
+                <CardContent className="flex flex-col gap-3 pb-5">
                   <p className="text-sm text-muted">
                     {servico.destaque ? "Destaque · " : ""}
-                    {servico.categoria || servico.descricao || "Serviço da carta"} · prazo {servico.prazo_dias} dias úteis
+                    {servico.categoria || "Serviço da carta"} · {servico.unidade_nome || "Secretaria"} · prazo {servico.prazo_dias} dias úteis
                   </p>
-                  <Link href={`/carta/${servico.id}`} className={buttonClass("primary", "sm")}>
-                    Ver detalhes
-                  </Link>
+                  {servico.descricao && <p className="text-sm">{servico.descricao}</p>}
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/carta/${servico.id}`} className={buttonClass("secondary", "sm")}>
+                      Ver detalhes
+                    </Link>
+                    <Link href={`/carta/${servico.id}?pedir=1`} className={buttonClass("primary", "sm")}>
+                      Solicitar
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </li>

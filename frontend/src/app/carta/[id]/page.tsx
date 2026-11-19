@@ -9,11 +9,18 @@ export const metadata: Metadata = {
   description: "Formulário público da carta de serviços.",
 };
 
-export default async function AbrirPedidoPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AbrirPedidoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ pedir?: string }>;
+}) {
   const { id } = await params;
+  const busca = await searchParams;
   return (
     <PublicShell>
-      <AbrirPedido id={id} />
+      <AbrirPedido id={id} pedirInicial={busca.pedir === "1"} />
     </PublicShell>
   );
 }
