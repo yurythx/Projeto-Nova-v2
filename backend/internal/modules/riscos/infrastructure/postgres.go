@@ -63,7 +63,6 @@ func (r *Repository) ListRiscos(ctx context.Context, db database.DBTX, f domain.
 	if f.Status != "" {
 		query += ` AND status = $` + string(rune('0'+idx))
 		args = append(args, f.Status)
-		idx++
 	}
 
 	query += ` ORDER BY severidade DESC, created_at DESC`

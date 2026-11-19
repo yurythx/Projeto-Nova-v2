@@ -205,10 +205,6 @@ func TestHandlers(t *testing.T) {
 	chama(t, ruim.DUA, pedido(http.MethodPost, `{"omitidas":1}`, &quem, nil), http.StatusInternalServerError)
 }
 
-type libera struct{}
-
-func (libera) Allow(context.Context, string) (bool, error) { return true, nil }
-
 func TestRotas(t *testing.T) {
 	h := NewHandlers(falso{}, nil)
 	r := chi.NewRouter()

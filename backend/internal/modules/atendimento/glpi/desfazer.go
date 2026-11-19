@@ -2,7 +2,6 @@ package glpi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -30,9 +29,6 @@ type Desfeito struct {
 
 // MaxExemplos limita os números de chamados mantidos no relatório.
 const MaxExemplos = 20
-
-// errSimulacao desfaz a transação da simulação.
-var errSimulacao = errors.New("glpi: simulação do desfazer")
 
 // mexidos marca os chamados importados que receberam alguma ação aqui
 // depois da carga. O registro da importação nasce na transação do

@@ -333,14 +333,7 @@ func (s *Service) Buscar(ctx context.Context, quem auth.Identity, id uuid.UUID) 
 	if err := s.visivel(quem, p); err != nil {
 		return domain.Processo{}, err
 	}
-	p.Pendencia = domain.Pendencia(p, s.agora())
-	pecas, err := s.repo.ListarPecas(ctx, s.leitor, id)
-	if err != nil {
-		return domain.Processo{}, err
-	}
-	p = p.ComCiencia().ComAtos(s.agora())
-	p.Pecas = s.links(ctx, pecas)
-	return p, nil
+	return s.apresentar(ctx, p)
 }
 
 // RegistrarConsulta grava a ciência quando o titular abre o processo.

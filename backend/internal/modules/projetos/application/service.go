@@ -198,29 +198,6 @@ func (s *Service) fixarPessoa(ctx context.Context, db database.DBTX, unidade, id
 	return nil, "", domain.ErrPessoaInvalida
 }
 
-// fixarResponsavel aceita quem pode gerir projetos da entidade, mesmo sem
-// lotação gravada na unidade do projeto.
-func (s *Service) fixarResponsavel(ctx context.Context, db database.DBTX, unidade, id *uuid.UUID, nome, nomeGuardado string, idGuardado *uuid.UUID) (*uuid.UUID, string, error) {
-	nome = strings.TrimSpace(nome)
-	if id != nil && *id == uuid.Nil {
-		id = nil
-	}
-	if id != nil {
-		canon, err := s.repo.NomeDeResponsavel(ctx, db, *id, unidade)
-		if err != nil {
-			return nil, "", err
-		}
-		return id, canon, nil
-	}
-	if nome == "" {
-		return nil, "", nil
-	}
-	if nome == strings.TrimSpace(nomeGuardado) {
-		return idGuardado, nomeGuardado, nil
-	}
-	return nil, "", domain.ErrPessoaInvalida
-}
-
 func alvoUnidade(u *uuid.UUID) auth.Target {
 	if u == nil {
 		return auth.Target{}

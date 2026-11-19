@@ -94,7 +94,7 @@ func TestSugerirClassificacao(t *testing.T) {
 	if err != nil || s.Tipo != domain.SugestaoClassificacao || s.Classificacao.Impacto != 3 || s.Conexao != "IA local" || *s.PedidaPor != c.tecnico.UserID {
 		t.Fatalf("sugestÃ£o: %+v %v", s, err)
 	}
-	if !strings.Contains(ia.pergunta, "TÃ­tulo: Pedido") || !strings.Contains(ia.pergunta, "Oferta: "+c.oferta.Nome) || !strings.Contains(ia.sistema, "JSON") {
+	if !strings.Contains(ia.pergunta, "Título: Pedido") || !strings.Contains(ia.pergunta, "Oferta: "+c.oferta.Nome) || !strings.Contains(ia.sistema, "JSON") {
 		t.Fatalf("pergunta: %q", ia.pergunta)
 	}
 	// A IA sÃ³ sugere: o chamado continua como estava.

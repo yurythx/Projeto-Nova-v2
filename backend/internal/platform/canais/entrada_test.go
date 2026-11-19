@@ -88,7 +88,8 @@ func TestFormatosDaEntrada(t *testing.T) {
 		assinaturaValida("s", "sha256=zz", corpo) || assinaturaValida("s", "md5=1", corpo) || assinaturaValida("", assinar("", corpo), corpo) {
 		t.Fatal("assinatura")
 	}
-	if len(novoToken()) != 48 || novoToken() == novoToken() {
+	primeiro, segundo := novoToken(), novoToken()
+	if len(primeiro) != 48 || primeiro == segundo {
 		t.Fatal("token")
 	}
 }

@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -76,14 +75,6 @@ func temPrazo(lista []PrazoPainel, nome, situacao string) bool {
 
 func em(ano int, mes time.Month, dia, hora, min int) time.Time {
 	return time.Date(ano, mes, dia, hora, min, 0, 0, Cuiaba)
-}
-
-func recusa(t *testing.T, err error, trecho string) {
-	t.Helper()
-	var r Recusa
-	if !errors.As(err, &r) || !strings.Contains(r.Msg, trecho) {
-		t.Fatalf("recusa %q: %v", trecho, err)
-	}
 }
 
 func docs(tipos ...string) []Documento {
