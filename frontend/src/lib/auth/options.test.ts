@@ -304,7 +304,12 @@ describe("callback jwt", () => {
     expect(
       (
         await jwt(o, {
-          token: { provider: "keycloak", accessToken: "x", accessTokenExpires: 1, refreshToken: "r" },
+          token: {
+            provider: "keycloak",
+            accessToken: "x",
+            accessTokenExpires: 1,
+            refreshToken: "r",
+          },
           trigger: "update",
         })
       ).error,

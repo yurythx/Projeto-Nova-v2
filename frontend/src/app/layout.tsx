@@ -53,7 +53,9 @@ const geistMono = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const b = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [BRANDING_TAG]);
+  const b = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [
+    BRANDING_TAG,
+  ]);
   const name = b?.app_name || "Projeto Nova";
   const desc =
     b?.app_description ||
@@ -92,7 +94,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Identidade da organização (API; salvar na tela expira o cache na hora)
   // + preferências e-MAG do visitante (cookie) — aplicadas em <html> ANTES
   // do 1º paint.
-  const api = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [BRANDING_TAG]);
+  const api = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [
+    BRANDING_TAG,
+  ]);
   const branding = mergeServerBranding(
     api,
     parseBrandingCookie(cookieStore.get(BRANDING_COOKIE)?.value),

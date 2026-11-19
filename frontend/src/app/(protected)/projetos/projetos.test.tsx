@@ -192,14 +192,12 @@ describe("Projetos — Detalhes e Tarefas", () => {
     expect(screen.getByText("A fazer")).toBeInTheDocument();
     expect(screen.getByText("Mariana Costa")).toBeInTheDocument();
     expect(screen.getByText("João Lima")).toBeInTheDocument();
-    expect(screen.getByRole("meter", { name: "Progresso de Expansão da Fibra Óptica" })).toHaveAttribute(
-      "aria-valuenow",
-      "25",
-    );
-    expect(screen.getByRole("meter", { name: "Progresso de Comprar cabos de fibra" })).toHaveAttribute(
-      "aria-valuenow",
-      "100",
-    );
+    expect(
+      screen.getByRole("meter", { name: "Progresso de Expansão da Fibra Óptica" }),
+    ).toHaveAttribute("aria-valuenow", "25");
+    expect(
+      screen.getByRole("meter", { name: "Progresso de Comprar cabos de fibra" }),
+    ).toHaveAttribute("aria-valuenow", "100");
   });
 
   it("exibe informações do projeto e permite adicionar tarefas", async () => {
@@ -450,7 +448,9 @@ describe("Projetos — Detalhes e Tarefas", () => {
 
     renderApp(<CalendarioPrazos agora={sexta} />);
 
-    expect(await screen.findByRole("region", { name: /Prazos de novembro de 2026/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("region", { name: /Prazos de novembro de 2026/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Comprar cabos de fibra" })).toHaveAttribute(
       "href",
       "/projetos/proj-1",

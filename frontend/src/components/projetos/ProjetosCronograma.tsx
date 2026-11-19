@@ -241,7 +241,11 @@ export function ProjetosCronograma({ projetos }: Props) {
                         </Link>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted">
-                        <PessoaComAvatar id={p.gerente_id} nome={p.gerente_nome} vazio="Sem gerente" />
+                        <PessoaComAvatar
+                          id={p.gerente_id}
+                          nome={p.gerente_nome}
+                          vazio="Sem gerente"
+                        />
                         {prioridadeMeta && <span>• {prioridadeMeta.label}</span>}
                       </div>
                     </div>

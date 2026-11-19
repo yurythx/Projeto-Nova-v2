@@ -1,14 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Flame,
-  Plus,
-  RefreshCw,
-  ShieldAlert,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Flame, Plus, RefreshCw, ShieldAlert } from "lucide-react";
 
 import { PageHeader } from "@/components/plataforma/PageHeader";
 import { DataState } from "@/components/plataforma/DataState";
@@ -73,13 +66,29 @@ function badgeSeveridade(nivel: NivelSeveridade | undefined, score?: number) {
   const label = score ? `${score} • ${n.toUpperCase()}` : n.toUpperCase();
   switch (n) {
     case "critico":
-      return <Badge tone="danger" className="font-semibold">{label}</Badge>;
+      return (
+        <Badge tone="danger" className="font-semibold">
+          {label}
+        </Badge>
+      );
     case "alto":
-      return <Badge tone="warning" className="font-semibold">{label}</Badge>;
+      return (
+        <Badge tone="warning" className="font-semibold">
+          {label}
+        </Badge>
+      );
     case "medio":
-      return <Badge tone="warning" className="font-semibold">{label}</Badge>;
+      return (
+        <Badge tone="warning" className="font-semibold">
+          {label}
+        </Badge>
+      );
     case "baixo":
-      return <Badge tone="success" className="font-semibold">{label}</Badge>;
+      return (
+        <Badge tone="success" className="font-semibold">
+          {label}
+        </Badge>
+      );
   }
 }
 
@@ -138,7 +147,10 @@ export default function RiscosPage() {
       if (filtroCategoria && r.categoria !== filtroCategoria) return false;
       if (filtroStatus && r.status !== filtroStatus) return false;
       if (filtroSeveridade && nivelDe(r.severidade) !== filtroSeveridade) return false;
-      if (celulaFiltro && (r.probabilidade !== celulaFiltro.prob || r.impacto !== celulaFiltro.imp)) {
+      if (
+        celulaFiltro &&
+        (r.probabilidade !== celulaFiltro.prob || r.impacto !== celulaFiltro.imp)
+      ) {
         return false;
       }
       if (busca) {
@@ -158,7 +170,8 @@ export default function RiscosPage() {
       total: riscos.length,
       criticos: riscos.filter((r) => nivelDe(r.severidade) === "critico").length,
       altos: riscos.filter((r) => nivelDe(r.severidade) === "alto").length,
-      emTratamento: riscos.filter((r) => r.status === "em_analise" || r.status === "em_mitigacao").length,
+      emTratamento: riscos.filter((r) => r.status === "em_analise" || r.status === "em_mitigacao")
+        .length,
       resolvidos: riscos.filter((r) => r.status === "resolvido").length,
     };
   }, [riscos]);
@@ -231,8 +244,8 @@ export default function RiscosPage() {
       }
       await mutate();
       setModalAberto(false);
-    } catch (err: any) {
-      setErroForm(err.message || "Erro ao salvar risco. Verifique os dados.");
+    } catch (err: unknown) {
+      setErroForm(err instanceof Error ? err.message : "Erro ao salvar risco. Verifique os dados.");
     } finally {
       setSalvando(false);
     }
@@ -387,7 +400,8 @@ export default function RiscosPage() {
                 Heatmap de Severidade (Probabilidade × Impacto)
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Padrão internacional ISO/IEC 27005. Clique em uma célula para filtrar os riscos daquele quadrante.
+                Padrão internacional ISO/IEC 27005. Clique em uma célula para filtrar os riscos
+                daquele quadrante.
               </p>
             </div>
             {celulaFiltro && (
@@ -411,7 +425,10 @@ export default function RiscosPage() {
                   Probabilidade \ Impacto
                 </div>
                 {[1, 2, 3, 4, 5].map((imp) => (
-                  <div key={imp} className="p-1 bg-muted/60 rounded font-semibold text-muted-foreground">
+                  <div
+                    key={imp}
+                    className="p-1 bg-muted/60 rounded font-semibold text-muted-foreground"
+                  >
                     {IMPACTO_ROTULOS[imp]}
                   </div>
                 ))}
@@ -425,10 +442,10 @@ export default function RiscosPage() {
                     {[1, 2, 3, 4, 5].map((imp) => {
                       const { score, nivel } = calcularNivel(prob, imp);
                       const contagem = mapaHeatmap.get(`${prob}-${imp}`) || 0;
-                      const selecionado =
-                        celulaFiltro?.prob === prob && celulaFiltro?.imp === imp;
+                      const selecionado = celulaFiltro?.prob === prob && celulaFiltro?.imp === imp;
 
-                      let bgClass = "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 border-emerald-200";
+                      let bgClass =
+                        "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 border-emerald-200";
                       if (nivel === "critico") {
                         bgClass = "bg-red-500 text-white border-red-600";
                       } else if (nivel === "alto") {
@@ -441,19 +458,13 @@ export default function RiscosPage() {
                         <button
                           key={`${prob}-${imp}`}
                           type="button"
-                          onClick={() =>
-                            setCelulaFiltro(
-                              selecionado ? null : { prob, imp }
-                            )
-                          }
+                          onClick={() => setCelulaFiltro(selecionado ? null : { prob, imp })}
                           className={`h-16 rounded border transition-all flex flex-col items-center justify-center relative cursor-pointer hover:opacity-90 ${bgClass} ${
                             selecionado ? "ring-4 ring-primary scale-105 z-10 shadow-lg" : ""
                           }`}
                         >
                           <span className="text-[10px] opacity-75 font-mono">Score {score}</span>
-                          <span className="text-lg font-bold">
-                            {contagem > 0 ? contagem : "—"}
-                          </span>
+                          <span className="text-lg font-bold">{contagem > 0 ? contagem : "—"}</span>
                           {contagem > 0 && (
                             <span className="text-[10px] font-semibold tracking-tighter uppercase">
                               {contagem === 1 ? "risco" : "riscos"}
@@ -538,9 +549,7 @@ export default function RiscosPage() {
               <tbody className="divide-y">
                 {riscosFiltrados.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-primary">
-                      {r.codigo}
-                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-primary">{r.codigo}</td>
                     <td className="py-3 px-4 max-w-xs">
                       <div className="font-semibold text-foreground">{r.titulo}</div>
                       <div className="text-xs text-muted-foreground line-clamp-2">
@@ -560,7 +569,10 @@ export default function RiscosPage() {
                     </td>
                     <td className="py-3 px-4 max-w-[200px]">
                       {r.controle_iso27001 ? (
-                        <div className="text-xs font-mono text-muted-foreground truncate" title={r.controle_iso27001}>
+                        <div
+                          className="text-xs font-mono text-muted-foreground truncate"
+                          title={r.controle_iso27001}
+                        >
                           {r.controle_iso27001}
                         </div>
                       ) : (
@@ -572,16 +584,10 @@ export default function RiscosPage() {
                         {ROTULOS_ESTRATEGIA[r.estrategia]}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
-                      {badgeStatus(r.status)}
-                    </td>
+                    <td className="py-3 px-4">{badgeStatus(r.status)}</td>
                     <td className="py-3 px-4 text-right">
                       {podeGerenciar && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => abrirModalEdicao(r)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => abrirModalEdicao(r)}>
                           Gerenciar
                         </Button>
                       )}
@@ -598,7 +604,11 @@ export default function RiscosPage() {
       <Dialog
         open={modalAberto}
         onClose={() => setModalAberto(false)}
-        title={riscoEmEdicao ? `Gerenciar Risco ${riscoEmEdicao.codigo}` : "Cadastrar Novo Risco (ISO 27001)"}
+        title={
+          riscoEmEdicao
+            ? `Gerenciar Risco ${riscoEmEdicao.codigo}`
+            : "Cadastrar Novo Risco (ISO 27001)"
+        }
       >
         <form onSubmit={salvarRisco} className="space-y-4">
           {erroForm && (
@@ -672,9 +682,7 @@ export default function RiscosPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium block mb-1">
-                  Probabilidade (1 a 5)
-                </label>
+                <label className="text-xs font-medium block mb-1">Probabilidade (1 a 5)</label>
                 <Select
                   value={probabilidade.toString()}
                   onChange={(e) => setProbabilidade(parseInt(e.target.value, 10))}
@@ -683,9 +691,7 @@ export default function RiscosPage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium block mb-1">
-                  Impacto (1 a 5)
-                </label>
+                <label className="text-xs font-medium block mb-1">Impacto (1 a 5)</label>
                 <Select
                   value={impacto.toString()}
                   onChange={(e) => setImpacto(parseInt(e.target.value, 10))}
@@ -750,11 +756,7 @@ export default function RiscosPage() {
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setModalAberto(false)}
-            >
+            <Button type="button" variant="secondary" onClick={() => setModalAberto(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={salvando}>

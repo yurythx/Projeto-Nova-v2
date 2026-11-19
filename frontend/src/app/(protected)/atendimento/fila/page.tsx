@@ -73,9 +73,7 @@ function FilaDaEquipe() {
     : consultaDaLista(filtros);
   const fila = useApiPage<Solicitacao>(atende ? withQuery("v1/atendimento/fila", consulta) : null);
   const arvore = useApiQuery<OrgTree[]>(atende ? "v1/iam/org-tree" : null);
-  const categorias = useApiQuery<Categoria[]>(
-    atende ? "v1/atendimento/catalogo/categorias" : null,
-  );
+  const categorias = useApiQuery<Categoria[]>(atende ? "v1/atendimento/catalogo/categorias" : null);
   const { activeEntity, filtrarPorEntidade } = useEntityFilter();
   const unidades = useMemo(() => {
     const entidades = (arvore.data ?? []).filter((e) => !activeEntity || e.id === activeEntity);
@@ -210,8 +208,8 @@ function FilaDaEquipe() {
             />
             {(fila.data?.meta?.total_items ?? 0) > itens.length && (
               <p className="text-sm text-muted">
-                O quadro mostra {itens.length} de {fila.data?.meta?.total_items}, até 40 por
-                coluna. O restante está na lista.
+                O quadro mostra {itens.length} de {fila.data?.meta?.total_items}, até 40 por coluna.
+                O restante está na lista.
               </p>
             )}
           </>

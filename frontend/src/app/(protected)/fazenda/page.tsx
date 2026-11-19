@@ -187,7 +187,9 @@ export default function FazendaPage() {
         {equipe && (list.data ?? []).length > 0 && (
           <div className="flex flex-wrap justify-center gap-2">
             {OPCOES_SITUACAO.map((opcao) => {
-              const quantidade = (list.data ?? []).filter((item) => item.situacao === opcao.value).length;
+              const quantidade = (list.data ?? []).filter(
+                (item) => item.situacao === opcao.value,
+              ).length;
               if (quantidade === 0) return null;
               return (
                 <Button
@@ -209,7 +211,10 @@ export default function FazendaPage() {
               <li key={`${prazo.nome}-${prazo.limite}`}>
                 {prazo.nome} até {emCuiaba(prazo.limite)}: {prazo.situacao}
                 {prazo.situacao === "alerta" && (
-                  <span className="text-muted"> — há prazo a vencer, acompanhe na área restrita</span>
+                  <span className="text-muted">
+                    {" "}
+                    — há prazo a vencer, acompanhe na área restrita
+                  </span>
                 )}
               </li>
             ))}

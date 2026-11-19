@@ -49,10 +49,16 @@ export function ResponsavelDaTarefa({
       />
       <p className="text-xs text-muted">Os nomes aparecem a partir da segunda letra.</p>
       {buscando && (
-        <ul role="listbox" aria-label="Responsáveis" className="flex flex-col rounded-lg border border-surface-border">
+        <ul
+          role="listbox"
+          aria-label="Responsáveis"
+          className="flex flex-col rounded-lg border border-surface-border"
+        >
           {lista.isLoading && <li className="px-3 py-2 text-sm text-muted">Carregando pessoas…</li>}
           {!lista.isLoading && visiveis.length === 0 && (
-            <li className="px-3 py-2 text-sm text-muted">Nenhuma pessoa com esse nome nesta entidade.</li>
+            <li className="px-3 py-2 text-sm text-muted">
+              Nenhuma pessoa com esse nome nesta entidade.
+            </li>
           )}
           {visiveis.map((pessoa) => (
             <li key={pessoa.id} role="option" aria-selected={value.id === pessoa.id}>

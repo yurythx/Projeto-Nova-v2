@@ -74,15 +74,21 @@ export default function AssistenciaDashboardPage() {
   const solicitacoesBrutas = fila.data?.items ?? [];
   const solicitacoes = filtrarPorEntidade(solicitacoesBrutas);
   const totalFila = fila.data?.meta?.total_items ?? solicitacoes.length;
-  const listaProblemas = filtrarPorEntidade((problemas.data ?? []).filter(
-    (item) => !filtros.estadoProblema || item.estado === filtros.estadoProblema,
-  ));
-  const listaMudancas = filtrarPorEntidade((mudancas.data ?? []).filter(
-    (item) => !filtros.estadoMudanca || item.estado === filtros.estadoMudanca,
-  ));
-  const listaProjetos = filtrarPorEntidade((projetos.data ?? []).filter(
-    (item) => !filtros.estadoProjeto || item.estado === filtros.estadoProjeto,
-  ));
+  const listaProblemas = filtrarPorEntidade(
+    (problemas.data ?? []).filter(
+      (item) => !filtros.estadoProblema || item.estado === filtros.estadoProblema,
+    ),
+  );
+  const listaMudancas = filtrarPorEntidade(
+    (mudancas.data ?? []).filter(
+      (item) => !filtros.estadoMudanca || item.estado === filtros.estadoMudanca,
+    ),
+  );
+  const listaProjetos = filtrarPorEntidade(
+    (projetos.data ?? []).filter(
+      (item) => !filtros.estadoProjeto || item.estado === filtros.estadoProjeto,
+    ),
+  );
   const incidentes = solicitacoes.filter((s) => s.tipo === "incidente").length;
   const requisicoes = solicitacoes.filter((s) => s.tipo === "requisicao").length;
   const notaFila =

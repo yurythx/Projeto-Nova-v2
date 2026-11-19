@@ -30,7 +30,9 @@ export function PessoasDaTarefa({
     if (!buscando) return [];
     const ja = new Set(value.map((pessoa) => pessoa.id));
     return (lista.data ?? [])
-      .filter((pessoa) => !ja.has(pessoa.id) && pessoa.nome.toLocaleLowerCase("pt-BR").includes(termo))
+      .filter(
+        (pessoa) => !ja.has(pessoa.id) && pessoa.nome.toLocaleLowerCase("pt-BR").includes(termo),
+      )
       .slice(0, 8);
   }, [buscando, lista.data, termo, value]);
 
@@ -44,9 +46,15 @@ export function PessoasDaTarefa({
         placeholder="Digite o nome"
         autoComplete="off"
       />
-      <p className="text-xs text-muted">Só quem já participa do projeto. Os nomes aparecem a partir da segunda letra.</p>
+      <p className="text-xs text-muted">
+        Só quem já participa do projeto. Os nomes aparecem a partir da segunda letra.
+      </p>
       {buscando && (
-        <ul role="listbox" aria-label="Pessoas do projeto" className="flex flex-col rounded-lg border border-surface-border">
+        <ul
+          role="listbox"
+          aria-label="Pessoas do projeto"
+          className="flex flex-col rounded-lg border border-surface-border"
+        >
           {lista.isLoading && <li className="px-3 py-2 text-sm text-muted">Carregando pessoas…</li>}
           {!lista.isLoading && visiveis.length === 0 && (
             <li className="px-3 py-2 text-sm text-muted">
@@ -73,7 +81,10 @@ export function PessoasDaTarefa({
       {value.length > 0 && (
         <ul className="flex flex-col gap-1">
           {value.map((pessoa) => (
-            <li key={pessoa.id || pessoa.nome} className="flex items-center justify-between rounded-md bg-surface-hover px-3 py-1.5 text-sm">
+            <li
+              key={pessoa.id || pessoa.nome}
+              className="flex items-center justify-between rounded-md bg-surface-hover px-3 py-1.5 text-sm"
+            >
               <span>{pessoa.nome}</span>
               <button
                 type="button"

@@ -66,7 +66,11 @@ export function PessoaDaUnidade({
         }}
       />
       {directory && (results.data?.items ?? []).length > 0 && (
-        <ul role="listbox" aria-label="Pessoas" className="flex flex-col rounded-lg border border-surface-border">
+        <ul
+          role="listbox"
+          aria-label="Pessoas"
+          className="flex flex-col rounded-lg border border-surface-border"
+        >
           {(results.data?.items ?? []).map((p) => (
             <li key={p.user_id} role="option" aria-selected={value.id === p.user_id}>
               <button
@@ -75,7 +79,9 @@ export function PessoaDaUnidade({
                 className="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
               >
                 {p.name || p.username}{" "}
-                <span className="text-xs text-muted">{[p.job_title, p.unidade].filter(Boolean).join(" · ")}</span>
+                <span className="text-xs text-muted">
+                  {[p.job_title, p.unidade].filter(Boolean).join(" · ")}
+                </span>
               </button>
             </li>
           ))}
@@ -95,9 +101,7 @@ export function PessoaDaUnidade({
       )}
       {value.nome && (
         <p className="flex items-center justify-between rounded-md bg-surface-hover px-3 py-1.5 text-sm">
-          <span>
-            {value.id ? value.nome : `Nome já registrado: ${value.nome}`}
-          </span>
+          <span>{value.id ? value.nome : `Nome já registrado: ${value.nome}`}</span>
           <button
             type="button"
             aria-label={`Remover ${value.nome}`}

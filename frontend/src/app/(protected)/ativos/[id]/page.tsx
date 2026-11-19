@@ -229,7 +229,9 @@ export function AtivoDetalhe() {
                   <div>
                     <dt className="text-xs text-muted">Origem</dt>
                     <dd>
-                      {a.origem === "agente" ? "Informado pelo agente da máquina" : "Cadastro manual"}
+                      {a.origem === "agente"
+                        ? "Informado pelo agente da máquina"
+                        : "Cadastro manual"}
                     </dd>
                   </div>
                   <div className="sm:col-span-2">

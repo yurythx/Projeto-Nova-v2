@@ -10,7 +10,15 @@ import { useApiQuery, withQuery } from "@/lib/api/swr";
 import type { PrazoAgenda } from "@/lib/projetos/projetos";
 import { pessoasDaTarefa, tarefaInclui } from "@/lib/projetos/projetos";
 
-import { diaBrasil, diaISO, deslocarMes, faixaDaSemana, gradeDoMes, mesISO, nomeDoMes } from "./datas";
+import {
+  diaBrasil,
+  diaISO,
+  deslocarMes,
+  faixaDaSemana,
+  gradeDoMes,
+  mesISO,
+  nomeDoMes,
+} from "./datas";
 
 const SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const VISIVEIS = 3;
@@ -64,13 +72,28 @@ export function CalendarioPrazos({ usuarioId, agora }: { usuarioId?: string; ago
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium capitalize text-foreground">{nomeDoMes(mes)}</h2>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="secondary" onClick={() => setMes((atual) => deslocarMes(atual, -1))}>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setMes((atual) => deslocarMes(atual, -1))}
+          >
             Mês anterior
           </Button>
-          <Button type="button" size="sm" variant="secondary" onClick={() => setMes(mesISO(relogio))}>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setMes(mesISO(relogio))}
+          >
             Mês atual
           </Button>
-          <Button type="button" size="sm" variant="secondary" onClick={() => setMes((atual) => deslocarMes(atual, 1))}>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setMes((atual) => deslocarMes(atual, 1))}
+          >
             Próximo mês
           </Button>
           <button
@@ -78,7 +101,9 @@ export function CalendarioPrazos({ usuarioId, agora }: { usuarioId?: string; ago
             aria-pressed={minhas}
             onClick={() => setMinhas((v) => !v)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              minhas ? "border-primary bg-primary/10 text-primary" : "border-surface-border text-muted"
+              minhas
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-surface-border text-muted"
             }`}
           >
             Só as minhas
@@ -108,7 +133,10 @@ export function CalendarioPrazos({ usuarioId, agora }: { usuarioId?: string; ago
         )}
         <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-surface-border bg-surface-border">
           {SEMANA.map((dia) => (
-            <div key={dia} className="bg-surface px-2 py-1 text-center text-[11px] font-medium text-muted">
+            <div
+              key={dia}
+              className="bg-surface px-2 py-1 text-center text-[11px] font-medium text-muted"
+            >
               {dia}
             </div>
           ))}

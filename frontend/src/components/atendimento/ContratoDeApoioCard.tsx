@@ -66,8 +66,8 @@ export function ContratoDeApoioCard({
         ) : (
           <p className="text-sm text-muted">
             Quando o chamado depender de um fornecedor, aponte o contrato: o tempo em
-            &quot;aguardando terceiro&quot; passa a contar, em horas úteis do expediente da
-            unidade, contra o prazo dele.
+            &quot;aguardando terceiro&quot; passa a contar, em horas úteis do expediente da unidade,
+            contra o prazo dele.
           </p>
         )}
         {ligado && !finalizada && (

@@ -40,7 +40,9 @@ export function Retorno({ code, state }: { code: string; state: string }) {
         if (vivo) setSessao(data);
       } catch (err) {
         if (vivo) {
-          setErro(err instanceof ApiError ? err.message : "Não foi possível concluir o Login Único.");
+          setErro(
+            err instanceof ApiError ? err.message : "Não foi possível concluir o Login Único.",
+          );
         }
       }
     }

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { diaISO, deslocarMes, faixaDaSemana, faixaDoPrazo, gradeDoMes, mesISO, nomeDoMes, prazoDoDia } from "./datas";
+import {
+  diaISO,
+  deslocarMes,
+  faixaDaSemana,
+  faixaDoPrazo,
+  gradeDoMes,
+  mesISO,
+  nomeDoMes,
+  prazoDoDia,
+} from "./datas";
 
 describe("datas do projeto", () => {
   const sexta = new Date("2026-11-06T15:00:00-03:00");

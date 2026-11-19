@@ -79,8 +79,11 @@ export function CartaPublica() {
 
   const secretarias = useMemo(() => {
     const mapa = new Map<string, string>();
-    for (const servico of servicos ?? []) mapa.set(servico.unidade_id, servico.unidade_nome || "Secretaria");
-    return [...mapa.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+    for (const servico of servicos ?? [])
+      mapa.set(servico.unidade_id, servico.unidade_nome || "Secretaria");
+    return [...mapa.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
   }, [servicos]);
 
   const visiveis = useMemo(() => {
@@ -88,7 +91,9 @@ export function CartaPublica() {
     return (servicos ?? []).filter((servico) => {
       if (unidade && servico.unidade_id !== unidade) return false;
       if (!termo) return true;
-      return `${servico.nome} ${servico.categoria} ${servico.descricao} ${servico.unidade_nome ?? ""}`.toLowerCase().includes(termo);
+      return `${servico.nome} ${servico.categoria} ${servico.descricao} ${servico.unidade_nome ?? ""}`
+        .toLowerCase()
+        .includes(termo);
     });
   }, [servicos, filtro, unidade]);
 
@@ -98,7 +103,9 @@ export function CartaPublica() {
     setConsulta(null);
     const numero = String(new FormData(e.currentTarget).get("numero") ?? "").trim();
     try {
-      setConsulta(await publicFetch<Consulta>(`v1/protocolos/consulta/${encodeURIComponent(numero)}`));
+      setConsulta(
+        await publicFetch<Consulta>(`v1/protocolos/consulta/${encodeURIComponent(numero)}`),
+      );
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : "Número não encontrado.");
     }
@@ -109,8 +116,8 @@ export function CartaPublica() {
       <section className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Protocolos digitais</h1>
         <p className="max-w-xl text-sm text-muted">
-          Abra um pedido da carta de serviços ou consulte o andamento pelo número. A consulta não mostra CPF, telefone
-          nem as respostas do formulário.
+          Abra um pedido da carta de serviços ou consulte o andamento pelo número. A consulta não
+          mostra CPF, telefone nem as respostas do formulário.
         </p>
         <div className="flex flex-wrap gap-3">
           <a href="#abrir" className={buttonClass("primary")}>
@@ -128,10 +135,19 @@ export function CartaPublica() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pb-5">
           <form onSubmit={consultar} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Input id="numero" name="numero" label="Número *" required maxLength={40} autoComplete="off" />
+            <Input
+              id="numero"
+              name="numero"
+              label="Número *"
+              required
+              maxLength={40}
+              autoComplete="off"
+            />
             <Button type="submit">Consultar</Button>
           </form>
-          {consulta && <ResultadoConsulta consulta={consulta} onAtualizar={setConsulta} onErro={setErro} />}
+          {consulta && (
+            <ResultadoConsulta consulta={consulta} onAtualizar={setConsulta} onErro={setErro} />
+          )}
         </CardContent>
       </Card>
 
@@ -155,7 +171,9 @@ export function CartaPublica() {
             options={secretarias}
           />
         </div>
-        {servicos && visiveis.length === 0 && <p className="text-sm text-muted">Nenhum serviço encontrado.</p>}
+        {servicos && visiveis.length === 0 && (
+          <p className="text-sm text-muted">Nenhum serviço encontrado.</p>
+        )}
         <ul className="flex flex-col gap-3">
           {visiveis.map((servico) => (
             <li key={servico.id}>
@@ -166,14 +184,18 @@ export function CartaPublica() {
                 <CardContent className="flex flex-col gap-3 pb-5">
                   <p className="text-sm text-muted">
                     {servico.destaque ? "Destaque · " : ""}
-                    {servico.categoria || "Serviço da carta"} · {servico.unidade_nome || "Secretaria"} · prazo {servico.prazo_dias} dias úteis
+                    {servico.categoria || "Serviço da carta"} ·{" "}
+                    {servico.unidade_nome || "Secretaria"} · prazo {servico.prazo_dias} dias úteis
                   </p>
                   {servico.descricao && <p className="text-sm">{servico.descricao}</p>}
                   <div className="flex flex-wrap gap-2">
                     <Link href={`/carta/${servico.id}`} className={buttonClass("secondary", "sm")}>
                       Ver detalhes
                     </Link>
-                    <Link href={`/carta/${servico.id}?pedir=1`} className={buttonClass("primary", "sm")}>
+                    <Link
+                      href={`/carta/${servico.id}?pedir=1`}
+                      className={buttonClass("primary", "sm")}
+                    >
                       Solicitar
                     </Link>
                   </div>
@@ -205,7 +227,9 @@ function ResultadoConsulta({
     const dados = new FormData(e.currentTarget);
     const cpf = String(dados.get("cpf") ?? "").trim();
     const mensagem = String(dados.get("mensagem") ?? "").trim();
-    const arquivos = dados.getAll("arquivos").filter((item): item is File => item instanceof File && item.size > 0);
+    const arquivos = dados
+      .getAll("arquivos")
+      .filter((item): item is File => item instanceof File && item.size > 0);
     try {
       const chaves: string[] = [];
       for (const arquivo of arquivos) {
@@ -217,14 +241,21 @@ function ResultadoConsulta({
         chaves.push(ticket.object_key);
       }
       onAtualizar(
-        await publicPost<Consulta>(`v1/protocolos/consulta/${encodeURIComponent(consulta.numero)}/resposta`, {
-          cpf,
-          mensagem,
-          arquivos: chaves,
-        }),
+        await publicPost<Consulta>(
+          `v1/protocolos/consulta/${encodeURIComponent(consulta.numero)}/resposta`,
+          {
+            cpf,
+            mensagem,
+            arquivos: chaves,
+          },
+        ),
       );
     } catch (err) {
-      onErro(err instanceof ApiError || err instanceof Error ? err.message : "Não foi possível enviar a resposta.");
+      onErro(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Não foi possível enviar a resposta.",
+      );
     } finally {
       setEnviando(false);
     }
@@ -236,13 +267,15 @@ function ResultadoConsulta({
         {consulta.numero} · {consulta.status_rotulo || consulta.status}
       </p>
       <p>
-        {consulta.nome} · {consulta.servico} · {consulta.unidade} · {PRIORIDADE[consulta.prioridade] ?? consulta.prioridade}
+        {consulta.nome} · {consulta.servico} · {consulta.unidade} ·{" "}
+        {PRIORIDADE[consulta.prioridade] ?? consulta.prioridade}
       </p>
       <p className="text-muted">Aberto em {fmtDateTime(consulta.criado_em)}</p>
       {consulta.prazo_em && <p className="text-muted">Prazo {fmtDateTime(consulta.prazo_em)}</p>}
       {consulta.agendamento && (
         <p>
-          Atendimento {consulta.agendamento.data} às {consulta.agendamento.hora} · {consulta.agendamento.status}
+          Atendimento {consulta.agendamento.data} às {consulta.agendamento.hora} ·{" "}
+          {consulta.agendamento.status}
         </p>
       )}
       {consulta.complemento && <p>Complementação pedida: {consulta.complemento}</p>}
@@ -257,8 +290,18 @@ function ResultadoConsulta({
         ))}
       </ul>
       {consulta.status === "em_complementacao" && (
-        <form onSubmit={responder} className="flex flex-col gap-3 border-t border-surface-border pt-3">
-          <Input id="cpf" name="cpf" label="CPF do pedido *" required inputMode="numeric" maxLength={14} />
+        <form
+          onSubmit={responder}
+          className="flex flex-col gap-3 border-t border-surface-border pt-3"
+        >
+          <Input
+            id="cpf"
+            name="cpf"
+            label="CPF do pedido *"
+            required
+            inputMode="numeric"
+            maxLength={14}
+          />
           <Textarea id="mensagem" name="mensagem" label="Resposta *" required maxLength={1000} />
           <Input id="arquivos" name="arquivos" label="Arquivos" type="file" multiple />
           <Button type="submit" loading={enviando}>

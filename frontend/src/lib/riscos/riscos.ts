@@ -11,11 +11,7 @@ export type CategoriaRisco =
 export type EstrategiaRisco = "mitigar" | "aceitar" | "transferir" | "evitar";
 
 export type StatusRisco =
-  | "identificado"
-  | "em_analise"
-  | "em_mitigacao"
-  | "monitorado"
-  | "resolvido";
+  "identificado" | "em_analise" | "em_mitigacao" | "monitorado" | "resolvido";
 
 export type NivelSeveridade = "baixo" | "medio" | "alto" | "critico";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { PessoaDaUnidade } from "@/components/projetos/PessoaDaUnidade";
@@ -110,11 +110,8 @@ export function Wizard5W2H({
   const [orcamento, setOrcamento] = useState("");
   const [centro, setCentro] = useState("");
   const [prioridade, setPrioridade] = useState<PrioridadeProjeto>("media");
-  const [unidadeId, setUnidadeId] = useState(unidadeInicial);
-
-  useEffect(() => {
-    if (!unidadeId && unidadeInicial) setUnidadeId(unidadeInicial);
-  }, [unidadeId, unidadeInicial]);
+  const [unidadeId, setUnidadeId] = useState(unidadeInicial ?? "");
+  const unidadeEscolhida = unidadeId || unidadeInicial || "";
   const [produtoId, setProdutoId] = useState("");
   const [quadro, setQuadro] = useState<EstadoProjeto>(
     (colunas[0]?.value as EstadoProjeto) || "planejado",
@@ -143,7 +140,7 @@ export function Wizard5W2H({
       setPasso(3);
       return;
     }
-    const unidade = unidadeId || unidadeInicial;
+    const unidade = unidadeEscolhida;
     if (exigirUnidade && !unidade) {
       setErro("Informe a unidade. Sem ela o projeto some da lista da instituição.");
       return;
@@ -231,16 +228,14 @@ export function Wizard5W2H({
               label="Quadro"
               value={quadro}
               onChange={(e) => setQuadro(e.target.value as EstadoProjeto)}
-              options={
-                colunas.length > 0 ? colunas : [{ value: "planejado", label: "Planejado" }]
-              }
+              options={colunas.length > 0 ? colunas : [{ value: "planejado", label: "Planejado" }]}
             />
           </div>
           <UnidadeDonaSelect
             id="w5-unidade"
             label="Unidade"
             permission="projetos:manage"
-            defaultValue={unidadeId || unidadeInicial}
+            defaultValue={unidadeEscolhida}
             exigir={exigirUnidade}
             onChange={setUnidadeId}
           />
@@ -253,7 +248,10 @@ export function Wizard5W2H({
               options={[
                 { value: "", label: "Nenhum produto associado" },
                 ...produtos
-                  .filter((prod) => !unidadeId || !prod.unidade_id || prod.unidade_id === unidadeId)
+                  .filter(
+                    (prod) =>
+                      !unidadeEscolhida || !prod.unidade_id || prod.unidade_id === unidadeEscolhida,
+                  )
                   .map((prod) => ({ value: prod.id, label: prod.nome })),
               ]}
             />
@@ -307,7 +305,7 @@ export function Wizard5W2H({
           <PessoaDaUnidade
             id="w5-gerente"
             label="Responsável direto"
-            unidadeId={unidadeId}
+            unidadeId={unidadeEscolhida}
             value={gerente}
             onChange={setGerente}
           />
@@ -353,7 +351,8 @@ export function Wizard5W2H({
             </Button>
           </div>
           <p className="text-xs text-muted">
-            Cada etapa vira uma tarefa em &quot;A fazer&quot;, com o líder como responsável. Editar a carta depois não cria tarefa de novo.
+            Cada etapa vira uma tarefa em &quot;A fazer&quot;, com o líder como responsável. Editar
+            a carta depois não cria tarefa de novo.
           </p>
           {etapas.length > 0 && (
             <ol className="grid gap-1 text-sm">

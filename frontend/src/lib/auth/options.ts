@@ -243,7 +243,12 @@ export const authOptions: NextAuthOptions = {
       // getSession) rotaciona o refresh token do Keycloak e a próxima
       // chamada é recusada — o log enche de "refresh token recusado"
       // e a pessoa cai da sessão com o token ainda válido.
-      if (trigger === "update" && !token.error && token.refreshToken && token.provider !== "local") {
+      if (
+        trigger === "update" &&
+        !token.error &&
+        token.refreshToken &&
+        token.provider !== "local"
+      ) {
         return refreshAccessToken(token);
       }
       return { ...token, error: "RefreshAccessTokenError" };

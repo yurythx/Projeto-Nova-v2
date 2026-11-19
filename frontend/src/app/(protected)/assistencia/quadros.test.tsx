@@ -723,7 +723,7 @@ describe("Projetos — regras do quadro", () => {
     });
     renderApp(<ProjetosPage />);
     await screen.findByTestId("projetos-kanban");
-    await user.click(screen.getByText("ligar as salas"));
+    await user.click(screen.getByText("#101"));
     expect(await screen.findByRole("dialog", { name: "Detalhe do projeto" })).toBeInTheDocument();
     expect(router.push).toHaveBeenCalledWith("/projetos?painel=proj-1", { scroll: false });
     await user.click(screen.getByRole("button", { name: "Fechar painel" }));
@@ -829,7 +829,7 @@ describe("Tarefas — regras do quadro", () => {
     expect(faixa("Bloqueada")).toHaveAttribute("data-ordem", "3");
     expect(within(faixa("Concluída")).getByText("Nenhum item")).toBeInTheDocument();
 
-    await user.click(screen.getByText("Lote homologado"));
+    await user.click(within(quadro).getByText("Sem prazo"));
     expect(router.push).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Comprar cabos" }));
     await user.clear(screen.getByLabelText("Nome do card Comprar cabos"));
@@ -839,7 +839,7 @@ describe("Tarefas — regras do quadro", () => {
     expect(api.to("PUT v1/projetos/proj-1/tarefas/tar-1")[0]!.body).toMatchObject({
       titulo: "Cabos novos",
       descricao: "Lote homologado",
-      responsavel_nome: "Mariana",
+      pessoas: [{ id: "", nome: "Mariana" }],
       estado: "a_fazer",
       ordem: 1,
     });
@@ -869,7 +869,7 @@ describe("Tarefas — regras do quadro", () => {
     expect(corpo).toMatchObject({
       titulo: "Lançar",
       descricao: "",
-      responsavel_nome: "",
+      pessoas: [],
       estado: "em_andamento",
       ordem: 2,
     });

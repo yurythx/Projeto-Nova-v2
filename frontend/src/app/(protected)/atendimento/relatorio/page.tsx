@@ -302,9 +302,8 @@ export default function AtendimentoRelatorioPage() {
                 <CardContent className="overflow-x-auto pb-5">
                   <p className="mb-2 text-sm text-muted">
                     Tempo dos chamados em &quot;aguardando terceiro&quot;, em horas úteis do
-                    expediente da unidade, contra o prazo do fornecedor copiado quando o
-                    contrato foi apontado. Sem política de prazo, a conta fica em horas
-                    corridas.
+                    expediente da unidade, contra o prazo do fornecedor copiado quando o contrato
+                    foi apontado. Sem política de prazo, a conta fica em horas corridas.
                   </p>
                   <table className="w-full text-left text-sm">
                     <thead>

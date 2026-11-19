@@ -62,7 +62,10 @@ export function ModalShell({
   const silenciarFecho = useRef(false);
   const [corpo, setCorpo] = useState<HTMLElement | null>(null);
 
+  // O painel de dentro só monta no turno seguinte. Assim o showModal interno
+  // fica por cima do externo e o fechamento não atravessa os dois diálogos.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a ordem dos <dialog> depende desta montagem
     setCorpo(document.body);
   }, []);
 
@@ -157,9 +160,7 @@ export function ModalShell({
       } overflow-hidden border border-surface-border bg-surface p-0 text-foreground
         shadow-2xl ${className}`}
     >
-      <div
-        className={`flex flex-col ${drawer ? "h-full" : "max-h-[calc(100dvh-2rem)]"}`}
-      >
+      <div className={`flex flex-col ${drawer ? "h-full" : "max-h-[calc(100dvh-2rem)]"}`}>
         {children}
       </div>
     </dialog>

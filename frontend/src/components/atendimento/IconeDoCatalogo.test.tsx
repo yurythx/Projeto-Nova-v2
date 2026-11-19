@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 
-import {
-  IconeDoCatalogo,
-  inferirIconePorTexto,
-} from "./IconeDoCatalogo";
+import { IconeDoCatalogo, inferirIconePorTexto } from "./IconeDoCatalogo";
 
 describe("IconeDoCatalogo — Inferência Inteligente e Resolução", () => {
   it("infere corretamente ícones baseados no nome da categoria ou oferta", () => {
@@ -32,9 +29,7 @@ describe("IconeDoCatalogo — Inferência Inteligente e Resolução", () => {
   });
 
   it("prioriza o nome explícito cadastrado sobre a inferência", () => {
-    const { container } = render(
-      <IconeDoCatalogo nome="wifi" contextoNome="Impressora de Rede" />,
-    );
+    const { container } = render(<IconeDoCatalogo nome="wifi" contextoNome="Impressora de Rede" />);
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 

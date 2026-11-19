@@ -2,7 +2,8 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { identityRoutes, mockBackend, renderApp } from "@/test/backend";
+import { identityRoutes, mockBackend, renderApp, type BackendRequest } from "@/test/backend";
+import type { CriarRiscoInput } from "@/lib/riscos/riscos";
 import { resetNavigation } from "@/test/navigation";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
@@ -54,13 +55,15 @@ describe("Matriz de Riscos (ISO/IEC 27001)", () => {
     expect(await screen.findByText("Matriz de Riscos (ISO/IEC 27001)")).toBeInTheDocument();
     expect(screen.getByText("RSK-001")).toBeInTheDocument();
     expect(screen.getByText("Falha de Link Primário de Internet")).toBeInTheDocument();
-    expect(screen.getByText("A.17.1 - Continuidade da Segurança da Informação")).toBeInTheDocument();
+    expect(
+      screen.getByText("A.17.1 - Continuidade da Segurança da Informação"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Em mitigação").length).toBeGreaterThan(0);
     expect(screen.getByText("16 • ALTO")).toBeInTheDocument();
   });
 
   it("permite abrir o modal de cadastro e cadastrar novo risco", async () => {
-    let payloadCriado: any = null;
+    let payloadCriado: CriarRiscoInput | null = null;
 
     mockBackend({
       ...identityRoutes(),
@@ -68,15 +71,16 @@ describe("Matriz de Riscos (ISO/IEC 27001)", () => {
         data: { matriz: [], total_riscos: 0, criticos: 0, altos: 0, medios: 0, baixos: 0 },
       },
       "GET v1/riscos": { data: [] },
-      "POST v1/riscos": (req: any) => {
-        payloadCriado = req.body;
+      "POST v1/riscos": (req: BackendRequest) => {
+        const corpo = req.body as CriarRiscoInput;
+        payloadCriado = corpo;
         return {
           status: 201,
           data: {
             ...RISCO_MOCK,
             id: "r2",
             codigo: "RSK-002",
-            titulo: req.body?.titulo,
+            titulo: corpo.titulo,
           },
         };
       },
@@ -97,14 +101,16 @@ describe("Matriz de Riscos (ISO/IEC 27001)", () => {
     await user.type(inputDesc, "Phishing direcionado contra operadores do sistema.");
 
     const inputPlano = screen.getByPlaceholderText(/Descreva as medidas corretivas/i);
-    await user.type(inputPlano, "Implementar MFA obrigatório via chave FIDO2 e treinamento anti-phishing.");
+    await user.type(
+      inputPlano,
+      "Implementar MFA obrigatório via chave FIDO2 e treinamento anti-phishing.",
+    );
 
     const btnSalvar = screen.getByRole("button", { name: /Registrar Risco/i });
     await user.click(btnSalvar);
 
     await waitFor(() => {
-      expect(payloadCriado).not.toBeNull();
-      expect(payloadCriado.titulo).toBe("Vazamento de Credenciais de Acesso");
+      expect(payloadCriado?.titulo).toBe("Vazamento de Credenciais de Acesso");
     });
   });
 });

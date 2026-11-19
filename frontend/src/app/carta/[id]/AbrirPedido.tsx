@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { CampoInput, oculto, respostasVisiveis, type Campo } from "@/components/protocolos/CamposDoPedido";
+import {
+  CampoInput,
+  oculto,
+  respostasVisiveis,
+  type Campo,
+} from "@/components/protocolos/CamposDoPedido";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -94,7 +99,11 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
       await putToTicket(ticket, arquivo);
       setRespostas((atual) => ({ ...atual, [campo]: ticket.object_key }));
     } catch (err) {
-      setErro(err instanceof ApiError || err instanceof Error ? err.message : "Não foi possível enviar o arquivo.");
+      setErro(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Não foi possível enviar o arquivo.",
+      );
     } finally {
       setSubindo(false);
     }
@@ -104,7 +113,9 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-14">
         <h1 className="text-2xl font-bold">Pedido {numero}</h1>
-        <p className="text-sm text-muted">Guarde este número. A consulta pública não mostra CPF nem as respostas.</p>
+        <p className="text-sm text-muted">
+          Guarde este número. A consulta pública não mostra CPF nem as respostas.
+        </p>
         <Link href="/carta" className={buttonClass("secondary", "sm")}>
           Voltar à carta
         </Link>
@@ -115,11 +126,17 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-14">
       <h1 className="text-2xl font-bold">{item?.servico.nome ?? "Abrir pedido"}</h1>
-      {item?.servico.unidade_nome && <p className="text-sm text-muted">{item.servico.unidade_nome}</p>}
+      {item?.servico.unidade_nome && (
+        <p className="text-sm text-muted">{item.servico.unidade_nome}</p>
+      )}
       {item?.servico.descricao && <p className="text-sm text-muted">{item.servico.descricao}</p>}
-      {item?.formulario.instrucao && <p className="text-sm text-muted">{item.formulario.instrucao}</p>}
+      {item?.formulario.instrucao && (
+        <p className="text-sm text-muted">{item.formulario.instrucao}</p>
+      )}
       {item && <p className="text-sm">Prazo de {item.servico.prazo_dias} dias úteis.</p>}
-      {item && item.servico.taxa_centavos > 0 && <p className="text-sm">Taxa {reais(item.servico.taxa_centavos)}</p>}
+      {item && item.servico.taxa_centavos > 0 && (
+        <p className="text-sm">Taxa {reais(item.servico.taxa_centavos)}</p>
+      )}
       {item && <Lista titulo="Requisitos" itens={item.servico.requisitos} />}
       {item && <Lista titulo="Documentos" itens={item.servico.documentos} />}
       {erro && <p className="text-sm text-danger">{erro}</p>}
@@ -135,8 +152,22 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
           </CardHeader>
           <CardContent className="pb-5">
             <form onSubmit={enviar} className="flex flex-col gap-3">
-              <Input id="nome" name="nome" label="Nome completo *" required minLength={2} maxLength={200} />
-              <Input id="cpf" name="cpf" label="CPF *" required inputMode="numeric" maxLength={14} />
+              <Input
+                id="nome"
+                name="nome"
+                label="Nome completo *"
+                required
+                minLength={2}
+                maxLength={200}
+              />
+              <Input
+                id="cpf"
+                name="cpf"
+                label="CPF *"
+                required
+                inputMode="numeric"
+                maxLength={14}
+              />
               <Input id="email" name="email" label="E-mail" type="email" maxLength={200} />
               <Input id="telefone" name="telefone" label="Telefone" maxLength={20} />
               {item.servico.exige_agendamento && (

@@ -76,10 +76,11 @@ export function Consulta() {
           <CardContent className="flex flex-col gap-3 text-sm">
             {resultado.numero && <p>Processo {resultado.numero}</p>}
             {qr && (
-              <img
-                src={qr}
-                alt={`QR do código ${resultado.codigo || "consultado"}`}
-                className="h-40 w-40"
+              <div
+                role="img"
+                aria-label={`QR do código ${resultado.codigo || "consultado"}`}
+                className="h-40 w-40 bg-contain bg-center bg-no-repeat"
+                style={{ backgroundImage: `url("${qr}")` }}
               />
             )}
           </CardContent>

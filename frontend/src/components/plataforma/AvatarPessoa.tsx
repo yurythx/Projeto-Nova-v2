@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const EVENTO = "nova-avatar";
@@ -74,10 +75,13 @@ export function AvatarPessoa({
     >
       <span aria-hidden="true">{iniciaisDe(visivel)}</span>
       {id && foto && (
-        <img
+        <Image
           src={`/api/backend/v1/directory/avatars/${id}${versao ? `?v=${versao}` : ""}`}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          unoptimized
+          sizes="40px"
+          className="object-cover"
           onError={() => setFoto(false)}
         />
       )}
@@ -135,7 +139,11 @@ export function PessoasComAvatar({
     <span className={`inline-flex min-w-0 items-center gap-2 ${className}`}>
       <span className="inline-flex shrink-0">
         {lista.slice(0, 3).map((pessoa) => (
-          <AvatarPessoa key={pessoa.id || pessoa.nome} id={pessoa.id} nome={pessoa.nome?.trim() ?? ""} />
+          <AvatarPessoa
+            key={pessoa.id || pessoa.nome}
+            id={pessoa.id}
+            nome={pessoa.nome?.trim() ?? ""}
+          />
         ))}
       </span>
       <span className="truncate">{nomes}</span>

@@ -15,7 +15,6 @@ import {
   Palette,
   Repeat,
   Share2,
-  ShieldAlert,
   ShieldCheck,
   Sliders,
   Users,
@@ -49,14 +48,7 @@ export interface NavGroups {
 // Módulos que não entram no menu de "Módulos": o núcleo tem entradas
 // próprias em Administração; Egress, Canais e Integrações vivem em Configuração;
 // a Busca vive no cabeçalho (#global-search).
-const HIDDEN_FROM_MENU = new Set([
-  "iam",
-  "audit",
-  "egress",
-  "search",
-  "integracoes",
-  "canais",
-]);
+const HIDDEN_FROM_MENU = new Set(["iam", "audit", "egress", "search", "integracoes", "canais"]);
 
 // Módulos agrupados sob a seção dedicada de Assistência (estilo ITIL/GLPI).
 const ASSISTENCIA_KEYS = new Set(["atendimento", "problemas", "mudancas", "projetos", "riscos"]);
@@ -104,7 +96,8 @@ export function buildNav(
         !MENU_PERMISSION[m.key] ||
         can(MENU_PERMISSION[m.key]!) ||
         (m.key === "cofre" && can("cofre:manage")) ||
-        (m.key === "fazenda" && (can("fazenda:protocolar") || can("fazenda:analisar") || can("fazenda:decidir"))),
+        (m.key === "fazenda" &&
+          (can("fazenda:protocolar") || can("fazenda:analisar") || can("fazenda:decidir"))),
     );
 
   const assistenciaMods: { key: string; item: NavItem }[] = [];
@@ -423,9 +416,7 @@ export function Sidebar({
             >
               Configuração
             </p>
-            <ul className="flex flex-col gap-0.5 px-2 pb-3">
-              {nav.configuracao.map(renderGroup)}
-            </ul>
+            <ul className="flex flex-col gap-0.5 px-2 pb-3">{nav.configuracao.map(renderGroup)}</ul>
           </div>
         )}
 

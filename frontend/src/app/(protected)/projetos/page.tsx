@@ -2,18 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { type FormEvent, Suspense, useMemo, useState } from "react";
 
 import { FileSpreadsheet } from "lucide-react";
 
 import { UnidadeDonaSelect } from "@/components/iam/UnidadeDonaSelect";
 import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { DataState } from "@/components/plataforma/DataState";
-import {
-  NomeClicavel,
-  ordenarColunas,
-  useAparencia,
-} from "@/components/plataforma/Faixas";
+import { NomeClicavel, ordenarColunas, useAparencia } from "@/components/plataforma/Faixas";
 import { colunasVisiveis, rotuloQuadro, useQuadro } from "@/components/plataforma/useQuadro";
 import { PainelDoQuadro, usePainelNaUrl } from "@/components/plataforma/PainelDoQuadro";
 import { ProjetoDetalheConteudo } from "@/app/(protected)/projetos/[id]/page";
@@ -134,11 +130,7 @@ function ProjetosConteudo() {
   const [gerente, setGerente] = useState({ id: "", nome: "" });
   const [orcamento, setOrcamento] = useState("0");
   const [unidadeId, setUnidadeId] = useState("");
-
-  useEffect(() => {
-    if (!modalAberto || unidadeId || !unidadePadrao) return;
-    setUnidadeId(unidadePadrao);
-  }, [modalAberto, unidadeId, unidadePadrao]);
+  const unidadeDoModal = unidadeId || unidadePadrao;
   const [produtoId, setProdutoId] = useState("");
   const [quadro, setQuadro] = useState<EstadoProjeto>("planejado");
   const produtos = useApiQuery<{ id: string; nome: string; unidade_id?: string }[]>(
@@ -227,7 +219,7 @@ function ProjetosConteudo() {
   }
 
   function unidadeDoFormulario(informada?: string) {
-    return informada || unidadeId || unidadePadrao;
+    return informada || unidadeDoModal;
   }
 
   function recusarSemUnidade() {
@@ -317,12 +309,12 @@ function ProjetosConteudo() {
     }
     return [...mapa.entries()].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
   }, [todosProjetos]);
-  const lista = useMemo(() => {
-    const base = filtrarPorUnidade(todosProjetos, unidadeFiltro);
-    if (!gerenteFiltro) return base;
-    if (gerenteFiltro === "sem") return base.filter((p) => !p.gerente_id);
-    return base.filter((p) => p.gerente_id === gerenteFiltro);
-  }, [todosProjetos, unidadeFiltro, gerenteFiltro]);
+  const baseDaUnidade = filtrarPorUnidade(todosProjetos, unidadeFiltro);
+  const lista = !gerenteFiltro
+    ? baseDaUnidade
+    : gerenteFiltro === "sem"
+      ? baseDaUnidade.filter((p) => !p.gerente_id)
+      : baseDaUnidade.filter((p) => p.gerente_id === gerenteFiltro);
   const colunas = colunasVisiveis(catalogo.colunas, lista, (p) => p.estado);
 
   return (
@@ -379,49 +371,49 @@ function ProjetosConteudo() {
       />
 
       {vista !== "minhas" && vista !== "carga" && vista !== "calendario" && (
-      <>
-      <FiltroPorUnidade
-        rotulo="Filtrar projetos por unidade"
-        itens={todosProjetos}
-        value={unidadeFiltro}
-        onChange={setUnidadeFiltro}
-      />
-
-      <div className={`grid gap-3 ${somenteFiltroLista ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-        {somenteFiltroLista && (
-          <Select
-            id="projetos-estado"
-            label="Estado"
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-            options={[
-              { value: "", label: "Todos os estados" },
-              ...(Object.keys(ESTADO_PROJETO) as EstadoProjeto[]).map((e) => ({
-                value: e,
-                label: ESTADO_PROJETO[e].label,
-              })),
-            ]}
+        <>
+          <FiltroPorUnidade
+            rotulo="Filtrar projetos por unidade"
+            itens={todosProjetos}
+            value={unidadeFiltro}
+            onChange={setUnidadeFiltro}
           />
-        )}
-        <Select
-          id="projetos-responsavel"
-          label="Responsável"
-          value={gerenteFiltro}
-          onChange={(e) => setGerenteFiltro(e.target.value)}
-          options={[
-            { value: "", label: "Todos os responsáveis" },
-            { value: "sem", label: "Sem responsável" },
-            ...gerentes.map(([id, nome]) => ({ value: id, label: nome })),
-          ]}
-        />
-        <Input
-          id="projetos-busca"
-          label="Buscar no título ou objetivo"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-      </div>
-      </>
+
+          <div className={`grid gap-3 ${somenteFiltroLista ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+            {somenteFiltroLista && (
+              <Select
+                id="projetos-estado"
+                label="Estado"
+                value={estado}
+                onChange={(e) => setEstado(e.target.value)}
+                options={[
+                  { value: "", label: "Todos os estados" },
+                  ...(Object.keys(ESTADO_PROJETO) as EstadoProjeto[]).map((e) => ({
+                    value: e,
+                    label: ESTADO_PROJETO[e].label,
+                  })),
+                ]}
+              />
+            )}
+            <Select
+              id="projetos-responsavel"
+              label="Responsável"
+              value={gerenteFiltro}
+              onChange={(e) => setGerenteFiltro(e.target.value)}
+              options={[
+                { value: "", label: "Todos os responsáveis" },
+                { value: "sem", label: "Sem responsável" },
+                ...gerentes.map(([id, nome]) => ({ value: id, label: nome })),
+              ]}
+            />
+            <Input
+              id="projetos-busca"
+              label="Buscar no título ou objetivo"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+        </>
       )}
 
       {vista === "minhas" ? (
@@ -445,104 +437,108 @@ function ProjetosConteudo() {
       ) : vista === "calendario" ? (
         <CalendarioPrazos usuarioId={me?.id} />
       ) : (
-      <DataState
-        loading={projetos.isLoading || carregandoSessao}
-        error={projetos.error}
-        onRetry={() => void projetos.mutate()}
-        empty={vista === "cronograma" && lista.length === 0}
-        emptyTitle="Nenhum projeto encontrado"
-        emptyDescription={
-          gere
-            ? "Crie seu primeiro projeto para acompanhar entregas, marcos e cronogramas."
-            : "Nenhum projeto registrado para exibição."
-        }
-      >
-        {lista.length === 0 && vista !== "cronograma" && (
-          <p className="text-sm text-muted">Nenhum projeto encontrado</p>
-        )}
-        {vista === "kanban" ? (
-          <ProjetosKanban
-            itens={lista}
-            onMover={mover}
-            pending={pending}
-            aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
-            aoAbrir={(p) => painel.abrir(p.id)}
-            colunas={colunas}
-            controles={controles}
-          />
-        ) : vista === "cronograma" ? (
-          <ProjetosCronograma projetos={lista} />
-        ) : (
-          <ListaTabela
-            rotulo="Lista de projetos"
-            memoria="nova-faixas:projetos-lista"
-            aparencia="nova-faixas:projetos"
-            colunas={colunas}
-            oficial={controles.oficial}
-            itens={lista}
-            colunaDe={(p) => p.estado}
-            idDe={(p) => p.id}
-            nomeDe={(p) => p.titulo}
-            aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
-            detalhe={(p) => <TarefasNaLista projetoId={p.id} titulo={p.titulo} podeCriar={gere} />}
-            cabecalhos={[
-              { id: "numero", rotulo: "#" },
-              { id: "projeto", rotulo: "Projeto" },
-              { id: "responsavel", rotulo: "Responsável" },
-              { id: "prioridade", rotulo: "Prioridade" },
-              { id: "progresso", rotulo: "Progresso" },
-              { id: "prazo", rotulo: "Prazo" },
-            ]}
-            render={(p, vista) => {
-              const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
-              return (
-                <>
-                  <TableCell>
-                    <span className="font-mono text-sm font-semibold text-primary">#{p.numero}</span>
-                  </TableCell>
-                  <TableCell>
-                    <NomeClicavel
-                      nome={vista.titulo || p.titulo}
-                      href={`/projetos/${p.id}`}
-                      onSalvar={(nome) => {
-                        vista.salvarNome(nome);
-                        painel.abrir(p.id);
-                      }}
-                      className="truncate text-left text-sm font-semibold text-foreground hover:underline"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <PessoaComAvatar
-                      id={p.gerente_id}
-                      nome={p.gerente_nome}
-                      className="text-sm text-foreground"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {prioridadeMeta ? (
-                      <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
-                    ) : (
-                      <span className="text-sm text-muted">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <ProgressoProjeto
-                      titulo={p.titulo}
-                      total={p.tarefas_total}
-                      concluidas={p.tarefas_concluidas}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted">
-                      {diaBrasil(p.data_fim_planejada) || "Sem prazo"}
-                    </span>
-                  </TableCell>
-                </>
-              );
-            }}
-          />
-        )}
-      </DataState>
+        <DataState
+          loading={projetos.isLoading || carregandoSessao}
+          error={projetos.error}
+          onRetry={() => void projetos.mutate()}
+          empty={vista === "cronograma" && lista.length === 0}
+          emptyTitle="Nenhum projeto encontrado"
+          emptyDescription={
+            gere
+              ? "Crie seu primeiro projeto para acompanhar entregas, marcos e cronogramas."
+              : "Nenhum projeto registrado para exibição."
+          }
+        >
+          {lista.length === 0 && vista !== "cronograma" && (
+            <p className="text-sm text-muted">Nenhum projeto encontrado</p>
+          )}
+          {vista === "kanban" ? (
+            <ProjetosKanban
+              itens={lista}
+              onMover={mover}
+              pending={pending}
+              aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
+              aoAbrir={(p) => painel.abrir(p.id)}
+              colunas={colunas}
+              controles={controles}
+            />
+          ) : vista === "cronograma" ? (
+            <ProjetosCronograma projetos={lista} />
+          ) : (
+            <ListaTabela
+              rotulo="Lista de projetos"
+              memoria="nova-faixas:projetos-lista"
+              aparencia="nova-faixas:projetos"
+              colunas={colunas}
+              oficial={controles.oficial}
+              itens={lista}
+              colunaDe={(p) => p.estado}
+              idDe={(p) => p.id}
+              nomeDe={(p) => p.titulo}
+              aoRenomear={gere ? (p, nome) => void renomearProjeto(p, nome) : undefined}
+              detalhe={(p) => (
+                <TarefasNaLista projetoId={p.id} titulo={p.titulo} podeCriar={gere} />
+              )}
+              cabecalhos={[
+                { id: "numero", rotulo: "#" },
+                { id: "projeto", rotulo: "Projeto" },
+                { id: "responsavel", rotulo: "Responsável" },
+                { id: "prioridade", rotulo: "Prioridade" },
+                { id: "progresso", rotulo: "Progresso" },
+                { id: "prazo", rotulo: "Prazo" },
+              ]}
+              render={(p, vista) => {
+                const prioridadeMeta = PRIORIDADE_PROJETO[p.prioridade];
+                return (
+                  <>
+                    <TableCell>
+                      <span className="font-mono text-sm font-semibold text-primary">
+                        #{p.numero}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <NomeClicavel
+                        nome={vista.titulo || p.titulo}
+                        href={`/projetos/${p.id}`}
+                        onSalvar={(nome) => {
+                          vista.salvarNome(nome);
+                          painel.abrir(p.id);
+                        }}
+                        className="truncate text-left text-sm font-semibold text-foreground hover:underline"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <PessoaComAvatar
+                        id={p.gerente_id}
+                        nome={p.gerente_nome}
+                        className="text-sm text-foreground"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {prioridadeMeta ? (
+                        <Badge tone={prioridadeMeta.tone}>{prioridadeMeta.label}</Badge>
+                      ) : (
+                        <span className="text-sm text-muted">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <ProgressoProjeto
+                        titulo={p.titulo}
+                        total={p.tarefas_total}
+                        concluidas={p.tarefas_concluidas}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted">
+                        {diaBrasil(p.data_fim_planejada) || "Sem prazo"}
+                      </span>
+                    </TableCell>
+                  </>
+                );
+              }}
+            />
+          )}
+        </DataState>
       )}
 
       {/* Modal de Criação de Projeto */}
@@ -578,129 +574,135 @@ function ProjetosConteudo() {
           <Wizard5W2H
             produtos={produtos.data ?? []}
             colunas={ordenarColunas(
-              catalogo.colunas.filter((coluna) => coluna.ativa !== false && coluna.id !== "cancelado"),
+              catalogo.colunas.filter(
+                (coluna) => coluna.ativa !== false && coluna.id !== "cancelado",
+              ),
             ).map((coluna) => ({
               value: coluna.id,
               label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
             }))}
             pending={pending}
-            unidadeInicial={unidadeId || unidadePadrao}
+            unidadeInicial={unidadeDoModal}
             exigirUnidade={instituicaoAtiva}
             onCancel={fecharModal}
             onCriar={criarGuiado}
           />
         ) : (
-        <form onSubmit={criar} className="mt-3 grid gap-3">
-          <Input
-            id="proj-titulo"
-            label="Título do projeto *"
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            placeholder="Ex.: Modernização do Data Center"
-            required
-            maxLength={160}
-          />
+          <form onSubmit={criar} className="mt-3 grid gap-3">
+            <Input
+              id="proj-titulo"
+              label="Título do projeto *"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Ex.: Modernização do Data Center"
+              required
+              maxLength={160}
+            />
 
-          <Textarea
-            id="proj-desc"
-            label="Descrição"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Contexto, escopo e premissas gerais..."
-            rows={8}
-            className="min-h-48"
-            maxLength={4000}
-          />
+            <Textarea
+              id="proj-desc"
+              label="Descrição"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Contexto, escopo e premissas gerais..."
+              rows={8}
+              className="min-h-48"
+              maxLength={4000}
+            />
 
-          <Textarea
-            id="proj-obj"
-            label="Objetivo"
-            value={objetivo}
-            onChange={(e) => setObjetivo(e.target.value)}
-            placeholder="Resultados esperados e valor entregue..."
-            rows={8}
-            className="min-h-48"
-            maxLength={4000}
-          />
+            <Textarea
+              id="proj-obj"
+              label="Objetivo"
+              value={objetivo}
+              onChange={(e) => setObjetivo(e.target.value)}
+              placeholder="Resultados esperados e valor entregue..."
+              rows={8}
+              className="min-h-48"
+              maxLength={4000}
+            />
 
-          <Select
-            id="proj-quadro"
-            label="Quadro"
-            value={quadro}
-            onChange={(e) => setQuadro(e.target.value as EstadoProjeto)}
-            options={ordenarColunas(
-              catalogo.colunas.filter((coluna) => coluna.ativa !== false && coluna.id !== "cancelado"),
-            ).map((coluna) => ({
-              value: coluna.id,
-              label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
-            }))}
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
-              id="proj-prio"
-              label="Prioridade"
-              value={prioridade}
-              onChange={(e) => setPrioridade(e.target.value as PrioridadeProjeto)}
-              options={Object.entries(PRIORIDADE_PROJETO).map(([k, v]) => ({
-                value: k,
-                label: v.label,
+              id="proj-quadro"
+              label="Quadro"
+              value={quadro}
+              onChange={(e) => setQuadro(e.target.value as EstadoProjeto)}
+              options={ordenarColunas(
+                catalogo.colunas.filter(
+                  (coluna) => coluna.ativa !== false && coluna.id !== "cancelado",
+                ),
+              ).map((coluna) => ({
+                value: coluna.id,
+                label: rotuloQuadro(catalogo.oficial, catalogo.colunas, look.gravado, coluna.id),
               }))}
             />
 
-            <PessoaDaUnidade
-              id="proj-gerente"
-              label="Responsável / Gerente"
-              unidadeId={unidadeId}
-              value={gerente}
-              onChange={setGerente}
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                id="proj-prio"
+                label="Prioridade"
+                value={prioridade}
+                onChange={(e) => setPrioridade(e.target.value as PrioridadeProjeto)}
+                options={Object.entries(PRIORIDADE_PROJETO).map(([k, v]) => ({
+                  value: k,
+                  label: v.label,
+                }))}
+              />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              id="proj-orc"
-              label="Orçamento previsto (R$)"
-              type="number"
-              step="0.01"
-              value={orcamento}
-              onChange={(e) => setOrcamento(e.target.value)}
-            />
+              <PessoaDaUnidade
+                id="proj-gerente"
+                label="Responsável / Gerente"
+                unidadeId={unidadeId}
+                value={gerente}
+                onChange={setGerente}
+              />
+            </div>
 
-            <UnidadeDonaSelect
-              id="proj-unidade"
-              label="Unidade"
-              permission="projetos:manage"
-              defaultValue={unidadeId || unidadePadrao}
-              exigir={instituicaoAtiva}
-              onChange={(uid) => setUnidadeId(uid)}
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                id="proj-orc"
+                label="Orçamento previsto (R$)"
+                type="number"
+                step="0.01"
+                value={orcamento}
+                onChange={(e) => setOrcamento(e.target.value)}
+              />
 
-          {(produtos.data ?? []).length > 0 && (
-            <Select
-              id="proj-produto"
-              label="Produto digital (opcional)"
-              value={produtoId}
-              onChange={(e) => setProdutoId(e.target.value)}
-              options={[
-                { value: "", label: "Nenhum produto associado" },
-                ...(produtos.data ?? [])
-                  .filter((prod) => !unidadeId || !prod.unidade_id || prod.unidade_id === unidadeId)
-                  .map((prod) => ({ value: prod.id, label: prod.nome })),
-              ]}
-            />
-          )}
+              <UnidadeDonaSelect
+                id="proj-unidade"
+                label="Unidade"
+                permission="projetos:manage"
+                defaultValue={unidadeDoModal}
+                exigir={instituicaoAtiva}
+                onChange={(uid) => setUnidadeId(uid)}
+              />
+            </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setModalAberto(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={pending}>
-              Criar projeto
-            </Button>
-          </div>
-        </form>
+            {(produtos.data ?? []).length > 0 && (
+              <Select
+                id="proj-produto"
+                label="Produto digital (opcional)"
+                value={produtoId}
+                onChange={(e) => setProdutoId(e.target.value)}
+                options={[
+                  { value: "", label: "Nenhum produto associado" },
+                  ...(produtos.data ?? [])
+                    .filter(
+                      (prod) => !unidadeId || !prod.unidade_id || prod.unidade_id === unidadeId,
+                    )
+                    .map((prod) => ({ value: prod.id, label: prod.nome })),
+                ]}
+              />
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setModalAberto(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" loading={pending}>
+                Criar projeto
+              </Button>
+            </div>
+          </form>
         )}
       </Dialog>
       <PainelDoQuadro

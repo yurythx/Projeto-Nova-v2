@@ -124,7 +124,10 @@ export function MudancaDetalhe() {
   const ligados = new Set(m?.vinculos.filter((v) => v.tipo === tipo).map((v) => v.alvo_id));
   const opcoes =
     tipo === "problema"
-      ? filtrarPorEntidade(problemas.data ?? []).map((p) => ({ value: p.id, label: `#${p.numero} · ${p.titulo}` }))
+      ? filtrarPorEntidade(problemas.data ?? []).map((p) => ({
+          value: p.id,
+          label: `#${p.numero} · ${p.titulo}`,
+        }))
       : tipo === "incidente"
         ? filtrarPorEntidade(incidentes.data?.items ?? []).map((s) => ({
             value: s.id,

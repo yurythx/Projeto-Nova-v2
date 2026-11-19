@@ -3,7 +3,14 @@
 import Link from "next/link";
 
 import { PessoaComAvatar } from "@/components/plataforma/AvatarPessoa";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/Table";
 import type { CargaPessoa, TarefaMinha } from "@/lib/projetos/projetos";
 
 import { diaBrasil, faixaDoPrazo, type FaixaPrazo } from "./datas";
@@ -41,7 +48,10 @@ export function MeuTrabalho({ tarefas }: { tarefas: TarefaMinha[] }) {
                 {itens.map((t) => (
                   <TableRow key={t.id}>
                     <TableCell>
-                      <Link href={`/projetos/${t.projeto_id}`} className="text-sm font-medium hover:underline">
+                      <Link
+                        href={`/projetos/${t.projeto_id}`}
+                        className="text-sm font-medium hover:underline"
+                      >
                         {t.pai_id ? `Subtarefa · ${t.titulo}` : t.titulo}
                       </Link>
                     </TableCell>
@@ -51,7 +61,9 @@ export function MeuTrabalho({ tarefas }: { tarefas: TarefaMinha[] }) {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted">{diaBrasil(t.data_limite) || "Sem prazo"}</span>
+                      <span className="text-sm text-muted">
+                        {diaBrasil(t.data_limite) || "Sem prazo"}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}

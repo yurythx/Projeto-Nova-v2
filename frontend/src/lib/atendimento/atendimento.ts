@@ -63,7 +63,7 @@ export interface SLA {
   tempo_resposta_minutos: number;
   tempo_solucao_minutos: number;
   pausar_em_espera: boolean;
-  calendario_tipo: 'expediente' | 'corrido_24x7';
+  calendario_tipo: "expediente" | "corrido_24x7";
   unidade_id?: string | null;
   ativa: boolean;
   created_at?: string;
@@ -607,7 +607,6 @@ export interface ResumoApontamentosAtendimento {
   total_horas: number;
   apontamentos: ApontamentoAtendimento[];
 }
-
 
 export const incidentePaiApi = {
   vincular: (solicitacaoId: string, paiId: string | null) =>

@@ -12,7 +12,14 @@ import {
   type TomFaixa,
   type VistaCard,
 } from "@/components/plataforma/Faixas";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/Table";
 
 const BORDA: Record<TomFaixa, string> = {
   neutral: "border-l-foreground/40",

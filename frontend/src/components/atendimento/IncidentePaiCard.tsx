@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GitFork, Link2, Plus, Unlink, AlertCircle, CheckCircle2 } from "lucide-react";
+import { GitFork, Link2, Plus, Unlink } from "lucide-react";
 
 import { useAction } from "@/components/plataforma/useAction";
 import { Badge } from "@/components/ui/Badge";
@@ -30,41 +30,57 @@ export function IncidentePaiCard({
 }) {
   const { run, pending } = useAction();
   const [filhos, setFilhos] = useState<Solicitacao[]>([]);
-  const [carregandoFilhos, setCarregandoFilhos] = useState(false);
   const [modalVincularAberto, setModalVincularAberto] = useState(false);
   const [idOuNumeroFilho, setIdOuNumeroFilho] = useState("");
   const [erroVincular, setErroVincular] = useState<string | null>(null);
 
   // Busca dados do chamado pai se este chamado for filho
   const [chamadoPai, setChamadoPai] = useState<Solicitacao | null>(null);
+  const [paiVisto, setPaiVisto] = useState(solicitacao.incidente_pai_id ?? "");
+
+  if ((solicitacao.incidente_pai_id ?? "") !== paiVisto) {
+    setPaiVisto(solicitacao.incidente_pai_id ?? "");
+    if (!solicitacao.incidente_pai_id) setChamadoPai(null);
+  }
 
   useEffect(() => {
-    if (solicitacao.incidente_pai_id) {
-      void apiClient
-        .get<Detalhe>(`v1/atendimento/solicitacoes/${solicitacao.incidente_pai_id}`)
-        .then((res) => {
-          if (res.data) setChamadoPai(res.data.solicitacao);
-        })
-        .catch(() => setChamadoPai(null));
-    } else {
-      setChamadoPai(null);
-    }
+    if (!solicitacao.incidente_pai_id) return;
+    let vivo = true;
+    void apiClient
+      .get<Detalhe>(`v1/atendimento/solicitacoes/${solicitacao.incidente_pai_id}`)
+      .then((res) => {
+        if (vivo && res.data) setChamadoPai(res.data.solicitacao);
+      })
+      .catch(() => {
+        if (vivo) setChamadoPai(null);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [solicitacao.incidente_pai_id]);
 
-  // Carrega lista de chamados filhos agrupados sob este chamado
   const carregarFilhos = () => {
-    setCarregandoFilhos(true);
     void incidentePaiApi
       .listarFilhos(solicitacao.id)
       .then((res) => {
         setFilhos(res.data ?? []);
       })
-      .catch(() => setFilhos([]))
-      .finally(() => setCarregandoFilhos(false));
+      .catch(() => setFilhos([]));
   };
 
   useEffect(() => {
-    carregarFilhos();
+    let vivo = true;
+    void incidentePaiApi
+      .listarFilhos(solicitacao.id)
+      .then((res) => {
+        if (vivo) setFilhos(res.data ?? []);
+      })
+      .catch(() => {
+        if (vivo) setFilhos([]);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [solicitacao.id]);
 
   const desvincularPai = async () => {
@@ -86,8 +102,10 @@ export function IncidentePaiCard({
       let filhoId = alvo;
       if (!alvo.includes("-") && !isNaN(Number(alvo))) {
         // É número do chamado: busca a solicitação pelo número na fila
-        const busca = await apiClient.get<any>(`v1/atendimento/fila?q=${alvo}`);
-        const achado = (busca.data?.items ?? []).find((s: Solicitacao) => s.numero === Number(alvo));
+        const busca = await apiClient.get<{ items?: Solicitacao[] }>(
+          `v1/atendimento/fila?q=${alvo}`,
+        );
+        const achado = (busca.data?.items ?? []).find((s) => s.numero === Number(alvo));
         if (!achado) {
           setErroVincular(`Chamado #${alvo} não encontrado.`);
           return;
@@ -103,16 +121,13 @@ export function IncidentePaiCard({
       setIdOuNumeroFilho("");
       carregarFilhos();
       onAtualizado();
-    } catch (err: any) {
-      setErroVincular(err.message || "Não foi possível vincular o chamado.");
+    } catch (err: unknown) {
+      setErroVincular(err instanceof Error ? err.message : "Não foi possível vincular o chamado.");
     }
   };
 
   const desvincularFilho = async (filhoId: string) => {
-    await run(
-      () => incidentePaiApi.vincular(filhoId, null),
-      "Chamado filho desvinculado.",
-    );
+    await run(() => incidentePaiApi.vincular(filhoId, null), "Chamado filho desvinculado.");
     carregarFilhos();
   };
 
@@ -150,13 +165,17 @@ export function IncidentePaiCard({
                     href={`/atendimento/solicitacoes/${chamadoPai.id}`}
                     className="text-sm font-bold text-primary hover:underline flex items-center gap-1.5 mt-0.5"
                   >
-                    <span>#{chamadoPai.numero} — {chamadoPai.titulo}</span>
+                    <span>
+                      #{chamadoPai.numero} — {chamadoPai.titulo}
+                    </span>
                     <Badge tone={tomEstado(chamadoPai.estado)} className="text-[10px]">
                       {rotuloEstado(chamadoPai.estado)}
                     </Badge>
                   </Link>
                 ) : (
-                  <span className="text-xs text-muted font-mono">{solicitacao.incidente_pai_id}</span>
+                  <span className="text-xs text-muted font-mono">
+                    {solicitacao.incidente_pai_id}
+                  </span>
                 )}
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   A solução técnica deste chamado é coordenada a partir do incidente pai.
@@ -261,11 +280,7 @@ export function IncidentePaiCard({
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setModalVincularAberto(false)}
-            >
+            <Button type="button" variant="secondary" onClick={() => setModalVincularAberto(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={pending}>
@@ -277,4 +292,3 @@ export function IncidentePaiCard({
     </Card>
   );
 }
-

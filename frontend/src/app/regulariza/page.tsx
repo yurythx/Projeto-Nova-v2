@@ -6,7 +6,8 @@ import { Simulador } from "./Simulador";
 
 export const metadata: Metadata = {
   title: "Simulador do Regulariza",
-  description: "Consulta pública de débitos com remissão, parcelas e ITBI estimado. Não abre processo.",
+  description:
+    "Consulta pública de débitos com remissão, parcelas e ITBI estimado. Não abre processo.",
 };
 
 export default function RegularizaPage() {

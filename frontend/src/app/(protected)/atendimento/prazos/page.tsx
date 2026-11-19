@@ -55,12 +55,8 @@ export default function AtendimentoPrazosPage() {
   const feriados = useApiQuery<Feriado[]>(
     filtro ? withQuery("v1/atendimento/feriados", filtro) : null,
   );
-  const slasQuery = useApiQuery<SLA[]>(
-    filtro ? withQuery("v1/atendimento/slas", filtro) : null,
-  );
-  const categoriasQuery = useApiQuery<Categoria[]>(
-    gere ? "v1/atendimento/categorias" : null,
-  );
+  const slasQuery = useApiQuery<SLA[]>(filtro ? withQuery("v1/atendimento/slas", filtro) : null);
+  const categoriasQuery = useApiQuery<Categoria[]>(gere ? "v1/atendimento/categorias" : null);
 
   const { run, pending } = useAction();
 
@@ -239,7 +235,9 @@ export default function AtendimentoPrazosPage() {
                         <div>
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-semibold text-foreground">{sla.nome}</span>
-                            <Badge tone={sla.calendario_tipo === "corrido_24x7" ? "warning" : "info"}>
+                            <Badge
+                              tone={sla.calendario_tipo === "corrido_24x7" ? "warning" : "info"}
+                            >
                               {sla.calendario_tipo === "corrido_24x7" ? "24x7" : "Expediente"}
                             </Badge>
                           </div>
@@ -248,7 +246,8 @@ export default function AtendimentoPrazosPage() {
                           )}
                           <div className="mt-3 flex flex-wrap gap-2 text-xs">
                             <span className="inline-flex items-center gap-1 rounded bg-surface px-2 py-1 font-mono text-foreground">
-                              <strong>1ª Resp:</strong> {formatarMinutos(sla.tempo_resposta_minutos)}
+                              <strong>1ª Resp:</strong>{" "}
+                              {formatarMinutos(sla.tempo_resposta_minutos)}
                             </span>
                             <span className="inline-flex items-center gap-1 rounded bg-surface px-2 py-1 font-mono text-foreground">
                               <strong>Solução:</strong> {formatarMinutos(sla.tempo_solucao_minutos)}
@@ -308,7 +307,9 @@ export default function AtendimentoPrazosPage() {
                                     id={`categoria-sla-${cat.id}`}
                                     aria-label={`SLA da categoria ${cat.nome}`}
                                     value={cat.sla_id ?? ""}
-                                    onChange={(e) => void vincularSlaCategoria(cat.id, e.target.value)}
+                                    onChange={(e) =>
+                                      void vincularSlaCategoria(cat.id, e.target.value)
+                                    }
                                     options={[
                                       { value: "", label: "Nenhuma (Usar Matriz de Prioridade)" },
                                       ...listaSLAs.map((s) => ({
@@ -390,7 +391,9 @@ export default function AtendimentoPrazosPage() {
                     id="sla-cal"
                     label="Calendário"
                     value={slaCalendario}
-                    onChange={(e) => setSlaCalendario(e.target.value as "expediente" | "corrido_24x7")}
+                    onChange={(e) =>
+                      setSlaCalendario(e.target.value as "expediente" | "corrido_24x7")
+                    }
                     options={[
                       { value: "expediente", label: "Horário de Expediente" },
                       { value: "corrido_24x7", label: "Contínuo 24x7" },

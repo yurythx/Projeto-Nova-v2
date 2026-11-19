@@ -59,10 +59,9 @@ describe("Protocolo da Fazenda", () => {
       "href",
       "/fazenda/novo?programa=regulariza",
     );
-    expect(screen.getByRole("link", { name: "Ver detalhes de Regulariza Rondonópolis" })).toHaveAttribute(
-      "href",
-      "/fazenda/novo?programa=regulariza&etapa=detalhe",
-    );
+    expect(
+      screen.getByRole("link", { name: "Ver detalhes de Regulariza Rondonópolis" }),
+    ).toHaveAttribute("href", "/fazenda/novo?programa=regulariza&etapa=detalhe");
     await user.type(screen.getByLabelText("Número do protocolo"), "999");
     expect(screen.queryByText("000001/2026")).not.toBeInTheDocument();
     expect(screen.getByText("Nenhum protocolo com esse número.")).toBeInTheDocument();

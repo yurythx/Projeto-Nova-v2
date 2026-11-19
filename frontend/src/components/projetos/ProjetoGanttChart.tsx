@@ -227,7 +227,9 @@ export function ProjetoGanttChart({
       data-testid="projeto-gantt-chart"
     >
       {/* Cabeçalho do Gantt e Resumo Operacional */}
-      <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${aberto ? "border-b border-surface-border pb-3" : ""}`}>
+      <div
+        className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${aberto ? "border-b border-surface-border pb-3" : ""}`}
+      >
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -290,246 +292,258 @@ export function ProjetoGanttChart({
       </div>
 
       {aberto && (
-      <>
-      {/* Controles de Navegação e Filtros */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-1.5">
-          <span className="text-muted font-medium mr-1">Filtrar:</span>
-          {(["todos", "em_andamento", "a_fazer", "concluida", "bloqueada"] as const).map((est) => (
-            <button
-              key={est}
-              type="button"
-              onClick={() => setFiltroEstado(est)}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                filtroEstado === est
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-surface-border/40 text-muted hover:text-foreground"
-              }`}
-            >
-              {est === "todos"
-                ? `Todas (${totalTarefas})`
-                : `${ESTADO_TAREFA[est as EstadoTarefa]?.label} (${
-                    tarefas.filter((t) => t.estado === est).length
-                  })`}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Zoom temporal */}
-          <div className="flex items-center rounded-lg border border-surface-border p-0.5 bg-black/[0.02] dark:bg-white/[0.02]">
-            {[30, 90, 180, 365].map((dias) => (
-              <button
-                key={dias}
-                type="button"
-                aria-pressed={janelaDias === dias}
-                onClick={() => setJanelaDias(dias)}
-                className={`rounded px-2 py-0.5 text-[11px] font-medium transition-all ${
-                  janelaDias === dias
-                    ? "bg-surface shadow-xs text-foreground font-semibold"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                {dias}d
-              </button>
-            ))}
-          </div>
-
-          {/* Navegação de semanas */}
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => navegarSemanas(-2)}
-              aria-label="Duas semanas antes"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </Button>
-            <Button size="sm" variant="secondary" onClick={irParaHoje} className="text-xs px-2.5">
-              Hoje
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => navegarSemanas(2)}
-              aria-label="Duas semanas depois"
-            >
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Grade Visual do Gráfico de Gantt */}
-      <div className="overflow-x-auto rounded-lg border border-surface-border bg-surface">
-        <div className="min-w-[840px]">
-          {/* Cabeçalho de Escala Temporal */}
-          <div className="grid grid-cols-12 border-b border-surface-border bg-black/[0.02] text-xs font-semibold text-muted dark:bg-white/[0.02]">
-            <div className="col-span-4 p-3 border-r border-surface-border flex items-center justify-between">
-              <span>Atividade & Responsável</span>
-              <span className="text-[11px] font-normal text-muted">Estado</span>
+        <>
+          {/* Controles de Navegação e Filtros */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted font-medium mr-1">Filtrar:</span>
+              {(["todos", "em_andamento", "a_fazer", "concluida", "bloqueada"] as const).map(
+                (est) => (
+                  <button
+                    key={est}
+                    type="button"
+                    onClick={() => setFiltroEstado(est)}
+                    className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                      filtroEstado === est
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface-border/40 text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {est === "todos"
+                      ? `Todas (${totalTarefas})`
+                      : `${ESTADO_TAREFA[est as EstadoTarefa]?.label} (${
+                          tarefas.filter((t) => t.estado === est).length
+                        })`}
+                  </button>
+                ),
+              )}
             </div>
-            <div className="col-span-8 relative h-12 flex">
-              {colunasCabecalho.map((col, i) => (
-                <div
-                  key={i}
-                  className="absolute top-0 bottom-0 border-l border-surface-border px-2 flex flex-col justify-center"
-                  style={{
-                    left: `${col.offsetPct}%`,
-                    width: `${col.widthPct}%`,
-                  }}
+
+            <div className="flex items-center gap-2">
+              {/* Zoom temporal */}
+              <div className="flex items-center rounded-lg border border-surface-border p-0.5 bg-black/[0.02] dark:bg-white/[0.02]">
+                {[30, 90, 180, 365].map((dias) => (
+                  <button
+                    key={dias}
+                    type="button"
+                    aria-pressed={janelaDias === dias}
+                    onClick={() => setJanelaDias(dias)}
+                    className={`rounded px-2 py-0.5 text-[11px] font-medium transition-all ${
+                      janelaDias === dias
+                        ? "bg-surface shadow-xs text-foreground font-semibold"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {dias}d
+                  </button>
+                ))}
+              </div>
+
+              {/* Navegação de semanas */}
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => navegarSemanas(-2)}
+                  aria-label="Duas semanas antes"
                 >
-                  <span className="text-[11px] font-medium text-foreground">{col.label}</span>
-                  <span className="text-[10px] text-muted">{col.sub}</span>
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={irParaHoje}
+                  className="text-xs px-2.5"
+                >
+                  Hoje
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => navegarSemanas(2)}
+                  aria-label="Duas semanas depois"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grade Visual do Gráfico de Gantt */}
+          <div className="overflow-x-auto rounded-lg border border-surface-border bg-surface">
+            <div className="min-w-[840px]">
+              {/* Cabeçalho de Escala Temporal */}
+              <div className="grid grid-cols-12 border-b border-surface-border bg-black/[0.02] text-xs font-semibold text-muted dark:bg-white/[0.02]">
+                <div className="col-span-4 p-3 border-r border-surface-border flex items-center justify-between">
+                  <span>Atividade & Responsável</span>
+                  <span className="text-[11px] font-normal text-muted">Estado</span>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="col-span-8 relative h-12 flex">
+                  {colunasCabecalho.map((col, i) => (
+                    <div
+                      key={i}
+                      className="absolute top-0 bottom-0 border-l border-surface-border px-2 flex flex-col justify-center"
+                      style={{
+                        left: `${col.offsetPct}%`,
+                        width: `${col.widthPct}%`,
+                      }}
+                    >
+                      <span className="text-[11px] font-medium text-foreground">{col.label}</span>
+                      <span className="text-[10px] text-muted">{col.sub}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          {/* Linhas de Atividades */}
-          {tarefasFiltradas.length === 0 ? (
-            <div className="p-8 text-center text-xs text-muted">
-              Nenhuma atividade encontrada para os critérios selecionados.
-            </div>
-          ) : (
-            <div className="relative divide-y divide-surface-border/60">
-              {/* Marcador vertical 'Hoje' */}
-              {hojePct !== null && (
-                <div
-                  className="absolute top-0 bottom-0 z-20 w-0.5 bg-danger pointer-events-none"
-                  style={{ left: `calc(33.333% + (66.666% * ${hojePct / 100}))` }}
-                  title="Data Atual (Hoje)"
-                >
-                  <span className="absolute -top-2.5 -translate-x-1/2 rounded bg-danger px-1.5 py-0.2 text-[9px] font-bold text-white uppercase shadow-xs">
-                    Hoje
-                  </span>
+              {/* Linhas de Atividades */}
+              {tarefasFiltradas.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted">
+                  Nenhuma atividade encontrada para os critérios selecionados.
+                </div>
+              ) : (
+                <div className="relative divide-y divide-surface-border/60">
+                  {/* Marcador vertical 'Hoje' */}
+                  {hojePct !== null && (
+                    <div
+                      className="absolute top-0 bottom-0 z-20 w-0.5 bg-danger pointer-events-none"
+                      style={{ left: `calc(33.333% + (66.666% * ${hojePct / 100}))` }}
+                      title="Data Atual (Hoje)"
+                    >
+                      <span className="absolute -top-2.5 -translate-x-1/2 rounded bg-danger px-1.5 py-0.2 text-[9px] font-bold text-white uppercase shadow-xs">
+                        Hoje
+                      </span>
+                    </div>
+                  )}
+
+                  {tarefasFiltradas.map((t, idx) => {
+                    const barra = calcularBarra(t);
+                    const estilo = estiloBarra[t.estado] || estiloBarra.a_fazer;
+                    const meta = ESTADO_TAREFA[t.estado];
+
+                    return (
+                      <div
+                        key={t.id}
+                        className="grid grid-cols-12 items-center hover:bg-black/[0.015] dark:hover:bg-white/[0.015] transition-colors group"
+                        data-testid={`gantt-row-${t.id}`}
+                      >
+                        {/* Coluna Esquerda: Dados da Tarefa */}
+                        <div className="col-span-4 p-2.5 border-r border-surface-border flex items-center justify-between gap-2 overflow-hidden">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-[11px] text-muted font-bold shrink-0">
+                                #{t.ordem || idx + 1}
+                              </span>
+                              <span
+                                className="text-xs font-medium text-foreground truncate block"
+                                title={t.titulo}
+                              >
+                                {t.titulo}
+                              </span>
+                            </div>
+                            {pessoasDaTarefa(t).length > 0 && (
+                              <div className="mt-0.5 text-[11px] text-muted">
+                                <PessoasComAvatar pessoas={pessoasDaTarefa(t)} />
+                              </div>
+                            )}
+                            {t.predecessora_id && (
+                              <p className="text-[11px] text-muted truncate">
+                                Depois de{" "}
+                                {tarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
+                                  "outra tarefa"}
+                              </p>
+                            )}
+                          </div>
+                          <div className="shrink-0 flex items-center gap-1">
+                            {barra.atrasada && (
+                              <span
+                                className="flex items-center text-[10px] text-danger font-semibold bg-danger/10 px-1 py-0.5 rounded"
+                                title="Atividade fora do prazo previsto"
+                              >
+                                <AlertTriangle className="h-3 w-3 mr-0.5" />
+                                Atrasada
+                              </span>
+                            )}
+                            <Badge
+                              tone={meta?.tone ?? "neutral"}
+                              className="text-[10px] py-0 px-1.5"
+                            >
+                              {meta?.label ?? t.estado}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Coluna Direita: Linha do Tempo e Barra do Gantt */}
+                        <div className="col-span-8 relative h-14 flex items-center px-1">
+                          {/* Grid de fundo sutil para cada semana */}
+                          <div className="absolute inset-0 flex pointer-events-none">
+                            {colunasCabecalho.map((col, i) => (
+                              <div
+                                key={i}
+                                className="absolute top-0 bottom-0 border-l border-surface-border/40"
+                                style={{ left: `${col.offsetPct}%`, width: `${col.widthPct}%` }}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Barra de Atividade */}
+                          <div
+                            className={`absolute h-7 rounded-md border shadow-xs flex items-center px-2 transition-all group-hover:ring-1 group-hover:ring-primary/40 ${estilo.bg} ${estilo.border}`}
+                            style={{
+                              left: `${barra.left}%`,
+                              width: `${barra.width}%`,
+                              minWidth: "32px",
+                            }}
+                            title={`${t.titulo} (${meta?.label}): ${barra.tInicio.toLocaleDateString("pt-BR")} até ${barra.tFim.toLocaleDateString("pt-BR")}`}
+                          >
+                            {/* Preenchimento de progresso interno */}
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-l-md opacity-25 bg-current"
+                              style={{ width: `${estilo.fillPct}%` }}
+                            />
+
+                            {/* Rótulo da Barra */}
+                            <div className="relative z-10 flex items-center gap-1.5 min-w-0 overflow-hidden">
+                              {t.estado === "concluida" && (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
+                              )}
+                              {t.estado === "em_andamento" && (
+                                <Clock className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
+                              )}
+                              <span className={`text-[11px] truncate ${estilo.text}`}>
+                                {t.titulo}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
-              {tarefasFiltradas.map((t, idx) => {
-                const barra = calcularBarra(t);
-                const estilo = estiloBarra[t.estado] || estiloBarra.a_fazer;
-                const meta = ESTADO_TAREFA[t.estado];
-
-                return (
-                  <div
-                    key={t.id}
-                    className="grid grid-cols-12 items-center hover:bg-black/[0.015] dark:hover:bg-white/[0.015] transition-colors group"
-                    data-testid={`gantt-row-${t.id}`}
-                  >
-                    {/* Coluna Esquerda: Dados da Tarefa */}
-                    <div className="col-span-4 p-2.5 border-r border-surface-border flex items-center justify-between gap-2 overflow-hidden">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-[11px] text-muted font-bold shrink-0">
-                            #{t.ordem || idx + 1}
-                          </span>
-                          <span
-                            className="text-xs font-medium text-foreground truncate block"
-                            title={t.titulo}
-                          >
-                            {t.titulo}
-                          </span>
-                        </div>
-                        {pessoasDaTarefa(t).length > 0 && (
-                          <div className="mt-0.5 text-[11px] text-muted">
-                            <PessoasComAvatar pessoas={pessoasDaTarefa(t)} />
-                          </div>
-                        )}
-                        {t.predecessora_id && (
-                          <p className="text-[11px] text-muted truncate">
-                            Depois de{" "}
-                            {tarefas.find((item) => item.id === t.predecessora_id)?.titulo ??
-                              "outra tarefa"}
-                          </p>
-                        )}
-                      </div>
-                      <div className="shrink-0 flex items-center gap-1">
-                        {barra.atrasada && (
-                          <span
-                            className="flex items-center text-[10px] text-danger font-semibold bg-danger/10 px-1 py-0.5 rounded"
-                            title="Atividade fora do prazo previsto"
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-0.5" />
-                            Atrasada
-                          </span>
-                        )}
-                        <Badge tone={meta?.tone ?? "neutral"} className="text-[10px] py-0 px-1.5">
-                          {meta?.label ?? t.estado}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Coluna Direita: Linha do Tempo e Barra do Gantt */}
-                    <div className="col-span-8 relative h-14 flex items-center px-1">
-                      {/* Grid de fundo sutil para cada semana */}
-                      <div className="absolute inset-0 flex pointer-events-none">
-                        {colunasCabecalho.map((col, i) => (
-                          <div
-                            key={i}
-                            className="absolute top-0 bottom-0 border-l border-surface-border/40"
-                            style={{ left: `${col.offsetPct}%`, width: `${col.widthPct}%` }}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Barra de Atividade */}
-                      <div
-                        className={`absolute h-7 rounded-md border shadow-xs flex items-center px-2 transition-all group-hover:ring-1 group-hover:ring-primary/40 ${estilo.bg} ${estilo.border}`}
-                        style={{
-                          left: `${barra.left}%`,
-                          width: `${barra.width}%`,
-                          minWidth: "32px",
-                        }}
-                        title={`${t.titulo} (${meta?.label}): ${barra.tInicio.toLocaleDateString("pt-BR")} até ${barra.tFim.toLocaleDateString("pt-BR")}`}
-                      >
-                        {/* Preenchimento de progresso interno */}
-                        <div
-                          className="absolute inset-y-0 left-0 rounded-l-md opacity-25 bg-current"
-                          style={{ width: `${estilo.fillPct}%` }}
-                        />
-
-                        {/* Rótulo da Barra */}
-                        <div className="relative z-10 flex items-center gap-1.5 min-w-0 overflow-hidden">
-                          {t.estado === "concluida" && (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
-                          )}
-                          {t.estado === "em_andamento" && (
-                            <Clock className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
-                          )}
-                          <span className={`text-[11px] truncate ${estilo.text}`}>{t.titulo}</span>
-                        </div>
-                      </div>
-                    </div>
+              {/* Marcos e Conexões com Mudanças (CAB) Vinculadas */}
+              {vinculos.length > 0 && (
+                <div className="border-t border-surface-border bg-black/[0.01] p-3 text-xs text-muted dark:bg-white/[0.01]">
+                  <div className="flex items-center gap-2 font-semibold text-foreground mb-1">
+                    <Flag className="h-3.5 w-3.5 text-info" />
+                    <span>Marcos Vinculados da Assistência</span>
                   </div>
-                );
-              })}
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    {vinculos.map((v) => (
+                      <span
+                        key={v.id}
+                        className="inline-flex items-center gap-1 text-[11px] rounded bg-surface border border-surface-border px-2 py-0.5 text-foreground"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-info" />
+                        Marco: {v.rotulo || v.alvo_id}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Marcos e Conexões com Mudanças (CAB) Vinculadas */}
-          {vinculos.length > 0 && (
-            <div className="border-t border-surface-border bg-black/[0.01] p-3 text-xs text-muted dark:bg-white/[0.01]">
-              <div className="flex items-center gap-2 font-semibold text-foreground mb-1">
-                <Flag className="h-3.5 w-3.5 text-info" />
-                <span>Marcos Vinculados da Assistência</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                {vinculos.map((v) => (
-                  <span
-                    key={v.id}
-                    className="inline-flex items-center gap-1 text-[11px] rounded bg-surface border border-surface-border px-2 py-0.5 text-foreground"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-info" />
-                    Marco: {v.rotulo || v.alvo_id}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      </>
+          </div>
+        </>
       )}
     </div>
   );

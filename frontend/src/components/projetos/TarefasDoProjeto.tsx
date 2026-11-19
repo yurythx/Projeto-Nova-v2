@@ -17,7 +17,14 @@ import { PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TableCell } from "@/components/ui/Table";
-import { ESTADO_TAREFA, pessoasDaTarefa, tarefaInclui, type EstadoTarefa, type PessoaProjeto, type Tarefa } from "@/lib/projetos/projetos";
+import {
+  ESTADO_TAREFA,
+  pessoasDaTarefa,
+  tarefaInclui,
+  type EstadoTarefa,
+  type PessoaProjeto,
+  type Tarefa,
+} from "@/lib/projetos/projetos";
 
 import { diaBrasil, diaISO, faixaDoPrazo } from "./datas";
 import { ListaTabela } from "./ListaTabela";
@@ -78,7 +85,8 @@ export function TarefasDoProjeto({
     return raizes.filter((t) => {
       const filhas = tarefas.filter((item) => item.pai_id === t.id);
       const grupo = [t, ...filhas];
-      if (termo && !grupo.some((item) => item.titulo.toLocaleLowerCase("pt-BR").includes(termo))) return false;
+      if (termo && !grupo.some((item) => item.titulo.toLocaleLowerCase("pt-BR").includes(termo)))
+        return false;
       if (minhas && !grupo.some((item) => tarefaInclui(item, usuarioId))) return false;
       if (atrasadas || semana) {
         const passa = grupo.some((item) => {
@@ -182,7 +190,11 @@ export function TarefasDoProjeto({
               <>
                 <TableCell>
                   <div data-testid={`tarefa-${t.id}`}>
-                    {nome(t, vistaCard, "block truncate text-left text-sm font-medium text-foreground hover:underline")}
+                    {nome(
+                      t,
+                      vistaCard,
+                      "block truncate text-left text-sm font-medium text-foreground hover:underline",
+                    )}
                     {anterior && (
                       <p className="truncate text-[11px] text-muted">Depois de {anterior}</p>
                     )}
@@ -253,10 +265,7 @@ export function TarefasDoProjeto({
                   "line-clamp-2 text-left text-sm font-medium text-foreground hover:underline",
                 )}
                 <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-                  <PessoasComAvatar
-                    pessoas={pessoasDaTarefa(t)}
-                    className="min-w-0"
-                  />
+                  <PessoasComAvatar pessoas={pessoasDaTarefa(t)} className="min-w-0" />
                   <span className="shrink-0">{diaBrasil(t.data_limite) || "Sem prazo"}</span>
                 </div>
                 {!tarefaInclui(t) && (
@@ -369,7 +378,9 @@ function CelulaPrazo({
   onPrazo: (dia: string) => void;
 }) {
   if (!mutavel) {
-    return <span className="text-sm text-muted">{diaBrasil(tarefa.data_limite) || "Sem prazo"}</span>;
+    return (
+      <span className="text-sm text-muted">{diaBrasil(tarefa.data_limite) || "Sem prazo"}</span>
+    );
   }
   return (
     <input

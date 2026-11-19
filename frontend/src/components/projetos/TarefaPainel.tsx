@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 
 import { PessoaComAvatar, PessoasComAvatar } from "@/components/plataforma/AvatarPessoa";
 import { PessoasDaTarefa } from "@/components/projetos/PessoasDaTarefa";
@@ -14,7 +14,15 @@ import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { mimeOf, putToTicket } from "@/lib/plataforma/upload";
 import type { UploadTicket } from "@/lib/plataforma/types";
-import { ESTADO_TAREFA, pessoasDaTarefa, tarefaInclui, type AtualizacaoTarefa, type EstadoTarefa, type PessoaProjeto, type Tarefa } from "@/lib/projetos/projetos";
+import {
+  ESTADO_TAREFA,
+  pessoasDaTarefa,
+  tarefaInclui,
+  type AtualizacaoTarefa,
+  type EstadoTarefa,
+  type PessoaProjeto,
+  type Tarefa,
+} from "@/lib/projetos/projetos";
 
 export interface AnexoTarefa {
   id: string;
@@ -41,7 +49,10 @@ function rotuloEstado(estado: string) {
 }
 
 function nomesDe(texto: string) {
-  return texto.split("\n").map((nome) => nome.trim()).filter(Boolean);
+  return texto
+    .split("\n")
+    .map((nome) => nome.trim())
+    .filter(Boolean);
 }
 
 function textoPessoas(antes: string, depois: string) {
@@ -126,16 +137,17 @@ export function TarefaPainel({
   const [confirmacao, setConfirmacao] = useState("");
   const [nova, setNova] = useState("");
   const [atualizacao, setAtualizacao] = useState("");
+  const [tarefaAberta, setTarefaAberta] = useState(tarefa?.id ?? "");
 
-  useEffect(() => {
-    if (!tarefa) return;
-    setRelato(tarefa.relato ?? "");
-    setResp(pessoasDaTarefa(tarefa));
+  if ((tarefa?.id ?? "") !== tarefaAberta) {
+    setTarefaAberta(tarefa?.id ?? "");
+    setRelato(tarefa?.relato ?? "");
+    setResp(tarefa ? pessoasDaTarefa(tarefa) : []);
     setArquivo(null);
     setConfirmacao("");
     setNova("");
     setAtualizacao("");
-  }, [tarefa]);
+  }
 
   const anexos = useApiQuery<AnexoTarefa[]>(
     tarefa ? `v1/projetos/${projetoId}/tarefas/${tarefa.id}/anexos` : null,
@@ -275,207 +287,229 @@ export function TarefaPainel({
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-      {tarefa && (
-        <div className="flex flex-col gap-4">
-          {mutavel ? (
-            <PessoasDaTarefa
-              projetoId={projetoId}
-              value={resp}
-              onChange={setResp}
-            />
-          ) : (
-            <PessoasComAvatar
-              pessoas={pessoasDaTarefa(tarefa)}
-              vazio="ninguém atribuído"
-              className="text-sm text-muted"
-            />
-          )}
-          {tarefa.pai_id && (
-            <p className="text-xs text-muted">
-              Subtarefa de {tarefas.find((item) => item.id === tarefa.pai_id)?.titulo ?? "outra tarefa"}
-            </p>
-          )}
-          {!tarefa.pai_id && (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-foreground">Subtarefas</p>
-              {tarefas.filter((item) => item.pai_id === tarefa.id).length === 0 && (
-                <p className="text-xs text-muted">Nenhuma subtarefa. Use quando esta tarefa crescer.</p>
+          {tarefa && (
+            <div className="flex flex-col gap-4">
+              {mutavel ? (
+                <PessoasDaTarefa projetoId={projetoId} value={resp} onChange={setResp} />
+              ) : (
+                <PessoasComAvatar
+                  pessoas={pessoasDaTarefa(tarefa)}
+                  vazio="ninguém atribuído"
+                  className="text-sm text-muted"
+                />
               )}
-              <ul className="flex flex-col gap-2">
-                {tarefas
-                  .filter((item) => item.pai_id === tarefa.id)
-                  .map((filha) => (
-                    <li key={filha.id} className="flex flex-wrap items-center gap-2">
+              {tarefa.pai_id && (
+                <p className="text-xs text-muted">
+                  Subtarefa de{" "}
+                  {tarefas.find((item) => item.id === tarefa.pai_id)?.titulo ?? "outra tarefa"}
+                </p>
+              )}
+              {!tarefa.pai_id && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-foreground">Subtarefas</p>
+                  {tarefas.filter((item) => item.pai_id === tarefa.id).length === 0 && (
+                    <p className="text-xs text-muted">
+                      Nenhuma subtarefa. Use quando esta tarefa crescer.
+                    </p>
+                  )}
+                  <ul className="flex flex-col gap-2">
+                    {tarefas
+                      .filter((item) => item.pai_id === tarefa.id)
+                      .map((filha) => (
+                        <li key={filha.id} className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className="text-left text-sm text-foreground hover:underline"
+                            onClick={() => onAbrir?.(filha)}
+                          >
+                            {filha.titulo}
+                          </button>
+                          <PessoasComAvatar
+                            pessoas={pessoasDaTarefa(filha)}
+                            vazio="ninguém"
+                            className="text-xs text-muted"
+                          />
+                          {mutavel && onMover ? (
+                            <select
+                              aria-label={`Estado da subtarefa ${filha.titulo}`}
+                              value={filha.estado}
+                              disabled={pending || !tarefaInclui(filha)}
+                              onChange={(e) => onMover(filha, e.target.value as EstadoTarefa)}
+                              className="h-8 rounded-md border border-surface-border bg-surface px-2 text-xs text-foreground"
+                            >
+                              {(Object.keys(ESTADO_TAREFA) as EstadoTarefa[]).map((estado) => (
+                                <option key={estado} value={estado}>
+                                  {ESTADO_TAREFA[estado].label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-xs text-muted">{rotuloEstado(filha.estado)}</span>
+                          )}
+                        </li>
+                      ))}
+                  </ul>
+                  {mutavel && (
+                    <form
+                      onSubmit={(e) => void criarSubtarefa(e)}
+                      className="flex items-center gap-2"
+                    >
+                      <Input
+                        id="nova-subtarefa"
+                        value={nova}
+                        onChange={(e) => setNova(e.target.value)}
+                        placeholder="Nova subtarefa"
+                        aria-label="Nova subtarefa"
+                        maxLength={160}
+                        className="h-8"
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="secondary"
+                        disabled={pending || !nova.trim()}
+                      >
+                        Adicionar
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              )}
+              <Textarea
+                id="tarefa-relato"
+                label="Como foi feita"
+                value={relato}
+                onChange={(e) => setRelato(e.target.value)}
+                placeholder="O que foi feito, o que travou, o que ficou pendente."
+                rows={6}
+                maxLength={4000}
+                readOnly={!mutavel}
+              />
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">Atualizações</p>
+                {(atualizacoes.data ?? []).length === 0 && (
+                  <p className="text-xs text-muted">Nenhuma atualização nesta tarefa.</p>
+                )}
+                <ul className="flex flex-col gap-3">
+                  {(atualizacoes.data ?? []).map((item) => (
+                    <li key={item.id} className="flex flex-col gap-1">
+                      <PessoaComAvatar
+                        id={item.autor_id}
+                        nome={item.autor_nome}
+                        className="text-sm"
+                      />
+                      <p className="whitespace-pre-wrap text-sm text-foreground">{item.texto}</p>
+                      <span className="text-[11px] text-muted">{fmtDateTime(item.created_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+                {podeComentar && (
+                  <form onSubmit={(e) => void publicar(e)} className="flex flex-col gap-2">
+                    <Textarea
+                      id="tarefa-atualizacao"
+                      label="Nova atualização"
+                      value={atualizacao}
+                      onChange={(e) => setAtualizacao(e.target.value)}
+                      placeholder="O que mudou, o que foi combinado, o que falta."
+                      rows={3}
+                      maxLength={2000}
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="secondary"
+                      className="self-start"
+                      disabled={pending || !atualizacao.trim()}
+                    >
+                      Publicar
+                    </Button>
+                  </form>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">Arquivos e fotos</p>
+                {(anexos.data ?? []).length === 0 && (
+                  <p className="text-xs text-muted">Nenhum arquivo nesta tarefa.</p>
+                )}
+                <ul className="flex flex-col gap-1">
+                  {(anexos.data ?? []).map((anexo) => (
+                    <li key={anexo.id}>
                       <button
                         type="button"
-                        className="text-left text-sm text-foreground hover:underline"
-                        onClick={() => onAbrir?.(filha)}
+                        className="text-left text-sm text-primary hover:underline"
+                        onClick={() => void abrirArquivo(anexo)}
                       >
-                        {filha.titulo}
+                        {anexo.nome}
                       </button>
-                      <PessoasComAvatar
-                        pessoas={pessoasDaTarefa(filha)}
-                        vazio="ninguém"
-                        className="text-xs text-muted"
-                      />
-                      {mutavel && onMover ? (
-                        <select
-                          aria-label={`Estado da subtarefa ${filha.titulo}`}
-                          value={filha.estado}
-                          disabled={pending || !tarefaInclui(filha)}
-                          onChange={(e) => onMover(filha, e.target.value as EstadoTarefa)}
-                          className="h-8 rounded-md border border-surface-border bg-surface px-2 text-xs text-foreground"
-                        >
-                          {(Object.keys(ESTADO_TAREFA) as EstadoTarefa[]).map((estado) => (
-                            <option key={estado} value={estado}>
-                              {ESTADO_TAREFA[estado].label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-xs text-muted">{rotuloEstado(filha.estado)}</span>
+                      {anexo.autor_nome && (
+                        <span className="ml-2 text-[11px] text-muted">{anexo.autor_nome}</span>
                       )}
                     </li>
                   ))}
-              </ul>
-              {mutavel && (
-                <form onSubmit={(e) => void criarSubtarefa(e)} className="flex items-center gap-2">
+                </ul>
+                {mutavel && (
+                  <form onSubmit={enviar} className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.csv,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
+                      onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+                      aria-label="Arquivo ou foto da tarefa"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="secondary"
+                      disabled={pending || !arquivo}
+                    >
+                      Enviar
+                    </Button>
+                  </form>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">Registros</p>
+                {(movimentos.data ?? []).length === 0 && (
+                  <p className="text-xs text-muted">Nenhuma movimentação ainda.</p>
+                )}
+                <ul className="flex flex-col gap-2">
+                  {(movimentos.data ?? []).map((m) => (
+                    <li key={m.id} className="text-sm text-foreground">
+                      <span className="text-muted">{fmtDateTime(m.created_at)}</span>
+                      {m.autor_nome ? ` · ${m.autor_nome}` : ""} {textoMovimento(m)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {mutavel && onExcluir && (
+                <div className="flex flex-col gap-2 border-t border-surface-border pt-4">
+                  <p className="text-sm font-medium text-foreground">Apagar tarefa</p>
+                  <p className="text-xs text-muted">
+                    Digite o título exato da tarefa para confirmar. Essa ação não tem volta.
+                    {tarefas.some((item) => item.pai_id === tarefa.id)
+                      ? " As subtarefas também são apagadas."
+                      : ""}
+                  </p>
                   <Input
-                    id="nova-subtarefa"
-                    value={nova}
-                    onChange={(e) => setNova(e.target.value)}
-                    placeholder="Nova subtarefa"
-                    aria-label="Nova subtarefa"
-                    maxLength={160}
-                    className="h-8"
+                    id="tarefa-confirmar-exclusao"
+                    label="Título para confirmar"
+                    value={confirmacao}
+                    onChange={(e) => setConfirmacao(e.target.value)}
+                    autoComplete="off"
                   />
-                  <Button type="submit" size="sm" variant="secondary" disabled={pending || !nova.trim()}>
-                    Adicionar
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    className="self-start"
+                    disabled={pending || confirmacao.trim() !== tarefa.titulo.trim()}
+                    onClick={() => onExcluir(tarefa)}
+                  >
+                    Apagar tarefa
                   </Button>
-                </form>
+                </div>
               )}
             </div>
           )}
-          <Textarea
-            id="tarefa-relato"
-            label="Como foi feita"
-            value={relato}
-            onChange={(e) => setRelato(e.target.value)}
-            placeholder="O que foi feito, o que travou, o que ficou pendente."
-            rows={6}
-            maxLength={4000}
-            readOnly={!mutavel}
-          />
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-foreground">Atualizações</p>
-            {(atualizacoes.data ?? []).length === 0 && (
-              <p className="text-xs text-muted">Nenhuma atualização nesta tarefa.</p>
-            )}
-            <ul className="flex flex-col gap-3">
-              {(atualizacoes.data ?? []).map((item) => (
-                <li key={item.id} className="flex flex-col gap-1">
-                  <PessoaComAvatar id={item.autor_id} nome={item.autor_nome} className="text-sm" />
-                  <p className="whitespace-pre-wrap text-sm text-foreground">{item.texto}</p>
-                  <span className="text-[11px] text-muted">{fmtDateTime(item.created_at)}</span>
-                </li>
-              ))}
-            </ul>
-            {podeComentar && (
-              <form onSubmit={(e) => void publicar(e)} className="flex flex-col gap-2">
-                <Textarea
-                  id="tarefa-atualizacao"
-                  label="Nova atualização"
-                  value={atualizacao}
-                  onChange={(e) => setAtualizacao(e.target.value)}
-                  placeholder="O que mudou, o que foi combinado, o que falta."
-                  rows={3}
-                  maxLength={2000}
-                />
-                <Button type="submit" size="sm" variant="secondary" className="self-start" disabled={pending || !atualizacao.trim()}>
-                  Publicar
-                </Button>
-              </form>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-foreground">Arquivos e fotos</p>
-            {(anexos.data ?? []).length === 0 && (
-              <p className="text-xs text-muted">Nenhum arquivo nesta tarefa.</p>
-            )}
-            <ul className="flex flex-col gap-1">
-              {(anexos.data ?? []).map((anexo) => (
-                <li key={anexo.id}>
-                  <button
-                    type="button"
-                    className="text-left text-sm text-primary hover:underline"
-                    onClick={() => void abrirArquivo(anexo)}
-                  >
-                    {anexo.nome}
-                  </button>
-                  {anexo.autor_nome && (
-                    <span className="ml-2 text-[11px] text-muted">{anexo.autor_nome}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {mutavel && (
-              <form onSubmit={enviar} className="flex flex-wrap items-center gap-2">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.csv,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
-                  onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
-                  aria-label="Arquivo ou foto da tarefa"
-                />
-                <Button type="submit" size="sm" variant="secondary" disabled={pending || !arquivo}>
-                  Enviar
-                </Button>
-              </form>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-foreground">Registros</p>
-            {(movimentos.data ?? []).length === 0 && (
-              <p className="text-xs text-muted">Nenhuma movimentação ainda.</p>
-            )}
-            <ul className="flex flex-col gap-2">
-              {(movimentos.data ?? []).map((m) => (
-                <li key={m.id} className="text-sm text-foreground">
-                  <span className="text-muted">{fmtDateTime(m.created_at)}</span>
-                  {m.autor_nome ? ` · ${m.autor_nome}` : ""} {textoMovimento(m)}
-                </li>
-              ))}
-            </ul>
-          </div>
-          {mutavel && onExcluir && (
-            <div className="flex flex-col gap-2 border-t border-surface-border pt-4">
-              <p className="text-sm font-medium text-foreground">Apagar tarefa</p>
-              <p className="text-xs text-muted">
-                Digite o título exato da tarefa para confirmar. Essa ação não tem volta.
-                {tarefas.some((item) => item.pai_id === tarefa.id)
-                  ? " As subtarefas também são apagadas."
-                  : ""}
-              </p>
-              <Input
-                id="tarefa-confirmar-exclusao"
-                label="Título para confirmar"
-                value={confirmacao}
-                onChange={(e) => setConfirmacao(e.target.value)}
-                autoComplete="off"
-              />
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                className="self-start"
-                disabled={pending || confirmacao.trim() !== tarefa.titulo.trim()}
-                onClick={() => onExcluir(tarefa)}
-              >
-                Apagar tarefa
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
         </div>
         {tarefa && mutavel && (
           <div className="flex shrink-0 items-center gap-2 border-t border-surface-border px-6 py-4">

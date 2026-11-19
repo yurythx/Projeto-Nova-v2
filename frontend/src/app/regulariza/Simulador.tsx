@@ -37,8 +37,8 @@ export function Simulador() {
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-14">
       <h1 className="text-2xl font-bold tracking-tight">Simulador do Regulariza</h1>
       <p className="text-sm text-muted">
-        A consulta mostra débitos com remissão, parcelas e ITBI estimado. Ela não abre processo. Para
-        protocolar, entre com o gov.br.
+        A consulta mostra débitos com remissão, parcelas e ITBI estimado. Ela não abre processo.
+        Para protocolar, entre com o gov.br.
       </p>
       <Link href="/govbr" className={buttonClass("secondary", "sm")}>
         Entrar com gov.br

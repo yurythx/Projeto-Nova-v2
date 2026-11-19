@@ -53,14 +53,12 @@ describe("IncidentePaiCard (AIOps)", () => {
     });
 
     renderApp(
-      <IncidentePaiCard
-        solicitacao={CHAMADO_FILHO}
-        podeEditar={true}
-        onAtualizado={vi.fn()}
-      />,
+      <IncidentePaiCard solicitacao={CHAMADO_FILHO} podeEditar={true} onAtualizado={vi.fn()} />,
     );
 
-    expect(await screen.findByText(/Chamado dependente vinculado ao Incidente Pai/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Chamado dependente vinculado ao Incidente Pai/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/#100 — Queda Geral de Link Fibra/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Desvincular/i })).toBeInTheDocument();
   });
@@ -73,11 +71,7 @@ describe("IncidentePaiCard (AIOps)", () => {
     });
 
     renderApp(
-      <IncidentePaiCard
-        solicitacao={CHAMADO_PAI}
-        podeEditar={true}
-        onAtualizado={vi.fn()}
-      />,
+      <IncidentePaiCard solicitacao={CHAMADO_PAI} podeEditar={true} onAtualizado={vi.fn()} />,
     );
 
     expect(await screen.findByText(/Chamados filhos correlatos \(1\)/i)).toBeInTheDocument();
@@ -87,7 +81,7 @@ describe("IncidentePaiCard (AIOps)", () => {
   });
 
   it("permite vincular novo chamado filho por número", async () => {
-    let payloadVinculo: any = null;
+    let payloadVinculo: { incidente_pai_id?: string } | null = null;
 
     mockBackend({
       "GET v1/atendimento/solicitacoes/pai-1/filhos": {
@@ -99,7 +93,7 @@ describe("IncidentePaiCard (AIOps)", () => {
         },
       },
       "PUT v1/atendimento/solicitacoes/filho-1/incidente-pai": (req) => {
-        payloadVinculo = req.body;
+        payloadVinculo = req.body as { incidente_pai_id?: string };
         return {
           status: 200,
           data: { solicitacao: { ...CHAMADO_FILHO, incidente_pai_id: "pai-1" } },
@@ -109,11 +103,7 @@ describe("IncidentePaiCard (AIOps)", () => {
 
     const user = userEvent.setup();
     renderApp(
-      <IncidentePaiCard
-        solicitacao={CHAMADO_PAI}
-        podeEditar={true}
-        onAtualizado={vi.fn()}
-      />,
+      <IncidentePaiCard solicitacao={CHAMADO_PAI} podeEditar={true} onAtualizado={vi.fn()} />,
     );
 
     const btnAbrirModal = await screen.findByRole("button", { name: /Vincular chamado filho/i });
@@ -128,9 +118,7 @@ describe("IncidentePaiCard (AIOps)", () => {
     await user.click(btnSalvar);
 
     await waitFor(() => {
-      expect(payloadVinculo).not.toBeNull();
-      expect(payloadVinculo.incidente_pai_id).toBe("pai-1");
+      expect(payloadVinculo?.incidente_pai_id).toBe("pai-1");
     });
   });
 });
-

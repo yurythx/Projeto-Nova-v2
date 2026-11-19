@@ -26,7 +26,9 @@ describe("Protocolar", () => {
     const user = userEvent.setup();
     mockBackend({ "POST v1/fazenda/processos": { data: { id: "p1", numero: "1" } } });
     renderApp(<Protocolar programa="avanca" />);
-    expect(screen.getByRole("checkbox", { name: "Documento único de regularidade" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: "Documento único de regularidade" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Identificação" })).not.toBeInTheDocument();
     await user.selectOptions(screen.getByRole("combobox", { name: "Entrada" }), "procurador");
     expect(screen.getByRole("checkbox", { name: "Procuração" })).toBeInTheDocument();

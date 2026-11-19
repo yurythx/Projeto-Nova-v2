@@ -75,7 +75,12 @@ function FotoDoPerfil() {
           Esta foto aparece nas listas e nos quadros. Sem foto, o círculo mostra as iniciais.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" loading={pending} onClick={() => arquivo.current?.click()}>
+          <Button
+            type="button"
+            variant="secondary"
+            loading={pending}
+            onClick={() => arquivo.current?.click()}
+          >
             Alterar foto
           </Button>
           <Button type="button" variant="ghost" disabled={pending} onClick={() => void remover()}>

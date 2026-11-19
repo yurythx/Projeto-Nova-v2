@@ -212,7 +212,9 @@ export default function ProcessoPage() {
                 <p className="text-sm">Ciência do recibo em {emCuiaba(item.ciencia_recibo)}</p>
               )}
               {emCuiaba(item.ciencia_exigencia) && (
-                <p className="text-sm">Ciência da exigência em {emCuiaba(item.ciencia_exigencia)}</p>
+                <p className="text-sm">
+                  Ciência da exigência em {emCuiaba(item.ciencia_exigencia)}
+                </p>
               )}
               {!!item.aliquota && (
                 <p className="text-sm">
@@ -228,13 +230,18 @@ export default function ProcessoPage() {
               {emCuiaba(item.tqc_limite) && (
                 <p className="text-sm">
                   Assinatura do TQC até {emCuiaba(item.tqc_limite)}
-                  {item.tqc_sem_efeito ? ". Sem assinatura no prazo, o despacho não produz efeito." : "."}
+                  {item.tqc_sem_efeito
+                    ? ". Sem assinatura no prazo, o despacho não produz efeito."
+                    : "."}
                 </p>
               )}
               {!!item.selo_percentual && (
                 <p className="text-sm">
                   Selo de {item.selo_percentual}%
-                  {item.selo_de && item.selo_ate ? `, exercícios ${item.selo_de} a ${item.selo_ate}` : ""}.
+                  {item.selo_de && item.selo_ate
+                    ? `, exercícios ${item.selo_de} a ${item.selo_ate}`
+                    : ""}
+                  .
                 </p>
               )}
               {emCuiaba(item.cassacao_prazo) && (
@@ -251,7 +258,7 @@ export default function ProcessoPage() {
                         {peca.url ? (
                           <a href={peca.url}>{NOMES[peca.tipo] ?? peca.tipo}</a>
                         ) : (
-                          NOMES[peca.tipo] ?? peca.tipo
+                          (NOMES[peca.tipo] ?? peca.tipo)
                         )}
                       </li>
                     ))}
@@ -340,8 +347,20 @@ export default function ProcessoPage() {
                   )}
                   {analisa && item.programa === "regulariza" && item.situacao !== "decidido" && (
                     <form onSubmit={parcelar} className="flex flex-col gap-3">
-                      <Input id="total" name="total" label="Valor do débito" placeholder="1.200,00" />
-                      <Input id="parcelas" name="parcelas" type="number" min={1} max={12} label="Parcelas" />
+                      <Input
+                        id="total"
+                        name="total"
+                        label="Valor do débito"
+                        placeholder="1.200,00"
+                      />
+                      <Input
+                        id="parcelas"
+                        name="parcelas"
+                        type="number"
+                        min={1}
+                        max={12}
+                        label="Parcelas"
+                      />
                       <Button type="submit">Calcular parcelamento</Button>
                     </form>
                   )}
@@ -383,50 +402,78 @@ export default function ProcessoPage() {
                         <Input id="inscricao" name="inscricao" label="Inscrição" />
                         <Input id="matricula-certidao" name="matricula" label="Matrícula" />
                         <Input id="aliquota" name="aliquota" label="Alíquota" />
-                        <Input id="data-instrumento" name="data_instrumento" type="date" label="Data do instrumento" />
+                        <Input
+                          id="data-instrumento"
+                          name="data_instrumento"
+                          type="date"
+                          label="Data do instrumento"
+                        />
                         <Button type="submit">Emitir certidão</Button>
                       </form>
                     )}
-                  {item.situacao === "decidido" && item.programa === "avanca" && can("fazenda:decidir") && (
-                    <>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const data = String(new FormData(e.currentTarget).get("assinado_em") ?? "");
-                          void agir("tqc", { assinado_em: data });
-                        }}
-                        className="flex flex-col gap-3"
-                      >
-                        <Input id="assinado-tqc" name="assinado_em" type="date" label="Assinatura do TQC" />
-                        <Button type="submit">Registrar TQC</Button>
-                      </form>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const criterios = Number(new FormData(e.currentTarget).get("criterios") ?? 0);
-                          void agir("selo", { criterios });
-                        }}
-                        className="flex flex-col gap-3"
-                      >
-                        <Input id="criterios-selo" name="criterios" type="number" min={2} max={5} label="Critérios do selo" />
-                        <Button type="submit">Anotar selo</Button>
-                      </form>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const fim = Number(new FormData(e.currentTarget).get("fim") ?? 0);
-                          void agir("isencao", { fim });
-                        }}
-                        className="flex flex-col gap-3"
-                      >
-                        <Input id="fim-isencao" name="fim" type="number" label="Último exercício da isenção" />
-                        <Button type="submit">Anotar isenção</Button>
-                      </form>
-                      <Button type="button" onClick={() => void agir("cassacao", {})}>
-                        Abrir defesa da cassação
-                      </Button>
-                    </>
-                  )}
+                  {item.situacao === "decidido" &&
+                    item.programa === "avanca" &&
+                    can("fazenda:decidir") && (
+                      <>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const data = String(
+                              new FormData(e.currentTarget).get("assinado_em") ?? "",
+                            );
+                            void agir("tqc", { assinado_em: data });
+                          }}
+                          className="flex flex-col gap-3"
+                        >
+                          <Input
+                            id="assinado-tqc"
+                            name="assinado_em"
+                            type="date"
+                            label="Assinatura do TQC"
+                          />
+                          <Button type="submit">Registrar TQC</Button>
+                        </form>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const criterios = Number(
+                              new FormData(e.currentTarget).get("criterios") ?? 0,
+                            );
+                            void agir("selo", { criterios });
+                          }}
+                          className="flex flex-col gap-3"
+                        >
+                          <Input
+                            id="criterios-selo"
+                            name="criterios"
+                            type="number"
+                            min={2}
+                            max={5}
+                            label="Critérios do selo"
+                          />
+                          <Button type="submit">Anotar selo</Button>
+                        </form>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const fim = Number(new FormData(e.currentTarget).get("fim") ?? 0);
+                            void agir("isencao", { fim });
+                          }}
+                          className="flex flex-col gap-3"
+                        >
+                          <Input
+                            id="fim-isencao"
+                            name="fim"
+                            type="number"
+                            label="Último exercício da isenção"
+                          />
+                          <Button type="submit">Anotar isenção</Button>
+                        </form>
+                        <Button type="button" onClick={() => void agir("cassacao", {})}>
+                          Abrir defesa da cassação
+                        </Button>
+                      </>
+                    )}
                   {analisa && (
                     <form onSubmit={execucao} className="flex flex-col gap-3">
                       <label className="flex items-center gap-2 text-sm">

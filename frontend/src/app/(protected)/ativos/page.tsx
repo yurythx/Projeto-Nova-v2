@@ -111,9 +111,7 @@ function Ativos() {
   const gere = can("ativos:manage");
   const le = gere || can("ativos:read");
   const produto = useSearchParams().get("produto") ?? undefined;
-  const ativos = useApiQuery<Ativo[]>(
-    le ? withQuery("v1/ativos", { produto_id: produto }) : null,
-  );
+  const ativos = useApiQuery<Ativo[]>(le ? withQuery("v1/ativos", { produto_id: produto }) : null);
   const produtos = useApiQuery<Produto[]>(
     le && (can("produtos:manage") || can("produtos:read")) ? "v1/produtos" : null,
   );

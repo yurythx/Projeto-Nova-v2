@@ -731,7 +731,9 @@ describe("Atendimento — solicitação", () => {
             id: "ent-pref",
             nome: "PREFEITURA",
             sigla: "PREFEITURA",
-            unidades: [{ id: "u-pref", nome: "PREFEITURA", sigla: "PREFEITURA", departamentos: [] }],
+            unidades: [
+              { id: "u-pref", nome: "PREFEITURA", sigla: "PREFEITURA", departamentos: [] },
+            ],
           },
           {
             id: "ent-sms",
@@ -783,12 +785,8 @@ describe("Atendimento — solicitação", () => {
     expect(
       within(ofertas).getByRole("link", { name: /Computador do Posto de Saúde SMS/ }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Impressora da Prefeitura/),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/Internet da Escola SEMECEL/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Impressora da Prefeitura/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Internet da Escola SEMECEL/)).not.toBeInTheDocument();
 
     tela.unmount();
     setActiveEntity("");
@@ -814,8 +812,20 @@ describe("Atendimento — solicitação", () => {
         ],
       },
       "GET v1/atendimento/fila": page([
-        { ...sol, id: "chamado-pref", numero: 101, titulo: "Chamado Gabinete", unidade_id: "u-pref" },
-        { ...sol, id: "chamado-sms", numero: 102, titulo: "Chamado Posto Saúde", unidade_id: "u-sms" },
+        {
+          ...sol,
+          id: "chamado-pref",
+          numero: 101,
+          titulo: "Chamado Gabinete",
+          unidade_id: "u-pref",
+        },
+        {
+          ...sol,
+          id: "chamado-sms",
+          numero: 102,
+          titulo: "Chamado Posto Saúde",
+          unidade_id: "u-sms",
+        },
       ]),
       "GET v1/atendimento/catalogo/categorias": { data: [] },
     });

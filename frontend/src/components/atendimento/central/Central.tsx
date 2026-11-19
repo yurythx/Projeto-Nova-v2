@@ -295,9 +295,7 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
     return secretarias[0]?.id ?? "todas";
   }, [me?.scopes, secretarias, tree.data]);
 
-  const secretariaAtiva =
-    secretariaFiltro ||
-    (activeEntity ? activeEntity : secretariaPadrao);
+  const secretariaAtiva = secretariaFiltro || (activeEntity ? activeEntity : secretariaPadrao);
 
   const ofertas = useMemo(() => {
     const raw = (catalogo.data ?? []).filter((o) => {
@@ -325,7 +323,14 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
       }
     }
     return ordenar(unicos);
-  }, [catalogo.data, p.tipo, secretarias.length, secretariaAtiva, unidadeParaEntidade, activeEntity]);
+  }, [
+    catalogo.data,
+    p.tipo,
+    secretarias.length,
+    secretariaAtiva,
+    unidadeParaEntidade,
+    activeEntity,
+  ]);
 
   const conhecidas = useMemo(
     () => new Set((categorias.data ?? []).map((c) => c.id)),
@@ -429,7 +434,14 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
                     href={`${BASE}?oferta=${o.id}`}
                     titulo={o.nome}
                     descricao={o.descricao}
-                    icone={<IconeDoCatalogo nome={o.icone} contextoNome={o.nome} padrao={p.icone} size={24} />}
+                    icone={
+                      <IconeDoCatalogo
+                        nome={o.icone}
+                        contextoNome={o.nome}
+                        padrao={p.icone}
+                        size={24}
+                      />
+                    }
                     selo={
                       secretarias.length > 1 && rotuloSec ? (
                         <Badge tone="neutral">{rotuloSec}</Badge>
@@ -448,7 +460,14 @@ export function CatalogoEmBlocos({ porta, categoria }: { porta: Porta; categoria
                 href={`${BASE}?ver=${porta}&categoria=${g.id}`}
                 titulo={g.nome}
                 descricao={g.descricao}
-                icone={<IconeDoCatalogo nome={g.icone} contextoNome={g.nome} padrao={p.icone} size={24} />}
+                icone={
+                  <IconeDoCatalogo
+                    nome={g.icone}
+                    contextoNome={g.nome}
+                    padrao={p.icone}
+                    size={24}
+                  />
+                }
               />
             ))}
           </Blocos>

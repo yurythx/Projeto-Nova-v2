@@ -17,7 +17,9 @@ export interface ServerBranding {
  * texto institucional fica fixo no código. O cache dura
  * BRANDING_REVALIDATE_SECONDS; salvar na tela expira na hora. */
 export async function getServerBranding(): Promise<ServerBranding> {
-  const b = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [BRANDING_TAG]);
+  const b = await publicGetOr<Branding | null>("branding", null, BRANDING_REVALIDATE_SECONDS, [
+    BRANDING_TAG,
+  ]);
   return {
     appName: b?.app_name || DEFAULT_BRANDING.appName,
     appDescription: b?.app_description || "",

@@ -29,7 +29,9 @@ export function ParticipantesDoProjeto({
     if (!buscando) return [];
     const ja = new Set((membros.data ?? []).map((pessoa) => pessoa.id));
     return (unidade.data ?? [])
-      .filter((pessoa) => !ja.has(pessoa.id) && pessoa.nome.toLocaleLowerCase("pt-BR").includes(termo))
+      .filter(
+        (pessoa) => !ja.has(pessoa.id) && pessoa.nome.toLocaleLowerCase("pt-BR").includes(termo),
+      )
       .slice(0, 8);
   }, [buscando, membros.data, termo, unidade.data]);
 
@@ -55,14 +57,19 @@ export function ParticipantesDoProjeto({
   return (
     <div>
       <span className="text-muted">Pessoas do projeto:</span>
-      {membros.error && <p className="mt-1 text-sm text-danger">Não foi possível carregar as pessoas do projeto.</p>}
+      {membros.error && (
+        <p className="mt-1 text-sm text-danger">Não foi possível carregar as pessoas do projeto.</p>
+      )}
       {participantes.length === 0 && !membros.error && (
         <p className="mt-1 text-sm text-foreground">Nenhuma pessoa além do gerente.</p>
       )}
       {participantes.length > 0 && (
         <ul className="mt-1 flex flex-col gap-1">
           {participantes.map((pessoa) => (
-            <li key={pessoa.id} className="flex items-center justify-between text-sm text-foreground">
+            <li
+              key={pessoa.id}
+              className="flex items-center justify-between text-sm text-foreground"
+            >
               <span>{pessoa.nome}</span>
               {mutavel && (
                 <button
@@ -88,11 +95,20 @@ export function ParticipantesDoProjeto({
             placeholder="Digite o nome"
             autoComplete="off"
           />
-          <p className="text-xs text-muted">Quem entra aqui pode ser designado nas tarefas. Os nomes aparecem a partir da segunda letra.</p>
+          <p className="text-xs text-muted">
+            Quem entra aqui pode ser designado nas tarefas. Os nomes aparecem a partir da segunda
+            letra.
+          </p>
           {buscando && (
-            <ul role="listbox" aria-label="Incluir no projeto" className="flex flex-col rounded-lg border border-surface-border">
+            <ul
+              role="listbox"
+              aria-label="Incluir no projeto"
+              className="flex flex-col rounded-lg border border-surface-border"
+            >
               {visiveis.length === 0 && (
-                <li className="px-3 py-2 text-sm text-muted">Nenhuma pessoa com esse nome nesta unidade.</li>
+                <li className="px-3 py-2 text-sm text-muted">
+                  Nenhuma pessoa com esse nome nesta unidade.
+                </li>
               )}
               {visiveis.map((pessoa) => (
                 <li key={pessoa.id}>

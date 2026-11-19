@@ -208,7 +208,9 @@ export function Painel5W2H({
                   onSalvo(mensagem);
                 } catch (err) {
                   const message =
-                    err instanceof ApiError ? err.message : "Não foi possível salvar o responsável.";
+                    err instanceof ApiError
+                      ? err.message
+                      : "Não foi possível salvar o responsável.";
                   setErro(message);
                   showToast({
                     title: "Operação não concluída",
@@ -221,52 +223,53 @@ export function Painel5W2H({
               }}
             />
           ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Bloco titulo="O que" texto={texto(v.descricao ? `${v.titulo}\n\n${v.descricao}` : v.titulo)} />
-            <Bloco titulo="Por que" texto={texto(v.objetivo)} />
-            <Bloco titulo="Onde" texto={texto(v.onde)} />
-            <Bloco
-              titulo="Quando"
-              texto={
-                v.data_inicio_planejada || v.data_fim_planejada
-                  ? `${dia(v.data_inicio_planejada) || "sem início"} até ${dia(v.data_fim_planejada) || "sem término"}`
-                  : "Não informado."
-              }
-            />
-            <Bloco
-              titulo="Quem"
-              texto={
-                [
-                  v.gerente_nome ? `Responsável: ${v.gerente_nome}` : "",
-                  v.patrocinador ? `Patrocinador: ${v.patrocinador}` : "",
-                ]
-                  .filter(Boolean)
-                  .join("\n") || "Não informado."
-              }
-            />
-            <Bloco
-              titulo="Como"
-              texto={
-                [
-                  v.metodologia,
-                  v.etapas_how > 0 ? `${v.etapas_how} etapas no quadro de tarefas.` : "",
-                ]
-                  .filter(Boolean)
-                  .join("\n\n") || "Não informado."
-              }
-            />
-            <Bloco
-              titulo="Quanto"
-              texto={
-                [
+            <div className="grid gap-4 md:grid-cols-2">
+              <Bloco
+                titulo="O que"
+                texto={texto(v.descricao ? `${v.titulo}\n\n${v.descricao}` : v.titulo)}
+              />
+              <Bloco titulo="Por que" texto={texto(v.objetivo)} />
+              <Bloco titulo="Onde" texto={texto(v.onde)} />
+              <Bloco
+                titulo="Quando"
+                texto={
+                  v.data_inicio_planejada || v.data_fim_planejada
+                    ? `${dia(v.data_inicio_planejada) || "sem início"} até ${dia(v.data_fim_planejada) || "sem término"}`
+                    : "Não informado."
+                }
+              />
+              <Bloco
+                titulo="Quem"
+                texto={
+                  [
+                    v.gerente_nome ? `Responsável: ${v.gerente_nome}` : "",
+                    v.patrocinador ? `Patrocinador: ${v.patrocinador}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n") || "Não informado."
+                }
+              />
+              <Bloco
+                titulo="Como"
+                texto={
+                  [
+                    v.metodologia,
+                    v.etapas_how > 0 ? `${v.etapas_how} etapas no quadro de tarefas.` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n\n") || "Não informado."
+                }
+              />
+              <Bloco
+                titulo="Quanto"
+                texto={[
                   `Orçamento: ${moeda(Number(v.orcamento) || 0)}`,
                   v.centro_custo ? `Centro de custo: ${v.centro_custo}` : "",
                 ]
                   .filter(Boolean)
-                  .join("\n")
-              }
-            />
-          </div>
+                  .join("\n")}
+              />
+            </div>
           )}
         </div>
       )}
@@ -333,40 +336,107 @@ function EditorCarta({
   return (
     <form onSubmit={enviar} className="grid gap-3" aria-label="Editar escopo 5W2H">
       <h3 className="text-base font-semibold text-foreground">Editar escopo 5W2H</h3>
-        <Input id="carta-titulo" label="Nome do projeto *" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={160} required />
-        <Textarea id="carta-descricao" label="Escopo e entregáveis" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} maxLength={4000} />
-        <Textarea id="carta-objetivo" label="Por que" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} rows={3} maxLength={4000} />
-        <Textarea id="carta-onde" label="Onde" value={onde} onChange={(e) => setOnde(e.target.value)} rows={2} maxLength={2000} />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input id="carta-inicio" label="Início" type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} />
-          <Input id="carta-fim" label="Término" type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
-        </div>
-        <PessoaDaUnidade
-          id="carta-gerente"
-          label="Responsável"
-          unidadeId={visao.unidade_id}
-          value={gerente}
-          onChange={setGerente}
+      <Input
+        id="carta-titulo"
+        label="Nome do projeto *"
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        maxLength={160}
+        required
+      />
+      <Textarea
+        id="carta-descricao"
+        label="Escopo e entregáveis"
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+        rows={3}
+        maxLength={4000}
+      />
+      <Textarea
+        id="carta-objetivo"
+        label="Por que"
+        value={objetivo}
+        onChange={(e) => setObjetivo(e.target.value)}
+        rows={3}
+        maxLength={4000}
+      />
+      <Textarea
+        id="carta-onde"
+        label="Onde"
+        value={onde}
+        onChange={(e) => setOnde(e.target.value)}
+        rows={2}
+        maxLength={2000}
+      />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input
+          id="carta-inicio"
+          label="Início"
+          type="date"
+          value={inicio}
+          onChange={(e) => setInicio(e.target.value)}
         />
-        <Input id="carta-patrocinador" label="Patrocinador" value={patrocinador} onChange={(e) => setPatrocinador(e.target.value)} maxLength={400} />
-        <Textarea id="carta-metodologia" label="Como" value={metodologia} onChange={(e) => setMetodologia(e.target.value)} rows={3} maxLength={4000} />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input id="carta-orcamento" label="Orçamento (R$)" type="number" min="0" step="0.01" value={orcamento} onChange={(e) => setOrcamento(e.target.value)} />
-          <Input id="carta-centro" label="Centro de custo" value={centro} onChange={(e) => setCentro(e.target.value)} maxLength={120} />
-        </div>
-        {erro && (
-          <p role="alert" className="text-sm text-danger">
-            {erro}
-          </p>
-        )}
-        <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={pending}>
-            Salvar escopo
-          </Button>
-        </div>
+        <Input
+          id="carta-fim"
+          label="Término"
+          type="date"
+          value={fim}
+          onChange={(e) => setFim(e.target.value)}
+        />
+      </div>
+      <PessoaDaUnidade
+        id="carta-gerente"
+        label="Responsável"
+        unidadeId={visao.unidade_id}
+        value={gerente}
+        onChange={setGerente}
+      />
+      <Input
+        id="carta-patrocinador"
+        label="Patrocinador"
+        value={patrocinador}
+        onChange={(e) => setPatrocinador(e.target.value)}
+        maxLength={400}
+      />
+      <Textarea
+        id="carta-metodologia"
+        label="Como"
+        value={metodologia}
+        onChange={(e) => setMetodologia(e.target.value)}
+        rows={3}
+        maxLength={4000}
+      />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input
+          id="carta-orcamento"
+          label="Orçamento (R$)"
+          type="number"
+          min="0"
+          step="0.01"
+          value={orcamento}
+          onChange={(e) => setOrcamento(e.target.value)}
+        />
+        <Input
+          id="carta-centro"
+          label="Centro de custo"
+          value={centro}
+          onChange={(e) => setCentro(e.target.value)}
+          maxLength={120}
+        />
+      </div>
+      {erro && (
+        <p role="alert" className="text-sm text-danger">
+          {erro}
+        </p>
+      )}
+      <div className="flex justify-end gap-2 pt-1">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button type="submit" loading={pending}>
+          Salvar escopo
+        </Button>
+      </div>
     </form>
   );
 }
