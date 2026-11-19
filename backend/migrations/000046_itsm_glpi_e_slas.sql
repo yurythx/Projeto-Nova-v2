@@ -120,7 +120,29 @@ END $$;
 -- +goose StatementEnd
 
 -- +goose Down
--- Reversão da migration 46
+-- Reversão da migration 46. A carga usa o primeiro usuário que existir
+-- quando não há admin; sem apagar estas linhas, o Down da conta de
+-- monitoramento quebra a chave de mudancas e problemas.
+DELETE FROM mudancas WHERE titulo IN (
+    'mudança nos pontos de rede da casa abrigo',
+    'mudança na procuradoria',
+    'Instalação de link de internet na praça do Alfredo de Castro, será ins',
+    'mudança centro recreativo alfredo de castro',
+    'Mudança ginasio marechal rondon'
+);
+DELETE FROM problemas WHERE titulo IN (
+    'mudança nos pontos de rede da casa abrigo',
+    'maquina do atendimento deu defeito e vai ser acionado a garantia para',
+    'Conclusão da instalação de pontos fêmea e configuração definitiva de energia no rack casa da mulher.'
+);
+DELETE FROM projetos WHERE titulo IN (
+    'Projeto - Sistema AMTC',
+    'Projeto - Portais das Secretarias',
+    'Projeto - Painel de Controle Administrativo',
+    'Projeto - Portal Municipal',
+    'Projeto - Intranet',
+    'Sistema - Centro Pop'
+);
 DELETE FROM atendimento_slas WHERE id IN ('a0000001-0000-0000-0000-000000000001'::uuid, 'a0000001-0000-0000-0000-000000000002'::uuid, 'a0000001-0000-0000-0000-000000000003'::uuid);
 ALTER TABLE atendimento_ofertas DROP COLUMN IF EXISTS sla_id;
 ALTER TABLE atendimento_categorias DROP COLUMN IF EXISTS sla_id;
