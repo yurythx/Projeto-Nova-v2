@@ -64,15 +64,15 @@ func TestSugestoesDaIAReal(t *testing.T) {
 	}
 
 	ind, err := r.IndicadoresIA(ctx, pool, agora.Add(-time.Hour), true, []uuid.UUID{u})
-	if err != nil || len(ind) != 2 {
+	if err != nil || len(ind) != 3 {
 		t.Fatalf("indicadores: %+v %v", ind, err)
 	}
-	if ind[0] != (domain.IndicadorIA{Tipo: "classificacao", Total: 1, Aceitas: 1}) || ind[1] != (domain.IndicadorIA{Tipo: "resumo", Total: 1, Pendentes: 1}) {
+	if ind[0] != (domain.IndicadorIA{Tipo: "classificacao", Total: 1, Aceitas: 1}) || ind[1] != (domain.IndicadorIA{Tipo: "resolucao"}) || ind[2] != (domain.IndicadorIA{Tipo: "resumo", Total: 1, Pendentes: 1}) {
 		t.Fatalf("contagem: %+v", ind)
 	}
-	// Outra unidade não vê as sugestões desta, mas as duas tarefas aparecem.
+	// Outra unidade não vê as sugestões desta, mas as três tarefas aparecem.
 	vazio, err := r.IndicadoresIA(ctx, pool, agora.Add(-time.Hour), true, []uuid.UUID{dbtest.Unidade(t, pool)})
-	if err != nil || len(vazio) != 2 || vazio[0].Total != 0 || vazio[1].Total != 0 {
+	if err != nil || len(vazio) != 3 || vazio[0].Total != 0 || vazio[1].Total != 0 || vazio[2].Total != 0 {
 		t.Fatalf("fora do escopo: %+v %v", vazio, err)
 	}
 

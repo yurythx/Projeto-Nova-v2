@@ -5,7 +5,6 @@ package infrastructure
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -570,12 +569,14 @@ func (r *Repository) Unlock(ctx context.Context, db database.DBTX, id uuid.UUID)
 }
 
 // lockIdentidadeSSO serializa quem grava o mesmo usuário ou e-mail.
-// A ordem das chaves evita deadlock entre duas contas.
+// O e-mail trava antes do usuário, sempre, para duas contas não
+// cruzarem. O texto vai direto ao Postgres, que recusa o byte 0.
 func lockIdentidadeSSO(ctx context.Context, db database.DBTX, username, email string) error {
-	chaves := []string{"email\x00" + email, "user\x00" + username}
-	sort.Strings(chaves)
-	for _, chave := range chaves {
-		if _, err := db.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('iam.sso'), hashtext($1))`, chave); err != nil {
+	for _, chave := range []struct{ espaco, valor string }{
+		{"iam.sso.email", email},
+		{"iam.sso.user", username},
+	} {
+		if _, err := db.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))`, chave.espaco, chave.valor); err != nil {
 			return wrap("upsert sso", err)
 		}
 	}

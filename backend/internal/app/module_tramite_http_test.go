@@ -381,11 +381,11 @@ func TestTramiteFluxoDeTrabalho(t *testing.T) {
 	h.expect(http.StatusConflict, http.MethodPost, "/api/v1/tramite/documentos/"+minuta.ID+"/assinatura", f.betoB, `{"signer_ids":["`+f.betoID.String()+`"]}`)
 	h.expect(http.StatusConflict, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/tramitar", f.betoB, `{"para_unidade_id":"`+f.unA+`","despacho":"Devolver"}`)
 
-	// Arquivar só depois de concluir; reabrir exige tramite:manage.
+	// Arquivar só depois de concluir. Reabre quem tramita na unidade atual.
 	h.expect(http.StatusOK, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/arquivar", f.betoB, `{"despacho":"Arquivo"}`)
 	h.expect(http.StatusConflict, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/arquivar", f.betoB, `{"despacho":"De novo"}`)
-	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/reabrir", f.betoB, `{"despacho":"Reabrir"}`)
-	reab := data[procResp](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/reabrir", f.admin, `{"despacho":"Reaberto para complementação"}`))
+	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/reabrir", f.anaA, `{"despacho":"Reabrir"}`)
+	reab := data[procResp](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/tramite/processos/"+proc.ID+"/reabrir", f.betoB, `{"despacho":"Reaberto para complementação"}`))
 	if reab.Status != "em_tramitacao" {
 		t.Fatalf("reaberto volta a tramitar: %+v", reab)
 	}

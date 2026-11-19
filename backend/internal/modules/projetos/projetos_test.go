@@ -294,7 +294,7 @@ func TestModuloCicloCompleto(t *testing.T) {
 	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/vinculos/"+envVinc.Data.ID.String(), ""); rec.Code != http.StatusNoContent {
 		t.Fatalf("excluir vínculo: %d", rec.Code)
 	}
-	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(), ""); rec.Code != http.StatusBadRequest {
+	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String(), ""); rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("apagar sem confirmação: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := do(gestorA, http.MethodDelete, "/projetos/"+projID.String()+"/tarefas/"+envTar.Data.ID.String()+"?confirmar="+url.QueryEscape("Mapear filas GLPI"), ""); rec.Code != http.StatusNoContent {
@@ -310,7 +310,7 @@ func TestModuloCicloCompleto(t *testing.T) {
 	}
 	admin := gestorA
 	admin.Roles = []string{string(auth.RoleAdmin)}
-	if rec := do(admin, http.MethodPost, "/projetos/"+projID.String()+"/cancelamento", `{"motivo":""}`); rec.Code != http.StatusBadRequest {
+	if rec := do(admin, http.MethodPost, "/projetos/"+projID.String()+"/cancelamento", `{"motivo":""}`); rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("cancelar sem motivo: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := do(admin, http.MethodPost, "/projetos/"+projID.String()+"/cancelamento", `{"motivo":"o teste encerrou o projeto"}`); rec.Code != http.StatusOK {

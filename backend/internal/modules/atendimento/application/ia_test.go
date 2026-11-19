@@ -255,7 +255,7 @@ func TestIndicadoresIA(t *testing.T) {
 		t.Fatal(err)
 	}
 	ind, err := svc.IndicadoresIA(ctx, c.tecnico)
-	if err != nil || len(ind) != 2 || ind[0].Tipo != domain.SugestaoClassificacao || ind[0].Total != 1 || ind[0].Aceitas != 1 {
+	if err != nil || len(ind) != 3 || ind[0].Tipo != domain.SugestaoClassificacao || ind[0].Total != 1 || ind[0].Aceitas != 1 || ind[1].Tipo != domain.SugestaoResolucao {
 		t.Fatalf("indicadores: %+v %v", ind, err)
 	}
 	if _, err := svc.IndicadoresIA(ctx, c.servidor); !errors.Is(err, domain.ErrForaDoEscopo) {
@@ -332,7 +332,7 @@ func TestHandlersDaIA(t *testing.T) {
 		t.Fatalf("IA fora do ar: %d", rec.Code)
 	}
 	sem := transport.NewHandlers(c.base, silencio)
-	if rec := chama(sem.Resumir, http.MethodPost, sol.ID.String(), nil, c.tecnico); rec.Code != http.StatusServiceUnavailable || !strings.Contains(rec.Body.String(), "nÃ£o estÃ¡ configurada") {
+	if rec := chama(sem.Resumir, http.MethodPost, sol.ID.String(), nil, c.tecnico); rec.Code != http.StatusServiceUnavailable || !strings.Contains(rec.Body.String(), "não está configurada") {
 		t.Fatalf("sem IA: %d %s", rec.Code, rec.Body.String())
 	}
 }

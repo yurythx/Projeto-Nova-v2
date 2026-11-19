@@ -20,7 +20,7 @@ type projetoResp struct {
 
 func TestProjetosRotas(t *testing.T) {
 	h := newHarness(t)
-	admin := h.admin()
+	adminID, admin := h.user("nova-admin")
 	_, semPerm := h.user("user-sem-perm")
 
 	h.expect(http.StatusUnauthorized, http.MethodGet, "/api/v1/projetos", "", "")
@@ -46,12 +46,10 @@ func TestProjetosRotas(t *testing.T) {
 
 	h.expect(http.StatusOK, http.MethodPost, "/api/v1/projetos/"+p.ID+"/estado", admin, `{"estado":"em_andamento"}`)
 
-	// Transição inválida de em_andamento para cancelado é permitida, mas direto para concluido precisa passar
-	h.expect(http.StatusOK, http.MethodPost, "/api/v1/projetos/"+p.ID+"/estado", admin, `{"estado":"concluido"}`)
-
-	// Tarefas
-	h.expect(http.StatusCreated, http.MethodPost, "/api/v1/projetos/"+p.ID+"/tarefas", admin,
-		`{"titulo":"Levantar requisitos","estado":"a_fazer"}`)
+	// A tarefa nasce em aberto. Concluir o projeto exige responsável e
+	// tarefa encerrada; concluído só muda depois da reabertura.
+	tarefa := data[idResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/projetos/"+p.ID+"/tarefas", admin,
+		`{"titulo":"Levantar requisitos","estado":"a_fazer"}`))
 
 	tarefas := h.expect(http.StatusOK, http.MethodGet, "/api/v1/projetos/"+p.ID+"/tarefas", admin, "").Body.String()
 	if !strings.Contains(tarefas, "Levantar requisitos") {
@@ -71,6 +69,12 @@ func TestProjetosRotas(t *testing.T) {
 	if !strings.Contains(vinculos, "Ativo · Servidor de Banco") {
 		t.Fatalf("vínculo não encontrado: %s", vinculos)
 	}
+
+	h.expect(http.StatusOK, http.MethodPost, "/api/v1/projetos/"+p.ID+"/participantes", admin,
+		`{"id":"`+adminID.String()+`"}`)
+	h.expect(http.StatusOK, http.MethodPut, "/api/v1/projetos/"+p.ID+"/tarefas/"+tarefa.ID, admin,
+		`{"titulo":"Levantar requisitos","estado":"concluida","responsavel_id":"`+adminID.String()+`"}`)
+	h.expect(http.StatusOK, http.MethodPost, "/api/v1/projetos/"+p.ID+"/estado", admin, `{"estado":"concluido"}`)
 
 	h.expect(http.StatusNotFound, http.MethodGet, "/api/v1/projetos/"+uuid.NewString(), admin, "")
 }

@@ -16,6 +16,9 @@ import (
 func TestAtendimentoEventosHTTP(t *testing.T) {
 	h := newHarness(t)
 	ctx := context.Background()
+	if _, err := h.d.DB.Exec(ctx, `UPDATE atendimento_eventos_config SET oferta_id = NULL`); err != nil {
+		t.Fatal(err)
+	}
 	admin := h.admin()
 	o := h.orgEscopo(t)
 	_, gestorDaUnidade := h.pessoaEm(t, o.a, "atendimento:manage")
