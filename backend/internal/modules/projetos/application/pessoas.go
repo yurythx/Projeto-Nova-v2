@@ -206,7 +206,7 @@ func (s *Service) IncluirParticipante(ctx context.Context, idt auth.Identity, pr
 		if err := s.repo.IncluirParticipante(ctx, tx, projetoID, domain.Pessoa{ID: id, Nome: nome}); err != nil {
 			return err
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.participante.added", "projeto", projetoID.String(), nil, id))
+		return novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.participante.added", "projeto", projetoID.String(), nil, id))
 	})
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (s *Service) ExcluirParticipante(ctx context.Context, idt auth.Identity, pr
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.participante.removed", "projeto", projetoID.String(), pessoa, nil)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.participante.removed", "projeto", projetoID.String(), pessoa, nil)); err != nil {
 			return err
 		}
 		parte, err := s.registrar(ctx, tx, idt.UserID, []uuid.UUID{pessoa}, notificacoes.Nova{

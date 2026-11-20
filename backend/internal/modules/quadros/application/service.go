@@ -222,6 +222,9 @@ func fotoNova(c domain.Coluna, cols []domain.Coluna) fotoNovaColuna {
 	return fotoNovaColuna{Nome: c.Nome, Cor: c.Cor, Ordem: c.Ordem, De: c.De, Para: c.Para, Sequencia: domain.Sequencia(cols)}
 }
 
+// lerEntropia lê os bytes da chave. O teste troca quando a origem não falha sozinha.
+var lerEntropia = rand.Read
+
 func chaveLivre(cols []domain.Coluna) (string, error) {
 	ocupadas := map[string]bool{}
 	for _, c := range cols {
@@ -229,7 +232,7 @@ func chaveLivre(cols []domain.Coluna) (string, error) {
 	}
 	for range 5 {
 		var buf [4]byte
-		if _, err := rand.Read(buf[:]); err != nil {
+		if _, err := lerEntropia(buf[:]); err != nil {
 			return "", err
 		}
 		chave := "c" + hex.EncodeToString(buf[:])

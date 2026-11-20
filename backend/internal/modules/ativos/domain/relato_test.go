@@ -38,4 +38,14 @@ func TestAplicarRelato(t *testing.T) {
 	if _, _, err := AplicarRelato(nil, Relato{Identificador: "x", Tipo: "nave", UnidadeID: unidade}); !errors.Is(err, ErrTipoInvalido) {
 		t.Fatal(err)
 	}
+	if _, _, err := AplicarRelato(nil, Relato{Nome: "Sem id", UnidadeID: unidade}); !errors.Is(err, ErrEntradaInvalida) {
+		t.Fatal(err)
+	}
+	ruim := &Inventario{Sistema: "linux", Processadores: 0}
+	if _, _, err := AplicarRelato(nil, Relato{Identificador: "PC-3", UnidadeID: unidade, Inventario: ruim}); !errors.Is(err, ErrEntradaInvalida) {
+		t.Fatal(err)
+	}
+	if _, _, err := AplicarRelato(&criado, Relato{Identificador: criado.Identificador, Tipo: "nave", UnidadeID: unidade}); !errors.Is(err, ErrTipoInvalido) {
+		t.Fatal(err)
+	}
 }

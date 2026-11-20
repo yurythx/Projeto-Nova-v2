@@ -4,15 +4,27 @@
 #
 # Medido em 2026-10-27, com Postgres, RabbitMQ, MinIO e Typesense, menos
 # 0,2 ponto de margem para testes que variam com o tempo.
+# ativos e projetos subiram em 2026-11-19, na suíte com race.
+# app, platform/config, protocolos, platform/mail, quadros e mudancas
+# chegaram a 100% em 2026-11-19. ativos, cofre e contratos subiram na suíte seguinte.
+# projetos subiu para 96.7 com reabertura, anexo e leitura parcial do banco.
+# projetos subiu para 99.9. Sobram dois ramos inalcançáveis: o cancelamento
+# só existe para o administrador, e o limite de pessoas da tarefa já foi
+# recusado antes do laço.
 
-app                      96.2
-atendimento              91.7
-ativos                   72.9
-cofre                    64.1
-contratos                70.3
-mudancas                 90.7
-platform/config          97.3
-platform/mail            75.6
-protocolos               98.8
-projetos                 91.2
-quadros                  54.8
+# atendimento subiu para 94.7 com a abertura pelo WhatsApp, o correio
+# e a lista. A SLA na abertura grava a prioridade média quando a
+# política não classificou, e o e-mail de quem atende entra como resposta.
+# atendimento subiu para 96.6 com o encerramento da fila, a série,
+# a SLA e os vínculos da solicitação (6574/6800).
+# contratos subiu para 99.7 com o cadastro, o aviso de vencimento e o
+# HTTP (423/424). Sobra o retorno de filtro que não é falta de escopo:
+# o filtro só devolve esse erro ou segue.
+# ativos subiu para 99.3 com o inventário, a credencial, as relações
+# e o HTTP (656/660). Sobram a passagem de criação que o domínio já
+# recusou, o erro de crypto/rand e o marshal do inventário.
+atendimento              96.6
+ativos                   99.3
+cofre                    64.7
+contratos                99.7
+projetos                 99.9

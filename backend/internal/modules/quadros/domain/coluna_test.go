@@ -152,3 +152,28 @@ func TestPermissoesDoQuadro(t *testing.T) {
 		t.Fatal("quadro desconhecido")
 	}
 }
+
+func TestOrdemEmpatadaEDestinoFora(t *testing.T) {
+	empatadas := []Coluna{
+		{Chave: "b", Ordem: 0, Ativa: true},
+		{Chave: "a", Ordem: 0, Ativa: true},
+	}
+	out := compactar(empatadas)
+	if chaveDe(out, "a").Ordem != 0 || chaveDe(out, "b").Ordem != 1 {
+		t.Fatalf("%#v", out)
+	}
+	movida, err := mover(empatadas, "b", 0)
+	if err != nil || chaveDe(movida, "b").Ordem != 0 {
+		t.Fatalf("%v %#v", err, movida)
+	}
+	if _, err := mover([]Coluna{{Chave: "x", Ativa: false}}, "x", 0); err != ErrRetirada {
+		t.Fatal(err)
+	}
+	negativa, err := mover(empatadas, "a", -1)
+	if err != nil || chaveDe(negativa, "a").Ordem != 0 {
+		t.Fatalf("%v %#v", err, negativa)
+	}
+	if Iguais(empatadas, nil) {
+		t.Fatal("tamanhos diferentes")
+	}
+}

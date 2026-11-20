@@ -42,8 +42,12 @@ func traduz(err error) error {
 	return err
 }
 
+// codificarJSON serializa o que vai para o jsonb. O teste troca quando
+// o valor do domínio não tem como falhar sozinho.
+var codificarJSON = json.Marshal
+
 func jsonBytes(v any) ([]byte, error) {
-	b, err := json.Marshal(v)
+	b, err := codificarJSON(v)
 	if err != nil {
 		return nil, err
 	}

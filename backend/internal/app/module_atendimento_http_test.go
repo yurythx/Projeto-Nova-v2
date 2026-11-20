@@ -12,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 
+	contratosmod "github.com/yurythx/projeto-nova-v2/internal/modules/contratos"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/kernel"
 )
 
@@ -460,5 +462,50 @@ func TestAtendimentoVisita(t *testing.T) {
 	}
 	if h.deliver("atendimento.visita.iniciada", visita) != 0 {
 		t.Fatal("eventos de visita não vão para o tempo real da fila")
+	}
+}
+
+func TestPortasDoKernelSaoChamadas(t *testing.T) {
+	h := newHarness(t)
+	o := h.orgEscopo(t)
+	_, tecnico := h.pessoaEm(t, o.a, "atendimento:atender", "atendimento:manage")
+	_, servidor := h.pessoaEm(t, o.a, "atendimento:abrir")
+	oferta := data[recursoResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/atendimento/ofertas", tecnico,
+		`{"nome":"Porta","tipo":"incidente","unidade_id":"`+o.a+`"}`))
+	sol := data[solicitacaoResp](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/atendimento/solicitacoes", servidor,
+		`{"oferta_id":"`+oferta.ID+`","titulo":"Porta do kernel"}`))
+	h.expect(http.StatusUnprocessableEntity, http.MethodPut, "/api/v1/atendimento/solicitacoes/"+sol.ID+"/segredo", tecnico,
+		`{"segredo_id":"`+uuid.NewString()+`"}`)
+	h.expect(http.StatusUnprocessableEntity, http.MethodPut, "/api/v1/atendimento/solicitacoes/"+sol.ID+"/ativo", tecnico,
+		`{"ativo_id":"`+uuid.NewString()+`"}`)
+
+	var mod *contratosmod.Module
+	for _, p := range h.d.Kernel.Plugins() {
+		if m, ok := p.(*contratosmod.Module); ok {
+			mod = m
+		}
+	}
+	admin := auth.Identity{UserID: uuid.New(), Roles: []string{string(auth.RoleAdmin)}}
+	ctx := context.Background()
+	forn, err := mod.Servico().CriarFornecedor(ctx, admin, "Casa de software", "", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lic, err := mod.Servico().CriarLicenca(ctx, admin, "Office", forn.ID, nil, 1, "chrome", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lista, err := mod.Servico().ListarLicencas(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var achou bool
+	for _, item := range lista {
+		if item.ID == lic.ID && item.Programa == "chrome" {
+			achou = true
+		}
+	}
+	if !achou {
+		t.Fatal("a licença com programa não voltou na lista")
 	}
 }

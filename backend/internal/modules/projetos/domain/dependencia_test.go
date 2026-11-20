@@ -47,6 +47,9 @@ func TestCadeiaEConclusao(t *testing.T) {
 	if err := MovimentoExigeResponsavel("", EstadoTarefaAFazer, nil); err != nil {
 		t.Fatalf("criar sem responsável: %v", err)
 	}
+	if err := MovimentoExigeResponsavel(EstadoTarefaEmAndamento, "", nil); !errors.Is(err, ErrResponsavelObrigatorio) {
+		t.Fatalf("destino vazio: %v", err)
+	}
 	if err := ConferirPredecessora(EstadoTarefaBloqueada, aberta); err != nil {
 		t.Fatalf("bloquear pode: %v", err)
 	}

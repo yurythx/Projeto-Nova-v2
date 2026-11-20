@@ -93,7 +93,8 @@ func (p produtos) Consultar(context.Context, database.DBTX, uuid.UUID) (*uuid.UU
 func TestMapError(t *testing.T) {
 	for _, err := range []error{domain.ErrNaoEncontrado, domain.ErrEntradaInvalida, domain.ErrTipoInvalido, domain.ErrEstadoInvalido,
 		domain.ErrForaDoEscopo, domain.ErrUnidadeInexistente, domain.ErrIdentificadorRepetido, domain.ErrProdutoInexistente,
-		domain.ErrProdutoIndisponivel, domain.ErrProdutoDeOutraUnidade, domain.ErrCadastroManual} {
+		domain.ErrProdutoIndisponivel, domain.ErrProdutoDeOutraUnidade, domain.ErrCadastroManual,
+		domain.RelacaoInvalida{Msg: "ciclo"}} {
 		var app *apperrors.Error
 		if !errors.As(application.MapError(err), &app) {
 			t.Errorf("%v", err)

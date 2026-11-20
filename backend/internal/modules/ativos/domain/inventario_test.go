@@ -61,4 +61,46 @@ func TestRelatoComInventario(t *testing.T) {
 	if err != nil || editado.Inventario == nil || editado.Inventario.MemoriaBytes != 16<<30 {
 		t.Fatal("a edição manual conserva a medida da máquina")
 	}
+	um, err := ValidarInventario(&Inventario{
+		Sistema: "linux", Processadores: 1, MemoriaBytes: 500,
+		Discos:    []Disco{{Nome: "sda", Bytes: 1}},
+		Programas: []Programa{{Nome: "zsh", Versao: "2"}, {Nome: "zsh", Versao: "1"}},
+	})
+	if err != nil || !strings.Contains(um.Resumo(), "500 B") || !strings.Contains(um.Resumo(), "1 disco") || !strings.Contains(um.Resumo(), "2 programas") || um.Programas[0].Versao != "1" {
+		t.Fatalf("%v %s", err, um.Resumo())
+	}
+	parcial := *um
+	parcial.ProgramasTruncado = true
+	parcial.Programas = []Programa{{Nome: "zsh", Versao: "1"}}
+	if !strings.Contains(parcial.Resumo(), "1 programa") {
+		t.Fatal(parcial.Resumo())
+	}
+	parcial.Programas = append(parcial.Programas, Programa{Nome: "bash", Versao: "1"})
+	if !strings.Contains(parcial.Resumo(), "lista parcial") {
+		t.Fatal(parcial.Resumo())
+	}
+	discos := make([]Disco, 17)
+	for i := range discos {
+		discos[i] = Disco{Nome: string(rune('a' + i)), Bytes: 1}
+	}
+	if _, err := ValidarInventario(&Inventario{Sistema: "linux", Processadores: 1, Discos: discos}); !errors.Is(err, ErrEntradaInvalida) {
+		t.Fatal("discos")
+	}
+	programas := make([]Programa, 101)
+	for i := range programas {
+		programas[i] = Programa{Nome: string(rune('a'+i/26)) + string(rune('a'+i%26))}
+	}
+	if _, err := ValidarInventario(&Inventario{Sistema: "linux", Processadores: 1, Programas: programas}); !errors.Is(err, ErrEntradaInvalida) {
+		t.Fatal("programas")
+	}
+	outroDisco := *um
+	outroDisco.Discos = []Disco{{Nome: "sdb", Bytes: 1}}
+	outroPrograma := *um
+	outroPrograma.Programas = []Programa{{Nome: "bash", Versao: "1"}, {Nome: "zsh", Versao: "1"}}
+	outroSistema := *um
+	outroSistema.Sistema = "bsd"
+	base := Ativo{Inventario: um}
+	if base.Igual(Ativo{Inventario: &outroDisco}) || base.Igual(Ativo{Inventario: &outroPrograma}) || base.Igual(Ativo{Inventario: &outroSistema}) || base.Igual(Ativo{}) {
+		t.Fatal("inventários diferentes")
+	}
 }

@@ -126,7 +126,7 @@ func (s *Service) RegistrarAnexo(ctx context.Context, idt auth.Identity, projeto
 		if err != nil {
 			return err
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.anexo", "projeto_tarefa", tarefaID.String(), nil, gravado)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.anexo", "projeto_tarefa", tarefaID.String(), nil, gravado)); err != nil {
 			return err
 		}
 		destinos := append(idDe(projeto.GerenteID), idDe(tarefa.ResponsavelID)...)

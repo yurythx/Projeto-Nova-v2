@@ -113,4 +113,26 @@ func TestPersistenciaReal(t *testing.T) {
 	if _, err := r.Get(ctx, pool, uuid.New()); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Fatal(err)
 	}
+	if _, err := pool.Exec(ctx, `UPDATE ativos SET inventario = '"x"'::jsonb WHERE id = $1`, salvo.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Get(ctx, pool, salvo.ID); err == nil {
+		t.Fatal("inventário que não é objeto")
+	}
+	if _, err := r.ListRelacoes(ctx, dbtest.ScanFail{}, salvo.ID); err == nil {
+		t.Fatal("relação ilegível")
+	}
+	if _, err := r.ListCredenciais(ctx, dbtest.ScanFail{}, domain.Filtro{}); err == nil {
+		t.Fatal("credencial ilegível")
+	}
+	if err := r.DeleteRelacao(ctx, dbtest.ScanFail{}, salvo.ID, salvo.ID); !errors.Is(err, domain.ErrNaoEncontrado) {
+		t.Fatalf("relação ausente: %v", err)
+	}
+	if err := r.RevogarCredencial(ctx, dbtest.ScanFail{}, salvo.ID, domain.Filtro{}); !errors.Is(err, domain.ErrNaoEncontrado) {
+		t.Fatalf("credencial ausente: %v", err)
+	}
+	var repetida domain.RelacaoInvalida
+	if err := r.InsertRelacao(ctx, umaLinha{&pgconn.PgError{Code: "23505"}}, domain.Relacao{}); !errors.As(err, &repetida) {
+		t.Fatalf("relação repetida: %v", err)
+	}
 }

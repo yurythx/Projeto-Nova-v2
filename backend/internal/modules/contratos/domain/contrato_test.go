@@ -42,6 +42,27 @@ func TestCadastro(t *testing.T) {
 	if _, err := NovoFornecedor(strings.Repeat("a", 161), "", "", nil); err == nil {
 		t.Fatal("nome longo")
 	}
+	if _, err := NovoFornecedor("Casa", "", strings.Repeat("1", 41), nil); err == nil {
+		t.Fatal("telefone")
+	}
+	if _, err := NovoContrato("1", " ", uuid.New(), inicio, inicio, 0, nil); err == nil {
+		t.Fatal("título")
+	}
+	if _, err := NovoContrato(strings.Repeat("1", 41), "Link", uuid.New(), inicio, inicio, 0, nil); err == nil {
+		t.Fatal("número")
+	}
+	if _, err := NovaLicenca(" ", uuid.New(), nil, 1, nil); err == nil {
+		t.Fatal("licença sem nome")
+	}
+	if _, err := ProgramaDe(strings.Repeat("a", 81)); err == nil {
+		t.Fatal("programa")
+	}
+	if prog, err := ProgramaDe("  calc "); err != nil || prog != "calc" {
+		t.Fatal(err)
+	}
+	if (EntradaInvalida{Msg: "x"}).Error() != "x" {
+		t.Fatal("mensagem")
+	}
 }
 
 func TestPrazoEVigencia(t *testing.T) {

@@ -49,7 +49,7 @@ func (s *Service) VerificarPrazos(ctx context.Context, agora time.Time) error {
 		if len(destinos) == 0 {
 			continue
 		}
-		e, err := notificacoes.Registrar(ctx, s.pool, destinos, notificacoes.Nova{
+		e, err := gravarAviso(ctx, s.pool, destinos, notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "Tarefa fora do prazo no projeto #" + strconv.FormatInt(t.ProjetoNumero, 10),
 			Mensagem: cortar(t.Titulo+" · "+t.ProjetoTitulo, 1000),
@@ -65,7 +65,7 @@ func (s *Service) VerificarPrazos(ctx context.Context, agora time.Time) error {
 		if p.GerenteID == nil || *p.GerenteID == uuid.Nil {
 			continue
 		}
-		e, err := notificacoes.Registrar(ctx, s.pool, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
+		e, err := gravarAviso(ctx, s.pool, []uuid.UUID{*p.GerenteID}, notificacoes.Nova{
 			Modulo:   "projetos",
 			Titulo:   "Fim planejado do projeto #" + strconv.FormatInt(p.Numero, 10) + " passou",
 			Mensagem: cortar(p.Titulo, 1000),

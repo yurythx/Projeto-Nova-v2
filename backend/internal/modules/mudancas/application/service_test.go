@@ -6,9 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -34,6 +36,7 @@ type repo struct {
 	falha   map[string]bool
 	ligado  bool
 	ligados []domain.Vinculo
+	ocupada bool
 }
 
 func (r repo) err(m string) error {
@@ -75,7 +78,7 @@ func (r repo) Desvincular(context.Context, database.DBTX, uuid.UUID, string, uui
 	return r.ligado, r.err("Desvincular")
 }
 func (r repo) JanelaOcupada(context.Context, database.DBTX, *uuid.UUID, time.Time, time.Time) (bool, error) {
-	return false, r.err("JanelaOcupada")
+	return r.ocupada, r.err("JanelaOcupada")
 }
 func (r repo) ListCongelamentos(context.Context, database.DBTX, domain.Filtro) ([]domain.Congelamento, error) {
 	return []domain.Congelamento{}, r.err("ListCongelamentos")
@@ -333,6 +336,132 @@ func TestCascataNaMesmaTransacao(t *testing.T) {
 	fx.tipos = nil
 	if _, err := svc.Transicionar(ctx, gestor, base.ID, domain.Concluida, "", false); err != nil || len(fx.tipos) != 0 {
 		t.Fatal("sem o pedido, os vínculos ficam")
+	}
+	outro := uuid.New()
+	mesmo := repo{m: base, ligados: []domain.Vinculo{
+		{Tipo: domain.VinculoIncidente, AlvoID: inc},
+		{Tipo: domain.VinculoIncidente, AlvoID: outro},
+	}, falha: map[string]bool{"Vinculos": true}}
+	if _, err := application.NewService(pool, mesmo, eventos{}, nil, nil).ComEfeitos(fx).Transicionar(ctx, gestor, base.ID, domain.Concluida, "", true); err == nil {
+		t.Fatal("vínculos")
+	}
+	mesmo.falha = nil
+	fx.err = nil
+	fx.tipos = nil
+	if _, err := application.NewService(pool, mesmo, eventos{}, nil, nil).ComEfeitos(fx).Transicionar(ctx, gestor, base.ID, domain.Concluida, "", true); err != nil || len(fx.tipos) != 2 {
+		t.Fatalf("mesmo tipo: %v %v", err, fx.tipos)
+	}
+}
+
+type quadro struct{ err error }
+
+func (q quadro) Mapa(context.Context, database.DBTX, string) (map[string][]string, error) {
+	return nil, q.err
+}
+
+func TestJanelaECongelamento(t *testing.T) {
+	ctx := context.Background()
+	pool := dbtest.Pool(t)
+	u := uuid.New()
+	ini := time.Now().Add(time.Hour)
+	fim := ini.Add(time.Hour)
+	in := domain.Entrada{Titulo: "Trocar fonte", Tipo: domain.TipoNormal, Risco: "baixo", PlanoReversao: "voltar",
+		InicioPlanejado: &ini, FimPlanejado: &fim, UnidadeID: &u}
+	gestor := com(u, "mudancas:manage")
+	base, err := domain.Nova(in, gestor.UserID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ocupada := repo{m: base, ocupada: true}
+	svc := application.NewService(pool, ocupada, eventos{}, nil, produtos{unidade: &u})
+	if _, err := svc.Criar(ctx, gestor, in); !errors.Is(err, domain.ErrCongelada) {
+		t.Fatal(err)
+	}
+	if _, err := svc.Atualizar(ctx, gestor, base.ID, in); !errors.Is(err, domain.ErrCongelada) {
+		t.Fatal(err)
+	}
+	if _, err := svc.Transicionar(ctx, gestor, base.ID, domain.EmAvaliacao, "", false); !errors.Is(err, domain.ErrCongelada) {
+		t.Fatal(err)
+	}
+
+	livre := application.NewService(pool, repo{m: base}, eventos{}, nil, produtos{unidade: &u})
+	livre.ComPassagens(quadro{errFalha})
+	if _, err := livre.Listar(ctx, gestor, application.FiltroEntrada{}); err == nil {
+		t.Fatal("mapa da lista")
+	}
+	if _, err := livre.Obter(ctx, gestor, base.ID); err == nil {
+		t.Fatal("mapa do obter")
+	}
+	if _, err := livre.Transicionar(ctx, gestor, base.ID, domain.Cancelada, "", false); err == nil {
+		t.Fatal("mapa da passagem")
+	}
+
+	vazio := application.NewService(pool, repo{}, eventos{}, nil, nil)
+	if lista, err := vazio.ListarCongelamentos(ctx, auth.Identity{}); err != nil || len(lista) != 0 {
+		t.Fatalf("sem escopo: %v %v", lista, err)
+	}
+	if _, err := vazio.CriarCongelamento(ctx, gestor, &u, ini, ini, "recesso"); !errors.Is(err, domain.ErrEntradaInvalida) {
+		t.Fatal(err)
+	}
+	if _, err := vazio.CriarCongelamento(ctx, com(u, "mudancas:aprovar"), &u, ini, fim, "recesso"); !errors.Is(err, domain.ErrForaDoEscopo) {
+		t.Fatal(err)
+	}
+	quebrado := application.NewService(pool, repo{falha: map[string]bool{"InsertCongelamento": true}}, eventos{}, nil, nil)
+	if _, err := quebrado.CriarCongelamento(ctx, gestor, &u, ini, fim, "recesso"); err == nil {
+		t.Fatal("insert")
+	}
+	criado, err := vazio.CriarCongelamento(ctx, gestor, &u, ini, fim, " recesso ")
+	if err != nil || criado.Motivo != "recesso" {
+		t.Fatalf("criar: %+v %v", criado, err)
+	}
+	if err := vazio.ExcluirCongelamento(ctx, auth.Identity{}, criado.ID); !errors.Is(err, domain.ErrForaDoEscopo) {
+		t.Fatal(err)
+	}
+	if err := application.NewService(pool, repo{falha: map[string]bool{"DeleteCongelamento": true}}, eventos{}, nil, nil).ExcluirCongelamento(ctx, gestor, criado.ID); err == nil {
+		t.Fatal("delete")
+	}
+	if err := vazio.ExcluirCongelamento(ctx, gestor, criado.ID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCongelamentosHTTP(t *testing.T) {
+	pool := dbtest.Pool(t)
+	h := transport.NewHandlers(application.NewService(pool, repo{}, eventos{}, nil, nil), slog.New(slog.DiscardHandler))
+	r := chi.NewRouter()
+	r.Get("/mudancas/congelamentos", h.ListarCongelamentos)
+	r.Post("/mudancas/congelamentos", h.CriarCongelamento)
+	r.Delete("/mudancas/congelamentos/{id}", h.ExcluirCongelamento)
+	u := uuid.New()
+	gestor := com(u, "mudancas:manage")
+	pedir := func(method, target, body string, id auth.Identity) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, target, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(auth.WithIdentity(req.Context(), id))
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		return rec
+	}
+	falho := transport.NewHandlers(application.NewService(pool, repo{falha: map[string]bool{"ListCongelamentos": true}}, eventos{}, nil, nil), slog.New(slog.DiscardHandler))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req = req.WithContext(auth.WithIdentity(req.Context(), admin()))
+	falho.ListarCongelamentos(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("lista: %d", rec.Code)
+	}
+	corpo := `{"unidade_id":"` + u.String() + `","inicio":"2026-12-01T00:00:00Z","fim":"2026-12-02T00:00:00Z","motivo":"recesso"}`
+	if rec := pedir(http.MethodPost, "/mudancas/congelamentos", corpo, com(u, "mudancas:aprovar")); rec.Code != http.StatusForbidden {
+		t.Fatalf("criar sem gestão: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := pedir(http.MethodPost, "/mudancas/congelamentos", corpo, gestor); rec.Code != http.StatusCreated {
+		t.Fatalf("criar: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := pedir(http.MethodDelete, "/mudancas/congelamentos/nao-e-uuid", "", gestor); rec.Code < 400 {
+		t.Fatalf("id: %d", rec.Code)
+	}
+	if rec := pedir(http.MethodDelete, "/mudancas/congelamentos/"+uuid.NewString(), "", gestor); rec.Code != http.StatusNoContent {
+		t.Fatalf("excluir: %d %s", rec.Code, rec.Body.String())
 	}
 }
 

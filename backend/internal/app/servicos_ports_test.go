@@ -275,7 +275,31 @@ func TestEfeitosDaCascata(t *testing.T) {
 	if _, err := (efeitosCascata{ligado: ligadoSe(true), prob: concluiCausa{err: errBanco}}).Resolver(ctx, tx, mudancas.VinculoProblema, id, r); !errors.Is(err, errBanco) {
 		t.Fatal(err)
 	}
-	if rotuloEstado("desconhecido", rotuloSolicitacao) != "desconhecido" {
+	if rotuloEstado("desconhecido", rotuloSolicitacao) != "desconhecido" || rotuloEstado("aberto", rotuloSolicitacao) != "aberta" {
 		t.Fatal("rótulo")
+	}
+}
+
+func TestConsultaDoAtivo(t *testing.T) {
+	ctx := context.Background()
+	id := uuid.New()
+	un := uuid.New()
+	ligado := func() bool { return true }
+	porta := ativoAtendimento{repo: stubAtivos{err: ativos.ErrNaoEncontrado}, ativo: ligado}
+	if _, _, err := porta.Consultar(ctx, nil, id); !errors.Is(err, atendimento.ErrAtivoAusente) {
+		t.Fatalf("ausente: %v", err)
+	}
+	porta.repo = stubAtivos{err: errBanco}
+	if _, _, err := porta.Consultar(ctx, nil, id); !errors.Is(err, errBanco) {
+		t.Fatalf("banco: %v", err)
+	}
+	porta.repo = stubAtivos{item: ativos.Ativo{Nome: "Servidor", UnidadeID: &un}}
+	nome, unidade, err := porta.Consultar(ctx, nil, id)
+	if err != nil || nome != "Servidor" || unidade == nil || *unidade != un {
+		t.Fatalf("nome: %q %v %v", nome, unidade, err)
+	}
+	porta.repo = stubAtivos{item: ativos.Ativo{Nome: "Servidor", Identificador: "PAT-1", UnidadeID: &un}}
+	if nome, _, err = porta.Consultar(ctx, nil, id); err != nil || nome != "Servidor [PAT-1]" {
+		t.Fatalf("patrimônio: %q %v", nome, err)
 	}
 }

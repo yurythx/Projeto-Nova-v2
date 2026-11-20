@@ -9,6 +9,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/google/uuid"
+
 	"github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/mail"
@@ -72,7 +74,7 @@ func (s *Service) ReceberCorreio(ctx context.Context, de, assunto, corpo, messag
 	if texto == "" {
 		texto = "(mensagem sem texto)"
 	}
-	if _, err := s.Comentar(ctx, auth.Identity{UserID: autor}, sol.ID, "Resposta por e-mail:\n"+texto, false); err != nil {
+	if _, err := s.Comentar(ctx, identidadeDoCorreio(sol, autor), sol.ID, "Resposta por e-mail:\n"+texto, false); err != nil {
 		if errors.Is(err, domain.ErrSolicitacaoFinalizada) || errors.Is(err, domain.ErrComentarioInvalido) || errors.Is(err, domain.ErrEspelho) {
 			return nil
 		}
@@ -80,6 +82,24 @@ func (s *Service) ReceberCorreio(ctx context.Context, de, assunto, corpo, messag
 		return err
 	}
 	return nil
+}
+
+// identidadeDoCorreio é quem escreveu. Quem abriu entra como solicitante.
+// Quem atende não traz o perfil no e-mail; a conferência do remetente já
+// o autorizou a responder na unidade do chamado.
+func identidadeDoCorreio(sol domain.Solicitacao, autor uuid.UUID) auth.Identity {
+	ident := auth.Identity{UserID: autor}
+	if autor == sol.SolicitanteID {
+		return ident
+	}
+	escopo := auth.Scope{Permissions: []string{string(auth.PermAtendimentoAtender)}}
+	if sol.UnidadeID != nil {
+		u := *sol.UnidadeID
+		escopo.UnidadeID = &u
+		escopo.Unidades = []uuid.UUID{u}
+	}
+	ident.Scopes = []auth.Scope{escopo}
+	return ident
 }
 
 // RunCorreio lê a caixa e grava as respostas. Sem caixa, encerra.

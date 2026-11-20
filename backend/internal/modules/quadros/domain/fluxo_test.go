@@ -155,6 +155,16 @@ func TestAplicarRecusaPatchVazioEChaveDesconhecida(t *testing.T) {
 	}
 }
 
+func TestCriarQuandoEncaixeFalha(t *testing.T) {
+	orig := encaixar
+	t.Cleanup(func() { encaixar = orig })
+	encaixar = func([]Coluna, string, int) ([]Coluna, error) { return nil, ErrRetirada }
+	_, _, _, err := Criar(quadroDe("problemas", "registrado", "em_analise"), "c01234567", pedido([]string{"registrado"}, nil))
+	if err != ErrRetirada {
+		t.Fatal(err)
+	}
+}
+
 func TestPermissoesDeTodosOsQuadros(t *testing.T) {
 	casos := []struct{ quadro, ler, escrever string }{
 		{"problemas", "problemas:read", "problemas:manage"},

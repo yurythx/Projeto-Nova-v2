@@ -2,9 +2,11 @@ package application
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -200,3 +202,76 @@ func TestRamosQueACatracaAponta(t *testing.T) {
 		t.Fatal("atualizar")
 	}
 }
+
+func TestAvisoERespostaQueFalham(t *testing.T) {
+	m := novoMem()
+	s := servicoTeste(m)
+	un := uuid.New()
+	ctx := ctxGestao(un)
+	form, err := s.SalvarFormulario(ctx, domain.Formulario{
+		UnidadeID: un, Titulo: "Alvará",
+		Campos: []domain.Campo{{ID: "nome", Tipo: "text", Rotulo: "Nome", Obrigatorio: true}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	serv, err := s.SalvarServico(ctx, domain.Servico{UnidadeID: un, FormularioID: form.ID, Nome: "Alvará"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	aviso := textoDeAviso
+	textoDeAviso = func(string, string, string) (string, error) { return "", domain.ErrInvalido }
+	t.Cleanup(func() { textoDeAviso = aviso })
+	if _, err := s.Abrir(ctx, Abertura{
+		ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Respostas: map[string]any{"nome": "Maria"},
+	}, false); err == nil {
+		t.Fatal("aviso da abertura")
+	}
+	textoDeAviso = aviso
+
+	ped, err := s.Abrir(ctx, Abertura{
+		ServicoID: serv.ID, Nome: "Maria Souza", CPF: "12345678900", Respostas: map[string]any{"nome": "Maria"},
+	}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := m.pedidos[ped.ID]
+	semNumero := original
+	semNumero.Numero = "   "
+	m.pedidos[ped.ID] = semNumero
+	if _, err := s.Cancelar(ctx, ped.ID); err == nil {
+		t.Fatal("aviso do cancelamento")
+	}
+	m.pedidos[ped.ID] = original
+	if _, err := s.Complementar(ctx, ped.ID, "falta o documento"); err != nil {
+		t.Fatal(err)
+	}
+	comp := m.pedidos[ped.ID]
+	comp.Numero = "   "
+	m.pedidos[ped.ID] = comp
+	if _, err := s.ResponderPublico(ctx, "   ", "12345678900", "segue", nil); err == nil {
+		t.Fatal("aviso da resposta")
+	}
+	m.pedidos[ped.ID] = comp
+	resposta := responderComplemento
+	responderComplemento = func(domain.Pedido, time.Time) (domain.Pedido, error) {
+		return domain.Pedido{}, domain.ErrEstadoFinal
+	}
+	t.Cleanup(func() { responderComplemento = resposta })
+	if _, err := s.ResponderPublico(ctx, "   ", "12345678900", "segue", nil); !errors.Is(err, domain.ErrEstadoFinal) {
+		t.Fatalf("resposta: %v", err)
+	}
+}
+
+func TestSorteioSemEntropia(t *testing.T) {
+	orig := rand.Reader
+	rand.Reader = falhaLeitor{}
+	t.Cleanup(func() { rand.Reader = orig })
+	if _, err := inteiroAleatorio(); err == nil {
+		t.Fatal("entropia")
+	}
+}
+
+type falhaLeitor struct{}
+
+func (falhaLeitor) Read([]byte) (int, error) { return 0, errors.New("sem entropia") }

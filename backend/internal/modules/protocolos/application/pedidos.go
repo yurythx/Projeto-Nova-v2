@@ -15,6 +15,14 @@ import (
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 )
 
+// textoDeAviso e responderComplemento são as funções do domínio. O teste
+// troca quando o número válido e o estado de complementação não falham sozinhos.
+var textoDeAviso = domain.Aviso
+
+var responderComplemento = func(p domain.Pedido, agora time.Time) (domain.Pedido, error) {
+	return p.ResponderComplemento(agora)
+}
+
 // Abrir grava o pedido. No balcão, a sessão precisa de protocolos:abrir na unidade do serviço.
 func (s *Service) Abrir(ctx context.Context, in Abertura, balcao bool) (domain.Pedido, error) {
 	serv, err := s.repo.BuscarServico(ctx, s.db, in.ServicoID)
@@ -102,7 +110,7 @@ func (s *Service) Abrir(ctx context.Context, in Abertura, balcao bool) (domain.P
 					return err
 				}
 			}
-			texto, err := domain.Aviso(numero, "pedido recebido", "acompanhe pelo número")
+			texto, err := textoDeAviso(numero, "pedido recebido", "acompanhe pelo número")
 			if err != nil {
 				return err
 			}
@@ -298,7 +306,7 @@ func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato, d
 		}); err != nil {
 			return err
 		}
-		texto, err := domain.Aviso(prox.Numero, fato, "acompanhe pelo número")
+		texto, err := textoDeAviso(prox.Numero, fato, "acompanhe pelo número")
 		if err != nil {
 			return err
 		}
@@ -337,7 +345,7 @@ func (s *Service) ResponderPublico(ctx context.Context, numero, cpf, mensagem st
 	if err != nil {
 		return domain.Consulta{}, err
 	}
-	prox, err := p.ResponderComplemento(s.agora())
+	prox, err := responderComplemento(p, s.agora())
 	if err != nil {
 		return domain.Consulta{}, err
 	}
@@ -356,7 +364,7 @@ func (s *Service) ResponderPublico(ctx context.Context, numero, cpf, mensagem st
 		}); err != nil {
 			return err
 		}
-		texto, err := domain.Aviso(prox.Numero, "complementação respondida", "acompanhe pelo número")
+		texto, err := textoDeAviso(prox.Numero, "complementação respondida", "acompanhe pelo número")
 		if err != nil {
 			return err
 		}

@@ -45,7 +45,27 @@ func TestNovaSLA(t *testing.T) {
 		sol = sol.AplicarSLA(&sla)
 		require.NotNil(t, sol.MetaRespostaMin)
 		require.NotNil(t, sol.MetaSolucaoMin)
+		require.NotNil(t, sol.Prioridade)
 		assert.Equal(t, 15, *sol.MetaRespostaMin)
 		assert.Equal(t, 60, *sol.MetaSolucaoMin)
+		assert.Equal(t, domain.PrioridadeMedia, *sol.Prioridade)
+
+		alta := domain.PrioridadeAlta
+		sol.Prioridade = &alta
+		sol = sol.AplicarSLA(&sla)
+		assert.Equal(t, domain.PrioridadeAlta, *sol.Prioridade)
+	})
+
+	t.Run("SLA nula ou inativa não aplica", func(t *testing.T) {
+		sol := domain.Solicitacao{}
+		assert.Nil(t, sol.AplicarSLA(nil).MetaRespostaMin)
+		inativa := domain.SLA{Ativa: false, TempoRespostaMinutos: 5, TempoSolucaoMinutos: 10}
+		assert.Nil(t, sol.AplicarSLA(&inativa).Prioridade)
+	})
+
+	t.Run("calendário desconhecido vira expediente", func(t *testing.T) {
+		sla, err := domain.NovaSLA("Outro", "", 10, 20, false, "marte", nil)
+		require.NoError(t, err)
+		assert.Equal(t, domain.CalendarioExpediente, sla.CalendarioTipo)
 	})
 }

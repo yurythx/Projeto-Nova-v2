@@ -72,7 +72,7 @@ func (s *Service) Cancelar(ctx context.Context, idt auth.Identity, id uuid.UUID,
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.projeto.cancelled", "projeto", id.String(), p, atualizado))
+		return novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.projeto.cancelled", "projeto", id.String(), p, atualizado))
 	})
 	if err != nil {
 		return nil, err

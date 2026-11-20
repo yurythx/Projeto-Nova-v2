@@ -6,15 +6,20 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	atendimento "github.com/yurythx/projeto-nova-v2/internal/modules/atendimento/domain"
 	ativosmod "github.com/yurythx/projeto-nova-v2/internal/modules/ativos"
+	cofreapp "github.com/yurythx/projeto-nova-v2/internal/modules/cofre/application"
 	cofredomain "github.com/yurythx/projeto-nova-v2/internal/modules/cofre/domain"
 	contratosapp "github.com/yurythx/projeto-nova-v2/internal/modules/contratos/application"
+	contratosdomain "github.com/yurythx/projeto-nova-v2/internal/modules/contratos/domain"
 	problemas "github.com/yurythx/projeto-nova-v2/internal/modules/problemas/domain"
 	projetos "github.com/yurythx/projeto-nova-v2/internal/modules/projetos/domain"
 	signumdomain "github.com/yurythx/projeto-nova-v2/internal/modules/signum/domain"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/database"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/database/dbtest"
 )
 
@@ -65,4 +70,60 @@ func TestPortasDesligadas(t *testing.T) {
 	if _, err := (horasDeChamado{}).Somar(ctx, dbtest.Fail{}, []uuid.UUID{id}); err == nil {
 		t.Fatal("soma sem banco")
 	}
+	if total, err := (horasDeChamado{}).Somar(ctx, somaDB{n: 1.5}, []uuid.UUID{id}); err != nil || total != 1.5 {
+		t.Fatalf("soma: %v %v", total, err)
+	}
+	ligado := func() bool { return true }
+	if _, err := (portaSegredo{svc: cofreapp.NewService(nil, nil, nil, nil), ativo: ligado}).Nome(ctx, auth.Identity{}, id); err == nil {
+		t.Fatal("cofre sem alcance")
+	}
+	if _, err := (portaContratos{svc: contratosapp.NewService(nil, contratosQueFalham{}, nil), ativo: ligado}).Listar(ctx, auth.Identity{}); err == nil {
+		t.Fatal("contratos")
+	}
+	mod := &ativosmod.Module{}
+	if _, err := (programasDoAtivo{mod: mod, ativo: ligado}).Contar(ctx, dbtest.Fail{}, false, nil, "chrome"); err == nil {
+		t.Fatal("contagem")
+	}
+	uso, err := (programasDoAtivo{mod: mod, ativo: ligado}).Contar(ctx, contaDB{}, false, nil, "chrome")
+	if err != nil || uso.Instalados != 2 || uso.ComInventario != 3 || !uso.Parcial {
+		t.Fatalf("uso: %+v %v", uso, err)
+	}
+}
+
+type contratosQueFalham struct{ contratosdomain.Repository }
+
+func (contratosQueFalham) ListContratos(context.Context, database.DBTX, contratosdomain.Filtro) ([]contratosdomain.Contrato, error) {
+	return nil, errors.New("lista")
+}
+
+type somaDB struct{ n float64 }
+
+func (somaDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, nil
+}
+func (somaDB) Query(context.Context, string, ...any) (pgx.Rows, error) { return nil, nil }
+func (s somaDB) QueryRow(context.Context, string, ...any) pgx.Row      { return somaRow{s.n} }
+
+type somaRow struct{ n float64 }
+
+func (r somaRow) Scan(dest ...any) error {
+	*dest[0].(*float64) = r.n
+	return nil
+}
+
+type contaDB struct{}
+
+func (contaDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, nil
+}
+func (contaDB) Query(context.Context, string, ...any) (pgx.Rows, error) { return nil, nil }
+func (contaDB) QueryRow(context.Context, string, ...any) pgx.Row        { return contaRow{} }
+
+type contaRow struct{}
+
+func (contaRow) Scan(dest ...any) error {
+	*dest[0].(*int) = 3
+	*dest[1].(*int) = 2
+	*dest[2].(*bool) = true
+	return nil
 }

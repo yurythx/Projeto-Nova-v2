@@ -59,7 +59,7 @@ func TestRepositorioPropagaFalhas(t *testing.T) {
 			t.Errorf("%s: %v", nome, err)
 		}
 	}
-	for _, nome := range []string{"List", "Aprovacoes", "Vinculos"} {
+	for _, nome := range []string{"List", "Aprovacoes", "Vinculos", "ListCongelamentos"} {
 		if err := calls[nome](dbtest.ScanFail{}); err == nil {
 			t.Errorf("%s com linha ilegível", nome)
 		}
@@ -123,6 +123,21 @@ func TestPersistenciaReal(t *testing.T) {
 	}
 	m.Estado = domain.EmAvaliacao
 	if err := r.Update(ctx, pool, m); err != nil {
+		t.Fatal(err)
+	}
+	janela := domain.Congelamento{ID: uuid.New(), UnidadeID: &u, Inicio: ini, Fim: fim, Motivo: "recesso", CreatedAt: time.Now().UTC()}
+	gravada, err := r.InsertCongelamento(ctx, pool, janela)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM mudanca_congelamentos WHERE id = $1`, gravada.ID)
+	})
+	lista, err := r.ListCongelamentos(ctx, pool, domain.Filtro{Restrito: true, Unidades: []uuid.UUID{u}})
+	if err != nil || len(lista) != 1 || lista[0].Motivo != "recesso" {
+		t.Fatalf("congelamentos: %+v %v", lista, err)
+	}
+	if err := r.DeleteCongelamento(ctx, pool, gravada.ID); err != nil {
 		t.Fatal(err)
 	}
 }

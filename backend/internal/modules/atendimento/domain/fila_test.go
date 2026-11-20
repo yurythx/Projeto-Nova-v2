@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -44,6 +46,89 @@ func TestNovaRegraRecusaAcaoVazia(t *testing.T) {
 	if err != nil || regra.Palavra != "senha" || regra.ID == uuid.Nil || !regra.Ativa {
 		t.Fatalf("%v %+v", err, regra)
 	}
+	equipe := uuid.New()
+	id := uuid.New()
+	criada := time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC)
+	soEquipe, err := NovaRegra(Regra{ID: id, Nome: "Equipe", EquipeID: &equipe, CreatedAt: criada})
+	if err != nil || soEquipe.ID != id || !soEquipe.CreatedAt.Equal(criada) {
+		t.Fatalf("equipe: %v %+v", err, soEquipe)
+	}
+}
+
+func TestCadastroDaFilaRecusa(t *testing.T) {
+	recusas := []error{
+		deveRecusar(t, func() error { _, err := NovaRegra(Regra{Nome: ""}); return err }),
+		deveRecusar(t, func() error { _, err := NovaRegra(Regra{Nome: strings.Repeat("a", NomeMax+1)}); return err }),
+		deveRecusar(t, func() error {
+			_, err := NovaRegra(Regra{Nome: "Ordem", Ordem: 1000, Prioridade: PrioridadeBaixa})
+			return err
+		}),
+		deveRecusar(t, func() error {
+			_, err := NovaRegra(Regra{Nome: "Palavra", Palavra: strings.Repeat("á", 81), Prioridade: PrioridadeBaixa})
+			return err
+		}),
+		deveRecusar(t, func() error {
+			_, err := NovaRegra(Regra{Nome: "Prioridade", Prioridade: "urgente"})
+			return err
+		}),
+		deveRecusar(t, func() error { _, err := NovaResposta(uuid.Nil, "oi", ""); return err }),
+		deveRecusar(t, func() error {
+			_, err := NovaResposta(uuid.New(), strings.Repeat("a", TextoMax+1), "")
+			return err
+		}),
+		deveRecusar(t, func() error { _, err := NovaResposta(uuid.New(), " ", " "); return err }),
+		deveRecusar(t, func() error { _, err := NovoChamadoMensal(ChamadoMensal{}); return err }),
+		deveRecusar(t, func() error {
+			_, err := NovoChamadoMensal(ChamadoMensal{OfertaID: uuid.New(), Titulo: "", CriadoPor: uuid.New(), Dia: 1})
+			return err
+		}),
+		deveRecusar(t, func() error {
+			_, err := NovoChamadoMensal(ChamadoMensal{OfertaID: uuid.New(), Titulo: "Backup", Descricao: strings.Repeat("a", TextoMax+1), CriadoPor: uuid.New(), Dia: 1})
+			return err
+		}),
+		deveRecusar(t, func() error {
+			_, err := NovoChamadoMensal(ChamadoMensal{OfertaID: uuid.New(), Titulo: "Backup", CriadoPor: uuid.New(), Dia: 29})
+			return err
+		}),
+		deveRecusar(t, func() error {
+			_, err := NovoChamadoMensal(ChamadoMensal{OfertaID: uuid.New(), Titulo: "Backup", Dia: 1})
+			return err
+		}),
+	}
+	for _, err := range recusas {
+		if err == nil || err.Error() == "" {
+			t.Fatal("recusa sem texto")
+		}
+	}
+	pronta, err := NovaResposta(uuid.New(), " Olá ", "")
+	if err != nil || pronta.Publico != "Olá" {
+		t.Fatalf("resposta: %v %+v", err, pronta)
+	}
+	id := uuid.New()
+	criada := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	mensal, err := NovoChamadoMensal(ChamadoMensal{
+		ID: id, OfertaID: uuid.New(), Titulo: " Backup ", CriadoPor: uuid.New(), Dia: 28, CreatedAt: criada,
+	})
+	if err != nil || mensal.ID != id || mensal.Titulo != "Backup" || !mensal.CreatedAt.Equal(criada) || !mensal.Ativa {
+		t.Fatalf("mensal: %v %+v", err, mensal)
+	}
+	negativo := ResumirDeflexao(4, -1)
+	if negativo == nil || negativo.SemPedido != 0 {
+		t.Fatalf("negativo: %+v", negativo)
+	}
+	estoura := ResumirDeflexao(4, 9)
+	if estoura == nil || estoura.SemPedido != 4 || estoura.Taxa != 100 {
+		t.Fatalf("teto: %+v", estoura)
+	}
+}
+
+func deveRecusar(t *testing.T, fn func() error) error {
+	t.Helper()
+	err := fn()
+	if err == nil {
+		t.Fatal("aceitou o que devia recusar")
+	}
+	return err
 }
 
 func TestDeflexaoSemVistaFicaVazia(t *testing.T) {

@@ -36,6 +36,9 @@ func Personalizada(chave string) bool {
 	return chaveNova.MatchString(chave)
 }
 
+// encaixar posiciona a coluna nova. O teste troca quando o destino válido não falha sozinho.
+var encaixar = mover
+
 // Criar acrescenta a coluna e as passagens. A ordem final começa em zero.
 // de é de onde o card entra; para é para onde ele sai. Sem entrada, a
 // coluna não nasce.
@@ -71,7 +74,7 @@ func Criar(cols []Coluna, chave string, n Nova) (Coluna, []Passagem, []Coluna, e
 		Ordem: maiorOrdem(cols) + 1, Entrada: false, Ativa: true,
 		De: de, Para: para,
 	}
-	out, err := mover(append(slices.Clone(cols), col), chave, n.Ordem)
+	out, err := encaixar(append(slices.Clone(cols), col), chave, n.Ordem)
 	if err != nil {
 		return Coluna{}, nil, nil, err
 	}

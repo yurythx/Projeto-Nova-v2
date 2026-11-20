@@ -98,3 +98,40 @@ func TestErrosDoBanco(t *testing.T) {
 		t.Fatal("outro")
 	}
 }
+
+func TestJSONQueNaoCodifica(t *testing.T) {
+	r := NewPostgresRepository()
+	ctx := context.Background()
+	orig := codificarJSON
+	t.Cleanup(func() { codificarJSON = orig })
+	falha := func(any) ([]byte, error) { return nil, errors.New("json") }
+	codificarJSON = falha
+	if err := r.InserirFormulario(ctx, nil, domain.Formulario{}); err == nil {
+		t.Fatal("formulário")
+	}
+	if err := r.AtualizarFormulario(ctx, nil, domain.Formulario{}); err == nil {
+		t.Fatal("atualizar formulário")
+	}
+	if err := r.InserirHistorico(ctx, nil, domain.Historico{}); err == nil {
+		t.Fatal("histórico")
+	}
+	if err := r.InserirServico(ctx, nil, domain.Servico{}); err == nil {
+		t.Fatal("serviço")
+	}
+	if err := r.AtualizarServico(ctx, nil, domain.Servico{}); err == nil {
+		t.Fatal("atualizar serviço")
+	}
+	for _, corte := range []int{2, 3} {
+		n := 0
+		codificarJSON = func(v any) ([]byte, error) {
+			n++
+			if n >= corte {
+				return nil, errors.New("json")
+			}
+			return orig(v)
+		}
+		if err := r.InserirServico(ctx, nil, domain.Servico{}); err == nil {
+			t.Fatalf("serviço no %dº campo", corte)
+		}
+	}
+}

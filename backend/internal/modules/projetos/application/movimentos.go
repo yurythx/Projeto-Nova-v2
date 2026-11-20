@@ -53,7 +53,7 @@ func (s *Service) anotarMovimento(ctx context.Context, tx pgx.Tx, idt auth.Ident
 	if err := s.repo.RegistrarMovimento(ctx, tx, m); err != nil {
 		return err
 	}
-	return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.moved", "projeto_tarefa", depois.ID.String(), antes, depois))
+	return novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.moved", "projeto_tarefa", depois.ID.String(), antes, depois))
 }
 
 func (s *Service) ListarMovimentos(ctx context.Context, idt auth.Identity, projetoID, tarefaID uuid.UUID) ([]domain.Movimento, error) {

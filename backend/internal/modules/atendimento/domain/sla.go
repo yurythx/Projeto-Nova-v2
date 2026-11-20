@@ -78,11 +78,17 @@ func (s SLA) Aplicar(nome, descricao string, tempoRespostaMin, tempoSolucaoMin i
 }
 
 // AplicarSLA aplica as metas da SLA diretamente sobre a solicitação.
+// A prioridade acompanha as metas: o banco não grava uma sem a outra.
+// Se a política já classificou, o nome fica; senão, fica a média.
 func (s Solicitacao) AplicarSLA(sla *SLA) Solicitacao {
 	if sla == nil || !sla.Ativa {
 		return s
 	}
 	s.MetaRespostaMin = &sla.TempoRespostaMinutos
 	s.MetaSolucaoMin = &sla.TempoSolucaoMinutos
+	if s.Prioridade == nil {
+		media := PrioridadeMedia
+		s.Prioridade = &media
+	}
 	return s
 }

@@ -72,6 +72,9 @@ func (s *Service) WithProgramas(p Programas) *Service { s.programas = p; return 
 // WithRelogio fixa o dia do aviso nos testes.
 func (s *Service) WithRelogio(agora func() time.Time) *Service { s.agora = agora; return s }
 
+// WithLogger troca o log. Sem ele, a falha do aviso não é registrada.
+func (s *Service) WithLogger(l *slog.Logger) *Service { s.logger = l; return s }
+
 // MapError traduz o domínio para a API.
 func MapError(err error) error {
 	switch {

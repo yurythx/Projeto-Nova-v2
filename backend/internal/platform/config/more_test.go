@@ -167,3 +167,27 @@ func TestTypesense(t *testing.T) {
 		t.Fatalf("produção com a chave de exemplo: %v", err)
 	}
 }
+
+func TestLoadExigeRemetenteEUsuarioDoCorreio(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("SMTP_HOST", "smtp.example")
+	t.Setenv("IMAP_HOST", "imap.example")
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "SMTP_FROM") || !strings.Contains(err.Error(), "IMAP_USER") {
+		t.Fatalf("correio: %v", err)
+	}
+}
+
+func TestLoadProducaoRecusaChavesIguais(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("MINIO_ACCESS_KEY", "nova-prod-access")
+	t.Setenv("MINIO_SECRET_KEY", "nova-prod-secret-strong-value")
+	mesma := "cHJvZC1zdHJvbmcta2V5LTMyLWJ5dGVzLWxvbmchIQ=="
+	t.Setenv("CONFIG_ENCRYPTION_KEY", mesma)
+	t.Setenv("COFRE_MASTER_KEY", mesma)
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "igual a CONFIG_ENCRYPTION_KEY") {
+		t.Fatalf("chaves iguais: %v", err)
+	}
+}

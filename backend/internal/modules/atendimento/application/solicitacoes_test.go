@@ -364,6 +364,9 @@ func (f falhaRepo) ResolverPolitica(ctx context.Context, db database.DBTX, u *uu
 	if f.falha["PoliticaIlegivel"] {
 		return domain.Politica{Fuso: "Marte/Olimpo"}, nil
 	}
+	if f.falha["FusoVazio"] {
+		return domain.Politica{Fuso: " "}, nil
+	}
 	return f.Repository.ResolverPolitica(ctx, db, u)
 }
 func (f falhaRepo) SalvarPolitica(ctx context.Context, db database.DBTX, p domain.Politica) (domain.Politica, error) {

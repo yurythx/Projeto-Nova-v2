@@ -28,10 +28,27 @@ const (
 	EventProjetoTransitioned = "projetos.projeto.transitioned"
 )
 
+// Eventos grava o evento na mesma transação. O teste troca quando o
+// escritor real não tem como falhar sozinho.
+type Eventos interface {
+	Write(ctx context.Context, tx pgx.Tx, eventType, aggregateType, aggregateID string, correlationID uuid.UUID, payload any) error
+}
+
+// registro grava uma linha da trilha.
+type registro interface {
+	Record(context.Context, audit.Entry) error
+}
+
+// novaTrilha abre a trilha na transação. O teste troca quando o escritor
+// real não tem como falhar sozinho.
+var novaTrilha = func(tx pgx.Tx) registro {
+	return audit.NewWriter(tx)
+}
+
 type Service struct {
 	pool      *pgxpool.Pool
 	repo      domain.Repository
-	outbox    *outbox.Writer
+	outbox    Eventos
 	logger    *slog.Logger
 	passagens Passagens
 	portas    domain.Portas
@@ -47,7 +64,11 @@ type Passagens interface {
 }
 
 func NewService(pool *pgxpool.Pool, repo domain.Repository, ob *outbox.Writer, logger *slog.Logger) *Service {
-	return &Service{pool: pool, repo: repo, outbox: ob, logger: logger}
+	s := &Service{pool: pool, repo: repo, logger: logger}
+	if ob != nil {
+		s.outbox = ob
+	}
+	return s
 }
 
 // ComPassagens liga os caminhos acrescentados nos quadros de projetos e de tarefas.
@@ -290,7 +311,7 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 					return err
 				}
 			}
-			if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.carta.created", "projeto", p.ID.String(), nil, carta)); err != nil {
+			if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.carta.created", "projeto", p.ID.String(), nil, carta)); err != nil {
 				return err
 			}
 		}
@@ -300,7 +321,7 @@ func (s *Service) criar(ctx context.Context, idt auth.Identity, e domain.Entrada
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoCreated, "projeto", p.ID.String(), nil, p))
+		return novaTrilha(tx).Record(ctx, audit.Meta(ctx, EventProjetoCreated, "projeto", p.ID.String(), nil, p))
 	})
 	if err != nil {
 		return nil, err
@@ -408,7 +429,7 @@ func (s *Service) SalvarCarta(ctx context.Context, idt auth.Identity, id uuid.UU
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.carta.saved", "projeto", id.String(), p, atualizado)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.carta.saved", "projeto", id.String(), p, atualizado)); err != nil {
 			return err
 		}
 		visao, err = s.montarVisao(ctx, tx, atualizado, &salva)
@@ -527,7 +548,7 @@ func (s *Service) Atualizar(ctx context.Context, idt auth.Identity, id uuid.UUID
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoUpdated, "projeto", id.String(), p, atualizado)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, EventProjetoUpdated, "projeto", id.String(), p, atualizado)); err != nil {
 			return err
 		}
 		parte, err := s.avisarTrocaDeGerente(ctx, tx, idt.UserID, p, atualizado, "Projeto #"+strconv.FormatInt(atualizado.Numero, 10)+" atualizado", atualizado.Titulo)
@@ -606,7 +627,7 @@ func (s *Service) Transicionar(ctx context.Context, idt auth.Identity, id uuid.U
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventProjetoTransitioned, "projeto", id.String(), p, atualizado))
+		return novaTrilha(tx).Record(ctx, audit.Meta(ctx, EventProjetoTransitioned, "projeto", id.String(), p, atualizado))
 	})
 	if err != nil {
 		return nil, err
@@ -683,7 +704,7 @@ func (s *Service) avisarAprovadores(ctx context.Context, tx pgx.Tx, p *domain.Pr
 	} else if ligados > 1 {
 		mensagem += " " + strconv.Itoa(ligados) + " registros ligados continuam no fluxo deles."
 	}
-	return notificacoes.Registrar(ctx, tx, destinos, notificacoes.Nova{
+	return gravarAviso(ctx, tx, destinos, notificacoes.Nova{
 		Modulo:   "projetos",
 		Titulo:   "Projeto #" + strconv.FormatInt(p.Numero, 10) + " concluído",
 		Mensagem: mensagem,
@@ -790,7 +811,7 @@ func (s *Service) Reabrir(ctx context.Context, idt auth.Identity, id uuid.UUID, 
 				return err
 			}
 		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.projeto.reopened", "projeto", id.String(), p, atualizado))
+		return novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.projeto.reopened", "projeto", id.String(), p, atualizado))
 	})
 	if err != nil {
 		return nil, err
@@ -1133,7 +1154,7 @@ func (s *Service) ExcluirTarefa(ctx context.Context, idt auth.Identity, id uuid.
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), atual, nil)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.deleted", "projeto_tarefa", id.String(), atual, nil)); err != nil {
 			return err
 		}
 		destinos := idDe(projeto.GerenteID)
@@ -1229,7 +1250,7 @@ func (s *Service) Vincular(ctx context.Context, idt auth.Identity, projetoID uui
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.created", "projeto", projetoID.String(), nil, v)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.created", "projeto", projetoID.String(), nil, v)); err != nil {
 			return err
 		}
 		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
@@ -1276,7 +1297,7 @@ func (s *Service) Desvincular(ctx context.Context, idt auth.Identity, vinculoID 
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), nil, nil)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.vinculo.deleted", "projeto_vinculo", vinculoID.String(), nil, nil)); err != nil {
 			return err
 		}
 		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
@@ -1368,7 +1389,7 @@ func (s *Service) RegistrarApontamento(
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.created", "projeto", projetoID.String(), nil, a)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.created", "projeto", projetoID.String(), nil, a)); err != nil {
 			return err
 		}
 		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,
@@ -1444,7 +1465,7 @@ func (s *Service) ExcluirApontamento(ctx context.Context, idt auth.Identity, apo
 				return err
 			}
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), nil, nil)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.apontamento.deleted", "projeto_apontamento", apontamentoID.String(), nil, nil)); err != nil {
 			return err
 		}
 		parte, err := s.avisarProjeto(ctx, tx, idt.UserID, p,

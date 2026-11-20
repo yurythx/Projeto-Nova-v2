@@ -47,8 +47,11 @@ func (s *Service) enviarAviso(ctx context.Context, db database.DBTX, autor uuid.
 	if len(limpos) == 0 {
 		return nil, nil
 	}
-	return notificacoes.Registrar(ctx, db, limpos, n)
+	return gravarAviso(ctx, db, limpos, n)
 }
+
+// gravarAviso persiste o aviso. O teste troca quando o registro real não falha sozinho.
+var gravarAviso = notificacoes.Registrar
 
 func chaveAviso(partes ...string) string {
 	chave := "projetos"

@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 )
 
+func n(v int) *int { return &v }
+
 func janela() (*time.Time, *time.Time) {
 	a := time.Now().Add(time.Hour)
 	b := a.Add(time.Hour)
@@ -66,6 +68,37 @@ func TestNovaEEdicao(t *testing.T) {
 	aprovada.Estado = Aprovada
 	if _, err := aprovada.Aplicar(in); err != ErrNaoEditavel {
 		t.Fatal(err)
+	}
+	for _, caso := range []struct {
+		nota  int
+		risco string
+		want  error
+	}{
+		{5, "baixo", nil}, {7, "baixo", nil}, {8, "medio", nil}, {11, "medio", nil},
+		{12, "alto", nil}, {15, "alto", nil},
+		{4, "baixo", ErrEntradaInvalida}, {16, "alto", ErrEntradaInvalida},
+		{6, "alto", ErrRiscoDivergente},
+	} {
+		in := entrada(TipoNormal)
+		in.Risco, in.RiscoScore = caso.risco, &caso.nota
+		if _, err := Nova(in, quem); err != caso.want {
+			t.Errorf("nota %d %s: %v", caso.nota, caso.risco, err)
+		}
+	}
+	comNota := entrada(TipoNormal)
+	comNota.Risco, comNota.RiscoScore = "medio", n(8)
+	marcada, err := Nova(comNota, quem)
+	if err != nil {
+		t.Fatal(err)
+	}
+	igual := marcada
+	igual.RiscoScore = n(8)
+	if !marcada.Igual(igual) {
+		t.Fatal("mesma nota")
+	}
+	igual.RiscoScore = n(9)
+	if marcada.Igual(igual) {
+		t.Fatal("nota diferente")
 	}
 	u := uuid.New()
 	if Dona(nil).UnidadeID != nil || Dona(&u).UnidadeID == nil || !MesmaUnidade(nil, nil) || MesmaUnidade(&u, nil) || !MesmaUnidade(&u, &u) {

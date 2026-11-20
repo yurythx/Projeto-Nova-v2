@@ -81,7 +81,7 @@ func (s *Service) CriarAtualizacao(ctx context.Context, idt auth.Identity, proje
 		if err := s.repo.CriarAtualizacao(ctx, tx, a); err != nil {
 			return err
 		}
-		if err := audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.atualizacao", "projeto_tarefa", tarefa.ID.String(), nil, a)); err != nil {
+		if err := novaTrilha(tx).Record(ctx, audit.Meta(ctx, "projetos.tarefa.atualizacao", "projeto_tarefa", tarefa.ID.String(), nil, a)); err != nil {
 			return err
 		}
 		parte, err := s.avisarAtualizacao(ctx, tx, idt.UserID, projeto, tarefa, limpo)

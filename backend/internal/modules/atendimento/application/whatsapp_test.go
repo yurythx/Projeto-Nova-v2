@@ -285,9 +285,22 @@ func TestAberturaPeloWhatsAppComCampo(t *testing.T) {
 func escolherServico(t *testing.T, c cenario, quem, oferta uuid.UUID) domain.RespostaWhatsApp {
 	t.Helper()
 	ctx := context.Background()
+	// Execuções antigas deixaram ofertas "E-mail fora" sem chamado. Elas
+	// empurram o serviço novo para além das primeiras páginas.
+	if _, err := c.pool.Exec(ctx, `
+		DELETE FROM atendimento_ofertas o
+		WHERE o.nome = 'E-mail fora'
+		  AND NOT EXISTS (SELECT 1 FROM atendimento_solicitacoes s WHERE s.oferta_id = o.id)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.pool.Exec(ctx, `UPDATE atendimento_ofertas SET nome = '0 ' || nome WHERE id = $1 AND nome NOT LIKE '0 %'`, oferta); err != nil {
+		t.Fatal(err)
+	}
 	var r domain.RespostaWhatsApp
 	var err error
-	for pagina := 0; pagina < 8; pagina++ {
+	// O catálogo de teste acumula ofertas de execuções anteriores. Percorre
+	// até a última página, em vez de parar num número fixo.
+	for pagina := 0; pagina < 200; pagina++ {
 		msg := "novo"
 		if pagina > 0 {
 			msg = "mais"
@@ -305,7 +318,19 @@ func escolherServico(t *testing.T, c cenario, quem, oferta uuid.UUID) domain.Res
 				return r
 			}
 		}
+		if !temMaisOfertas(r) {
+			break
+		}
 	}
 	t.Fatalf("serviço fora das páginas: %+v", r)
 	return r
+}
+
+func temMaisOfertas(r domain.RespostaWhatsApp) bool {
+	for _, op := range r.Opcoes {
+		if op.ID == "mais" {
+			return true
+		}
+	}
+	return false
 }

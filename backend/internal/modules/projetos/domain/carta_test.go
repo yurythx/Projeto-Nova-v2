@@ -39,6 +39,16 @@ func TestCartaEEtapas(t *testing.T) {
 		if err != domain.ErrOrcamentoInvalido {
 			t.Fatalf("esperava orçamento inválido, obteve %v", err)
 		}
+		if _, _, err := domain.ValidarAbertura(domain.EntradaProjeto{}, domain.EntradaCarta{}, nil); err == nil {
+			t.Fatal("abertura sem título")
+		}
+		longo := domain.EntradaProjeto{Titulo: "Portal", Descricao: strings.Repeat("a", domain.DescricaoMax+1)}
+		if _, _, err := domain.ValidarAbertura(longo, domain.EntradaCarta{}, nil); err != domain.ErrCartaInvalida {
+			t.Fatalf("texto longo: %v", err)
+		}
+		if _, _, err := (domain.Plano5W2H{Titulo: "Portal", Onde: strings.Repeat("a", domain.CartaOndeMax+1)}).Normalizar(); err != domain.ErrCartaInvalida {
+			t.Fatalf("onde longo: %v", err)
+		}
 	})
 
 	t.Run("salvar a carta não pede etapas", func(t *testing.T) {
