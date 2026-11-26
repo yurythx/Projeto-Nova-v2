@@ -102,7 +102,7 @@ func (somaDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
 	return pgconn.CommandTag{}, nil
 }
 func (somaDB) Query(context.Context, string, ...any) (pgx.Rows, error) { return nil, nil }
-func (s somaDB) QueryRow(context.Context, string, ...any) pgx.Row      { return somaRow{s.n} }
+func (s somaDB) QueryRow(context.Context, string, ...any) pgx.Row      { return somaRow(s) }
 
 type somaRow struct{ n float64 }
 
