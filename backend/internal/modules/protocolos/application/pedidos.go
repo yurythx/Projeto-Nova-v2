@@ -251,9 +251,16 @@ func (s *Service) BuscarPedido(ctx context.Context, id uuid.UUID) (Ficha, error)
 	if err != nil {
 		return Ficha{}, err
 	}
-	ficha := Ficha{Pedido: p, Historico: hist}
+	serv, err := s.repo.BuscarServico(ctx, s.db, p.ServicoID)
+	if err != nil {
+		return Ficha{}, err
+	}
+	ficha := Ficha{Pedido: p, Historico: hist, Etapas: serv.Workflow.Ordenadas()}
 	if ficha.Historico == nil {
 		ficha.Historico = []domain.Historico{}
+	}
+	if ficha.Etapas == nil {
+		ficha.Etapas = []domain.Etapa{}
 	}
 	ag, err := s.repo.BuscarAgendamento(ctx, s.db, p.ID)
 	if err == nil {

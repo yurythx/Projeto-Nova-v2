@@ -129,7 +129,7 @@ func TestFluxoDoPedido(t *testing.T) {
 		t.Fatal(len(lista), lista, err)
 	}
 	ficha, err := s.BuscarPedido(ctx, ped.ID)
-	if err != nil || len(ficha.Historico) == 0 {
+	if err != nil || len(ficha.Historico) == 0 || ficha.Etapas == nil || len(ficha.Etapas) != 0 {
 		t.Fatal(ficha, err)
 	}
 	if _, err := s.Complementar(ctx, ped.ID, "envie o comprovante"); err != nil {
@@ -286,6 +286,15 @@ func TestAgendamentoEFalhas(t *testing.T) {
 	if _, err := s.Avancar(ctx, anda.ID); err != nil {
 		t.Fatal(err)
 	}
+	// A ficha leva as etapas do serviço em ordem; sem o serviço, não monta.
+	if ficha, err := s.BuscarPedido(ctx, anda.ID); err != nil || len(ficha.Etapas) != 2 || ficha.Etapas[0].ID != "a" {
+		t.Fatal(ficha.Etapas, err)
+	}
+	m.falha = "buscar-serv"
+	if _, err := s.BuscarPedido(ctx, anda.ID); err == nil {
+		t.Fatal("serviço da ficha")
+	}
+	m.falha = ""
 	s.run = func(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 		return fn(ctx, &stubTx{falha: 1})
 	}

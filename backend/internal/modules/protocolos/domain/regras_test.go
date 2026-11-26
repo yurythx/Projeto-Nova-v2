@@ -133,6 +133,12 @@ func TestServicoWorkflowAgenda(t *testing.T) {
 	if !ok || primeira.ID != "a" {
 		t.Fatalf("primeira: %+v", primeira)
 	}
+	if ord := w.Ordenadas(); len(ord) != 2 || ord[0].ID != "a" || ord[1].ID != "b" || w.Etapas[0].ID != "b" {
+		t.Fatalf("ordenadas sem mexer no original: %+v / %+v", ord, w.Etapas)
+	}
+	if ord := (Workflow{Etapas: w.Etapas}).Ordenadas(); ord != nil {
+		t.Fatalf("desligado não tem fluxo: %+v", ord)
+	}
 	seg, err := w.Seguinte("a")
 	if err != nil || seg.ID != "b" {
 		t.Fatalf("seguinte: %+v %v", seg, err)

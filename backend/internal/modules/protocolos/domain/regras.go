@@ -638,13 +638,22 @@ func (w Workflow) Primeira() (Etapa, bool) {
 	return primeira, true
 }
 
+// Ordenadas devolve as etapas na ordem do fluxo. Desligado, nenhuma.
+func (w Workflow) Ordenadas() []Etapa {
+	if !w.Ligado {
+		return nil
+	}
+	ordenadas := append([]Etapa(nil), w.Etapas...)
+	slices.SortFunc(ordenadas, func(a, b Etapa) int { return a.Ordem - b.Ordem })
+	return ordenadas
+}
+
 // Seguinte devolve a etapa depois da atual.
 func (w Workflow) Seguinte(atual string) (Etapa, error) {
 	if !w.Ligado || len(w.Etapas) == 0 {
 		return Etapa{}, ErrInvalido
 	}
-	ordenadas := append([]Etapa(nil), w.Etapas...)
-	slices.SortFunc(ordenadas, func(a, b Etapa) int { return a.Ordem - b.Ordem })
+	ordenadas := w.Ordenadas()
 	if atual == "" {
 		return ordenadas[0], nil
 	}

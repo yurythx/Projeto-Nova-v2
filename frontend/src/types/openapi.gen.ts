@@ -10659,6 +10659,7 @@ export interface components {
         };
         ProtocolosFicha: {
             agendamento?: components["schemas"]["ProtocolosAgendamento"];
+            etapas: components["schemas"]["ProtocolosEtapa"][];
             historico: components["schemas"]["ProtocolosHistorico"][];
             pedido: components["schemas"]["ProtocolosPedido"];
         };

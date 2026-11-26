@@ -12331,6 +12331,12 @@
           "agendamento": {
             "$ref": "#/components/schemas/ProtocolosAgendamento"
           },
+          "etapas": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolosEtapa"
+            },
+            "type": "array"
+          },
           "historico": {
             "items": {
               "$ref": "#/components/schemas/ProtocolosHistorico"
@@ -12342,6 +12348,7 @@
           }
         },
         "required": [
+          "etapas",
           "historico",
           "pedido"
         ],

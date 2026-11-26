@@ -46,6 +46,8 @@ type Ficha struct {
 	Pedido      domain.Pedido       `json:"pedido"`
 	Historico   []domain.Historico  `json:"historico"`
 	Agendamento *domain.Agendamento `json:"agendamento,omitempty"`
+	// Etapas do workflow do serviço, na ordem: a ficha desenha o fluxo.
+	Etapas []domain.Etapa `json:"etapas"`
 }
 
 // Abertura é o que o cidadão ou o balcão enviam.
