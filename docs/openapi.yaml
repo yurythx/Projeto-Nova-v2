@@ -9183,6 +9183,14 @@ components:
                 - status
             type: object
             x-projeto-nova-generated: true
+        ProtocolosMensagemPublica:
+            properties:
+                cpf:
+                    type: string
+                mensagem:
+                    type: string
+            type: object
+            x-projeto-nova-generated: true
         ProtocolosOrientacao:
             properties:
                 obrigatorio:
@@ -9247,6 +9255,8 @@ components:
                     type: string
                 justificativa:
                     type: string
+                mensagem_nova:
+                    type: boolean
                 nome:
                     type: string
                 numero:
@@ -9297,6 +9307,7 @@ components:
                 - formulario_id
                 - id
                 - justificativa
+                - mensagem_nova
                 - nome
                 - numero
                 - prioridade
@@ -26083,6 +26094,46 @@ paths:
             summary: Protocolos — Executar ação /protocolos/consulta/{numero}/arquivo
             tags:
                 - protocolos
+    /api/v1/protocolos/consulta/{numero}/mensagem:
+        post:
+            operationId: postProtocolosConsultaNumeroMensagem
+            parameters:
+                - in: path
+                  name: numero
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ProtocolosMensagemPublica'
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosConsulta'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Protocolos — Executar ação /protocolos/consulta/{numero}/mensagem
+            tags:
+                - protocolos
     /api/v1/protocolos/consulta/{numero}/resposta:
         post:
             operationId: postProtocolosConsultaNumeroResposta
@@ -26978,6 +27029,90 @@ paths:
             security:
                 - bearerAuth: []
             summary: Protocolos — Executar ação /protocolos/pedidos/{id}/encaminhar
+            tags:
+                - protocolos
+    /api/v1/protocolos/pedidos/{id}/mensagem:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProtocolosPedidosIdMensagem
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema: {}
+                required: true
+                x-projeto-nova-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosPedido'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolos — Executar ação /protocolos/pedidos/{id}/mensagem
+            tags:
+                - protocolos
+    /api/v1/protocolos/pedidos/{id}/mensagens/lidas:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postProtocolosPedidosIdMensagensLidas
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/ProtocolosPedido'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-projeto-nova-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Protocolos — Executar ação /protocolos/pedidos/{id}/mensagens/lidas
             tags:
                 - protocolos
     /api/v1/protocolos/pedidos/{id}/nota:

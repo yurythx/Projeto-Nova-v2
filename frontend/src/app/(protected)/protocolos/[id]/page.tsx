@@ -12,6 +12,7 @@ import {
   FileText,
   History,
   MessageSquareWarning,
+  MessagesSquare,
   Pencil,
   Printer,
   Send,
@@ -78,6 +79,7 @@ interface Pedido {
   processo_sei?: string;
   complemento_prazo?: string;
   exige_aceite?: boolean;
+  mensagem_nova?: boolean;
   encaminhamento?: {
     unidade_id: string;
     unidade_nome?: string;
@@ -132,7 +134,11 @@ const ROTULO_ACAO: Record<string, string> = {
   conclusao_enviada: "Conclusão Enviada para Aprovação",
   aprovacao: "Conclusão Aprovada",
   devolucao: "Conclusão Devolvida para Revisão",
+  mensagem_cidadao: "Mensagem do Cidadão",
+  mensagem_mesa: "Mensagem ao Cidadão",
 };
+
+const MENSAGENS = new Set(["mensagem_cidadao", "mensagem_mesa"]);
 
 /** Descrições que o servidor grava quando o evento não tem texto próprio: o título já diz. */
 const FATO_PADRAO = new Set([
@@ -186,6 +192,19 @@ export function FichaConteudo() {
   const complementando = pedido?.status === "em_complementacao";
   const estado = pedido ? situacaoDoPedido(pedido) : null;
   const travado = Boolean(estado?.travado);
+  const conversa = (ficha.data?.historico ?? []).filter((item) => MENSAGENS.has(item.acao));
+  const [resposta, setResposta] = useState("");
+
+  async function responderCidadao(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!pedido) return;
+    const ok = await postar(
+      `v1/protocolos/pedidos/${pedido.id}/mensagem`,
+      { mensagem: resposta.trim() },
+      "Mensagem enviada ao cidadão",
+    );
+    if (ok) setResposta("");
+  }
 
   function abrirAcao(tipo: AcaoAberta["tipo"]) {
     if (!pedido) return;
@@ -758,6 +777,94 @@ export function FichaConteudo() {
                     </div>
                   </Cartao>
                 )}
+
+                {/* Conversa com o cidadão */}
+                <Cartao>
+                  <TituloCartao>
+                    <MessagesSquare className="h-5 w-5" aria-hidden />
+                    Conversa com o Cidadão
+                  </TituloCartao>
+                  {pedido.mensagem_nova && (
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200">
+                      <span className="font-medium">O cidadão mandou mensagem nova.</span>
+                      {can("protocolos:tratar") && (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          className="text-xs font-semibold underline-offset-2 hover:underline"
+                          onClick={() =>
+                            void postar(
+                              `v1/protocolos/pedidos/${pedido.id}/mensagens/lidas`,
+                              {},
+                              "Mensagem marcada como lida",
+                            )
+                          }
+                        >
+                          Marcar como lida
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-3">
+                    {conversa.length === 0 && (
+                      <span className="text-xs text-gray-500 dark:text-slate-400">
+                        Nenhuma mensagem. O cidadão escreve pela consulta do protocolo na carta.
+                      </span>
+                    )}
+                    {conversa.map((item) => {
+                      const doCidadao = item.acao === "mensagem_cidadao";
+                      return (
+                        <div
+                          key={item.id}
+                          className={`max-w-[85%] rounded-lg border px-4 py-3 ${
+                            doCidadao
+                              ? "self-start border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-900/40"
+                              : "self-end border-sky-200 bg-sky-50 dark:border-sky-500/30 dark:bg-sky-500/10"
+                          }`}
+                        >
+                          <p className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                            {doCidadao ? pedido.nome : "Prefeitura"} ·{" "}
+                            <span className="font-normal">{fmtDateTime(item.created_at)}</span>
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-slate-100">
+                            {item.descricao}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {trata && (
+                    <form
+                      onSubmit={(e) => void responderCidadao(e)}
+                      className="mt-4 flex flex-col gap-2"
+                    >
+                      <label
+                        htmlFor="resposta-cidadao"
+                        className="text-sm font-medium text-gray-700 dark:text-slate-200"
+                      >
+                        Responder ao cidadão
+                      </label>
+                      <textarea
+                        id="resposta-cidadao"
+                        value={resposta}
+                        onChange={(e) => setResposta(e.target.value)}
+                        rows={3}
+                        maxLength={2000}
+                        disabled={travado}
+                        placeholder="O texto aparece na consulta pública e o cidadão recebe um aviso."
+                        className={`${CAMPO} resize-y`}
+                      />
+                      <button
+                        type="submit"
+                        disabled={pending || travado || !resposta.trim()}
+                        className={`${BOTAO_PRIMARIO} self-end`}
+                      >
+                        <Send className="h-4 w-4" aria-hidden />
+                        Enviar mensagem
+                      </button>
+                    </form>
+                  )}
+                </Cartao>
 
                 {/* Histórico */}
                 <Cartao>

@@ -340,10 +340,10 @@ func (r *PostgresRepository) AtualizarPedido(ctx context.Context, db database.DB
 	tag, err := db.Exec(ctx, `UPDATE protocolos_pedidos SET unidade_id=$2, departamento_id=$3, respostas=$4, campos=$5,
 		status=$6, etapa_id=$7, prazo_em=$8, decisao=$9, justificativa=$10, complemento=$11, responsavel_id=$12, updated_at=$13,
 		prioridade=$14, encaminhar_para=$15, encaminhar_justificativa=$16, encaminhar_prazo_dias=$17,
-		encaminhado_por=$18, encaminhado_em=$19, processo_sei=$20, complemento_prazo=$21, complemento_avisado=$22
+		encaminhado_por=$18, encaminhado_em=$19, processo_sei=$20, complemento_prazo=$21, complemento_avisado=$22, mensagem_nova=$23
 		WHERE id=$1`,
 		p.ID, p.UnidadeID, p.DepartamentoID, resp, campos, p.Status, p.EtapaID, p.PrazoEm, p.Decisao, p.Justificativa, p.Complemento, p.ResponsavelID, p.UpdatedAt,
-		p.Prioridade, enc.para, enc.justificativa, enc.prazo, enc.por, enc.em, p.ProcessoSEI, p.ComplementoPrazo, p.ComplementoAvisado)
+		p.Prioridade, enc.para, enc.justificativa, enc.prazo, enc.por, enc.em, p.ProcessoSEI, p.ComplementoPrazo, p.ComplementoAvisado, p.MensagemNova)
 	if err != nil {
 		return fmt.Errorf("protocolos.AtualizarPedido: %w", err)
 	}
@@ -361,7 +361,7 @@ func scanPedido(row pgx.Row) (domain.Pedido, error) {
 		&resp, &campos, &p.Status, &p.EtapaID, &p.Prioridade, &p.PrazoEm, &p.Decisao, &p.Justificativa, &p.Complemento,
 		&p.UsuarioID, &p.ResponsavelID, &p.CreatedAt, &p.UpdatedAt, &p.ServicoNome, &p.UnidadeNome,
 		&p.ResponsavelNome, &enc.para, &enc.justificativa, &enc.prazo, &enc.por, &enc.em, &enc.nome, &p.ExigeAceite,
-		&p.ProcessoSEI, &p.ComplementoPrazo, &p.ComplementoAvisado, &p.AprovadorID)
+		&p.ProcessoSEI, &p.ComplementoPrazo, &p.ComplementoAvisado, &p.AprovadorID, &p.MensagemNova)
 	if err != nil {
 		return domain.Pedido{}, traduz(err)
 	}
@@ -384,7 +384,7 @@ const colsPedido = `p.id, p.numero, p.servico_id, p.formulario_id, p.unidade_id,
 	COALESCE(NULLIF(btrim(ru.display_name), ''), ru.username, ''),
 	p.encaminhar_para, p.encaminhar_justificativa, p.encaminhar_prazo_dias, p.encaminhado_por, p.encaminhado_em,
 	COALESCE(ue.nome, ''), s.exige_aceite,
-	p.processo_sei, p.complemento_prazo, p.complemento_avisado, s.aprovador_id`
+	p.processo_sei, p.complemento_prazo, p.complemento_avisado, s.aprovador_id, p.mensagem_nova`
 
 // joinsPedido traz o serviço, a unidade, o responsável e a unidade do encaminhamento.
 const joinsPedido = ` FROM protocolos_pedidos p

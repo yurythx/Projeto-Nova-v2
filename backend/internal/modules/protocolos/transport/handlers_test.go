@@ -59,6 +59,15 @@ func (f falso) Abrir(context.Context, application.Abertura, bool) (domain.Pedido
 func (f falso) Consultar(context.Context, string) (domain.Consulta, error) {
 	return domain.Consulta{Numero: "SEMA202600001"}, f.erro
 }
+func (f falso) EnviarMensagemPublica(context.Context, string, string, string) (domain.Consulta, error) {
+	return domain.Consulta{Numero: "SEMA202600001"}, f.erro
+}
+func (f falso) EnviarMensagem(context.Context, uuid.UUID, string) (domain.Pedido, error) {
+	return domain.Pedido{}, f.erro
+}
+func (f falso) MarcarMensagensLidas(context.Context, uuid.UUID) (domain.Pedido, error) {
+	return domain.Pedido{}, f.erro
+}
 func (f falso) ResponderPublico(context.Context, string, string, string, []string) (domain.Consulta, error) {
 	return domain.Consulta{Numero: "SEMA202600001", Status: domain.StatusAndamento}, f.erro
 }
@@ -163,6 +172,9 @@ func TestRotas(t *testing.T) {
 		{h.Consultar, http.MethodGet, "", "SEMA202600001"},
 		{h.PedirArquivoComplemento, http.MethodPost, `{"cpf":"12345678900","nome":"doc.pdf","content_type":"application/pdf"}`, "SEMA202600001"},
 		{h.ResponderPublico, http.MethodPost, `{"cpf":"12345678900","mensagem":"segue"}`, "SEMA202600001"},
+		{h.EnviarMensagemPublica, http.MethodPost, `{"cpf":"12345678900","mensagem":"e aí?"}`, "SEMA202600001"},
+		{h.EnviarMensagem, http.MethodPost, `{"mensagem":"em análise"}`, id},
+		{h.MarcarMensagensLidas, http.MethodPost, "", id},
 		{h.ListarPedidos, http.MethodGet, "", ""},
 		{h.BuscarPedido, http.MethodGet, "", id},
 		{h.Complementar, http.MethodPost, `{"mensagem":"envie"}`, id},
@@ -242,6 +254,8 @@ func TestRotas(t *testing.T) {
 		{ruim.Consultar, http.MethodGet, "", "SEMA202600001"},
 		{ruim.PedirArquivoComplemento, http.MethodPost, `{"cpf":"12345678900","nome":"doc.pdf","content_type":"application/pdf"}`, "SEMA202600001"},
 		{ruim.ResponderPublico, http.MethodPost, `{"cpf":"12345678900","mensagem":"segue"}`, "SEMA202600001"},
+		{ruim.EnviarMensagemPublica, http.MethodPost, `{"cpf":"12345678900","mensagem":"e aí?"}`, "SEMA202600001"},
+		{ruim.EnviarMensagem, http.MethodPost, `{"mensagem":"em análise"}`, id},
 		{ruim.ListarPedidos, http.MethodGet, "", ""},
 		{ruim.BuscarPedido, http.MethodGet, "", id},
 		{ruim.Complementar, http.MethodPost, `{"mensagem":"envie"}`, id},
@@ -288,6 +302,8 @@ func TestRotas(t *testing.T) {
 		{h.PedirArquivo, "{", id},
 		{h.PedirArquivoComplemento, "{", "SEMA202600001"},
 		{h.ResponderPublico, "{", "SEMA202600001"},
+		{h.EnviarMensagemPublica, "{", "SEMA202600001"},
+		{h.EnviarMensagem, "{", id},
 		{h.PedirArquivo, `{"nome":"doc.pdf"}`, "nao"},
 		{h.LinkArquivo, "", "nao"},
 		{h.BuscarPedido, "", "nao"},

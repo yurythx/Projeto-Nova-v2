@@ -25,6 +25,7 @@ export interface PedidoResumo {
   exige_aceite?: boolean;
   aprovador_id?: string;
   processo_sei?: string;
+  mensagem_nova?: boolean;
   complemento_prazo?: string;
   encaminhamento?: {
     unidade_id: string;

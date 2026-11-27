@@ -320,9 +320,11 @@ type Pedido struct {
 	// ComplementoPrazo é até quando o cidadão responde; vencido, o pedido é cancelado.
 	ComplementoPrazo *time.Time `json:"complemento_prazo,omitempty"`
 	// ComplementoAvisado marca o lembrete da véspera já enviado ao cidadão.
-	ComplementoAvisado bool      `json:"-"`
-	CreatedAt          time.Time `json:"created_at"`
-	UpdatedAt          time.Time `json:"updated_at"`
+	ComplementoAvisado bool `json:"-"`
+	// MensagemNova acende quando o cidadão escreve e apaga quando a mesa responde ou lê.
+	MensagemNova bool      `json:"mensagem_nova"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // Historico é uma linha da trilha do pedido.

@@ -304,7 +304,7 @@ func (s *Service) ver(ctx context.Context, unidade uuid.UUID) error {
 }
 
 // acoesComDono só andam com responsável quando o serviço exige aceite.
-var acoesComDono = map[string]bool{"complemento": true, "avanco": true, "conclusao": true, domain.AcaoAguardaAprovacao: true}
+var acoesComDono = map[string]bool{"complemento": true, "avanco": true, "conclusao": true, domain.AcaoAguardaAprovacao: true, domain.AcaoMensagemMesa: true}
 
 func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato, descricao string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
 	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, evento, acao, fato, texto(descricao), nil, fn)

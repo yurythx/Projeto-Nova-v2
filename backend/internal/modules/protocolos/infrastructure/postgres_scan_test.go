@@ -342,7 +342,7 @@ func linhaPedido(id uuid.UUID, agora time.Time, resp, campos []byte) []any {
 	return []any{id, "SEMA202600001", id, id, id, (*uuid.UUID)(nil), "Maria", "12345678900", "", "", resp, campos,
 		"novo", "", "normal", (*time.Time)(nil), "", "", "", (*uuid.UUID)(nil), (*uuid.UUID)(nil), agora, agora, "Alvará", "Meio Ambiente",
 		"", (*uuid.UUID)(nil), "", 0, (*uuid.UUID)(nil), (*time.Time)(nil), "", false,
-		"", (*time.Time)(nil), false, (*uuid.UUID)(nil)}
+		"", (*time.Time)(nil), false, (*uuid.UUID)(nil), false}
 }
 
 func must(b []byte, err error) []byte {

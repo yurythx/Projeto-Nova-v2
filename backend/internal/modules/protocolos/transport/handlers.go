@@ -18,6 +18,9 @@ import (
 
 // Casos é o que o HTTP precisa do caso de uso.
 type Casos interface {
+	EnviarMensagemPublica(ctx context.Context, numero, cpf, mensagem string) (domain.Consulta, error)
+	EnviarMensagem(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
+	MarcarMensagensLidas(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
 	SalvarFormulario(ctx context.Context, f domain.Formulario) (domain.Formulario, error)
 	ListarFormularios(ctx context.Context) ([]domain.Formulario, error)
 	SalvarServico(ctx context.Context, s domain.Servico) (domain.Servico, error)
@@ -337,6 +340,41 @@ func (h *Handlers) ResponderPublico(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteOK(w, consulta)
+}
+
+type mensagemPublica struct {
+	CPF      string `json:"cpf"`
+	Mensagem string `json:"mensagem"`
+}
+
+// EnviarMensagemPublica é a mensagem do cidadão pela consulta.
+func (h *Handlers) EnviarMensagemPublica(w http.ResponseWriter, r *http.Request) {
+	var body mensagemPublica
+	if err := httputil.Bind(w, r, &body); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	consulta, err := h.casos.EnviarMensagemPublica(r.Context(), chi.URLParam(r, "numero"), body.CPF, body.Mensagem)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, consulta)
+}
+
+// EnviarMensagem é a resposta da mesa ao cidadão.
+func (h *Handlers) EnviarMensagem(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[textoBody](h, w, r)
+	if !ok {
+		return
+	}
+	p, err := h.casos.EnviarMensagem(r.Context(), id, body.Mensagem)
+	h.responder(w, r, p, err)
+}
+
+// MarcarMensagensLidas apaga a novidade da conversa.
+func (h *Handlers) MarcarMensagensLidas(w http.ResponseWriter, r *http.Request) {
+	h.simples(w, r, h.casos.MarcarMensagensLidas)
 }
 
 func (h *Handlers) Consultar(w http.ResponseWriter, r *http.Request) {

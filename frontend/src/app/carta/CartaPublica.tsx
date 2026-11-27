@@ -13,6 +13,7 @@ import {
   FilePlus2,
   FileText,
   MessageSquareWarning,
+  MessagesSquare,
   Search,
   Star,
   XCircle,
@@ -358,6 +359,12 @@ function CartaoDoServico({ servico }: { servico: Servico }) {
 function marcaDoHistorico(acao: string): { cor: string; icone: ReactNode } {
   const classe = "h-4 w-4";
   switch (acao) {
+    case "mensagem_cidadao":
+    case "mensagem_mesa":
+      return {
+        cor: "bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300",
+        icone: <MessagesSquare className={classe} aria-hidden />,
+      };
     case "criado":
       return {
         cor: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300",
@@ -438,7 +445,38 @@ function ResultadoConsulta({
     }
   }
 
+  async function escrever(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setEnviando(true);
+    onErro("");
+    const dados = new FormData(form);
+    try {
+      onAtualizar(
+        await publicPost<Consulta>(
+          `v1/protocolos/consulta/${encodeURIComponent(consulta.numero)}/mensagem`,
+          {
+            cpf: String(dados.get("cpf") ?? "").trim(),
+            mensagem: String(dados.get("mensagem") ?? "").trim(),
+          },
+        ),
+      );
+      form.reset();
+    } catch (err) {
+      onErro(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Não foi possível enviar a mensagem.",
+      );
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   const historico = [...(consulta.historico ?? [])].reverse();
+  const aberto = !["concluido", "aprovado", "rejeitado", "cancelado", "em_complementacao"].includes(
+    consulta.status,
+  );
 
   return (
     <div className="flex flex-col gap-6 rounded-xl border border-gray-200 p-5 sm:p-6 dark:border-slate-700">
@@ -528,7 +566,14 @@ function ResultadoConsulta({
                     {marca.icone}
                   </span>
                   <div className="min-w-0 pt-1">
-                    <p className="text-sm font-medium text-gray-800 dark:text-slate-100">
+                    {(item.acao === "mensagem_cidadao" || item.acao === "mensagem_mesa") && (
+                      <p className="text-xs font-semibold uppercase text-sky-700 dark:text-sky-300">
+                        {item.acao === "mensagem_cidadao"
+                          ? "Sua mensagem"
+                          : "Mensagem da prefeitura"}
+                      </p>
+                    )}
+                    <p className="whitespace-pre-wrap text-sm font-medium text-gray-800 dark:text-slate-100">
                       {item.descricao}
                     </p>
                     <p className={`text-xs ${TEXTO_FRACO}`}>
@@ -579,6 +624,45 @@ function ResultadoConsulta({
           </Rotulado>
           <button type="submit" disabled={enviando} className={`${BOTAO_PRIMARIO} self-end`}>
             Enviar resposta
+          </button>
+        </form>
+      )}
+
+      {aberto && (
+        <form
+          onSubmit={(e) => void escrever(e)}
+          aria-label="Mensagem à prefeitura"
+          className="flex flex-col gap-4 rounded-xl border border-sky-200 bg-sky-50/50 p-5 dark:border-sky-500/30 dark:bg-sky-500/10"
+        >
+          <div>
+            <h3 className={`text-base font-semibold ${TEXTO_FORTE}`}>Mensagem à prefeitura</h3>
+            <p className={`text-xs ${TEXTO_FRACO}`}>
+              Tire uma dúvida ou acrescente uma informação. A resposta aparece no histórico, e você
+              recebe um aviso no contato informado no pedido.
+            </p>
+          </div>
+          <Rotulado id="cpf-mensagem" rotulo="CPF do pedido *">
+            <input
+              id="cpf-mensagem"
+              name="cpf"
+              required
+              inputMode="numeric"
+              maxLength={14}
+              className={CAMPO}
+            />
+          </Rotulado>
+          <Rotulado id="texto-mensagem" rotulo="Mensagem *">
+            <textarea
+              id="texto-mensagem"
+              name="mensagem"
+              required
+              rows={3}
+              maxLength={1000}
+              className={`${CAMPO} min-h-[80px] resize-y`}
+            />
+          </Rotulado>
+          <button type="submit" disabled={enviando} className={`${BOTAO_PRIMARIO} self-end`}>
+            Enviar mensagem
           </button>
         </form>
       )}

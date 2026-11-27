@@ -20,6 +20,7 @@ func RegisterPublic(r chi.Router, h *Handlers) {
 	r.Get("/protocolos/consulta/{numero}", h.Consultar)
 	r.Post("/protocolos/consulta/{numero}/arquivo", h.PedirArquivoComplemento)
 	r.Post("/protocolos/consulta/{numero}/resposta", h.ResponderPublico)
+	r.Post("/protocolos/consulta/{numero}/mensagem", h.EnviarMensagemPublica)
 }
 
 // RegisterAuthed monta a gestão e a mesa. A permissão da rota é conferida de novo na unidade.
@@ -46,6 +47,8 @@ func RegisterAuthed(r chi.Router, h *Handlers, logger *slog.Logger) {
 		r.With(tratar).Post("/{id}/complemento", h.Complementar)
 		r.With(tratar).Post("/{id}/resposta", h.Responder)
 		r.With(tratar).Post("/{id}/nota", h.Anotar)
+		r.With(tratar).Post("/{id}/mensagem", h.EnviarMensagem)
+		r.With(tratar).Post("/{id}/mensagens/lidas", h.MarcarMensagensLidas)
 		r.With(tratar).Post("/{id}/editar", h.Editar)
 		r.With(tratar).Post("/{id}/avancar", h.Avancar)
 		r.With(tratar).Post("/{id}/concluir", h.Concluir)

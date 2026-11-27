@@ -50,7 +50,7 @@ import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 const POR_PAGINA = 10;
 
-type Dono = "todos" | "meus" | "sem" | "encaminhados" | "aprovacao";
+type Dono = "todos" | "meus" | "sem" | "encaminhados" | "aprovacao" | "mensagens";
 
 const ABAS_PRAZO = [
   { value: "todos", label: "Todos" },
@@ -103,16 +103,18 @@ function PainelDeProtocolos() {
       sem: pedidos.filter((p) => !p.responsavel_id && !FINAIS.has(p.status)).length,
       encaminhados: pedidos.filter((p) => p.encaminhamento).length,
       aprovacao: pedidos.filter((p) => situacaoDoPedido(p).aguardando).length,
+      mensagens: pedidos.filter((p) => p.mensagem_nova).length,
     }),
     [pedidos, meuId],
   );
   const pedidosDoDono = useMemo(
     () =>
       pedidos.filter((p) => {
-        if (dono === "meus") return Boolean(meuId) && p.responsavel_id === meuId;
-        if (dono === "sem") return !p.responsavel_id && !FINAIS.has(p.status);
         if (sei === "com" && !p.processo_sei) return false;
         if (sei === "sem" && p.processo_sei) return false;
+        if (dono === "meus") return Boolean(meuId) && p.responsavel_id === meuId;
+        if (dono === "sem") return !p.responsavel_id && !FINAIS.has(p.status);
+        if (dono === "mensagens") return Boolean(p.mensagem_nova);
         if (dono === "encaminhados") return Boolean(p.encaminhamento);
         if (dono === "aprovacao") return situacaoDoPedido(p).aguardando;
         return true;
@@ -215,6 +217,9 @@ function PainelDeProtocolos() {
               </Link>
             </>
           )}
+          <Link href="/protocolos/relatorios" className={BOTAO_SECUNDARIO}>
+            Relatórios
+          </Link>
           <Link href="/carta" className={BOTAO_SECUNDARIO}>
             Carta pública
           </Link>
@@ -307,6 +312,7 @@ function PainelDeProtocolos() {
                 label: "Aguardando aprovação",
                 total: contagemDono.aprovacao,
               },
+              { value: "mensagens", label: "Mensagens novas", total: contagemDono.mensagens },
             ]}
           />
         </div>
@@ -496,6 +502,11 @@ function PainelDeProtocolos() {
                               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
                                 ⏳ Encaminhamento para{" "}
                                 {p.encaminhamento.unidade_nome || "outra unidade"}
+                              </span>
+                            )}
+                            {p.mensagem_nova && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-sky-600 px-2.5 py-0.5 text-xs font-semibold text-white dark:bg-sky-500">
+                                💬 Mensagem nova
                               </span>
                             )}
                             {p.processo_sei && (

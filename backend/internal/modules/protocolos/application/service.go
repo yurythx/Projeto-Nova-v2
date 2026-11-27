@@ -31,9 +31,12 @@ const (
 	EventoCancelado   = "protocolos.pedido.cancelado"
 	EventoFalta       = "protocolos.falta.registrada"
 	EventoNota        = "protocolos.pedido.nota"
-	EventoEdicao      = "protocolos.pedido.editado"
-	EventoFormulario  = "protocolos.formulario.salvo"
-	EventoServico     = "protocolos.servico.salvo"
+	// A conversa com o cidadão.
+	EventoMensagemCidadao = "protocolos.pedido.mensagem_cidadao"
+	EventoMensagemMesa    = "protocolos.pedido.mensagem_mesa"
+	EventoEdicao          = "protocolos.pedido.editado"
+	EventoFormulario      = "protocolos.formulario.salvo"
+	EventoServico         = "protocolos.servico.salvo"
 	// Aceite, encaminhamento e aprovação.
 	EventoAceite           = "protocolos.pedido.aceito"
 	EventoTransferencia    = "protocolos.pedido.transferido"
@@ -141,6 +144,8 @@ func MapError(err error) error {
 		return apperrors.Conflict("pedido com encaminhamento pendente")
 	case errors.Is(err, domain.ErrAprovacao):
 		return apperrors.Conflict("conclusão aguardando aprovação")
+	case errors.Is(err, domain.ErrMuitasMensagens):
+		return apperrors.Conflict("aguarde a resposta da prefeitura antes de mandar outra mensagem")
 	default:
 		return err
 	}
