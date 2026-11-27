@@ -248,18 +248,22 @@ type Agenda struct {
 
 // Servico é o que o cidadão escolhe na carta.
 type Servico struct {
-	ID                   uuid.UUID    `json:"id"`
-	UnidadeID            uuid.UUID    `json:"unidade_id"`
-	UnidadeNome          string       `json:"unidade_nome,omitempty"`
-	FormularioID         uuid.UUID    `json:"formulario_id"`
-	Nome                 string       `json:"nome"`
-	Descricao            string       `json:"descricao"`
-	Categoria            string       `json:"categoria"`
-	PrazoDias            int          `json:"prazo_dias"`
-	TaxaCentavos         int          `json:"taxa_centavos"`
-	Destaque             bool         `json:"destaque"`
-	Ativo                bool         `json:"ativo"`
-	AprovaSozinho        bool         `json:"aprova_sozinho"`
+	ID            uuid.UUID `json:"id"`
+	UnidadeID     uuid.UUID `json:"unidade_id"`
+	UnidadeNome   string    `json:"unidade_nome,omitempty"`
+	FormularioID  uuid.UUID `json:"formulario_id"`
+	Nome          string    `json:"nome"`
+	Descricao     string    `json:"descricao"`
+	Categoria     string    `json:"categoria"`
+	PrazoDias     int       `json:"prazo_dias"`
+	TaxaCentavos  int       `json:"taxa_centavos"`
+	Destaque      bool      `json:"destaque"`
+	Ativo         bool      `json:"ativo"`
+	AprovaSozinho bool      `json:"aprova_sozinho"`
+	// ExigeAceite trava o tratamento até alguém aceitar o pedido.
+	ExigeAceite bool `json:"exige_aceite"`
+	// ExigeAprovacao manda a conclusão para quem gere a unidade aprovar.
+	ExigeAprovacao       bool         `json:"exige_aprovacao"`
 	ExigeAgendamento     bool         `json:"exige_agendamento"`
 	SoResponsavelTecnico bool         `json:"so_responsavel_tecnico"`
 	ImpedirCPFAberto     bool         `json:"impedir_cpf_aberto"`
@@ -298,8 +302,14 @@ type Pedido struct {
 	Complemento    string         `json:"complemento"`
 	UsuarioID      *uuid.UUID     `json:"usuario_id,omitempty"`
 	ResponsavelID  *uuid.UUID     `json:"responsavel_id,omitempty"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
+	// ResponsavelNome vem do diretório na leitura.
+	ResponsavelNome string `json:"responsavel_nome,omitempty"`
+	// Encaminhamento pendente a outra unidade. Enquanto existe, o pedido não muda.
+	Encaminhamento *Encaminhamento `json:"encaminhamento,omitempty"`
+	// ExigeAceite vem do serviço: a mesa desabilita o tratamento do pedido sem dono.
+	ExigeAceite bool      `json:"exige_aceite"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // Historico é uma linha da trilha do pedido.
@@ -897,7 +907,7 @@ func Abrir(s Servico, f Formulario, numero, nome, cpf, email, telefone, priorida
 		FormularioID: f.ID, UnidadeID: s.UnidadeID, Nome: nome, CPF: cpf,
 		Email: strings.TrimSpace(email), Telefone: strings.TrimSpace(telefone),
 		Respostas: respostas, Campos: f.Campos, Status: StatusNovo, Prioridade: Prioridade(prioridade),
-		UsuarioID: usuario, CreatedAt: agora, UpdatedAt: agora,
+		UsuarioID: usuario, CreatedAt: agora, UpdatedAt: agora, ExigeAceite: s.ExigeAceite,
 	}
 	if etapa, ok := s.Workflow.Primeira(); ok {
 		var err error
@@ -1019,6 +1029,9 @@ func (p Pedido) Concluir(decisao, justificativa string, agora time.Time) (Pedido
 	if p.Status == StatusComplementacao {
 		return Pedido{}, ErrComplemento
 	}
+	if p.Status == StatusAguardando && p.Decisao != "" {
+		return Pedido{}, ErrAprovacao
+	}
 	if decisao != DecisaoFavoravel && decisao != DecisaoDesfavoravel {
 		return Pedido{}, ErrInvalido
 	}
@@ -1074,8 +1087,8 @@ func Publico(p Pedido, campoAnonimo string, historico []Historico, agenda *Agend
 			continue
 		}
 		h.Anexos = nil
-		if h.Acao == AcaoEdicao {
-			h.Descricao = "pedido atualizado"
+		if texto, ok := AcaoPublica(h.Acao); ok {
+			h.Descricao = texto
 		}
 		publico = append(publico, h)
 	}

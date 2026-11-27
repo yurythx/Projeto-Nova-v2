@@ -58,6 +58,8 @@ func TestErrosDoBanco(t *testing.T) {
 		func(db database.DBTX) error { _, err := r.ListarHoras(ctx, db, id, "2026-11-16"); return err },
 		func(db database.DBTX) error { _, _, err := r.LerFaltas(ctx, db, "1"); return err },
 		func(db database.DBTX) error { return r.SomarFalta(ctx, db, "1", time.Now()) },
+		func(db database.DBTX) error { _, err := r.Pessoa(ctx, db, id); return err },
+		func(db database.DBTX) error { _, err := r.Pessoas(ctx, db, id); return err },
 	}
 	for i, ch := range chamadas {
 		if err := ch(dbtest.Fail{}); err == nil {

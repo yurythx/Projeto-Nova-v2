@@ -29,6 +29,7 @@ type mem struct {
 	ultima      time.Time
 	falha       string
 	numeros     map[string]bool
+	pessoas     map[uuid.UUID]string
 }
 
 func novoMem() *mem {
@@ -36,6 +37,7 @@ func novoMem() *mem {
 		sigla: "SEMA", nome: "Meio Ambiente",
 		forms: map[uuid.UUID]domain.Formulario{}, servs: map[uuid.UUID]domain.Servico{},
 		pedidos: map[uuid.UUID]domain.Pedido{}, resp: map[string]bool{}, numeros: map[string]bool{},
+		pessoas: map[uuid.UUID]string{},
 	}
 }
 
@@ -387,4 +389,28 @@ func servicoTeste(m *mem) *Service {
 	n := 0
 	s.sorteio = func() int { n++; return n }
 	return s
+}
+
+func (m *mem) Pessoa(_ context.Context, _ database.DBTX, id uuid.UUID) (string, error) {
+	if err := m.erra("pessoa"); err != nil {
+		return "", err
+	}
+	nome, ok := m.pessoas[id]
+	if !ok {
+		return "", domain.ErrNaoEncontrado
+	}
+	return nome, nil
+}
+func (m *mem) Pessoas(context.Context, database.DBTX, uuid.UUID) ([]domain.Pessoa, error) {
+	if m.falha == "nulo" {
+		return nil, nil
+	}
+	if err := m.erra("pessoas"); err != nil {
+		return nil, err
+	}
+	out := []domain.Pessoa{}
+	for id, nome := range m.pessoas {
+		out = append(out, domain.Pessoa{ID: id, Nome: nome})
+	}
+	return out, nil
 }

@@ -5,6 +5,7 @@ import { Suspense, useState, type FormEvent, type ReactNode } from "react";
 
 import {
   ArrowLeft,
+  ArrowRightLeft,
   CalendarDays,
   CheckCircle2,
   Download,
@@ -13,14 +14,23 @@ import {
   MessageSquareWarning,
   Pencil,
   Printer,
+  Send,
+  ShieldCheck,
   User,
+  UserCheck,
   Zap,
 } from "lucide-react";
 
 import { DataState } from "@/components/plataforma/DataState";
 import { useIdDaRota } from "@/components/plataforma/PainelDoQuadro";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
-import { ModalDeAcao, type AcaoAberta } from "@/components/protocolos/AcoesDoPedido";
+import {
+  diaDoPrazo,
+  ModalDeAcao,
+  MOTIVO_TRAVADO,
+  situacaoDoPedido,
+  type AcaoAberta,
+} from "@/components/protocolos/AcoesDoPedido";
 import {
   dataCurta,
   FINAIS,
@@ -35,9 +45,9 @@ import {
 import { BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO } from "@/components/protocolos/ui";
 import { Dialog } from "@/components/ui/Dialog";
 import { apiClient } from "@/lib/api/client";
-import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
-import type { OrgTree, UserAdmin } from "@/lib/plataforma/types";
+import type { OrgTree } from "@/lib/plataforma/types";
 
 interface Campo {
   id: string;
@@ -62,6 +72,14 @@ interface Pedido {
   prioridade: string;
   prazo_em?: string;
   responsavel_id?: string;
+  responsavel_nome?: string;
+  exige_aceite?: boolean;
+  encaminhamento?: {
+    unidade_id: string;
+    unidade_nome?: string;
+    justificativa?: string;
+    prazo_dias?: number;
+  } | null;
   complemento: string;
   decisao: string;
   justificativa: string;
@@ -102,6 +120,14 @@ const ROTULO_ACAO: Record<string, string> = {
   edicao: "Dados Editados",
   conclusao: "Protocolo Concluído",
   cancelado: "Protocolo Cancelado",
+  aceite: "Responsabilidade Aceita",
+  transferencia: "Responsabilidade Transferida",
+  encaminhamento: "Encaminhamento Solicitado",
+  encaminhamento_aceito: "Encaminhamento Aceito",
+  encaminhamento_recusado: "Encaminhamento Recusado",
+  conclusao_enviada: "Conclusão Enviada para Aprovação",
+  aprovacao: "Conclusão Aprovada",
+  devolucao: "Conclusão Devolvida para Revisão",
 };
 
 /** Descrições que o servidor grava quando o evento não tem texto próprio: o título já diz. */
@@ -113,6 +139,7 @@ const FATO_PADRAO = new Set([
   "há complementação",
   "complementação respondida",
   "pedido atualizado",
+  "conclusão aprovada",
 ]);
 
 const CAMPO_EDITAVEL = new Set([
@@ -143,9 +170,6 @@ export function FichaConteudo() {
   const { can } = usePlataforma();
   const ficha = useApiQuery<Ficha>(id ? `v1/protocolos/pedidos/${id}` : null);
   const arvore = useApiQuery<OrgTree[]>(id ? "v1/iam/org-tree" : null);
-  const pessoas = useApiPage<UserAdmin>(
-    can("users:read") ? withQuery("v1/users", { active: true, page_size: 50 }) : null,
-  );
   const { run, pending } = useAction();
   const [acao, setAcao] = useState<AcaoAberta | null>(null);
   const [editando, setEditando] = useState(false);
@@ -154,7 +178,22 @@ export function FichaConteudo() {
   const etapas = ficha.data?.etapas ?? [];
   const agendamento = ficha.data?.agendamento;
   const trata = Boolean(can("protocolos:tratar") && pedido && !FINAIS.has(pedido.status));
+  const gere = can("protocolos:gerir");
   const complementando = pedido?.status === "em_complementacao";
+  const estado = pedido ? situacaoDoPedido(pedido) : null;
+  const travado = Boolean(estado?.travado);
+
+  function abrirAcao(tipo: AcaoAberta["tipo"]) {
+    if (!pedido) return;
+    setAcao({
+      tipo,
+      pedidoId: pedido.id,
+      numero: pedido.numero,
+      unidadeId: pedido.unidade_id,
+      prioridade: pedido.prioridade,
+      prazo: diaDoPrazo(pedido.prazo_em),
+    });
+  }
 
   async function baixar(campo: string) {
     const link = await run(() =>
@@ -175,14 +214,19 @@ export function FichaConteudo() {
     e.preventDefault();
     if (!pedido) return;
     const dados = new FormData(e.currentTarget);
+    const editaveis = (pedido.campos ?? []).filter((campo) => CAMPO_EDITAVEL.has(campo.tipo));
     const respostas: Record<string, unknown> = { ...(pedido.respostas ?? {}) };
-    for (const campo of pedido.campos ?? []) {
-      if (!CAMPO_EDITAVEL.has(campo.tipo)) continue;
+    for (const campo of editaveis) {
       respostas[campo.id] = String(dados.get(`campo-${campo.id}`) ?? "");
     }
     const ok = await postar(
       `v1/protocolos/pedidos/${pedido.id}/editar`,
-      { justificativa: String(dados.get("justificativa") ?? ""), respostas },
+      {
+        justificativa: String(dados.get("justificativa") ?? ""),
+        prioridade: String(dados.get("prioridade") ?? ""),
+        prazo: String(dados.get("prazo") ?? ""),
+        ...(editaveis.length > 0 ? { respostas } : {}),
+      },
       "Dados do protocolo atualizados",
     );
     if (ok) setEditando(false);
@@ -282,6 +326,122 @@ export function FichaConteudo() {
                   </div>
                 )}
 
+                {/* Encaminhamento pendente */}
+                {pedido.encaminhamento && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-l-4 border-amber-500 bg-amber-50 p-5 text-sm dark:bg-amber-500/10">
+                    <div className="flex items-start gap-3">
+                      <Send className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden />
+                      <div>
+                        <p className="font-semibold text-amber-700 dark:text-amber-300">
+                          Encaminhamento para{" "}
+                          {pedido.encaminhamento.unidade_nome || "outra unidade"} aguardando aceite
+                        </p>
+                        {pedido.encaminhamento.justificativa && (
+                          <p className="text-gray-700 dark:text-slate-100">
+                            {pedido.encaminhamento.justificativa}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                          O protocolo fica parado até a unidade de destino decidir.
+                          {(pedido.encaminhamento.prazo_dias ?? 0) > 0 &&
+                            ` Prazo no destino: ${pedido.encaminhamento.prazo_dias} dias úteis.`}
+                        </p>
+                      </div>
+                    </div>
+                    {trata && (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={pending}
+                          className={BOTAO_PRIMARIO}
+                          onClick={() =>
+                            void postar(
+                              `v1/protocolos/pedidos/${pedido.id}/encaminhamento/aceitar`,
+                              {},
+                              "Encaminhamento aceito: o protocolo mudou de unidade",
+                            )
+                          }
+                        >
+                          Aceitar encaminhamento
+                        </button>
+                        <button
+                          type="button"
+                          className={BOTAO_SECUNDARIO}
+                          onClick={() => abrirAcao("recusar_encaminhamento")}
+                        >
+                          Recusar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Conclusão aguardando aprovação */}
+                {estado?.aguardando && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-l-4 border-violet-500 bg-violet-50 p-5 text-sm dark:bg-violet-500/10">
+                    <div className="flex items-start gap-3">
+                      <ShieldCheck
+                        className="h-5 w-5 text-violet-600 dark:text-violet-300"
+                        aria-hidden
+                      />
+                      <div>
+                        <p className="font-semibold text-violet-700 dark:text-violet-200">
+                          Conclusão aguardando aprovação ·{" "}
+                          {pedido.decisao === "desfavoravel" ? "Desfavorável" : "Favorável"}
+                        </p>
+                        <p className="text-gray-700 dark:text-slate-100">{pedido.justificativa}</p>
+                      </div>
+                    </div>
+                    {gere ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={pending}
+                          className={BOTAO_PRIMARIO}
+                          onClick={() =>
+                            void postar(
+                              `v1/protocolos/pedidos/${pedido.id}/aprovar`,
+                              {},
+                              "Conclusão aprovada",
+                            )
+                          }
+                        >
+                          Aprovar conclusão
+                        </button>
+                        <button
+                          type="button"
+                          className={BOTAO_SECUNDARIO}
+                          onClick={() => abrirAcao("devolver")}
+                        >
+                          Devolver para revisão
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        Quem gere a unidade aprova ou devolve.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Aceite pendente */}
+                {travado && !estado?.encaminhado && trata && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-l-4 border-blue-500 bg-blue-50 p-5 text-sm dark:bg-blue-500/10">
+                    <p className="text-blue-800 dark:text-blue-200">
+                      Este serviço exige que alguém aceite o protocolo antes de tratá-lo.
+                    </p>
+                    <button
+                      type="button"
+                      className={BOTAO_PRIMARIO}
+                      disabled={complementando}
+                      onClick={() => abrirAcao("aceitar")}
+                    >
+                      <UserCheck className="h-4 w-4" aria-hidden />
+                      Aceitar
+                    </button>
+                  </div>
+                )}
+
                 {/* Decisão */}
                 {FINAIS.has(pedido.status) && pedido.justificativa && (
                   <div
@@ -334,7 +494,7 @@ export function FichaConteudo() {
                       {nomeNaArvore(pedido.departamento_id, arvore.data) || "N/A"}
                     </Info>
                     <Info rotulo="Responsável">
-                      {nomeDaPessoa(pedido.responsavel_id, pessoas.data?.items) || "N/A"}
+                      {pedido.responsavel_nome || "Aguardando aceite"}
                     </Info>
                     <Info rotulo="Data de Criação">{dataCurta(pedido.created_at)}</Info>
                     <Info rotulo="Prazo">
@@ -432,17 +592,51 @@ export function FichaConteudo() {
 
               {/* Barra lateral */}
               <div className="flex flex-col gap-6">
-                {trata && (
+                {trata && !estado?.encaminhado && !estado?.aguardando && (
                   <Cartao className="border-t-4 border-t-blue-500">
                     <TituloCartao>
                       <Zap className="h-5 w-5 text-blue-500" aria-hidden />
                       Ações
                     </TituloCartao>
                     <div className="flex flex-col gap-2">
+                      {estado?.semDono ? (
+                        <button
+                          type="button"
+                          disabled={complementando}
+                          className={BOTAO_PRIMARIO}
+                          onClick={() => abrirAcao("aceitar")}
+                        >
+                          <UserCheck className="h-4 w-4" aria-hidden />
+                          Aceitar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={BOTAO_SECUNDARIO}
+                          onClick={() => abrirAcao("transferir")}
+                        >
+                          <ArrowRightLeft className="h-4 w-4" aria-hidden />
+                          Transferir
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={complementando}
+                        className={BOTAO_SECUNDARIO}
+                        onClick={() => abrirAcao("encaminhar")}
+                      >
+                        <Send className="h-4 w-4" aria-hidden />
+                        Encaminhar para outra unidade
+                      </button>
+                      {travado && (
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                          {MOTIVO_TRAVADO}: complementação, nota, etapa e conclusão.
+                        </p>
+                      )}
                       {pedido.etapa_id && !complementando && (
                         <button
                           type="button"
-                          disabled={pending}
+                          disabled={pending || travado}
                           className={BOTAO_PRIMARIO}
                           onClick={() =>
                             void postar(
@@ -472,6 +666,7 @@ export function FichaConteudo() {
                       ) : (
                         <button
                           type="button"
+                          disabled={travado}
                           className={BOTAO_SECUNDARIO}
                           onClick={() =>
                             setAcao({
@@ -486,6 +681,7 @@ export function FichaConteudo() {
                       )}
                       <button
                         type="button"
+                        disabled={travado}
                         className={BOTAO_SECUNDARIO}
                         onClick={() =>
                           setAcao({ tipo: "nota", pedidoId: pedido.id, numero: pedido.numero })
@@ -493,16 +689,14 @@ export function FichaConteudo() {
                       >
                         Adicionar nota
                       </button>
-                      {(pedido.campos ?? []).some((c) => CAMPO_EDITAVEL.has(c.tipo)) && (
-                        <button
-                          type="button"
-                          className={BOTAO_SECUNDARIO}
-                          onClick={() => setEditando(true)}
-                        >
-                          <Pencil className="h-4 w-4" aria-hidden />
-                          Editar dados
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={BOTAO_SECUNDARIO}
+                        onClick={() => setEditando(true)}
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden />
+                        Editar dados
+                      </button>
                       {agendamento &&
                         (agendamento.status === "agendado" ||
                           agendamento.status === "confirmado") && (
@@ -524,7 +718,8 @@ export function FichaConteudo() {
                       {!complementando && (
                         <button
                           type="button"
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+                          disabled={travado}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                           onClick={() =>
                             setAcao({
                               tipo: "concluir",
@@ -615,6 +810,42 @@ export function FichaConteudo() {
               size="lg"
             >
               <form onSubmit={(e) => void salvarEdicao(e)} className="mt-4 flex flex-col gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="edicao-prioridade"
+                      className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-400"
+                    >
+                      Prioridade
+                    </label>
+                    <select
+                      id="edicao-prioridade"
+                      name="prioridade"
+                      defaultValue={pedido.prioridade}
+                      className={CAMPO}
+                    >
+                      <option value="baixa">Baixa</option>
+                      <option value="normal">Normal</option>
+                      <option value="alta">Alta</option>
+                      <option value="urgente">Urgente</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="edicao-prazo"
+                      className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-400"
+                    >
+                      Prazo
+                    </label>
+                    <input
+                      id="edicao-prazo"
+                      name="prazo"
+                      type="date"
+                      defaultValue={diaDoPrazo(pedido.prazo_em)}
+                      className={CAMPO}
+                    />
+                  </div>
+                </div>
                 {(pedido.campos ?? [])
                   .filter((campo) => CAMPO_EDITAVEL.has(campo.tipo))
                   .map((campo) => (
@@ -734,12 +965,6 @@ function nomeNaArvore(id: string | undefined, arvore: OrgTree[] | undefined): st
     }
   }
   return "";
-}
-
-function nomeDaPessoa(id: string | undefined, pessoas: UserAdmin[] | undefined): string {
-  if (!id) return "";
-  const pessoa = pessoas?.find((item) => item.id === id);
-  return pessoa ? pessoa.display_name || pessoa.username : "Responsável definido";
 }
 
 function chaveDeArquivo(valor: unknown): boolean {

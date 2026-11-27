@@ -38,10 +38,17 @@ type Casos interface {
 	Complementar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
 	Responder(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
 	Anotar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
-	Editar(ctx context.Context, id uuid.UUID, justificativa string, respostas map[string]any) (domain.Pedido, error)
+	Editar(ctx context.Context, id uuid.UUID, in application.Edicao) (domain.Pedido, error)
 	Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
 	Concluir(ctx context.Context, id uuid.UUID, decisao, justificativa string) (domain.Pedido, error)
 	Cancelar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
+	Pessoas(ctx context.Context, id uuid.UUID) ([]domain.Pessoa, error)
+	Aceitar(ctx context.Context, id uuid.UUID, responsavel *uuid.UUID) (domain.Pedido, error)
+	Transferir(ctx context.Context, id, novo uuid.UUID) (domain.Pedido, error)
+	Encaminhar(ctx context.Context, id, destino uuid.UUID, justificativa string, prazoDias int) (domain.Pedido, error)
+	DecidirEncaminhamento(ctx context.Context, id uuid.UUID, aceitar bool, motivo string) (domain.Pedido, error)
+	Aprovar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
+	Devolver(ctx context.Context, id uuid.UUID, motivo string) (domain.Pedido, error)
 }
 
 // Handlers agrupa as rotas.
@@ -422,6 +429,9 @@ func (h *Handlers) Anotar(w http.ResponseWriter, r *http.Request) {
 type editarBody struct {
 	Justificativa string         `json:"justificativa"`
 	Respostas     map[string]any `json:"respostas"`
+	// Prioridade e prazo (AAAA-MM-DD) vazios mantêm o valor atual.
+	Prioridade string `json:"prioridade"`
+	Prazo      string `json:"prazo"`
 }
 
 func (h *Handlers) Editar(w http.ResponseWriter, r *http.Request) {
@@ -435,7 +445,9 @@ func (h *Handlers) Editar(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	p, err := h.casos.Editar(r.Context(), id, body.Justificativa, body.Respostas)
+	p, err := h.casos.Editar(r.Context(), id, application.Edicao{
+		Justificativa: body.Justificativa, Respostas: body.Respostas, Prioridade: body.Prioridade, Prazo: body.Prazo,
+	})
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -483,4 +495,128 @@ func (h *Handlers) Concluir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteOK(w, p)
+}
+
+func idDoPedido(r *http.Request) (uuid.UUID, error) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		return uuid.Nil, apperrors.BadRequest("pedido inválido")
+	}
+	return id, nil
+}
+
+// corpo lê o id do pedido e o corpo JSON.
+func corpo[T any](h *Handlers, w http.ResponseWriter, r *http.Request) (uuid.UUID, T, bool) {
+	var body T
+	id, err := idDoPedido(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return uuid.Nil, body, false
+	}
+	if err := httputil.Bind(w, r, &body); err != nil {
+		h.fail(w, r, err)
+		return uuid.Nil, body, false
+	}
+	return id, body, true
+}
+
+func (h *Handlers) responder(w http.ResponseWriter, r *http.Request, p domain.Pedido, err error) {
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, p)
+}
+
+// Pessoas lista quem pode assumir o pedido.
+func (h *Handlers) Pessoas(w http.ResponseWriter, r *http.Request) {
+	id, err := idDoPedido(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	lista, err := h.casos.Pessoas(r.Context(), id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+type responsavelPedidoBody struct {
+	ResponsavelID *uuid.UUID `json:"responsavel_id"`
+}
+
+// Aceitar dá dono ao pedido; sem responsavel_id, quem chama assume.
+func (h *Handlers) Aceitar(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[responsavelPedidoBody](h, w, r)
+	if !ok {
+		return
+	}
+	p, err := h.casos.Aceitar(r.Context(), id, body.ResponsavelID)
+	h.responder(w, r, p, err)
+}
+
+// Transferir troca o responsável.
+func (h *Handlers) Transferir(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[responsavelPedidoBody](h, w, r)
+	if !ok {
+		return
+	}
+	if body.ResponsavelID == nil {
+		h.fail(w, r, apperrors.Validation("indique o novo responsável"))
+		return
+	}
+	p, err := h.casos.Transferir(r.Context(), id, *body.ResponsavelID)
+	h.responder(w, r, p, err)
+}
+
+type encaminharBody struct {
+	UnidadeID     uuid.UUID `json:"unidade_id"`
+	Justificativa string    `json:"justificativa"`
+	PrazoDias     int       `json:"prazo_dias"`
+}
+
+// Encaminhar pede a mudança de unidade.
+func (h *Handlers) Encaminhar(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[encaminharBody](h, w, r)
+	if !ok {
+		return
+	}
+	p, err := h.casos.Encaminhar(r.Context(), id, body.UnidadeID, body.Justificativa, body.PrazoDias)
+	h.responder(w, r, p, err)
+}
+
+// AceitarEncaminhamento recebe o pedido na unidade de destino.
+func (h *Handlers) AceitarEncaminhamento(w http.ResponseWriter, r *http.Request) {
+	id, err := idDoPedido(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	p, err := h.casos.DecidirEncaminhamento(r.Context(), id, true, "")
+	h.responder(w, r, p, err)
+}
+
+// RecusarEncaminhamento devolve o pedido à unidade de origem.
+func (h *Handlers) RecusarEncaminhamento(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[textoBody](h, w, r)
+	if !ok {
+		return
+	}
+	p, err := h.casos.DecidirEncaminhamento(r.Context(), id, false, body.Mensagem)
+	h.responder(w, r, p, err)
+}
+
+// Aprovar confirma a conclusão.
+func (h *Handlers) Aprovar(w http.ResponseWriter, r *http.Request) { h.simples(w, r, h.casos.Aprovar) }
+
+// Devolver recusa a conclusão.
+func (h *Handlers) Devolver(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[textoBody](h, w, r)
+	if !ok {
+		return
+	}
+	p, err := h.casos.Devolver(r.Context(), id, body.Mensagem)
+	h.responder(w, r, p, err)
 }

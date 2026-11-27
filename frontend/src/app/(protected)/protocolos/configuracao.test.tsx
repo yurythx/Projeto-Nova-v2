@@ -258,6 +258,7 @@ describe("Serviços do protocolo", () => {
     await user.click(within(modal).getByRole("checkbox", { name: "Exige horário" }));
     await user.click(within(modal).getByRole("checkbox", { name: "Exige horário" }));
     await user.click(within(modal).getByRole("tab", { name: "Workflow" }));
+    await user.click(within(modal).getByRole("checkbox", { name: "Exige aceite antes de tratar" }));
     await user.click(within(modal).getByRole("checkbox", { name: "Workflow ligado" }));
     await user.selectOptions(within(modal).getByLabelText("Responsável"), "usuario");
     await user.click(within(modal).getByRole("button", { name: "Salvar" }));
@@ -266,6 +267,8 @@ describe("Serviços do protocolo", () => {
       formulario_id: "f1",
       nome: "Certidão",
       destaque: true,
+      exige_aceite: true,
+      exige_aprovacao: false,
       exige_agendamento: false,
       agenda: { dias: [] },
       workflow: { ligado: true },

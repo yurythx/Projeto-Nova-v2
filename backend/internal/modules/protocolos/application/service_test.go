@@ -796,7 +796,7 @@ func TestNotaFaltaEEdicao(t *testing.T) {
 	if _, err := s.Anotar(ctx, ped.ID, "conferir o documento na pasta"); err != nil {
 		t.Fatal(err)
 	}
-	editado, err := s.Editar(ctx, ped.ID, "o nome veio abreviado", map[string]any{"nome": "Maria da Silva"})
+	editado, err := s.Editar(ctx, ped.ID, Edicao{Justificativa: "o nome veio abreviado", Respostas: map[string]any{"nome": "Maria da Silva"}})
 	if err != nil || editado.Respostas["nome"] != "Maria da Silva" {
 		t.Fatal(editado.Respostas, err)
 	}

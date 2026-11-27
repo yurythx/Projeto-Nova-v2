@@ -45,5 +45,13 @@ func RegisterAuthed(r chi.Router, h *Handlers, logger *slog.Logger) {
 		r.With(tratar).Post("/{id}/avancar", h.Avancar)
 		r.With(tratar).Post("/{id}/concluir", h.Concluir)
 		r.With(tratar).Post("/{id}/cancelar", h.Cancelar)
+		r.Get("/{id}/pessoas", h.Pessoas)
+		r.With(tratar).Post("/{id}/aceitar", h.Aceitar)
+		r.With(tratar).Post("/{id}/transferir", h.Transferir)
+		r.With(tratar).Post("/{id}/encaminhar", h.Encaminhar)
+		r.With(tratar).Post("/{id}/encaminhamento/aceitar", h.AceitarEncaminhamento)
+		r.With(tratar).Post("/{id}/encaminhamento/recusar", h.RecusarEncaminhamento)
+		r.With(gerir).Post("/{id}/aprovar", h.Aprovar)
+		r.With(gerir).Post("/{id}/devolver", h.Devolver)
 	})
 }

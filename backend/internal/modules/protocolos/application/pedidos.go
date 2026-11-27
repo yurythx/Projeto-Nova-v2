@@ -243,7 +243,7 @@ func (s *Service) BuscarPedido(ctx context.Context, id uuid.UUID) (Ficha, error)
 	if err != nil {
 		return Ficha{}, err
 	}
-	if err := s.ver(ctx, p.UnidadeID); err != nil {
+	if err := s.verPedido(ctx, p); err != nil {
 		return Ficha{}, err
 	}
 	p.SituacaoPrazo = domain.SituacaoPrazo(p.Status, p.CreatedAt, p.PrazoEm, s.agora())
@@ -271,6 +271,15 @@ func (s *Service) BuscarPedido(ctx context.Context, id uuid.UUID) (Ficha, error)
 	return ficha, nil
 }
 
+// verPedido aceita quem trata a unidade atual ou a de destino do encaminhamento pendente.
+func (s *Service) verPedido(ctx context.Context, p domain.Pedido) error {
+	err := s.ver(ctx, p.UnidadeID)
+	if err != nil && p.Encaminhamento != nil && s.ver(ctx, p.Encaminhamento.UnidadeID) == nil {
+		return nil
+	}
+	return err
+}
+
 func (s *Service) ver(ctx context.Context, unidade uuid.UUID) error {
 	id, ok := auth.IdentityFromContext(ctx)
 	if !ok {
@@ -282,18 +291,59 @@ func (s *Service) ver(ctx context.Context, unidade uuid.UUID) error {
 	return domain.ErrNaoEncontrado
 }
 
+// acoesComDono só andam com responsável quando o serviço exige aceite.
+var acoesComDono = map[string]bool{"complemento": true, "avanco": true, "conclusao": true, domain.AcaoAguardaAprovacao: true}
+
 func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato, descricao string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
+	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, evento, acao, fato, texto(descricao), fn)
+}
+
+// texto adia uma descrição já conhecida.
+func texto(t string) func() string { return func() string { return t } }
+
+// mudarCom confere a permissão na unidade, recusa o pedido com encaminhamento
+// pendente e o pedido sem dono quando o serviço exige aceite. A descrição é
+// lida depois de fn, que pode descobrir o nome de quem assume.
+func (s *Service) mudarCom(ctx context.Context, perm auth.Permission, id uuid.UUID, evento, acao, fato string, descricao func() string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
 	atual, err := s.repo.BuscarPedido(ctx, s.db, id)
 	if err != nil {
 		return domain.Pedido{}, err
 	}
-	if err := s.exigir(ctx, auth.PermProtocolosTratar, atual.UnidadeID); err != nil {
+	if err := s.exigir(ctx, perm, atual.UnidadeID); err != nil {
 		return domain.Pedido{}, err
+	}
+	if atual.Encaminhamento != nil {
+		return domain.Pedido{}, domain.ErrEncaminhamento
+	}
+	if acoesComDono[acao] {
+		if err := s.exigirDono(ctx, atual); err != nil {
+			return domain.Pedido{}, err
+		}
 	}
 	prox, err := fn(atual)
 	if err != nil {
 		return domain.Pedido{}, err
 	}
+	return s.persistir(ctx, atual, prox, evento, acao, fato, descricao())
+}
+
+// exigirDono recusa o pedido sem responsável quando o serviço exige aceite.
+func (s *Service) exigirDono(ctx context.Context, p domain.Pedido) error {
+	if p.ResponsavelID != nil {
+		return nil
+	}
+	serv, err := s.repo.BuscarServico(ctx, s.db, p.ServicoID)
+	if err != nil {
+		return err
+	}
+	if serv.ExigeAceite {
+		return domain.ErrSemResponsavel
+	}
+	return nil
+}
+
+// persistir grava o pedido, a linha da trilha, o evento e a auditoria, e avisa.
+func (s *Service) persistir(ctx context.Context, atual, prox domain.Pedido, evento, acao, fato, descricao string) (domain.Pedido, error) {
 	if _, nome, err := s.repo.Unidade(ctx, s.db, prox.UnidadeID); err == nil {
 		prox.UnidadeNome = nome
 	} else if !errors.Is(err, domain.ErrNaoEncontrado) {
@@ -303,7 +353,7 @@ func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato, d
 	if strings.TrimSpace(descricao) == "" {
 		descricao = fato
 	}
-	err = s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
+	err := s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		if err := s.repo.AtualizarPedido(ctx, tx, prox); err != nil {
 			return err
 		}
@@ -425,6 +475,9 @@ func (s *Service) Anotar(ctx context.Context, id uuid.UUID, mensagem string) (do
 	if domain.EstadoFinal(atual.Status) {
 		return domain.Pedido{}, domain.ErrEstadoFinal
 	}
+	if err := s.exigirDono(ctx, atual); err != nil {
+		return domain.Pedido{}, err
+	}
 	quem, _ := auth.IdentityFromContext(ctx)
 	err = s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		if err := s.repo.InserirHistorico(ctx, tx, domain.Historico{
@@ -440,14 +493,28 @@ func (s *Service) Anotar(ctx context.Context, id uuid.UUID, mensagem string) (do
 	return atual, err
 }
 
-// Editar troca as respostas e guarda a justificativa só na mesa.
-func (s *Service) Editar(ctx context.Context, id uuid.UUID, justificativa string, respostas map[string]any) (domain.Pedido, error) {
-	justificativa, err := domain.TextoInterno(justificativa, 4000)
+// Edicao é o que a mesa troca no pedido. Respostas nulas, prioridade e prazo vazios mantêm o atual.
+type Edicao struct {
+	Justificativa string
+	Respostas     map[string]any
+	Prioridade    string
+	Prazo         string
+}
+
+// Editar troca as respostas, a prioridade e o prazo, e guarda a justificativa só na mesa.
+func (s *Service) Editar(ctx context.Context, id uuid.UUID, in Edicao) (domain.Pedido, error) {
+	justificativa, err := domain.TextoInterno(in.Justificativa, 4000)
 	if err != nil {
 		return domain.Pedido{}, err
 	}
 	return s.mudar(ctx, id, EventoEdicao, domain.AcaoEdicao, "pedido atualizado", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
-		return p.Editar(preservarArquivos(p, respostas), s.agora())
+		if in.Respostas != nil {
+			var err error
+			if p, err = p.Editar(preservarArquivos(p, in.Respostas), s.agora()); err != nil {
+				return domain.Pedido{}, err
+			}
+		}
+		return p.Ajustar(in.Prioridade, in.Prazo, s.agora())
 	})
 }
 
@@ -477,8 +544,21 @@ func (s *Service) Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, err
 	})
 }
 
-// Concluir grava a decisão.
+// Concluir grava a decisão. Se o serviço exige aprovação, a conclusão espera quem gere a unidade.
 func (s *Service) Concluir(ctx context.Context, id uuid.UUID, decisao, justificativa string) (domain.Pedido, error) {
+	atual, err := s.repo.BuscarPedido(ctx, s.db, id)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	serv, err := s.repo.BuscarServico(ctx, s.db, atual.ServicoID)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	if serv.ExigeAprovacao {
+		return s.mudar(ctx, id, EventoAguardaAprovacao, domain.AcaoAguardaAprovacao, "conclusão enviada para aprovação", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
+			return p.PedirAprovacao(decisao, justificativa, s.agora())
+		})
+	}
 	return s.mudar(ctx, id, EventoConclusao, "conclusao", "pedido concluído", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
 		return p.Concluir(decisao, justificativa, s.agora())
 	})

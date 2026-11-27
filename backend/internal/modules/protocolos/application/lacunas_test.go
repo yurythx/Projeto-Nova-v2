@@ -134,7 +134,7 @@ func TestRamosQueACatracaAponta(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := s.Editar(ctx, ped.ID, " ", map[string]any{"nome": "Maria"}); err == nil {
+	if _, err := s.Editar(ctx, ped.ID, Edicao{Justificativa: " ", Respostas: map[string]any{"nome": "Maria"}}); err == nil {
 		t.Fatal("justificativa")
 	}
 	if _, err := s.LinkArquivo(ctx, ped.ID, prefixoComplemento(ped.ID)+"/nao-esta.pdf"); err == nil {
@@ -155,7 +155,7 @@ func TestRamosQueACatracaAponta(t *testing.T) {
 	}, nil); got["doc"] != "protocolos/carta/ja-no-pedido" || got["nome"] != nil {
 		t.Fatalf("arquivos %+v", got)
 	}
-	if _, err := s.Editar(ctx, ped.ID, "o nome veio abreviado", map[string]any{"nome": "Maria da Silva"}); err != nil {
+	if _, err := s.Editar(ctx, ped.ID, Edicao{Justificativa: "o nome veio abreviado", Respostas: map[string]any{"nome": "Maria da Silva"}}); err != nil {
 		t.Fatal(err)
 	}
 

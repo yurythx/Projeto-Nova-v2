@@ -14,11 +14,18 @@ import {
   MoreVertical,
   Search,
   User,
+  UserCheck,
 } from "lucide-react";
 
 import { DataState } from "@/components/plataforma/DataState";
 import { useAction } from "@/components/plataforma/useAction";
-import { ModalDeAcao, type AcaoAberta } from "@/components/protocolos/AcoesDoPedido";
+import {
+  diaDoPrazo,
+  ModalDeAcao,
+  MOTIVO_TRAVADO,
+  situacaoDoPedido,
+  type AcaoAberta,
+} from "@/components/protocolos/AcoesDoPedido";
 import {
   bordaDoPrazo,
   corDaEstatistica,
@@ -34,13 +41,15 @@ import {
   type PedidoResumo,
 } from "@/components/protocolos/estilo";
 import { KanbanProtocolos } from "@/components/protocolos/KanbanProtocolos";
-import { BOTAO_SECUNDARIO } from "@/components/protocolos/ui";
+import { BOTAO_SECUNDARIO, Pilulas } from "@/components/protocolos/ui";
 import { filtrarPedidos, paginar, STATUS } from "@/components/protocolos/painel";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 const POR_PAGINA = 10;
+
+type Dono = "todos" | "meus" | "sem" | "encaminhados";
 
 const ABAS_PRAZO = [
   { value: "todos", label: "Todos" },
@@ -62,7 +71,8 @@ export default function ProtocolosPage() {
 }
 
 function PainelDeProtocolos() {
-  const { can } = usePlataforma();
+  const { can, me } = usePlataforma();
+  const meuId = me?.id;
   const router = useRouter();
   const params = useSearchParams();
   const visao = params.get("vista") === "kanban" ? "kanban" : "lista";
@@ -82,6 +92,27 @@ function PainelDeProtocolos() {
   const [pagina, setPagina] = useState(1);
   const [menu, setMenu] = useState<string | null>(null);
   const [acao, setAcao] = useState<AcaoAberta | null>(null);
+  const [dono, setDono] = useState<Dono>("todos");
+
+  const contagemDono = useMemo(
+    () => ({
+      todos: pedidos.length,
+      meus: pedidos.filter((p) => meuId && p.responsavel_id === meuId).length,
+      sem: pedidos.filter((p) => !p.responsavel_id && !FINAIS.has(p.status)).length,
+      encaminhados: pedidos.filter((p) => p.encaminhamento).length,
+    }),
+    [pedidos, meuId],
+  );
+  const pedidosDoDono = useMemo(
+    () =>
+      pedidos.filter((p) => {
+        if (dono === "meus") return Boolean(meuId) && p.responsavel_id === meuId;
+        if (dono === "sem") return !p.responsavel_id && !FINAIS.has(p.status);
+        if (dono === "encaminhados") return Boolean(p.encaminhamento);
+        return true;
+      }),
+    [pedidos, dono, meuId],
+  );
 
   const servicos = useMemo(() => {
     const mapa = new Map<string, string>();
@@ -108,8 +139,8 @@ function PainelDeProtocolos() {
   }, [pedidos]);
 
   const visiveis = useMemo(
-    () => filtrarPedidos(pedidos, { prazo, busca, servico, status, prioridade }),
-    [pedidos, prazo, busca, servico, status, prioridade],
+    () => filtrarPedidos(pedidosDoDono, { prazo, busca, servico, status, prioridade }),
+    [pedidosDoDono, prazo, busca, servico, status, prioridade],
   );
   const paginaAtual = useMemo(() => paginar(visiveis, pagina, POR_PAGINA), [visiveis, pagina]);
   const complementacao = porStatus.find((s) => s.status === "em_complementacao")?.total ?? 0;
@@ -127,18 +158,25 @@ function PainelDeProtocolos() {
     router.push(`/protocolos/${p.id}`);
   }
 
-  async function avancar(p: PedidoResumo) {
+  async function postar(p: PedidoResumo, sufixo: string, aviso: string) {
     setMenu(null);
     const ok = await run(
-      () => apiClient.post(`v1/protocolos/pedidos/${p.id}/avancar`, {}),
-      "Protocolo avançou de etapa",
+      () => apiClient.post(`v1/protocolos/pedidos/${p.id}/${sufixo}`, {}),
+      aviso,
     );
     if (ok) void lista.mutate();
   }
 
   function escolher(p: PedidoResumo, tipo: AcaoAberta["tipo"]) {
     setMenu(null);
-    setAcao({ tipo, pedidoId: p.id, numero: p.numero });
+    setAcao({
+      tipo,
+      pedidoId: p.id,
+      numero: p.numero,
+      unidadeId: p.unidade_id,
+      prioridade: p.prioridade,
+      prazo: diaDoPrazo(p.prazo_em),
+    });
   }
 
   return (
@@ -242,6 +280,21 @@ function PainelDeProtocolos() {
             </button>
           </div>
         )}
+
+        {/* Responsável */}
+        <div className="mb-2 flex flex-wrap items-center gap-3">
+          <Pilulas
+            rotulo="Responsável"
+            valor={dono}
+            onChange={(v) => filtrar(() => setDono(v))}
+            opcoes={[
+              { value: "todos", label: "Todos", total: contagemDono.todos },
+              { value: "meus", label: "Meus protocolos", total: contagemDono.meus },
+              { value: "sem", label: "Sem responsável", total: contagemDono.sem },
+              { value: "encaminhados", label: "Encaminhamentos", total: contagemDono.encaminhados },
+            ]}
+          />
+        </div>
 
         {/* Abas de prazo */}
         <div
@@ -365,7 +418,7 @@ function PainelDeProtocolos() {
             ) : (
               <>
                 {paginaAtual.itens.map((p) => {
-                  const final = FINAIS.has(p.status);
+                  const estado = situacaoDoPedido(p);
                   const situacao = p.situacao_prazo || "no_prazo";
                   return (
                     <article
@@ -399,6 +452,26 @@ function PainelDeProtocolos() {
                               <Clock className="h-3.5 w-3.5" aria-hidden />
                               {dataCurta(p.created_at)}
                             </span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {p.responsavel_nome ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200">
+                                <UserCheck className="h-3.5 w-3.5" aria-hidden />
+                                Responsável: {p.responsavel_nome}
+                              </span>
+                            ) : (
+                              !estado.final && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-slate-700 dark:text-slate-300">
+                                  Aguardando aceite
+                                </span>
+                              )
+                            )}
+                            {p.encaminhamento && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
+                                ⏳ Encaminhamento para{" "}
+                                {p.encaminhamento.unidade_nome || "outra unidade"}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1.5">
@@ -436,7 +509,7 @@ function PainelDeProtocolos() {
                           <Eye className="h-4 w-4" aria-hidden />
                           Visualizar
                         </button>
-                        {trata && !final && (
+                        {trata && !estado.final && (
                           <div className="relative">
                             <button
                               type="button"
@@ -465,50 +538,134 @@ function PainelDeProtocolos() {
                                   >
                                     Visualizar
                                   </ItemMenu>
-                                  {p.etapa_id && p.status !== "em_complementacao" && (
-                                    <ItemMenu
-                                      cor="text-violet-600 dark:text-violet-400"
-                                      disabled={pending}
-                                      onClick={() => void avancar(p)}
-                                    >
-                                      Encaminhar para a próxima etapa
-                                    </ItemMenu>
-                                  )}
-                                  <ItemMenu
-                                    cor="text-cyan-600 dark:text-cyan-400"
-                                    onClick={() => escolher(p, "nota")}
-                                  >
-                                    Adicionar nota
-                                  </ItemMenu>
-                                  {p.status === "em_complementacao" ? (
-                                    <ItemMenu
-                                      cor="text-emerald-600 dark:text-emerald-400"
-                                      onClick={() => escolher(p, "resposta")}
-                                    >
-                                      Registrar resposta
-                                    </ItemMenu>
+                                  {estado.encaminhado ? (
+                                    <>
+                                      <ItemMenu
+                                        cor="text-emerald-600 dark:text-emerald-400"
+                                        disabled={pending}
+                                        onClick={() =>
+                                          void postar(
+                                            p,
+                                            "encaminhamento/aceitar",
+                                            "Encaminhamento aceito: o protocolo mudou de unidade",
+                                          )
+                                        }
+                                      >
+                                        Aceitar encaminhamento
+                                      </ItemMenu>
+                                      <ItemMenu
+                                        cor="text-red-600 dark:text-red-400"
+                                        onClick={() => escolher(p, "recusar_encaminhamento")}
+                                      >
+                                        Recusar encaminhamento
+                                      </ItemMenu>
+                                    </>
+                                  ) : estado.aguardando ? (
+                                    gere && (
+                                      <>
+                                        <ItemMenu
+                                          cor="text-emerald-600 dark:text-emerald-400"
+                                          disabled={pending}
+                                          onClick={() =>
+                                            void postar(p, "aprovar", "Conclusão aprovada")
+                                          }
+                                        >
+                                          Aprovar conclusão
+                                        </ItemMenu>
+                                        <ItemMenu
+                                          cor="text-orange-600 dark:text-orange-400"
+                                          onClick={() => escolher(p, "devolver")}
+                                        >
+                                          Devolver para revisão
+                                        </ItemMenu>
+                                      </>
+                                    )
                                   ) : (
-                                    <ItemMenu
-                                      cor="text-orange-600 dark:text-orange-400"
-                                      onClick={() => escolher(p, "complemento")}
-                                    >
-                                      Solicitar complementação
-                                    </ItemMenu>
+                                    <>
+                                      <ItemMenu
+                                        cor="text-gray-700 dark:text-slate-200"
+                                        onClick={() => escolher(p, "editar")}
+                                      >
+                                        Editar
+                                      </ItemMenu>
+                                      {estado.semDono ? (
+                                        <ItemMenu
+                                          cor="text-emerald-600 dark:text-emerald-400"
+                                          disabled={p.status === "em_complementacao"}
+                                          onClick={() => escolher(p, "aceitar")}
+                                        >
+                                          Aceitar
+                                        </ItemMenu>
+                                      ) : (
+                                        <ItemMenu
+                                          cor="text-indigo-600 dark:text-indigo-300"
+                                          onClick={() => escolher(p, "transferir")}
+                                        >
+                                          Transferir
+                                        </ItemMenu>
+                                      )}
+                                      <ItemMenu
+                                        cor="text-violet-600 dark:text-violet-400"
+                                        disabled={p.status === "em_complementacao"}
+                                        onClick={() => escolher(p, "encaminhar")}
+                                      >
+                                        Encaminhar para outra unidade
+                                      </ItemMenu>
+                                      {p.etapa_id && p.status !== "em_complementacao" && (
+                                        <ItemMenu
+                                          cor="text-violet-600 dark:text-violet-400"
+                                          disabled={pending || estado.travado}
+                                          motivo={estado.travado ? MOTIVO_TRAVADO : undefined}
+                                          onClick={() =>
+                                            void postar(p, "avancar", "Protocolo avançou de etapa")
+                                          }
+                                        >
+                                          Encaminhar para a próxima etapa
+                                        </ItemMenu>
+                                      )}
+                                      <ItemMenu
+                                        cor="text-cyan-600 dark:text-cyan-400"
+                                        disabled={estado.travado}
+                                        motivo={estado.travado ? MOTIVO_TRAVADO : undefined}
+                                        onClick={() => escolher(p, "nota")}
+                                      >
+                                        Adicionar nota
+                                      </ItemMenu>
+                                      {p.status === "em_complementacao" ? (
+                                        <ItemMenu
+                                          cor="text-emerald-600 dark:text-emerald-400"
+                                          onClick={() => escolher(p, "resposta")}
+                                        >
+                                          Registrar resposta
+                                        </ItemMenu>
+                                      ) : (
+                                        <ItemMenu
+                                          cor="text-orange-600 dark:text-orange-400"
+                                          disabled={estado.travado}
+                                          motivo={estado.travado ? MOTIVO_TRAVADO : undefined}
+                                          onClick={() => escolher(p, "complemento")}
+                                        >
+                                          Solicitar complementação
+                                        </ItemMenu>
+                                      )}
+                                      {p.status !== "em_complementacao" && (
+                                        <ItemMenu
+                                          cor="text-red-600 dark:text-red-400"
+                                          disabled={estado.travado}
+                                          motivo={estado.travado ? MOTIVO_TRAVADO : undefined}
+                                          onClick={() => escolher(p, "concluir")}
+                                        >
+                                          Concluir
+                                        </ItemMenu>
+                                      )}
+                                      <ItemMenu
+                                        cor="text-red-600 dark:text-red-400"
+                                        onClick={() => escolher(p, "cancelar")}
+                                      >
+                                        Cancelar
+                                      </ItemMenu>
+                                    </>
                                   )}
-                                  {p.status !== "em_complementacao" && (
-                                    <ItemMenu
-                                      cor="text-red-600 dark:text-red-400"
-                                      onClick={() => escolher(p, "concluir")}
-                                    >
-                                      Concluir
-                                    </ItemMenu>
-                                  )}
-                                  <ItemMenu
-                                    cor="text-red-600 dark:text-red-400"
-                                    onClick={() => escolher(p, "cancelar")}
-                                  >
-                                    Cancelar
-                                  </ItemMenu>
                                 </div>
                               </>
                             )}
@@ -577,11 +734,14 @@ function Estatistica({ titulo, valor, fundo }: { titulo: string; valor: number; 
 function ItemMenu({
   cor,
   disabled,
+  motivo,
   onClick,
   children,
 }: {
   cor: string;
   disabled?: boolean;
+  /** Por que a ação está bloqueada (dica ao passar o mouse). */
+  motivo?: string;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -590,6 +750,7 @@ function ItemMenu({
       type="button"
       role="menuitem"
       disabled={disabled}
+      title={motivo}
       onClick={onClick}
       className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-slate-700/50 ${cor}`}
     >

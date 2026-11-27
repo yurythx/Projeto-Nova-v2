@@ -12252,11 +12252,50 @@
           "justificativa": {
             "type": "string"
           },
+          "prazo": {
+            "type": "string"
+          },
+          "prioridade": {
+            "type": "string"
+          },
           "respostas": {
             "additionalProperties": {},
             "type": "object"
           }
         },
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosEncaminhamento": {
+        "properties": {
+          "em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          },
+          "por": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "prazo_dias": {
+            "type": "integer"
+          },
+          "unidade_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unidade_nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "em",
+          "justificativa",
+          "prazo_dias",
+          "unidade_id"
+        ],
         "type": "object",
         "x-projeto-nova-generated": true
       },
@@ -12546,8 +12585,14 @@
           "email": {
             "type": "string"
           },
+          "encaminhamento": {
+            "$ref": "#/components/schemas/ProtocolosEncaminhamento"
+          },
           "etapa_id": {
             "type": "string"
+          },
+          "exige_aceite": {
+            "type": "boolean"
           },
           "formulario_id": {
             "format": "uuid",
@@ -12575,6 +12620,9 @@
           },
           "responsavel_id": {
             "format": "uuid",
+            "type": "string"
+          },
+          "responsavel_nome": {
             "type": "string"
           },
           "respostas": {
@@ -12618,6 +12666,7 @@
           "created_at",
           "decisao",
           "etapa_id",
+          "exige_aceite",
           "formulario_id",
           "id",
           "justificativa",
@@ -12629,6 +12678,23 @@
           "status",
           "unidade_id",
           "updated_at"
+        ],
+        "type": "object",
+        "x-projeto-nova-generated": true
+      },
+      "ProtocolosPessoa": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome"
         ],
         "type": "object",
         "x-projeto-nova-generated": true
@@ -12725,7 +12791,13 @@
             },
             "type": "array"
           },
+          "exige_aceite": {
+            "type": "boolean"
+          },
           "exige_agendamento": {
+            "type": "boolean"
+          },
+          "exige_aprovacao": {
             "type": "boolean"
           },
           "formulario_id": {
@@ -12782,7 +12854,9 @@
           "descricao",
           "destaque",
           "documentos",
+          "exige_aceite",
           "exige_agendamento",
+          "exige_aprovacao",
           "formulario_id",
           "id",
           "impedir_cpf_aberto",
@@ -12831,7 +12905,13 @@
             },
             "type": "array"
           },
+          "exige_aceite": {
+            "type": "boolean"
+          },
           "exige_agendamento": {
+            "type": "boolean"
+          },
+          "exige_aprovacao": {
             "type": "boolean"
           },
           "formulario_id": {
@@ -40875,6 +40955,151 @@
         ]
       }
     },
+    "/api/v1/protocolos/pedidos/{id}/aceitar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdAceitar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/aceitar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/aprovar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdAprovar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/aprovar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
     "/api/v1/protocolos/pedidos/{id}/arquivo": {
       "get": {
         "operationId": "getProtocolosPedidosIdArquivo",
@@ -41242,6 +41467,83 @@
         ]
       }
     },
+    "/api/v1/protocolos/pedidos/{id}/devolver": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdDevolver",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/devolver",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
     "/api/v1/protocolos/pedidos/{id}/editar": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A edição exige justificativa. A consulta pública mostra apenas que o pedido foi atualizado.",
@@ -41316,6 +41618,228 @@
           }
         ],
         "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/editar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/encaminhamento/aceitar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdEncaminhamentoAceitar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/encaminhamento/aceitar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/encaminhamento/recusar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdEncaminhamentoRecusar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/encaminhamento/recusar",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/encaminhar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdEncaminhar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/encaminhar",
         "tags": [
           "protocolos"
         ]
@@ -41400,6 +41924,70 @@
         ]
       }
     },
+    "/api/v1/protocolos/pedidos/{id}/pessoas": {
+      "get": {
+        "operationId": "getProtocolosPedidosIdPessoas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/ProtocolosPessoa"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Listar/consultar /protocolos/pedidos/{id}/pessoas",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
     "/api/v1/protocolos/pedidos/{id}/resposta": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions. A mesa registra o texto recebido. Sem texto o pedido continua em complementação.",
@@ -41474,6 +42062,83 @@
           }
         ],
         "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/resposta",
+        "tags": [
+          "protocolos"
+        ]
+      }
+    },
+    "/api/v1/protocolos/pedidos/{id}/transferir": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postProtocolosPedidosIdTransferir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true,
+          "x-projeto-nova-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ProtocolosPedido"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-projeto-nova-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Protocolos — Executar ação /protocolos/pedidos/{id}/transferir",
         "tags": [
           "protocolos"
         ]

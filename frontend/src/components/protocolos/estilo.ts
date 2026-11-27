@@ -19,6 +19,16 @@ export interface PedidoResumo {
   prioridade: string;
   prazo_em?: string;
   created_at: string;
+  decisao?: string;
+  responsavel_id?: string;
+  responsavel_nome?: string;
+  exige_aceite?: boolean;
+  encaminhamento?: {
+    unidade_id: string;
+    unidade_nome?: string;
+    justificativa?: string;
+    prazo_dias?: number;
+  } | null;
 }
 
 export const FINAIS = new Set(["concluido", "aprovado", "rejeitado", "cancelado"]);

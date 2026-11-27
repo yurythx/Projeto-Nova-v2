@@ -267,15 +267,49 @@ func TestLeituras(t *testing.T) {
 	if err := r.SomarFalta(ctx, banco{}, "1", agora); err != nil {
 		t.Fatal(err)
 	}
+	// Pedido com responsável e encaminhamento pendente.
+	enc := linhaPedido(id, agora, []byte(`{}`), []byte("[]"))
+	enc[25], enc[26], enc[27], enc[28], enc[29], enc[30], enc[31] = "Ana Lima", &id, "é da saúde", 5, &id, &agora, "Saúde"
+	lido, err := r.BuscarPedido(ctx, banco{row: valores{enc}}, id)
+	if err != nil || lido.ResponsavelNome != "Ana Lima" || lido.Encaminhamento == nil ||
+		lido.Encaminhamento.UnidadeNome != "Saúde" || lido.Encaminhamento.PrazoDias != 5 || !lido.Encaminhamento.Em.Equal(agora) {
+		t.Fatalf("%+v %v", lido.Encaminhamento, err)
+	}
+	enc[30] = (*time.Time)(nil)
+	if lido, err := r.BuscarPedido(ctx, banco{row: valores{enc}}, id); err != nil || !lido.Encaminhamento.Em.IsZero() {
+		t.Fatal(err)
+	}
+	if err := r.AtualizarPedido(ctx, banco{}, lido); err != nil {
+		t.Fatal(err)
+	}
+	if g := encaminhamentoArgs(nil); g.para != nil || g.em != nil {
+		t.Fatal(g)
+	}
+	if g := encaminhamentoArgs(lido.Encaminhamento); g.para == nil || *g.para != id || g.prazo != 5 {
+		t.Fatal(g)
+	}
+	if nome, err := r.Pessoa(ctx, banco{row: valores{[]any{"Ana Lima"}}}, id); err != nil || nome != "Ana Lima" {
+		t.Fatal(nome, err)
+	}
+	if _, err := r.Pessoa(ctx, banco{row: erroLinha{pgx.ErrNoRows}}, id); !errors.Is(err, domain.ErrNaoEncontrado) {
+		t.Fatal(err)
+	}
+	if lista, err := r.Pessoas(ctx, banco{rows: &grade{linhas: [][]any{{id, "Ana Lima"}}}}, id); err != nil || len(lista) != 1 || lista[0].Nome != "Ana Lima" {
+		t.Fatal(lista, err)
+	}
+	if _, err := r.Pessoas(ctx, banco{rows: dbtest.BadRows()}, id); err == nil {
+		t.Fatal("pessoa")
+	}
 }
 
 func linhaServico(id uuid.UUID, agora time.Time, w, a, req, docs []byte) []any {
-	return []any{id, id, id, "Alvará", "", "licenca", 10, 0, true, true, false, false, false, false, "", w, a, req, docs, agora, agora, "Meio Ambiente"}
+	return []any{id, id, id, "Alvará", "", "licenca", 10, 0, true, true, false, false, false, false, "", w, a, req, docs, agora, agora, false, false, "Meio Ambiente"}
 }
 
 func linhaPedido(id uuid.UUID, agora time.Time, resp, campos []byte) []any {
 	return []any{id, "SEMA202600001", id, id, id, (*uuid.UUID)(nil), "Maria", "12345678900", "", "", resp, campos,
-		"novo", "", "normal", (*time.Time)(nil), "", "", "", (*uuid.UUID)(nil), (*uuid.UUID)(nil), agora, agora, "Alvará", "Meio Ambiente"}
+		"novo", "", "normal", (*time.Time)(nil), "", "", "", (*uuid.UUID)(nil), (*uuid.UUID)(nil), agora, agora, "Alvará", "Meio Ambiente",
+		"", (*uuid.UUID)(nil), "", 0, (*uuid.UUID)(nil), (*time.Time)(nil), "", false}
 }
 
 func must(b []byte, err error) []byte {

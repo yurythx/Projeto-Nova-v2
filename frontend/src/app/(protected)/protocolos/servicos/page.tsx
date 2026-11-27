@@ -76,6 +76,8 @@ interface Servico {
   destaque: boolean;
   ativo: boolean;
   aprova_sozinho: boolean;
+  exige_aceite?: boolean;
+  exige_aprovacao?: boolean;
   exige_agendamento: boolean;
   so_responsavel_tecnico: boolean;
   impedir_cpf_aberto: boolean;
@@ -233,6 +235,8 @@ export default function ServicosPage() {
                   <Detalhe rotulo="Regras">
                     {[
                       servico.destaque && "Destaque na carta",
+                      servico.exige_aceite && "Exige aceite",
+                      servico.exige_aprovacao && "Conclusão com aprovação",
                       servico.aprova_sozinho && "Aprova ao abrir",
                       servico.so_responsavel_tecnico && "Só responsável técnico",
                       servico.impedir_cpf_aberto && "Um pedido aberto por CPF",
@@ -402,6 +406,8 @@ function ModalDoServico({
           taxa_centavos: Number.isFinite(taxa) ? taxa : 0,
           destaque: dados.get("destaque") === "on",
           aprova_sozinho: dados.get("aprova_sozinho") === "on",
+          exige_aceite: dados.get("exige_aceite") === "on",
+          exige_aprovacao: dados.get("exige_aprovacao") === "on",
           exige_agendamento: exige,
           so_responsavel_tecnico: dados.get("so_responsavel_tecnico") === "on",
           impedir_cpf_aberto: dados.get("impedir_cpf_aberto") === "on",
@@ -618,6 +624,22 @@ function ModalDoServico({
         </div>
 
         <div data-aba="workflow" hidden={aba !== "workflow"} className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Marcar
+              name="exige_aceite"
+              texto="Exige aceite antes de tratar"
+              defaultChecked={servico?.exige_aceite}
+            />
+            <Marcar
+              name="exige_aprovacao"
+              texto="Conclusão passa por aprovação"
+              defaultChecked={servico?.exige_aprovacao}
+            />
+          </div>
+          <p className={`text-sm ${TEXTO_FRACO}`}>
+            Com aceite, ninguém trata o protocolo até alguém assumir. Com aprovação, a conclusão
+            espera quem gere a unidade aprovar ou devolver.
+          </p>
           <Marcar texto="Workflow ligado" checked={fluxo} onChange={setFluxo} />
           {fluxo ? (
             <ListaEtapas etapas={etapas} onChange={setEtapas} />

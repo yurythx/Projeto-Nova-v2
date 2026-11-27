@@ -41,4 +41,8 @@ type Repository interface {
 	ListarHoras(ctx context.Context, db database.DBTX, servico uuid.UUID, dia string) ([]string, error)
 	LerFaltas(ctx context.Context, db database.DBTX, cpf string) (int, time.Time, error)
 	SomarFalta(ctx context.Context, db database.DBTX, cpf string, quando time.Time) error
+	// Pessoa devolve o nome do usuário ativo.
+	Pessoa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
+	// Pessoas lista os usuários ativos com escopo na unidade.
+	Pessoas(ctx context.Context, db database.DBTX, unidade uuid.UUID) ([]Pessoa, error)
 }

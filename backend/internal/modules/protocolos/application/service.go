@@ -34,6 +34,15 @@ const (
 	EventoEdicao      = "protocolos.pedido.editado"
 	EventoFormulario  = "protocolos.formulario.salvo"
 	EventoServico     = "protocolos.servico.salvo"
+	// Aceite, encaminhamento e aprovação.
+	EventoAceite           = "protocolos.pedido.aceito"
+	EventoTransferencia    = "protocolos.pedido.transferido"
+	EventoEncaminhamento   = "protocolos.pedido.encaminhado"
+	EventoEncaminhamentoOK = "protocolos.pedido.encaminhamento_aceito"
+	EventoEncaminhamentoNo = "protocolos.pedido.encaminhamento_recusado"
+	EventoAguardaAprovacao = "protocolos.pedido.aguarda_aprovacao"
+	EventoAprovacao        = "protocolos.pedido.aprovado"
+	EventoDevolucao        = "protocolos.pedido.devolvido"
 )
 
 // Sino é a caixa da plataforma. E-mail e WhatsApp saem dela quando o canal está ligado.
@@ -126,6 +135,12 @@ func MapError(err error) error {
 		return apperrors.Conflict("horário indisponível")
 	case errors.Is(err, domain.ErrFalta):
 		return apperrors.Conflict("falta já registrada neste horário")
+	case errors.Is(err, domain.ErrSemResponsavel):
+		return apperrors.Conflict("aceite o pedido antes de tratá-lo")
+	case errors.Is(err, domain.ErrEncaminhamento):
+		return apperrors.Conflict("pedido com encaminhamento pendente")
+	case errors.Is(err, domain.ErrAprovacao):
+		return apperrors.Conflict("conclusão aguardando aprovação")
 	default:
 		return err
 	}

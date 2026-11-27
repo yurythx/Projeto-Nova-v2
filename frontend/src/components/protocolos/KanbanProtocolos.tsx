@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin, UserCheck } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -96,6 +96,20 @@ export function KanbanProtocolos({
                         <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         {dataCurta(p.created_at)}
                       </span>
+                      <span
+                        className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+                        title="Responsável"
+                      >
+                        <UserCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        <span className="truncate">
+                          {p.responsavel_nome || "Aguardando aceite"}
+                        </span>
+                      </span>
+                      {p.encaminhamento && (
+                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                          ⏳ Encaminhado para {p.encaminhamento.unidade_nome || "outra unidade"}
+                        </span>
+                      )}
                     </div>
                   </button>
                 ))}

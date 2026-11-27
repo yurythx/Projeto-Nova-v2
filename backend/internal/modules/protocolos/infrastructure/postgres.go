@@ -175,11 +175,11 @@ func (r *PostgresRepository) InserirServico(ctx context.Context, db database.DBT
 	_, err = db.Exec(ctx, `INSERT INTO protocolos_servicos (
 		id, unidade_id, formulario_id, nome, descricao, categoria, prazo_dias, taxa_centavos, destaque, ativo,
 		aprova_sozinho, exige_agendamento, so_responsavel_tecnico, impedir_cpf_aberto, campo_anonimo,
-		workflow, agenda, requisitos, documentos, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
+		workflow, agenda, requisitos, documentos, created_at, updated_at, exige_aceite, exige_aprovacao)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
 		s.ID, s.UnidadeID, s.FormularioID, s.Nome, s.Descricao, s.Categoria, s.PrazoDias, s.TaxaCentavos, s.Destaque, s.Ativo,
 		s.AprovaSozinho, s.ExigeAgendamento, s.SoResponsavelTecnico, s.ImpedirCPFAberto, s.CampoAnonimo,
-		w, a, req, docs, s.CreatedAt, s.UpdatedAt)
+		w, a, req, docs, s.CreatedAt, s.UpdatedAt, s.ExigeAceite, s.ExigeAprovacao)
 	if err != nil {
 		return fmt.Errorf("protocolos.InserirServico: %w", err)
 	}
@@ -194,9 +194,10 @@ func (r *PostgresRepository) AtualizarServico(ctx context.Context, db database.D
 	tag, err := db.Exec(ctx, `UPDATE protocolos_servicos SET unidade_id=$2, formulario_id=$3, nome=$4, descricao=$5, categoria=$6,
 		prazo_dias=$7, taxa_centavos=$8, destaque=$9, ativo=$10, aprova_sozinho=$11, exige_agendamento=$12,
 		so_responsavel_tecnico=$13, impedir_cpf_aberto=$14, campo_anonimo=$15, workflow=$16, agenda=$17,
-		requisitos=$18, documentos=$19, updated_at=$20 WHERE id=$1`,
+		requisitos=$18, documentos=$19, updated_at=$20, exige_aceite=$21, exige_aprovacao=$22 WHERE id=$1`,
 		s.ID, s.UnidadeID, s.FormularioID, s.Nome, s.Descricao, s.Categoria, s.PrazoDias, s.TaxaCentavos, s.Destaque, s.Ativo,
-		s.AprovaSozinho, s.ExigeAgendamento, s.SoResponsavelTecnico, s.ImpedirCPFAberto, s.CampoAnonimo, w, a, req, docs, s.UpdatedAt)
+		s.AprovaSozinho, s.ExigeAgendamento, s.SoResponsavelTecnico, s.ImpedirCPFAberto, s.CampoAnonimo, w, a, req, docs, s.UpdatedAt,
+		s.ExigeAceite, s.ExigeAprovacao)
 	if err != nil {
 		return fmt.Errorf("protocolos.AtualizarServico: %w", err)
 	}
@@ -211,7 +212,7 @@ func scanServico(row pgx.Row) (domain.Servico, error) {
 	var w, a, req, docs []byte
 	err := row.Scan(&s.ID, &s.UnidadeID, &s.FormularioID, &s.Nome, &s.Descricao, &s.Categoria, &s.PrazoDias, &s.TaxaCentavos,
 		&s.Destaque, &s.Ativo, &s.AprovaSozinho, &s.ExigeAgendamento, &s.SoResponsavelTecnico, &s.ImpedirCPFAberto, &s.CampoAnonimo,
-		&w, &a, &req, &docs, &s.CreatedAt, &s.UpdatedAt, &s.UnidadeNome)
+		&w, &a, &req, &docs, &s.CreatedAt, &s.UpdatedAt, &s.ExigeAceite, &s.ExigeAprovacao, &s.UnidadeNome)
 	if err != nil {
 		return domain.Servico{}, traduz(err)
 	}
@@ -238,7 +239,7 @@ func scanServico(row pgx.Row) (domain.Servico, error) {
 
 const colsServico = `id, unidade_id, formulario_id, nome, descricao, categoria, prazo_dias, taxa_centavos, destaque, ativo,
 	aprova_sozinho, exige_agendamento, so_responsavel_tecnico, impedir_cpf_aberto, campo_anonimo,
-	workflow, agenda, requisitos, documentos, created_at, updated_at,
+	workflow, agenda, requisitos, documentos, created_at, updated_at, exige_aceite, exige_aprovacao,
 	(SELECT nome FROM unidades WHERE id = protocolos_servicos.unidade_id)`
 
 func (r *PostgresRepository) BuscarServico(ctx context.Context, db database.DBTX, id uuid.UUID) (domain.Servico, error) {
@@ -263,7 +264,7 @@ func (r *PostgresRepository) ListarServicos(ctx context.Context, db database.DBT
 func (r *PostgresRepository) ListarServicosDaGestao(ctx context.Context, db database.DBTX, v domain.Visao) ([]domain.Servico, error) {
 	rows, err := db.Query(ctx, `SELECT t.id, t.unidade_id, t.formulario_id, t.nome, t.descricao, t.categoria, t.prazo_dias, t.taxa_centavos,
 		t.destaque, t.ativo, t.aprova_sozinho, t.exige_agendamento, t.so_responsavel_tecnico, t.impedir_cpf_aberto, t.campo_anonimo,
-		t.workflow, t.agenda, t.requisitos, t.documentos, t.created_at, t.updated_at, u.nome
+		t.workflow, t.agenda, t.requisitos, t.documentos, t.created_at, t.updated_at, t.exige_aceite, t.exige_aprovacao, u.nome
 		FROM protocolos_servicos t JOIN unidades u ON u.id = t.unidade_id
 		WHERE `+filtro+` ORDER BY t.nome`, v.Tudo, v.Unidades, v.Entidades)
 	if err != nil {
@@ -320,10 +321,14 @@ func (r *PostgresRepository) AtualizarPedido(ctx context.Context, db database.DB
 	if err != nil {
 		return err
 	}
+	enc := encaminhamentoArgs(p.Encaminhamento)
 	tag, err := db.Exec(ctx, `UPDATE protocolos_pedidos SET unidade_id=$2, departamento_id=$3, respostas=$4, campos=$5,
-		status=$6, etapa_id=$7, prazo_em=$8, decisao=$9, justificativa=$10, complemento=$11, responsavel_id=$12, updated_at=$13
+		status=$6, etapa_id=$7, prazo_em=$8, decisao=$9, justificativa=$10, complemento=$11, responsavel_id=$12, updated_at=$13,
+		prioridade=$14, encaminhar_para=$15, encaminhar_justificativa=$16, encaminhar_prazo_dias=$17,
+		encaminhado_por=$18, encaminhado_em=$19
 		WHERE id=$1`,
-		p.ID, p.UnidadeID, p.DepartamentoID, resp, campos, p.Status, p.EtapaID, p.PrazoEm, p.Decisao, p.Justificativa, p.Complemento, p.ResponsavelID, p.UpdatedAt)
+		p.ID, p.UnidadeID, p.DepartamentoID, resp, campos, p.Status, p.EtapaID, p.PrazoEm, p.Decisao, p.Justificativa, p.Complemento, p.ResponsavelID, p.UpdatedAt,
+		p.Prioridade, enc.para, enc.justificativa, enc.prazo, enc.por, enc.em)
 	if err != nil {
 		return fmt.Errorf("protocolos.AtualizarPedido: %w", err)
 	}
@@ -336,12 +341,15 @@ func (r *PostgresRepository) AtualizarPedido(ctx context.Context, db database.DB
 func scanPedido(row pgx.Row) (domain.Pedido, error) {
 	var p domain.Pedido
 	var resp, campos []byte
+	var enc encaminhamentoLido
 	err := row.Scan(&p.ID, &p.Numero, &p.ServicoID, &p.FormularioID, &p.UnidadeID, &p.DepartamentoID, &p.Nome, &p.CPF, &p.Email, &p.Telefone,
 		&resp, &campos, &p.Status, &p.EtapaID, &p.Prioridade, &p.PrazoEm, &p.Decisao, &p.Justificativa, &p.Complemento,
-		&p.UsuarioID, &p.ResponsavelID, &p.CreatedAt, &p.UpdatedAt, &p.ServicoNome, &p.UnidadeNome)
+		&p.UsuarioID, &p.ResponsavelID, &p.CreatedAt, &p.UpdatedAt, &p.ServicoNome, &p.UnidadeNome,
+		&p.ResponsavelNome, &enc.para, &enc.justificativa, &enc.prazo, &enc.por, &enc.em, &enc.nome, &p.ExigeAceite)
 	if err != nil {
 		return domain.Pedido{}, traduz(err)
 	}
+	p.Encaminhamento = enc.dominio()
 	if err := lerJSON(resp, &p.Respostas); err != nil {
 		return domain.Pedido{}, err
 	}
@@ -356,11 +364,20 @@ func scanPedido(row pgx.Row) (domain.Pedido, error) {
 
 const colsPedido = `p.id, p.numero, p.servico_id, p.formulario_id, p.unidade_id, p.departamento_id, p.nome, p.cpf, p.email, p.telefone,
 	p.respostas, p.campos, p.status, p.etapa_id, p.prioridade, p.prazo_em, p.decisao, p.justificativa, p.complemento,
-	p.usuario_id, p.responsavel_id, p.created_at, p.updated_at, s.nome, u.nome`
+	p.usuario_id, p.responsavel_id, p.created_at, p.updated_at, s.nome, u.nome,
+	COALESCE(NULLIF(btrim(ru.display_name), ''), ru.username, ''),
+	p.encaminhar_para, p.encaminhar_justificativa, p.encaminhar_prazo_dias, p.encaminhado_por, p.encaminhado_em,
+	COALESCE(ue.nome, ''), s.exige_aceite`
+
+// joinsPedido traz o serviço, a unidade, o responsável e a unidade do encaminhamento.
+const joinsPedido = ` FROM protocolos_pedidos p
+		JOIN protocolos_servicos s ON s.id = p.servico_id
+		JOIN unidades u ON u.id = p.unidade_id
+		LEFT JOIN users ru ON ru.id = p.responsavel_id
+		LEFT JOIN unidades ue ON ue.id = p.encaminhar_para`
 
 func (r *PostgresRepository) BuscarPedido(ctx context.Context, db database.DBTX, id uuid.UUID) (domain.Pedido, error) {
-	p, err := scanPedido(db.QueryRow(ctx, `SELECT `+colsPedido+` FROM protocolos_pedidos p
-		JOIN protocolos_servicos s ON s.id = p.servico_id JOIN unidades u ON u.id = p.unidade_id WHERE p.id=$1`, id))
+	p, err := scanPedido(db.QueryRow(ctx, `SELECT `+colsPedido+joinsPedido+` WHERE p.id=$1`, id))
 	if err != nil {
 		return domain.Pedido{}, fmt.Errorf("protocolos.BuscarPedido: %w", err)
 	}
@@ -368,8 +385,7 @@ func (r *PostgresRepository) BuscarPedido(ctx context.Context, db database.DBTX,
 }
 
 func (r *PostgresRepository) BuscarPorNumero(ctx context.Context, db database.DBTX, numero string) (domain.Pedido, error) {
-	p, err := scanPedido(db.QueryRow(ctx, `SELECT `+colsPedido+` FROM protocolos_pedidos p
-		JOIN protocolos_servicos s ON s.id = p.servico_id JOIN unidades u ON u.id = p.unidade_id WHERE p.numero=$1`, numero))
+	p, err := scanPedido(db.QueryRow(ctx, `SELECT `+colsPedido+joinsPedido+` WHERE p.numero=$1`, numero))
 	if err != nil {
 		return domain.Pedido{}, fmt.Errorf("protocolos.BuscarPorNumero: %w", err)
 	}
@@ -377,10 +393,10 @@ func (r *PostgresRepository) BuscarPorNumero(ctx context.Context, db database.DB
 }
 
 func (r *PostgresRepository) ListarPedidos(ctx context.Context, db database.DBTX, v domain.Visao) ([]domain.Pedido, error) {
-	rows, err := db.Query(ctx, `SELECT `+colsPedido+` FROM protocolos_pedidos p
-		JOIN protocolos_servicos s ON s.id = p.servico_id
-		JOIN unidades u ON u.id = p.unidade_id
-		WHERE ($1::bool OR p.unidade_id = ANY($2::uuid[]) OR u.entidade_id = ANY($3::uuid[]))
+	// A unidade de destino de um encaminhamento pendente também vê o pedido, para aceitar ou recusar.
+	rows, err := db.Query(ctx, `SELECT `+colsPedido+joinsPedido+`
+		WHERE ($1::bool OR p.unidade_id = ANY($2::uuid[]) OR u.entidade_id = ANY($3::uuid[])
+			OR p.encaminhar_para = ANY($2::uuid[]) OR ue.entidade_id = ANY($3::uuid[]))
 		ORDER BY p.created_at DESC`, v.Tudo, v.Unidades, v.Entidades)
 	if err != nil {
 		return nil, fmt.Errorf("protocolos.ListarPedidos: %w", err)
@@ -565,4 +581,71 @@ func (r *PostgresRepository) SomarFalta(ctx context.Context, db database.DBTX, c
 		return fmt.Errorf("protocolos.SomarFalta: %w", err)
 	}
 	return nil
+}
+
+// encaminhamentoGravado são as colunas do encaminhamento pendente; nulas quando não há.
+type encaminhamentoGravado struct {
+	para          *uuid.UUID
+	justificativa string
+	prazo         int
+	por           *uuid.UUID
+	em            *time.Time
+}
+
+func encaminhamentoArgs(e *domain.Encaminhamento) encaminhamentoGravado {
+	if e == nil {
+		return encaminhamentoGravado{}
+	}
+	para, em := e.UnidadeID, e.Em
+	return encaminhamentoGravado{para: &para, justificativa: e.Justificativa, prazo: e.PrazoDias, por: e.Por, em: &em}
+}
+
+// encaminhamentoLido recebe as colunas na leitura do pedido.
+type encaminhamentoLido struct {
+	encaminhamentoGravado
+	nome string
+}
+
+func (e encaminhamentoLido) dominio() *domain.Encaminhamento {
+	if e.para == nil {
+		return nil
+	}
+	out := &domain.Encaminhamento{
+		UnidadeID: *e.para, UnidadeNome: e.nome, Justificativa: e.justificativa, PrazoDias: e.prazo, Por: e.por,
+	}
+	if e.em != nil {
+		out.Em = *e.em
+	}
+	return out
+}
+
+func (r *PostgresRepository) Pessoa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error) {
+	var nome string
+	err := db.QueryRow(ctx, `SELECT COALESCE(NULLIF(btrim(display_name), ''), username)
+		FROM users WHERE id = $1 AND active`, id).Scan(&nome)
+	if err != nil {
+		return "", fmt.Errorf("protocolos.Pessoa: %w", traduz(err))
+	}
+	return nome, nil
+}
+
+func (r *PostgresRepository) Pessoas(ctx context.Context, db database.DBTX, unidade uuid.UUID) ([]domain.Pessoa, error) {
+	rows, err := db.Query(ctx, `SELECT u.id, COALESCE(NULLIF(btrim(u.display_name), ''), u.username)
+		FROM users u
+		WHERE u.active AND EXISTS (SELECT 1 FROM user_scopes s WHERE s.user_id = u.id AND s.unidade_id = $1)
+		ORDER BY 2, u.id
+		LIMIT 200`, unidade)
+	if err != nil {
+		return nil, fmt.Errorf("protocolos.Pessoas: %w", err)
+	}
+	defer rows.Close()
+	out := []domain.Pessoa{}
+	for rows.Next() {
+		var p domain.Pessoa
+		if err := rows.Scan(&p.ID, &p.Nome); err != nil {
+			return nil, fmt.Errorf("protocolos.Pessoas: %w", err)
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
 }

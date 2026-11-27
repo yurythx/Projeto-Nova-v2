@@ -77,7 +77,7 @@ func (f falso) Responder(context.Context, uuid.UUID, string) (domain.Pedido, err
 func (f falso) Anotar(context.Context, uuid.UUID, string) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
-func (f falso) Editar(context.Context, uuid.UUID, string, map[string]any) (domain.Pedido, error) {
+func (f falso) Editar(context.Context, uuid.UUID, application.Edicao) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
 func (f falso) Avancar(context.Context, uuid.UUID) (domain.Pedido, error) {
@@ -88,6 +88,27 @@ func (f falso) Concluir(context.Context, uuid.UUID, string, string) (domain.Pedi
 }
 func (f falso) Cancelar(context.Context, uuid.UUID) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusCancelado}, f.erro
+}
+func (f falso) Pessoas(context.Context, uuid.UUID) ([]domain.Pessoa, error) {
+	return []domain.Pessoa{{Nome: "Ana"}}, f.erro
+}
+func (f falso) Aceitar(context.Context, uuid.UUID, *uuid.UUID) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) Transferir(context.Context, uuid.UUID, uuid.UUID) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) Encaminhar(context.Context, uuid.UUID, uuid.UUID, string, int) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) DecidirEncaminhamento(context.Context, uuid.UUID, bool, string) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) Aprovar(context.Context, uuid.UUID) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusConcluido}, f.erro
+}
+func (f falso) Devolver(context.Context, uuid.UUID, string) (domain.Pedido, error) {
+	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
 
 func pedido(method, alvo, body, id string) *http.Request {
@@ -135,6 +156,15 @@ func TestRotas(t *testing.T) {
 		{h.Avancar, http.MethodPost, "", id},
 		{h.Cancelar, http.MethodPost, "", id},
 		{h.Concluir, http.MethodPost, `{"decisao":"favoravel","justificativa":"ok"}`, id},
+		{h.Pessoas, http.MethodGet, "", id},
+		{h.Aceitar, http.MethodPost, `{}`, id},
+		{h.Aceitar, http.MethodPost, `{"responsavel_id":"` + un + `"}`, id},
+		{h.Transferir, http.MethodPost, `{"responsavel_id":"` + un + `"}`, id},
+		{h.Encaminhar, http.MethodPost, `{"unidade_id":"` + un + `","justificativa":"é da saúde","prazo_dias":5}`, id},
+		{h.AceitarEncaminhamento, http.MethodPost, "", id},
+		{h.RecusarEncaminhamento, http.MethodPost, `{"mensagem":"não é nosso"}`, id},
+		{h.Aprovar, http.MethodPost, "", id},
+		{h.Devolver, http.MethodPost, `{"mensagem":"refazer o parecer"}`, id},
 	}
 	for _, c := range ok {
 		rec := httptest.NewRecorder()
@@ -196,6 +226,14 @@ func TestRotas(t *testing.T) {
 		{ruim.Avancar, http.MethodPost, "", id},
 		{ruim.Cancelar, http.MethodPost, "", id},
 		{ruim.Concluir, http.MethodPost, `{"decisao":"favoravel","justificativa":"ok"}`, id},
+		{ruim.Pessoas, http.MethodGet, "", id},
+		{ruim.Aceitar, http.MethodPost, `{}`, id},
+		{ruim.Transferir, http.MethodPost, `{"responsavel_id":"` + un + `"}`, id},
+		{ruim.Encaminhar, http.MethodPost, `{"unidade_id":"` + un + `","justificativa":"x"}`, id},
+		{ruim.AceitarEncaminhamento, http.MethodPost, "", id},
+		{ruim.RecusarEncaminhamento, http.MethodPost, `{"mensagem":"x"}`, id},
+		{ruim.Aprovar, http.MethodPost, "", id},
+		{ruim.Devolver, http.MethodPost, `{"mensagem":"x"}`, id},
 	}
 	for _, c := range falhas {
 		rec = httptest.NewRecorder()
@@ -234,6 +272,16 @@ func TestRotas(t *testing.T) {
 		{h.Avancar, "", "nao"},
 		{h.Cancelar, "", "nao"},
 		{h.Concluir, `{"decisao":"favoravel","justificativa":"ok"}`, "nao"},
+		{h.Pessoas, "", "nao"},
+		{h.Aceitar, `{}`, "nao"},
+		{h.Aceitar, "{", id},
+		{h.Transferir, `{}`, id},
+		{h.Transferir, "{", id},
+		{h.Encaminhar, "{", id},
+		{h.AceitarEncaminhamento, "", "nao"},
+		{h.RecusarEncaminhamento, "{", id},
+		{h.Aprovar, "", "nao"},
+		{h.Devolver, `{"mensagem":"x"}`, "nao"},
 	} {
 		rec = httptest.NewRecorder()
 		c.fn(rec, pedido(http.MethodPost, "/", c.body, c.param))
