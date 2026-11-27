@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* A variante dark: segue o mesmo critério dos tokens: o tema escolhido no
+   botão ([data-theme]) e, sem escolha, o modo do sistema. Sem isto o
+   Tailwind 4 só olhava o sistema, e quem ligava o escuro pelo botão via
+   texto cinza-escuro sobre fundo escuro. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
 /* Design tokens do Projeto-nova-v2 — paleta DSGov (Padrão Digital de
    Governo) como base, 100% substituível por white-label: cada órgão
    sobrescreve os tokens pela tela Configurações > Identidade visual
@@ -122,6 +137,7 @@
 /* Modo Escuro Padrão */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-high-contrast="true"]) {
+    color-scheme: dark;
     --header-topbar: #0a1324;
     --background: #0f172a;
     --foreground: #f8fafc;
@@ -143,6 +159,7 @@
 }
 
 :root[data-theme="dark"]:not([data-high-contrast="true"]) {
+  color-scheme: dark;
   --header-topbar: #0a1324;
   --background: #0f172a;
   --foreground: #f8fafc;
@@ -163,6 +180,7 @@
 }
 
 :root[data-theme="light"]:not([data-high-contrast="true"]) {
+  color-scheme: light;
   --header-topbar: #14284b;
   --background: #f8fafc;
   --foreground: #0f172a;

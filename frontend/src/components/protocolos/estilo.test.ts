@@ -38,9 +38,11 @@ describe("estilo do protocolo", () => {
     expect(seloDaPrioridade("alta")).toBe("bg-orange-500");
     expect(seloDaPrioridade("x")).toBe("bg-blue-500");
     expect(gradienteDoStatus("novo")).toContain("from-[#4facfe]");
-    expect(gradienteDoStatus("em_analise")).toBe("bg-cyan-500");
+    expect(gradienteDoStatus("em_analise")).toBe("bg-cyan-500 text-white");
+    expect(gradienteDoStatus("pendente")).toContain("text-slate-800");
     expect(gradienteDaPrioridade("urgente")).toContain("from-[#ff9a9e]");
-    expect(gradienteDaPrioridade("x")).toBe("bg-blue-500");
+    expect(gradienteDaPrioridade("x")).toBe("bg-blue-500 text-white");
+    expect(gradienteDaPrioridade("normal")).toContain("text-white");
   });
 
   it("marca o prazo na borda e no selo, com no prazo como padrão", () => {

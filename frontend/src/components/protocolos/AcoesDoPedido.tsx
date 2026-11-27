@@ -6,6 +6,8 @@ import { useAction } from "@/components/plataforma/useAction";
 import { Dialog } from "@/components/ui/Dialog";
 import { apiClient } from "@/lib/api/client";
 
+import { BOTAO_PERIGO, BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO, ROTULO } from "./ui";
+
 export type TipoAcao = "complemento" | "resposta" | "nota" | "concluir" | "cancelar";
 
 export interface AcaoAberta {
@@ -21,16 +23,6 @@ const TITULO: Record<TipoAcao, string> = {
   concluir: "Concluir Protocolo",
   cancelar: "Cancelar Protocolo",
 };
-
-const CAMPO =
-  "w-full rounded-lg border border-gray-300 bg-surface px-4 py-3 text-sm text-foreground transition-colors focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10";
-const ROTULO = "mb-2 block text-sm font-medium text-gray-700 dark:text-muted";
-export const BOTAO_PRIMARIO =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50";
-export const BOTAO_SECUNDARIO =
-  "inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-surface px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-foreground dark:hover:bg-white/5";
-const BOTAO_PERIGO =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50";
 
 /** Modal da ação escolhida no menu do pedido. Chama onFeito depois de gravar. */
 export function ModalDeAcao({
@@ -81,7 +73,7 @@ export function ModalDeAcao({
     >
       <form onSubmit={(e) => void enviar(e)} className="mt-4 flex flex-col gap-4">
         {tipo === "cancelar" && (
-          <p className="text-sm text-gray-600 dark:text-muted">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             O protocolo é encerrado como cancelado e o cidadão vê a mudança na consulta. Esta ação
             não pode ser desfeita.
           </p>

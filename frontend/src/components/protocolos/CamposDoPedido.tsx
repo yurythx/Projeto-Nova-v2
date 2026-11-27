@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { Textarea } from "@/components/ui/Textarea";
+import { BOTAO_SECUNDARIO, CAMPO, Rotulado, ROTULO } from "./ui";
 
 export interface Campo {
   id: string;
@@ -29,40 +26,54 @@ export function CampoInput({
   onArquivo: (arquivo: File) => void;
 }) {
   if (campo.tipo === "page") {
-    return <h3 className="pt-2 text-sm font-semibold">{campo.rotulo}</h3>;
+    return (
+      <h3 className="border-b border-gray-200 pb-2 pt-3 text-base font-semibold text-gray-800 dark:border-slate-700 dark:text-slate-100">
+        {campo.rotulo}
+      </h3>
+    );
   }
   const label = campo.obrigatorio ? `${campo.rotulo} *` : campo.rotulo;
   if (campo.tipo === "textarea") {
     return (
-      <Textarea
-        id={campo.id}
-        label={label}
-        required={campo.obrigatorio}
-        placeholder={campo.placeholder}
-        value={typeof valor === "string" ? valor : ""}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <Rotulado id={campo.id} rotulo={label}>
+        <textarea
+          id={campo.id}
+          rows={4}
+          required={campo.obrigatorio}
+          placeholder={campo.placeholder}
+          value={typeof valor === "string" ? valor : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${CAMPO} min-h-[100px] resize-y`}
+        />
+      </Rotulado>
     );
   }
   if (campo.tipo === "select" || campo.tipo === "radio") {
     return (
-      <Select
-        id={campo.id}
-        label={label}
-        required={campo.obrigatorio}
-        placeholder="Selecione…"
-        value={typeof valor === "string" ? valor : ""}
-        options={(campo.opcoes ?? []).map((opcao) => ({ value: opcao, label: opcao }))}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <Rotulado id={campo.id} rotulo={label}>
+        <select
+          id={campo.id}
+          required={campo.obrigatorio}
+          value={typeof valor === "string" ? valor : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={CAMPO}
+        >
+          <option value="">Selecione…</option>
+          {(campo.opcoes ?? []).map((opcao) => (
+            <option key={opcao} value={opcao}>
+              {opcao}
+            </option>
+          ))}
+        </select>
+      </Rotulado>
     );
   }
   if (campo.tipo === "checkbox" || campo.tipo === "boolean") {
     return (
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/50">
         <input
           type="checkbox"
-          className="h-4 w-4 accent-primary"
+          className="h-4 w-4 accent-blue-500"
           checked={valor === true}
           onChange={(e) => onChange(e.target.checked)}
         />
@@ -72,19 +83,23 @@ export function CampoInput({
   }
   if (campo.tipo === "file") {
     return (
-      <div className="flex flex-col gap-1">
-        <Input
+      <Rotulado id={campo.id} rotulo={label}>
+        <input
           id={campo.id}
-          label={label}
           type="file"
           required={campo.obrigatorio && typeof valor !== "string"}
           onChange={(e) => {
             const arquivo = e.target.files?.[0];
             if (arquivo) onArquivo(arquivo);
           }}
+          className={`${CAMPO} file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 dark:file:bg-sky-400/15 dark:file:text-sky-300`}
         />
-        {typeof valor === "string" && <p className="text-xs text-muted">Arquivo recebido.</p>}
-      </div>
+        {typeof valor === "string" && (
+          <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            Arquivo recebido.
+          </p>
+        )}
+      </Rotulado>
     );
   }
   if (campo.tipo === "map" || campo.tipo === "map_area" || campo.tipo === "ambulante") {
@@ -101,12 +116,15 @@ export function CampoInput({
     const marcados = Array.isArray(valor) ? valor.map(String) : [];
     return (
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{label}</legend>
+        <legend className={ROTULO}>{label}</legend>
         {(campo.opcoes ?? []).map((opcao) => (
-          <label key={opcao} className="flex items-center gap-2 text-sm">
+          <label
+            key={opcao}
+            className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-200"
+          >
             <input
               type="checkbox"
-              className="h-4 w-4 accent-primary"
+              className="h-4 w-4 accent-blue-500"
               checked={marcados.includes(opcao)}
               onChange={(e) =>
                 onChange(
@@ -123,22 +141,24 @@ export function CampoInput({
     );
   }
   return (
-    <Input
-      id={campo.id}
-      label={label}
-      required={campo.obrigatorio}
-      placeholder={campo.placeholder}
-      type={tipoHtml(campo.tipo)}
-      inputMode={campo.tipo === "number" ? "decimal" : undefined}
-      value={valor == null ? "" : String(valor)}
-      onChange={(e) =>
-        onChange(
-          campo.tipo === "number" && e.target.value !== ""
-            ? Number(e.target.value)
-            : e.target.value,
-        )
-      }
-    />
+    <Rotulado id={campo.id} rotulo={label}>
+      <input
+        id={campo.id}
+        required={campo.obrigatorio}
+        placeholder={campo.placeholder}
+        type={tipoHtml(campo.tipo)}
+        inputMode={campo.tipo === "number" ? "decimal" : undefined}
+        value={valor == null ? "" : String(valor)}
+        onChange={(e) =>
+          onChange(
+            campo.tipo === "number" && e.target.value !== ""
+              ? Number(e.target.value)
+              : e.target.value,
+          )
+        }
+        className={CAMPO}
+      />
+    </Rotulado>
   );
 }
 
@@ -200,48 +220,59 @@ function CampoMapa({
     lat && lng ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}` : "";
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium">{label}</legend>
+      <legend className={ROTULO}>{label}</legend>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input
-          id={`${campo.id}-lat`}
-          label={area ? "Latitude do primeiro ponto" : "Latitude"}
-          inputMode="decimal"
-          value={lat}
-          onChange={(e) => gravar(e.target.value, lng)}
-        />
-        <Input
+        <Rotulado id={`${campo.id}-lat`} rotulo={area ? "Latitude do primeiro ponto" : "Latitude"}>
+          <input
+            id={`${campo.id}-lat`}
+            inputMode="decimal"
+            value={lat}
+            onChange={(e) => gravar(e.target.value, lng)}
+            className={CAMPO}
+          />
+        </Rotulado>
+        <Rotulado
           id={`${campo.id}-lng`}
-          label={area ? "Longitude do primeiro ponto" : "Longitude"}
-          inputMode="decimal"
-          value={lng}
-          onChange={(e) => gravar(lat, e.target.value)}
-        />
+          rotulo={area ? "Longitude do primeiro ponto" : "Longitude"}
+        >
+          <input
+            id={`${campo.id}-lng`}
+            inputMode="decimal"
+            value={lng}
+            onChange={(e) => gravar(lat, e.target.value)}
+            className={CAMPO}
+          />
+        </Rotulado>
         {area && (
           <>
-            <Input
-              id={`${campo.id}-lat2`}
-              label="Latitude do segundo ponto"
-              inputMode="decimal"
-              value={lat2}
-              onChange={(e) => gravar(lat, lng, e.target.value, lng2)}
-            />
-            <Input
-              id={`${campo.id}-lng2`}
-              label="Longitude do segundo ponto"
-              inputMode="decimal"
-              value={lng2}
-              onChange={(e) => gravar(lat, lng, lat2, e.target.value)}
-            />
+            <Rotulado id={`${campo.id}-lat2`} rotulo="Latitude do segundo ponto">
+              <input
+                id={`${campo.id}-lat2`}
+                inputMode="decimal"
+                value={lat2}
+                onChange={(e) => gravar(lat, lng, e.target.value, lng2)}
+                className={CAMPO}
+              />
+            </Rotulado>
+            <Rotulado id={`${campo.id}-lng2`} rotulo="Longitude do segundo ponto">
+              <input
+                id={`${campo.id}-lng2`}
+                inputMode="decimal"
+                value={lng2}
+                onChange={(e) => gravar(lat, lng, lat2, e.target.value)}
+                className={CAMPO}
+              />
+            </Rotulado>
           </>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" variant="secondary" onClick={localizar}>
+        <button type="button" className={BOTAO_SECUNDARIO} onClick={localizar}>
           Usar minha localização
-        </Button>
+        </button>
         {mapa && (
           <a
-            className="text-sm text-primary underline"
+            className="text-sm font-medium text-blue-600 underline dark:text-sky-400"
             href={mapa}
             target="_blank"
             rel="noreferrer"
@@ -250,7 +281,7 @@ function CampoMapa({
           </a>
         )}
       </div>
-      {aviso && <p className="text-xs text-danger">{aviso}</p>}
+      {aviso && <p className="text-xs text-red-600 dark:text-red-400">{aviso}</p>}
     </fieldset>
   );
 }

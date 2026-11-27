@@ -20,12 +20,7 @@ import {
 import { DataState } from "@/components/plataforma/DataState";
 import { useIdDaRota } from "@/components/plataforma/PainelDoQuadro";
 import { fmtDateTime, useAction } from "@/components/plataforma/useAction";
-import {
-  BOTAO_PRIMARIO,
-  BOTAO_SECUNDARIO,
-  ModalDeAcao,
-  type AcaoAberta,
-} from "@/components/protocolos/AcoesDoPedido";
+import { ModalDeAcao, type AcaoAberta } from "@/components/protocolos/AcoesDoPedido";
 import {
   dataCurta,
   FINAIS,
@@ -37,6 +32,7 @@ import {
   seloDoPrazo,
   textoDoPrazo,
 } from "@/components/protocolos/estilo";
+import { BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO } from "@/components/protocolos/ui";
 import { Dialog } from "@/components/ui/Dialog";
 import { apiClient } from "@/lib/api/client";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
@@ -204,16 +200,16 @@ export function FichaConteudo() {
         {pedido && (
           <>
             {/* Cabeçalho */}
-            <div className="sticky top-0 z-30 mb-8 flex flex-wrap items-center gap-4 border-b border-gray-200/50 bg-gray-50/90 py-4 backdrop-blur dark:border-surface-border dark:bg-background/90">
+            <div className="sticky top-0 z-30 mb-8 flex flex-wrap items-center gap-4 border-b border-gray-200/50 bg-gray-50/90 py-4 backdrop-blur dark:border-slate-700 dark:bg-background/90">
               <button
                 type="button"
                 onClick={() => router.push("/protocolos")}
-                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-200 dark:bg-white/10 dark:text-foreground"
+                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <ArrowLeft className="h-5 w-5" aria-hidden />
                 Voltar
               </button>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-foreground">
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100">
                 Protocolo #{pedido.numero}
               </h1>
             </div>
@@ -224,7 +220,7 @@ export function FichaConteudo() {
                 {etapas.length > 0 && (
                   <Cartao>
                     <TituloCartao>Fluxo do Processo</TituloCartao>
-                    <div className="relative mt-4 flex min-h-[80px] justify-between overflow-x-auto px-4 before:absolute before:left-8 before:right-8 before:top-4 before:z-0 before:h-0.5 before:bg-gray-200">
+                    <div className="relative mt-4 flex min-h-[80px] justify-between overflow-x-auto px-4 before:absolute before:left-8 before:right-8 before:top-4 before:z-0 before:h-0.5 before:bg-gray-200 dark:before:bg-slate-600">
                       {etapas.map((etapa, indice) => {
                         const atual = etapas.findIndex((e) => e.id === pedido.etapa_id);
                         const ativa = etapa.id === pedido.etapa_id;
@@ -240,7 +236,7 @@ export function FichaConteudo() {
                                   ? "border-blue-500 bg-blue-500 text-white"
                                   : feita
                                     ? "border-emerald-500 bg-emerald-500 text-white"
-                                    : "border-gray-200 bg-white text-gray-500"
+                                    : "border-gray-200 bg-white text-gray-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400"
                               }`}
                             >
                               {feita ? (
@@ -252,8 +248,8 @@ export function FichaConteudo() {
                             <span
                               className={`max-w-[100px] text-center text-xs leading-tight ${
                                 ativa
-                                  ? "font-semibold text-gray-800 dark:text-foreground"
-                                  : "text-gray-500 dark:text-muted"
+                                  ? "font-semibold text-gray-800 dark:text-slate-100"
+                                  : "text-gray-500 dark:text-slate-400"
                               }`}
                             >
                               {nomeDaEtapa(etapa.id)}
@@ -262,7 +258,7 @@ export function FichaConteudo() {
                         );
                       })}
                     </div>
-                    <div className="mt-4 rounded bg-gray-50 p-4 text-sm text-gray-700 dark:bg-white/5 dark:text-foreground">
+                    <div className="mt-4 rounded bg-gray-50 p-4 text-sm text-gray-700 dark:bg-slate-900/40 dark:text-slate-100">
                       <strong>Etapa Atual: </strong>
                       {nomeDaEtapa(pedido.etapa_id)}
                       {pedido.prazo_em ? ` · prazo até ${dataCurta(pedido.prazo_em)}` : ""}
@@ -273,10 +269,15 @@ export function FichaConteudo() {
                 {/* Aviso de complementação */}
                 {complementando && pedido.complemento && (
                   <div className="flex items-start gap-3 rounded-xl border border-l-4 border-amber-500 bg-amber-50 p-5 text-sm dark:bg-amber-500/10">
-                    <MessageSquareWarning className="h-5 w-5 text-amber-600" aria-hidden />
+                    <MessageSquareWarning
+                      className="h-5 w-5 text-amber-600 dark:text-amber-400"
+                      aria-hidden
+                    />
                     <div>
-                      <p className="font-semibold text-amber-700">Complementação Solicitada</p>
-                      <p className="text-gray-700 dark:text-foreground">{pedido.complemento}</p>
+                      <p className="font-semibold text-amber-700 dark:text-amber-300">
+                        Complementação Solicitada
+                      </p>
+                      <p className="text-gray-700 dark:text-slate-100">{pedido.complemento}</p>
                     </div>
                   </div>
                 )}
@@ -292,14 +293,16 @@ export function FichaConteudo() {
                   >
                     <p
                       className={`font-semibold ${
-                        pedido.decisao === "desfavoravel" ? "text-red-700" : "text-emerald-700"
+                        pedido.decisao === "desfavoravel"
+                          ? "text-red-700 dark:text-red-300"
+                          : "text-emerald-700 dark:text-emerald-300"
                       }`}
                     >
                       {pedido.decisao === "desfavoravel"
                         ? "Decisão Desfavorável (indeferido)"
                         : "Decisão Favorável (deferido)"}
                     </p>
-                    <p className="text-gray-700 dark:text-foreground">{pedido.justificativa}</p>
+                    <p className="text-gray-700 dark:text-slate-100">{pedido.justificativa}</p>
                   </div>
                 )}
 
@@ -313,14 +316,14 @@ export function FichaConteudo() {
                     <Info rotulo="Número">{pedido.numero}</Info>
                     <Info rotulo="Status">
                       <span
-                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-medium uppercase text-white ${gradienteDoStatus(pedido.status)}`}
+                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${gradienteDoStatus(pedido.status)}`}
                       >
                         {rotuloDoStatus(pedido.status)}
                       </span>
                     </Info>
                     <Info rotulo="Prioridade">
                       <span
-                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-medium uppercase text-white ${gradienteDaPrioridade(pedido.prioridade)}`}
+                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${gradienteDaPrioridade(pedido.prioridade)}`}
                       >
                         {rotuloDaPrioridade(pedido.prioridade)}
                       </span>
@@ -371,7 +374,7 @@ export function FichaConteudo() {
                       <Info rotulo="Horário">{agendamento.hora}</Info>
                       <Info rotulo="Situação">{rotuloHorario(agendamento.status)}</Info>
                     </GradeInfo>
-                    <p className="mt-3 text-xs text-gray-500 dark:text-muted">
+                    <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
                       Duas faltas bloqueiam novo horário por 30 dias a partir da última.
                     </p>
                   </Cartao>
@@ -401,9 +404,9 @@ export function FichaConteudo() {
                         return (
                           <div
                             key={campo.id}
-                            className="flex flex-col gap-1 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-surface-border dark:bg-white/5"
+                            className="flex flex-col gap-1 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-900/40"
                           >
-                            <span className="text-sm font-semibold text-gray-700 dark:text-foreground">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-slate-100">
                               {campo.rotulo}
                             </span>
                             {campo.tipo === "file" && chaveDeArquivo(valor) ? (
@@ -416,7 +419,7 @@ export function FichaConteudo() {
                                 Baixar
                               </button>
                             ) : (
-                              <span className="whitespace-pre-wrap break-words text-sm text-gray-500 dark:text-muted">
+                              <span className="whitespace-pre-wrap break-words text-sm text-gray-500 dark:text-slate-400">
                                 {mostrar(valor)}
                               </span>
                             )}
@@ -535,7 +538,7 @@ export function FichaConteudo() {
                       )}
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-surface px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-surface px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10"
                         onClick={() =>
                           setAcao({ tipo: "cancelar", pedidoId: pedido.id, numero: pedido.numero })
                         }
@@ -554,26 +557,28 @@ export function FichaConteudo() {
                   </TituloCartao>
                   <div className="flex flex-col gap-4">
                     {(ficha.data?.historico ?? []).length === 0 && (
-                      <span className="text-xs text-gray-500">Nenhuma movimentação registrada</span>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">
+                        Nenhuma movimentação registrada
+                      </span>
                     )}
                     {[...(ficha.data?.historico ?? [])].reverse().map((item) => (
                       <div
                         key={item.id}
-                        className="flex gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-surface-border dark:bg-white/5"
+                        className="flex gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-900/40"
                       >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-white/10">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-slate-700 dark:text-slate-300">
                           <History className="h-4 w-4" aria-hidden />
                         </span>
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-700 dark:text-foreground">
+                          <span className="text-sm font-medium text-gray-700 dark:text-slate-100">
                             {ROTULO_ACAO[item.acao] ?? item.acao}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-muted">
+                          <span className="text-xs text-gray-500 dark:text-slate-400">
                             {rotuloDoStatus(item.status)} • {fmtDateTime(item.created_at)}
                           </span>
                           {item.descricao &&
                             !FATO_PADRAO.has(item.descricao.trim().toLowerCase()) && (
-                              <span className="whitespace-pre-wrap break-words text-xs text-gray-500 dark:text-muted">
+                              <span className="whitespace-pre-wrap break-words text-xs text-gray-500 dark:text-slate-400">
                                 {item.descricao}
                               </span>
                             )}
@@ -582,7 +587,7 @@ export function FichaConteudo() {
                               key={anexo}
                               type="button"
                               onClick={() => void baixar(anexo)}
-                              className="mt-1 inline-flex w-fit items-center gap-1.5 text-[0.8125rem] text-sky-600 hover:underline"
+                              className="mt-1 inline-flex w-fit items-center gap-1.5 text-[0.8125rem] text-sky-600 hover:underline dark:text-sky-400"
                             >
                               <FileText className="h-3.5 w-3.5" aria-hidden />
                               Anexo desta etapa
@@ -616,7 +621,7 @@ export function FichaConteudo() {
                     <div key={campo.id}>
                       <label
                         htmlFor={`campo-${campo.id}`}
-                        className="mb-2 block text-sm font-medium text-gray-700 dark:text-muted"
+                        className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-400"
                       >
                         {campo.rotulo}
                       </label>
@@ -628,14 +633,14 @@ export function FichaConteudo() {
                             ? ""
                             : mostrar(pedido.respostas?.[campo.id])
                         }
-                        className="w-full rounded-lg border border-gray-300 bg-surface px-4 py-3 text-sm text-foreground focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10"
+                        className={CAMPO}
                       />
                     </div>
                   ))}
                 <div>
                   <label
                     htmlFor="justificativa-edicao"
-                    className="mb-2 block text-sm font-medium text-gray-700 dark:text-muted"
+                    className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-400"
                   >
                     Justificativa da edição *
                   </label>
@@ -645,7 +650,7 @@ export function FichaConteudo() {
                     required
                     rows={3}
                     maxLength={4000}
-                    className="w-full rounded-lg border border-gray-300 bg-surface px-4 py-3 text-sm text-foreground focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10"
+                    className={CAMPO}
                   />
                 </div>
                 <div className="flex justify-end gap-3">
@@ -672,7 +677,7 @@ export function FichaConteudo() {
 function Cartao({ className = "", children }: { className?: string; children: ReactNode }) {
   return (
     <section
-      className={`rounded-xl border border-slate-200 bg-surface p-6 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.03)] transition-shadow hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05),0_4px_6px_-2px_rgba(0,0,0,0.03)] dark:border-surface-border ${className}`}
+      className={`rounded-xl border border-slate-200 bg-surface p-6 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.03)] transition-shadow hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05),0_4px_6px_-2px_rgba(0,0,0,0.03)] dark:border-slate-700 ${className}`}
     >
       {children}
     </section>
@@ -681,7 +686,7 @@ function Cartao({ className = "", children }: { className?: string; children: Re
 
 function TituloCartao({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-foreground">
+    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-slate-100">
       {children}
     </h2>
   );
@@ -696,8 +701,10 @@ function GradeInfo({ children }: { children: ReactNode }) {
 function Info({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium uppercase text-gray-500 dark:text-muted">{rotulo}</span>
-      <span className="break-words text-sm font-medium text-gray-800 dark:text-foreground">
+      <span className="text-xs font-medium uppercase text-gray-500 dark:text-slate-400">
+        {rotulo}
+      </span>
+      <span className="break-words text-sm font-medium text-gray-800 dark:text-slate-100">
         {children}
       </span>
     </div>

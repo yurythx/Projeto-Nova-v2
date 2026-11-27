@@ -79,19 +79,19 @@ export function corDaEstatistica(status: string): string {
 
 /** Selo de status na ficha (gradiente do ProtocoloDetalhes original). */
 const GRADIENTE_STATUS: Record<string, string> = {
-  novo: "bg-gradient-to-br from-[#4facfe] to-[#00f2fe] shadow-[0_4px_15px_rgba(79,172,254,0.3)]",
+  novo: "bg-gradient-to-br from-[#4facfe] to-[#00f2fe] shadow-[0_4px_15px_rgba(79,172,254,0.3)] text-white",
   em_andamento:
-    "bg-gradient-to-br from-[#43e97b] to-[#38f9d7] shadow-[0_4px_15px_rgba(67,233,123,0.3)]",
+    "bg-gradient-to-br from-[#43e97b] to-[#38f9d7] shadow-[0_4px_15px_rgba(67,233,123,0.3)] text-white",
   concluido:
-    "bg-gradient-to-br from-[#fa709a] to-[#fee140] shadow-[0_4px_15px_rgba(250,112,154,0.3)]",
+    "bg-gradient-to-br from-[#fa709a] to-[#fee140] shadow-[0_4px_15px_rgba(250,112,154,0.3)] text-white",
   pendente:
-    "bg-gradient-to-br from-[#a8edea] to-[#fed6e3] shadow-[0_4px_15px_rgba(168,237,234,0.3)]",
+    "bg-gradient-to-br from-[#a8edea] to-[#fed6e3] shadow-[0_4px_15px_rgba(168,237,234,0.3)] text-slate-800",
   cancelado:
-    "bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] shadow-[0_4px_15px_rgba(255,154,158,0.3)]",
+    "bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] shadow-[0_4px_15px_rgba(255,154,158,0.3)] text-slate-800",
 };
 
 export function gradienteDoStatus(status: string): string {
-  return GRADIENTE_STATUS[status] ?? seloDoStatus(status);
+  return GRADIENTE_STATUS[status] ?? `${seloDoStatus(status)} text-white`;
 }
 
 const ROTULO_PRIORIDADE: Record<string, string> = {
@@ -119,15 +119,17 @@ export function seloDaPrioridade(prioridade: string): string {
 
 /** Selo da prioridade na ficha (gradiente). */
 const GRADIENTE_PRIORIDADE: Record<string, string> = {
-  baixa: "bg-gradient-to-br from-[#a8edea] to-[#fed6e3] shadow-[0_4px_15px_rgba(168,237,234,0.3)]",
-  normal: "bg-gradient-to-br from-[#4facfe] to-[#00f2fe] shadow-[0_4px_15px_rgba(79,172,254,0.3)]",
-  alta: "bg-gradient-to-br from-[#fa709a] to-[#fee140] shadow-[0_4px_15px_rgba(250,112,154,0.3)]",
+  baixa:
+    "bg-gradient-to-br from-[#a8edea] to-[#fed6e3] shadow-[0_4px_15px_rgba(168,237,234,0.3)] text-slate-800",
+  normal:
+    "bg-gradient-to-br from-[#4facfe] to-[#00f2fe] shadow-[0_4px_15px_rgba(79,172,254,0.3)] text-white",
+  alta: "bg-gradient-to-br from-[#fa709a] to-[#fee140] shadow-[0_4px_15px_rgba(250,112,154,0.3)] text-white",
   urgente:
-    "bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] shadow-[0_4px_15px_rgba(255,154,158,0.3)]",
+    "bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] shadow-[0_4px_15px_rgba(255,154,158,0.3)] text-slate-800",
 };
 
 export function gradienteDaPrioridade(prioridade: string): string {
-  return GRADIENTE_PRIORIDADE[prioridade] ?? seloDaPrioridade(prioridade);
+  return GRADIENTE_PRIORIDADE[prioridade] ?? `${seloDaPrioridade(prioridade)} text-white`;
 }
 
 /** Borda esquerda do cartão da lista, pela situação do prazo. */
@@ -144,10 +146,14 @@ export function bordaDoPrazo(situacao?: string): string {
 
 /** Selo claro do prazo (SLABadge do original). */
 const SELO_PRAZO: Record<string, string> = {
-  no_prazo: "bg-emerald-50 text-emerald-600 border border-emerald-500/20",
-  atencao: "bg-amber-50 text-amber-600 border border-amber-500/20",
-  atrasado: "bg-red-50 text-red-600 border border-red-500/20",
-  finalizado: "bg-gray-100 text-gray-500 border border-gray-300/20",
+  no_prazo:
+    "bg-emerald-50 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-400/30",
+  atencao:
+    "bg-amber-50 text-amber-600 border border-amber-500/20 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-400/30",
+  atrasado:
+    "bg-red-50 text-red-600 border border-red-500/20 dark:bg-red-500/15 dark:text-red-300 dark:border-red-400/30",
+  finalizado:
+    "bg-gray-100 text-gray-500 border border-gray-300/20 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500/30",
 };
 
 export function seloDoPrazo(situacao?: string): string {
@@ -247,8 +253,8 @@ export function bordaDaPrioridade(prioridade: string): string {
 /** Selo pequeno da prioridade no cartão do kanban. */
 export function seloPequenoDaPrioridade(prioridade: string): string {
   return prioridade === "alta" || prioridade === "urgente"
-    ? "bg-red-100 text-red-700"
-    : "bg-slate-200 text-slate-600";
+    ? "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+    : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300";
 }
 
 /** Data curta em pt-BR no fuso do protocolo (Cuiabá). */

@@ -18,11 +18,7 @@ import {
 
 import { DataState } from "@/components/plataforma/DataState";
 import { useAction } from "@/components/plataforma/useAction";
-import {
-  BOTAO_SECUNDARIO,
-  ModalDeAcao,
-  type AcaoAberta,
-} from "@/components/protocolos/AcoesDoPedido";
+import { ModalDeAcao, type AcaoAberta } from "@/components/protocolos/AcoesDoPedido";
 import {
   bordaDoPrazo,
   corDaEstatistica,
@@ -38,6 +34,7 @@ import {
   type PedidoResumo,
 } from "@/components/protocolos/estilo";
 import { KanbanProtocolos } from "@/components/protocolos/KanbanProtocolos";
+import { BOTAO_SECUNDARIO } from "@/components/protocolos/ui";
 import { filtrarPedidos, paginar, STATUS } from "@/components/protocolos/painel";
 import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
@@ -54,7 +51,7 @@ const ABAS_PRAZO = [
 ];
 
 const CAMPO =
-  "w-full min-w-[150px] rounded-lg border border-gray-300 bg-surface px-4 py-3 text-sm text-foreground transition-colors focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10";
+  "w-full min-w-[150px] rounded-lg border border-gray-300 bg-surface dark:border-slate-600 px-4 py-3 text-sm text-foreground transition-colors focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10";
 
 export default function ProtocolosPage() {
   return (
@@ -148,7 +145,7 @@ function PainelDeProtocolos() {
     <div className="mx-auto flex w-full max-w-[1400px] flex-col">
       {/* Cabeçalho */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-foreground">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100">
           Painel de Protocolos
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +171,7 @@ function PainelDeProtocolos() {
             Carta pública
           </Link>
           <div
-            className="flex gap-2 rounded-lg bg-slate-100 p-1 dark:bg-white/10"
+            className="flex gap-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-900/70"
             role="group"
             aria-label="Forma de ver os protocolos"
           >
@@ -186,8 +183,8 @@ function PainelDeProtocolos() {
                 onClick={() => trocarVisao(v)}
                 className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
                   visao === v
-                    ? "bg-white text-blue-500 shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:bg-surface"
-                    : "text-slate-500 dark:text-muted"
+                    ? "bg-white text-blue-500 shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:bg-slate-700 dark:text-sky-300"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 }`}
               >
                 {v === "lista" ? "Lista" : "Kanban"}
@@ -248,7 +245,7 @@ function PainelDeProtocolos() {
 
         {/* Abas de prazo */}
         <div
-          className="mb-6 mt-4 flex gap-6 overflow-x-auto border-b-2 border-gray-100 dark:border-surface-border"
+          className="mb-6 mt-4 flex gap-6 overflow-x-auto border-b-2 border-gray-100 dark:border-slate-700"
           role="tablist"
           aria-label="Situação do prazo"
         >
@@ -261,18 +258,18 @@ function PainelDeProtocolos() {
                 role="tab"
                 aria-selected={ativa}
                 onClick={() => filtrar(() => setPrazo(aba.value))}
-                className={`relative -bottom-0.5 flex shrink-0 items-center gap-2 border-b-[3px] px-1 py-3 text-sm transition-all hover:text-blue-600 ${
+                className={`relative -bottom-0.5 flex shrink-0 items-center gap-2 border-b-[3px] px-1 py-3 text-sm transition-all hover:text-blue-600 dark:hover:text-sky-300 ${
                   ativa
-                    ? "border-blue-600 font-semibold text-blue-600"
-                    : "border-transparent font-medium text-gray-500 dark:text-muted"
+                    ? "border-blue-600 font-semibold text-blue-600 dark:border-sky-400 dark:text-sky-300"
+                    : "border-transparent font-medium text-gray-500 dark:text-slate-400"
                 }`}
               >
                 {aba.label}
                 <span
                   className={`rounded-full px-2 py-px text-[0.7rem] font-semibold ${
                     ativa
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-muted"
+                      ? "bg-blue-100 text-blue-600 dark:bg-sky-400/20 dark:text-sky-200"
+                      : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400"
                   }`}
                 >
                   {contagemPrazo[aba.value] ?? 0}
@@ -283,11 +280,11 @@ function PainelDeProtocolos() {
         </div>
 
         {/* Filtros */}
-        <div className="mb-8 rounded-xl border border-gray-200 bg-surface p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:border-surface-border">
+        <div className="mb-8 rounded-xl border border-gray-200 bg-surface p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:border-slate-700">
           <div className="grid items-center gap-4 md:grid-cols-[1fr_1fr_1fr_auto]">
             <div className="relative md:col-span-4">
               <Search
-                className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500"
+                className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 dark:text-slate-400"
                 aria-hidden
               />
               <input
@@ -296,7 +293,7 @@ function PainelDeProtocolos() {
                 placeholder="Buscar por protocolo, CPF ou nome..."
                 value={busca}
                 onChange={(e) => filtrar(() => setBusca(e.target.value))}
-                className="w-full rounded-lg border border-gray-300 bg-surface py-3.5 pl-11 pr-4 text-base text-foreground transition-colors focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10"
+                className="w-full rounded-lg border border-gray-300 bg-surface dark:border-slate-600 py-3.5 pl-11 pr-4 text-base text-foreground transition-colors focus:border-blue-500 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10"
               />
             </div>
             <select
@@ -348,7 +345,7 @@ function PainelDeProtocolos() {
                   setPrazo("todos");
                 })
               }
-              className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-600"
+              className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
             >
               <FilterX className="h-4 w-4" aria-hidden />
               Limpar
@@ -360,9 +357,9 @@ function PainelDeProtocolos() {
         {visao === "kanban" && visiveis.length > 0 ? (
           <KanbanProtocolos pedidos={visiveis} onAbrir={abrir} />
         ) : (
-          <div className="flex flex-col rounded-xl border border-gray-200 bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:border-surface-border">
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:border-slate-700">
             {visiveis.length === 0 ? (
-              <p className="p-12 text-center text-gray-500 dark:text-muted">
+              <p className="p-12 text-center text-gray-500 dark:text-slate-400">
                 Nenhum protocolo encontrado com os filtros aplicados.
               </p>
             ) : (
@@ -373,19 +370,21 @@ function PainelDeProtocolos() {
                   return (
                     <article
                       key={p.id}
-                      className={`border-b border-gray-200 p-6 transition-colors last:border-b-0 hover:bg-slate-50 dark:border-surface-border dark:hover:bg-white/5 ${bordaDoPrazo(p.situacao_prazo)}`}
+                      className={`border-b border-gray-200 p-6 transition-colors last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50 ${bordaDoPrazo(p.situacao_prazo)}`}
                     >
                       <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-foreground">
+                          <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-slate-100">
                             Protocolo #{p.numero}
                           </h2>
-                          <p className="mb-2 text-sm text-gray-500 dark:text-muted">
+                          <p className="mb-2 text-sm text-gray-500 dark:text-slate-400">
                             {p.servico_nome || "Serviço não encontrado"}
                           </p>
-                          <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-muted">
+                          <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-slate-400">
                             <span className="flex items-center gap-1">
-                              <span className="mr-1 font-semibold text-blue-500">📌 Etapa:</span>
+                              <span className="mr-1 font-semibold text-blue-500 dark:text-sky-400">
+                                📌 Etapa:
+                              </span>
                               {nomeDaEtapa(p.etapa_id)}
                             </span>
                             <span className="flex items-center gap-1">
@@ -432,7 +431,7 @@ function PainelDeProtocolos() {
                         <button
                           type="button"
                           onClick={() => abrir(p)}
-                          className="flex items-center gap-1.5 rounded-md border border-blue-500 bg-blue-500 px-3 py-2 text-xs font-medium text-white transition-colors hover:border-blue-600 hover:bg-blue-600"
+                          className="flex items-center gap-1.5 rounded-md border border-blue-500 bg-blue-500 px-3 py-2 text-xs font-medium text-white transition-colors hover:border-blue-600 hover:bg-blue-600 dark:border-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
                         >
                           <Eye className="h-4 w-4" aria-hidden />
                           Visualizar
@@ -444,7 +443,7 @@ function PainelDeProtocolos() {
                               aria-label={`Ações do protocolo ${p.numero}`}
                               aria-expanded={menu === p.id}
                               onClick={() => setMenu(menu === p.id ? null : p.id)}
-                              className="flex items-center rounded-md border border-gray-300 bg-surface p-2 text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 dark:text-foreground dark:hover:bg-white/5"
+                              className="flex items-center rounded-md border border-gray-300 bg-surface dark:border-slate-600 p-2 text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 dark:text-slate-100 dark:hover:bg-slate-700/50"
                             >
                               <MoreVertical className="h-4 w-4" aria-hidden />
                             </button>
@@ -458,33 +457,39 @@ function PainelDeProtocolos() {
                                 />
                                 <div
                                   role="menu"
-                                  className="absolute left-0 top-full z-50 mt-2 min-w-[220px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] dark:border-surface-border dark:bg-surface"
+                                  className="absolute left-0 top-full z-50 mt-2 min-w-[220px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] dark:border-slate-600 dark:bg-slate-800 dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)]"
                                 >
-                                  <ItemMenu cor="text-blue-500" onClick={() => abrir(p)}>
+                                  <ItemMenu
+                                    cor="text-blue-500 dark:text-sky-400"
+                                    onClick={() => abrir(p)}
+                                  >
                                     Visualizar
                                   </ItemMenu>
                                   {p.etapa_id && p.status !== "em_complementacao" && (
                                     <ItemMenu
-                                      cor="text-violet-600"
+                                      cor="text-violet-600 dark:text-violet-400"
                                       disabled={pending}
                                       onClick={() => void avancar(p)}
                                     >
                                       Encaminhar para a próxima etapa
                                     </ItemMenu>
                                   )}
-                                  <ItemMenu cor="text-cyan-600" onClick={() => escolher(p, "nota")}>
+                                  <ItemMenu
+                                    cor="text-cyan-600 dark:text-cyan-400"
+                                    onClick={() => escolher(p, "nota")}
+                                  >
                                     Adicionar nota
                                   </ItemMenu>
                                   {p.status === "em_complementacao" ? (
                                     <ItemMenu
-                                      cor="text-emerald-600"
+                                      cor="text-emerald-600 dark:text-emerald-400"
                                       onClick={() => escolher(p, "resposta")}
                                     >
                                       Registrar resposta
                                     </ItemMenu>
                                   ) : (
                                     <ItemMenu
-                                      cor="text-orange-600"
+                                      cor="text-orange-600 dark:text-orange-400"
                                       onClick={() => escolher(p, "complemento")}
                                     >
                                       Solicitar complementação
@@ -492,14 +497,14 @@ function PainelDeProtocolos() {
                                   )}
                                   {p.status !== "em_complementacao" && (
                                     <ItemMenu
-                                      cor="text-red-600"
+                                      cor="text-red-600 dark:text-red-400"
                                       onClick={() => escolher(p, "concluir")}
                                     >
                                       Concluir
                                     </ItemMenu>
                                   )}
                                   <ItemMenu
-                                    cor="text-red-600"
+                                    cor="text-red-600 dark:text-red-400"
                                     onClick={() => escolher(p, "cancelar")}
                                   >
                                     Cancelar
@@ -586,7 +591,7 @@ function ItemMenu({
       role="menuitem"
       disabled={disabled}
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/5 ${cor}`}
+      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-slate-700/50 ${cor}`}
     >
       {children}
     </button>
@@ -613,7 +618,7 @@ function BotaoPagina({
       className={`rounded-md border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         ativa
           ? "border-blue-500 bg-blue-500 text-white"
-          : "border-gray-300 bg-surface text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:text-foreground dark:hover:bg-white/5"
+          : "border-gray-300 bg-surface dark:border-slate-600 text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:text-slate-100 dark:hover:bg-slate-700/50"
       }`}
     >
       {children}
