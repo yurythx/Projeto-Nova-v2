@@ -25,4 +25,7 @@ func TestModulo(t *testing.T) {
 	if com.Manifest().Key != Key {
 		t.Fatal("config")
 	}
+	if w := m.Workers(); len(w) != 1 || w[0].Name != "prazos-de-protocolos" || w[0].Process != kernel.ProcessWorker {
+		t.Fatalf("%+v", w)
+	}
 }

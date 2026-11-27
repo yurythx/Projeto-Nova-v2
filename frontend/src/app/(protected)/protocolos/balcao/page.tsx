@@ -11,6 +11,7 @@ import {
   respostasVisiveis,
   type Campo,
 } from "@/components/protocolos/CamposDoPedido";
+import { HorarioLivre } from "@/components/protocolos/HorarioLivre";
 import { useAction } from "@/components/plataforma/useAction";
 import {
   BOTAO_PRIMARIO,
@@ -351,14 +352,9 @@ export default function BalcaoPage() {
                     </select>
                   </Rotulado>
                   {item.servico.exige_agendamento && (
-                    <>
-                      <Rotulado id="data" rotulo="Data do atendimento">
-                        <input id="data" name="data" type="date" className={CAMPO} />
-                      </Rotulado>
-                      <Rotulado id="hora" rotulo="Hora">
-                        <input id="hora" name="hora" type="time" className={CAMPO} />
-                      </Rotulado>
-                    </>
+                    <div className="sm:col-span-2">
+                      <HorarioLivre servicoId={item.servico.id} obrigatorio={false} />
+                    </div>
                   )}
                 </div>
               </section>

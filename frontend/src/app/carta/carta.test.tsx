@@ -220,6 +220,7 @@ describe("Pedido pela carta", () => {
     const user = userEvent.setup();
     const api = mockBackend({
       "GET v1/protocolos/carta/s1": { data: ITEM },
+      "GET v1/protocolos/carta/s1/horarios": { data: ["09:00", "09:30"] },
       "POST v1/protocolos/carta/s1/arquivo": {
         data: { upload_url: "https://minio/up", method: "PUT", object_key: "k1", headers: {} },
       },
@@ -242,7 +243,8 @@ describe("Pedido pela carta", () => {
     await user.type(screen.getByLabelText("Nome completo *"), "Ana");
     await user.type(screen.getByLabelText("CPF *"), "00807124362");
     await user.type(screen.getByLabelText("Data do atendimento *"), "2026-12-02");
-    await user.type(screen.getByLabelText("Hora *"), "09:00");
+    await screen.findByRole("option", { name: "09:30" });
+    await user.selectOptions(screen.getByLabelText("Horário *"), "09:00");
     expect(screen.getByRole("heading", { name: "Empresa" })).toBeInTheDocument();
     await user.type(screen.getByLabelText("Razão social *"), "Padaria");
     await user.type(screen.getByLabelText("Observação"), "Esquina");

@@ -12,6 +12,7 @@ import {
   Clock,
   Coins,
   FileText,
+  Phone,
 } from "lucide-react";
 
 import {
@@ -20,6 +21,7 @@ import {
   respostasVisiveis,
   type Campo,
 } from "@/components/protocolos/CamposDoPedido";
+import { HorarioLivre } from "@/components/protocolos/HorarioLivre";
 import {
   BOTAO_PRIMARIO,
   BOTAO_SECUNDARIO,
@@ -53,6 +55,13 @@ interface CartaItem {
     taxa_centavos: number;
     requisitos?: Orientacao[];
     documentos?: Orientacao[];
+    detalhes?: {
+      quem_pode?: string;
+      passo_a_passo?: string;
+      contato?: string;
+      tempo_estimado?: string;
+      descricao_taxa?: string;
+    };
   };
   formulario: { titulo: string; instrucao: string; campos: Campo[] };
 }
@@ -206,6 +215,14 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
                 </section>
                 <ListaDeOrientacao titulo="Requisitos" itens={requisitos} />
                 <ListaDeOrientacao titulo="Documentos necessários" itens={documentos} />
+                <TextoDoServico
+                  titulo="Quem pode solicitar"
+                  texto={item.servico.detalhes?.quem_pode}
+                />
+                <TextoDoServico
+                  titulo="Passo a passo"
+                  texto={item.servico.detalhes?.passo_a_passo}
+                />
                 <button
                   type="button"
                   onClick={() => setPedir(true)}
@@ -277,14 +294,7 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
                 {item.servico.exige_agendamento && (
                   <section className="flex flex-col gap-4">
                     <Secao numero={2}>Horário do atendimento</Secao>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Rotulado id="data" rotulo="Data do atendimento *">
-                        <input id="data" name="data" type="date" required className={CAMPO} />
-                      </Rotulado>
-                      <Rotulado id="hora" rotulo="Hora *">
-                        <input id="hora" name="hora" type="time" required className={CAMPO} />
-                      </Rotulado>
-                    </div>
+                    <HorarioLivre servicoId={item.servico.id} obrigatorio />
                   </section>
                 )}
 
@@ -338,9 +348,24 @@ export function AbrirPedido({ id, pedirInicial = false }: { id: string; pedirIni
                 ? `${item.servico.prazo_dias} dias úteis`
                 : "Sem prazo fixo"}
             </Resumo>
+            {item.servico.detalhes?.tempo_estimado && (
+              <Resumo icone={<Clock className="h-4 w-4" aria-hidden />} rotulo="Tempo estimado">
+                {item.servico.detalhes.tempo_estimado}
+              </Resumo>
+            )}
             <Resumo icone={<Coins className="h-4 w-4" aria-hidden />} rotulo="Taxa">
               {item.servico.taxa_centavos > 0 ? reais(item.servico.taxa_centavos) : "Gratuito"}
+              {item.servico.detalhes?.descricao_taxa && (
+                <span className={`block text-xs font-normal ${TEXTO_FRACO}`}>
+                  {item.servico.detalhes.descricao_taxa}
+                </span>
+              )}
             </Resumo>
+            {item.servico.detalhes?.contato && (
+              <Resumo icone={<Phone className="h-4 w-4" aria-hidden />} rotulo="Contato">
+                {item.servico.detalhes.contato}
+              </Resumo>
+            )}
             <Resumo icone={<CalendarClock className="h-4 w-4" aria-hidden />} rotulo="Atendimento">
               {item.servico.exige_agendamento ? "Com horário marcado" : "Sem agendamento"}
             </Resumo>
@@ -425,6 +450,18 @@ function ListaDeOrientacao({ titulo, itens }: { titulo: string; itens: Orientaca
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function TextoDoServico({ titulo, texto }: { titulo: string; texto?: string }) {
+  if (!texto) return null;
+  return (
+    <section className={`${CARTAO} flex flex-col gap-3 p-6`}>
+      <h2 className={`text-lg font-semibold ${TEXTO_FORTE}`}>{titulo}</h2>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-slate-200">
+        {texto}
+      </p>
     </section>
   );
 }

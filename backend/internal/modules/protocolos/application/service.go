@@ -342,6 +342,10 @@ func (s *Service) Carta(ctx context.Context, unidade *uuid.UUID) ([]domain.Servi
 	if lista == nil {
 		lista = []domain.Servico{}
 	}
+	// O aprovador é da mesa: a carta pública não o mostra.
+	for i := range lista {
+		lista[i].AprovadorID = nil
+	}
 	return lista, err
 }
 
@@ -358,6 +362,7 @@ func (s *Service) ServicoPublico(ctx context.Context, id uuid.UUID) (domain.Serv
 	if err != nil {
 		return domain.Servico{}, domain.Formulario{}, err
 	}
+	serv.AprovadorID = nil
 	return serv, form, nil
 }
 

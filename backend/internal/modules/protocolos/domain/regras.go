@@ -34,16 +34,16 @@ var (
 // Cuiaba é o fuso do recibo, do prazo e do agendamento (UTC−4, sem horário de verão).
 var Cuiaba = time.FixedZone("Cuiaba", -4*60*60)
 
-// SomarDiasUteis conta dias em Cuiabá e pula sábado e domingo. O feriado
-// municipal não entra neste plug-in: ele mora no calendário de quem o cadastra.
-func SomarDiasUteis(inicio time.Time, dias int) time.Time {
+// SomarDiasUteis conta dias em Cuiabá e pula sábado, domingo e o feriado do calendário.
+func SomarDiasUteis(inicio time.Time, dias int, cal ...Calendario) time.Time {
 	atual := inicio.In(Cuiaba)
 	if dias <= 0 {
 		return atual
 	}
+	c := unir(cal)
 	for restantes := dias; restantes > 0; {
 		atual = atual.AddDate(0, 0, 1)
-		if atual.Weekday() == time.Saturday || atual.Weekday() == time.Sunday {
+		if !c.util(atual) {
 			continue
 		}
 		restantes--
@@ -89,7 +89,7 @@ const (
 // SituacaoPrazo classifica a mesa. Estado final encerra a conta. Sem data,
 // o pedido fica no prazo. Passou o dia do prazo, está atrasado. A partir de
 // três quartos dos dias úteis entre a abertura e o prazo, fica em atenção.
-func SituacaoPrazo(status string, criado time.Time, prazo *time.Time, agora time.Time) string {
+func SituacaoPrazo(status string, criado time.Time, prazo *time.Time, agora time.Time, cal ...Calendario) string {
 	if EstadoFinal(status) {
 		return PrazoFinalizado
 	}
@@ -101,11 +101,12 @@ func SituacaoPrazo(status string, criado time.Time, prazo *time.Time, agora time
 	if diaCivil(hoje).After(diaCivil(limite)) {
 		return PrazoAtrasado
 	}
-	total := diasUteisFechado(criado.In(Cuiaba), limite)
+	c := unir(cal)
+	total := diasUteisFechado(criado.In(Cuiaba), limite, c)
 	if total <= 0 {
 		return PrazoNoPrazo
 	}
-	if diasUteisFechado(criado.In(Cuiaba), hoje)*4 > total*3 {
+	if diasUteisFechado(criado.In(Cuiaba), hoje, c)*4 > total*3 {
 		return PrazoAtencao
 	}
 	return PrazoNoPrazo
@@ -116,14 +117,14 @@ func diaCivil(t time.Time) time.Time {
 	return time.Date(ano, mes, dia, 0, 0, 0, 0, Cuiaba)
 }
 
-func diasUteisFechado(inicio, fim time.Time) int {
+func diasUteisFechado(inicio, fim time.Time, c Calendario) int {
 	a, b := diaCivil(inicio), diaCivil(fim)
 	if b.Before(a) {
 		return 0
 	}
 	n := 0
 	for !a.After(b) {
-		if a.Weekday() != time.Saturday && a.Weekday() != time.Sunday {
+		if c.util(a) {
 			n++
 		}
 		a = a.AddDate(0, 0, 1)
@@ -263,17 +264,21 @@ type Servico struct {
 	// ExigeAceite trava o tratamento até alguém aceitar o pedido.
 	ExigeAceite bool `json:"exige_aceite"`
 	// ExigeAprovacao manda a conclusão para quem gere a unidade aprovar.
-	ExigeAprovacao       bool         `json:"exige_aprovacao"`
-	ExigeAgendamento     bool         `json:"exige_agendamento"`
-	SoResponsavelTecnico bool         `json:"so_responsavel_tecnico"`
-	ImpedirCPFAberto     bool         `json:"impedir_cpf_aberto"`
-	CampoAnonimo         string       `json:"campo_anonimo"`
-	Workflow             Workflow     `json:"workflow"`
-	Agenda               Agenda       `json:"agenda"`
-	Requisitos           []Orientacao `json:"requisitos"`
-	Documentos           []Orientacao `json:"documentos"`
-	CreatedAt            time.Time    `json:"created_at"`
-	UpdatedAt            time.Time    `json:"updated_at"`
+	ExigeAprovacao bool `json:"exige_aprovacao"`
+	// AprovadorID é a pessoa que aprova a conclusão. Vazio: quem gere a unidade.
+	AprovadorID *uuid.UUID `json:"aprovador_id,omitempty"`
+	// Detalhes é a orientação extra da carta.
+	Detalhes             DetalhesServico `json:"detalhes"`
+	ExigeAgendamento     bool            `json:"exige_agendamento"`
+	SoResponsavelTecnico bool            `json:"so_responsavel_tecnico"`
+	ImpedirCPFAberto     bool            `json:"impedir_cpf_aberto"`
+	CampoAnonimo         string          `json:"campo_anonimo"`
+	Workflow             Workflow        `json:"workflow"`
+	Agenda               Agenda          `json:"agenda"`
+	Requisitos           []Orientacao    `json:"requisitos"`
+	Documentos           []Orientacao    `json:"documentos"`
+	CreatedAt            time.Time       `json:"created_at"`
+	UpdatedAt            time.Time       `json:"updated_at"`
 }
 
 // Pedido é o protocolo preenchido.
@@ -307,9 +312,17 @@ type Pedido struct {
 	// Encaminhamento pendente a outra unidade. Enquanto existe, o pedido não muda.
 	Encaminhamento *Encaminhamento `json:"encaminhamento,omitempty"`
 	// ExigeAceite vem do serviço: a mesa desabilita o tratamento do pedido sem dono.
-	ExigeAceite bool      `json:"exige_aceite"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ExigeAceite bool `json:"exige_aceite"`
+	// AprovadorID vem do serviço: quem aprova a conclusão, se não for quem gere.
+	AprovadorID *uuid.UUID `json:"aprovador_id,omitempty"`
+	// ProcessoSEI é o número do processo que corre em paralelo no SEI.
+	ProcessoSEI string `json:"processo_sei"`
+	// ComplementoPrazo é até quando o cidadão responde; vencido, o pedido é cancelado.
+	ComplementoPrazo *time.Time `json:"complemento_prazo,omitempty"`
+	// ComplementoAvisado marca o lembrete da véspera já enviado ao cidadão.
+	ComplementoAvisado bool      `json:"-"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
 
 // Historico é uma linha da trilha do pedido.
@@ -344,18 +357,22 @@ type ResponsavelTecnico struct {
 
 // Consulta é o recorte público pelo número.
 type Consulta struct {
-	Numero       string       `json:"numero"`
-	Status       string       `json:"status"`
-	StatusRotulo string       `json:"status_rotulo"`
-	Prioridade   string       `json:"prioridade"`
-	Nome         string       `json:"nome"`
-	Servico      string       `json:"servico"`
-	Unidade      string       `json:"unidade"`
-	CriadoEm     time.Time    `json:"criado_em"`
-	PrazoEm      *time.Time   `json:"prazo_em,omitempty"`
-	Complemento  string       `json:"complemento,omitempty"`
-	Historico    []Historico  `json:"historico"`
-	Agendamento  *Agendamento `json:"agendamento,omitempty"`
+	Numero       string     `json:"numero"`
+	Status       string     `json:"status"`
+	StatusRotulo string     `json:"status_rotulo"`
+	Prioridade   string     `json:"prioridade"`
+	Nome         string     `json:"nome"`
+	Servico      string     `json:"servico"`
+	Unidade      string     `json:"unidade"`
+	CriadoEm     time.Time  `json:"criado_em"`
+	PrazoEm      *time.Time `json:"prazo_em,omitempty"`
+	Complemento  string     `json:"complemento,omitempty"`
+	// ComplementoPrazo é até quando o cidadão responde a complementação.
+	ComplementoPrazo *time.Time `json:"complemento_prazo,omitempty"`
+	// ProcessoSEI é o processo que corre em paralelo no SEI.
+	ProcessoSEI string       `json:"processo_sei,omitempty"`
+	Historico   []Historico  `json:"historico"`
+	Agendamento *Agendamento `json:"agendamento,omitempty"`
 }
 
 // Visao é o recorte da listagem da equipe.
@@ -577,6 +594,14 @@ func NovoServico(s Servico, agora time.Time) (Servico, error) {
 	if err := validarOrientacao(s.Requisitos); err != nil || validarOrientacao(s.Documentos) != nil {
 		return Servico{}, ErrInvalido
 	}
+	detalhes, err := s.Detalhes.normalizar()
+	if err != nil {
+		return Servico{}, err
+	}
+	s.Detalhes = detalhes
+	if s.AprovadorID != nil && *s.AprovadorID == uuid.Nil {
+		s.AprovadorID = nil
+	}
 	if s.Requisitos == nil {
 		s.Requisitos = []Orientacao{}
 	}
@@ -764,15 +789,16 @@ func (a Agenda) primeiraLivre(tomadas []string) string {
 }
 
 // ProcurarVaga anda até 30 dias a partir de amanhã em Cuiabá e pula horário já tomado.
-func ProcurarVaga(a Agenda, agora time.Time, ocupadas func(dia string) ([]string, error)) (string, string, error) {
+func ProcurarVaga(a Agenda, agora time.Time, ocupadas func(dia string) ([]string, error), cal ...Calendario) (string, string, error) {
 	if err := a.Validar(); err != nil {
 		return "", "", err
 	}
 	base := agora.In(Cuiaba)
 	inicio := time.Date(base.Year(), base.Month(), base.Day(), 0, 0, 0, 0, Cuiaba).AddDate(0, 0, 1)
+	c := unir(cal)
 	for i := 0; i < LimiteBuscaAgendamento; i++ {
 		dia := inicio.AddDate(0, 0, i)
-		if !a.Cabe(dia) {
+		if !a.Cabe(dia) || c.Feriado(dia) {
 			continue
 		}
 		chave := dia.Format("2006-01-02")
@@ -887,7 +913,7 @@ func Prioridade(s string) string {
 }
 
 // Abrir monta o pedido a partir do serviço ativo e das respostas já validadas.
-func Abrir(s Servico, f Formulario, numero, nome, cpf, email, telefone, prioridade string, respostas map[string]any, usuario *uuid.UUID, agora time.Time) (Pedido, error) {
+func Abrir(s Servico, f Formulario, numero, nome, cpf, email, telefone, prioridade string, respostas map[string]any, usuario *uuid.UUID, agora time.Time, cal ...Calendario) (Pedido, error) {
 	if !s.Ativo || !f.Ativo || s.FormularioID != f.ID {
 		return Pedido{}, ErrInvalido
 	}
@@ -907,11 +933,11 @@ func Abrir(s Servico, f Formulario, numero, nome, cpf, email, telefone, priorida
 		FormularioID: f.ID, UnidadeID: s.UnidadeID, Nome: nome, CPF: cpf,
 		Email: strings.TrimSpace(email), Telefone: strings.TrimSpace(telefone),
 		Respostas: respostas, Campos: f.Campos, Status: StatusNovo, Prioridade: Prioridade(prioridade),
-		UsuarioID: usuario, CreatedAt: agora, UpdatedAt: agora, ExigeAceite: s.ExigeAceite,
+		UsuarioID: usuario, CreatedAt: agora, UpdatedAt: agora, ExigeAceite: s.ExigeAceite, AprovadorID: s.AprovadorID,
 	}
 	if etapa, ok := s.Workflow.Primeira(); ok {
 		var err error
-		p, err = p.aplicar(etapa, agora)
+		p, err = p.aplicar(etapa, agora, cal...)
 		if err != nil {
 			return Pedido{}, err
 		}
@@ -919,13 +945,13 @@ func Abrir(s Servico, f Formulario, numero, nome, cpf, email, telefone, priorida
 		p.Status = StatusAprovado
 	}
 	if p.PrazoEm == nil && s.PrazoDias > 0 {
-		limite := SomarDiasUteis(agora, s.PrazoDias)
+		limite := SomarDiasUteis(agora, s.PrazoDias, cal...)
 		p.PrazoEm = &limite
 	}
 	return p, nil
 }
 
-func (p Pedido) aplicar(e Etapa, agora time.Time) (Pedido, error) {
+func (p Pedido) aplicar(e Etapa, agora time.Time, cal ...Calendario) (Pedido, error) {
 	if e.Status != "" {
 		if !StatusConhecido(e.Status) {
 			return Pedido{}, ErrInvalido
@@ -934,7 +960,7 @@ func (p Pedido) aplicar(e Etapa, agora time.Time) (Pedido, error) {
 	}
 	p.EtapaID = e.ID
 	if e.PrazoDias > 0 {
-		limite := SomarDiasUteis(agora, e.PrazoDias)
+		limite := SomarDiasUteis(agora, e.PrazoDias, cal...)
 		p.PrazoEm = &limite
 	}
 	switch e.ResponsavelTipo {
@@ -988,6 +1014,8 @@ func (p Pedido) Complementar(mensagem string, agora time.Time) (Pedido, error) {
 	}
 	p.Status = StatusComplementacao
 	p.Complemento = mensagem
+	p.ComplementoPrazo = nil
+	p.ComplementoAvisado = false
 	p.UpdatedAt = agora
 	return p, nil
 }
@@ -1002,12 +1030,14 @@ func (p Pedido) ResponderComplemento(agora time.Time) (Pedido, error) {
 	}
 	p.Status = StatusAndamento
 	p.Complemento = ""
+	p.ComplementoPrazo = nil
+	p.ComplementoAvisado = false
 	p.UpdatedAt = agora
 	return p, nil
 }
 
 // Avancar passa à etapa seguinte. Complemento aberto recusa.
-func (p Pedido) Avancar(w Workflow, agora time.Time) (Pedido, error) {
+func (p Pedido) Avancar(w Workflow, agora time.Time, cal ...Calendario) (Pedido, error) {
 	if err := p.aberto(); err != nil {
 		return Pedido{}, err
 	}
@@ -1018,7 +1048,7 @@ func (p Pedido) Avancar(w Workflow, agora time.Time) (Pedido, error) {
 	if err != nil {
 		return Pedido{}, err
 	}
-	return p.aplicar(etapa, agora)
+	return p.aplicar(etapa, agora, cal...)
 }
 
 // Concluir grava a decisão.
@@ -1094,13 +1124,16 @@ func Publico(p Pedido, campoAnonimo string, historico []Historico, agenda *Agend
 	}
 	historico = publico
 	var comp string
+	var compPrazo *time.Time
 	if p.Status == StatusComplementacao {
 		comp = p.Complemento
+		compPrazo = p.ComplementoPrazo
 	}
 	return Consulta{
 		Numero: p.Numero, Status: p.Status, StatusRotulo: RotuloStatus(p.Status), Prioridade: p.Prioridade, Nome: nome,
 		Servico: p.ServicoNome, Unidade: p.UnidadeNome, CriadoEm: p.CreatedAt,
-		PrazoEm: p.PrazoEm, Complemento: comp, Historico: historico, Agendamento: agenda,
+		PrazoEm: p.PrazoEm, Complemento: comp, ComplementoPrazo: compPrazo, ProcessoSEI: p.ProcessoSEI,
+		Historico: historico, Agendamento: agenda,
 	}
 }
 

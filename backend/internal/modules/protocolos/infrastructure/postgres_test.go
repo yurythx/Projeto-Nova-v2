@@ -60,6 +60,12 @@ func TestErrosDoBanco(t *testing.T) {
 		func(db database.DBTX) error { return r.SomarFalta(ctx, db, "1", time.Now()) },
 		func(db database.DBTX) error { _, err := r.Pessoa(ctx, db, id); return err },
 		func(db database.DBTX) error { _, err := r.Pessoas(ctx, db, id); return err },
+		func(db database.DBTX) error { _, err := r.ListarFeriados(ctx, db); return err },
+		func(db database.DBTX) error { return r.SalvarFeriado(ctx, db, domain.Feriado{Data: "2026-12-25"}) },
+		func(db database.DBTX) error { return r.RemoverFeriado(ctx, db, "2026-12-25") },
+		func(db database.DBTX) error { _, err := r.ComplementacoesVencidas(ctx, db, time.Now()); return err },
+		func(db database.DBTX) error { _, err := r.PrazosVencendo(ctx, db, time.Now(), time.Now()); return err },
+		func(db database.DBTX) error { return r.MarcarAvisoComplemento(ctx, db, id) },
 	}
 	for i, ch := range chamadas {
 		if err := ch(dbtest.Fail{}); err == nil {
@@ -123,7 +129,7 @@ func TestJSONQueNaoCodifica(t *testing.T) {
 	if err := r.AtualizarServico(ctx, nil, domain.Servico{}); err == nil {
 		t.Fatal("atualizar serviço")
 	}
-	for _, corte := range []int{2, 3} {
+	for _, corte := range []int{2, 3, 5} {
 		n := 0
 		codificarJSON = func(v any) ([]byte, error) {
 			n++
@@ -134,6 +140,12 @@ func TestJSONQueNaoCodifica(t *testing.T) {
 		}
 		if err := r.InserirServico(ctx, nil, domain.Servico{}); err == nil {
 			t.Fatalf("serviço no %dº campo", corte)
+		}
+		n = 0
+		if corte == 5 {
+			if err := r.AtualizarServico(ctx, nil, domain.Servico{}); err == nil {
+				t.Fatal("detalhes na atualização")
+			}
 		}
 	}
 }

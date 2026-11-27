@@ -300,16 +300,49 @@ func TestLeituras(t *testing.T) {
 	if _, err := r.Pessoas(ctx, banco{rows: dbtest.BadRows()}, id); err == nil {
 		t.Fatal("pessoa")
 	}
+	detRuim := linhaServico(id, agora, []byte(`{}`), []byte(`{}`), []byte(`[]`), []byte(`[]`))
+	detRuim[24] = []byte("{")
+	if _, err := r.BuscarServico(ctx, banco{row: valores{detRuim}}, id); err == nil {
+		t.Fatal("detalhes")
+	}
+	if lista, err := r.ListarFeriados(ctx, banco{rows: &grade{linhas: [][]any{{"2026-12-25", "Natal"}}}}); err != nil || len(lista) != 1 || lista[0].Nome != "Natal" {
+		t.Fatal(lista, err)
+	}
+	if _, err := r.ListarFeriados(ctx, banco{rows: dbtest.BadRows()}); err == nil {
+		t.Fatal("feriado")
+	}
+	if err := r.SalvarFeriado(ctx, banco{}, domain.Feriado{Data: "2026-12-25", Nome: "Natal"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RemoverFeriado(ctx, banco{}, "2026-12-25"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RemoverFeriado(ctx, dbtest.ScanFail{}, "2026-12-25"); !errors.Is(err, domain.ErrNaoEncontrado) {
+		t.Fatal(err)
+	}
+	if lista, err := r.ComplementacoesVencidas(ctx, banco{rows: &grade{linhas: [][]any{ped}}}, agora); err != nil || len(lista) != 1 {
+		t.Fatal(lista, err)
+	}
+	if _, err := r.PrazosVencendo(ctx, banco{rows: dbtest.BadRows()}, agora, agora); err == nil {
+		t.Fatal("vencendo")
+	}
+	if _, err := r.PrazosVencendo(ctx, banco{rows: dbtest.ErrRows()}, agora, agora); err == nil {
+		t.Fatal("linhas")
+	}
+	if err := r.MarcarAvisoComplemento(ctx, banco{}, id); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func linhaServico(id uuid.UUID, agora time.Time, w, a, req, docs []byte) []any {
-	return []any{id, id, id, "Alvará", "", "licenca", 10, 0, true, true, false, false, false, false, "", w, a, req, docs, agora, agora, false, false, "Meio Ambiente"}
+	return []any{id, id, id, "Alvará", "", "licenca", 10, 0, true, true, false, false, false, false, "", w, a, req, docs, agora, agora, false, false, (*uuid.UUID)(nil), []byte(`{}`), "Meio Ambiente"}
 }
 
 func linhaPedido(id uuid.UUID, agora time.Time, resp, campos []byte) []any {
 	return []any{id, "SEMA202600001", id, id, id, (*uuid.UUID)(nil), "Maria", "12345678900", "", "", resp, campos,
 		"novo", "", "normal", (*time.Time)(nil), "", "", "", (*uuid.UUID)(nil), (*uuid.UUID)(nil), agora, agora, "Alvará", "Meio Ambiente",
-		"", (*uuid.UUID)(nil), "", 0, (*uuid.UUID)(nil), (*time.Time)(nil), "", false}
+		"", (*uuid.UUID)(nil), "", 0, (*uuid.UUID)(nil), (*time.Time)(nil), "", false,
+		"", (*time.Time)(nil), false, (*uuid.UUID)(nil)}
 }
 
 func must(b []byte, err error) []byte {

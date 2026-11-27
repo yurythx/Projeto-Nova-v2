@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"strings"
 
+	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
+
 	"github.com/google/uuid"
 
 	"github.com/yurythx/projeto-nova-v2/internal/modules/protocolos/domain"
@@ -42,7 +44,7 @@ func (s *Service) Aceitar(ctx context.Context, id uuid.UUID, responsavel *uuid.U
 			return "assumido por " + nome
 		}
 		return "atribuído a " + nome
-	}, func(p domain.Pedido) (domain.Pedido, error) {
+	}, nil, func(p domain.Pedido) (domain.Pedido, error) {
 		if alvo != quem.UserID {
 			if err := s.exigir(ctx, auth.PermProtocolosGerir, p.UnidadeID); err != nil {
 				return domain.Pedido{}, err
@@ -57,7 +59,7 @@ func (s *Service) Aceitar(ctx context.Context, id uuid.UUID, responsavel *uuid.U
 		return prox, err
 	})
 	if err == nil && alvo != quem.UserID {
-		s.avisarResponsavel(ctx, alvo, p, "Você foi indicado como responsável.")
+		s.avisarResponsavel(ctx, alvo, p, "Você foi indicado como responsável.", "protocolos:responsavel:"+p.ID.String()+":"+alvo.String())
 	}
 	return p, err
 }
@@ -66,7 +68,7 @@ func (s *Service) Aceitar(ctx context.Context, id uuid.UUID, responsavel *uuid.U
 func (s *Service) Transferir(ctx context.Context, id, novo uuid.UUID) (domain.Pedido, error) {
 	quem, _ := auth.IdentityFromContext(ctx)
 	var nome string
-	p, err := s.mudarCom(ctx, auth.PermProtocolosTratar, id, EventoTransferencia, domain.AcaoTransferencia, "responsável alterado", func() string { return "transferido para " + nome }, func(p domain.Pedido) (domain.Pedido, error) {
+	p, err := s.mudarCom(ctx, auth.PermProtocolosTratar, id, EventoTransferencia, domain.AcaoTransferencia, "responsável alterado", func() string { return "transferido para " + nome }, nil, func(p domain.Pedido) (domain.Pedido, error) {
 		if p.ResponsavelID == nil || *p.ResponsavelID != quem.UserID {
 			if err := s.exigir(ctx, auth.PermProtocolosGerir, p.UnidadeID); err != nil {
 				return domain.Pedido{}, err
@@ -81,7 +83,7 @@ func (s *Service) Transferir(ctx context.Context, id, novo uuid.UUID) (domain.Pe
 		return prox, err
 	})
 	if err == nil && novo != quem.UserID {
-		s.avisarResponsavel(ctx, novo, p, "O pedido foi transferido para você.")
+		s.avisarResponsavel(ctx, novo, p, "O pedido foi transferido para você.", "protocolos:responsavel:"+p.ID.String()+":"+novo.String())
 	}
 	return p, err
 }
@@ -92,7 +94,7 @@ func (s *Service) Encaminhar(ctx context.Context, id, destino uuid.UUID, justifi
 	var nomeDestino string
 	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, EventoEncaminhamento, domain.AcaoEncaminhamento, "pedido encaminhado", func() string {
 		return "encaminhado a " + nomeDestino + ": " + strings.TrimSpace(justificativa)
-	}, func(p domain.Pedido) (domain.Pedido, error) {
+	}, nil, func(p domain.Pedido) (domain.Pedido, error) {
 		var err error
 		if _, nomeDestino, err = s.repo.Unidade(ctx, s.db, destino); err != nil {
 			return domain.Pedido{}, err
@@ -119,12 +121,16 @@ func (s *Service) DecidirEncaminhamento(ctx context.Context, id uuid.UUID, aceit
 		return domain.Pedido{}, err
 	}
 	if aceitar {
-		prox, err := atual.ReceberEncaminhamento(s.agora())
+		cal, err := s.calendario(ctx)
+		if err != nil {
+			return domain.Pedido{}, err
+		}
+		prox, err := atual.ReceberEncaminhamento(s.agora(), cal)
 		if err != nil {
 			return domain.Pedido{}, err
 		}
 		return s.persistir(ctx, atual, prox, EventoEncaminhamentoOK, domain.AcaoEncaminhamentoAceito, "pedido recebido pela nova unidade",
-			"recebido por "+atual.Encaminhamento.UnidadeNome)
+			"recebido por "+atual.Encaminhamento.UnidadeNome, nil)
 	}
 	motivo, err = domain.TextoInterno(motivo, 2000)
 	if err != nil {
@@ -135,14 +141,39 @@ func (s *Service) DecidirEncaminhamento(ctx context.Context, id uuid.UUID, aceit
 		return domain.Pedido{}, err
 	}
 	return s.persistir(ctx, atual, prox, EventoEncaminhamentoNo, domain.AcaoEncaminhamentoRecusado, "encaminhamento não aceito",
-		atual.Encaminhamento.UnidadeNome+" recusou: "+motivo)
+		atual.Encaminhamento.UnidadeNome+" recusou: "+motivo, nil)
 }
 
-// Aprovar confirma a conclusão que aguarda. Pede protocolos:gerir na unidade.
+// Aprovar confirma a conclusão que aguarda. Aprova o aprovador indicado no
+// serviço; sem indicação, quem tem protocolos:gerir na unidade.
 func (s *Service) Aprovar(ctx context.Context, id uuid.UUID) (domain.Pedido, error) {
-	return s.mudarCom(ctx, auth.PermProtocolosGerir, id, EventoAprovacao, domain.AcaoAprovacao, "pedido concluído", texto("conclusão aprovada"), func(p domain.Pedido) (domain.Pedido, error) {
+	perm, err := s.permissaoDeAprovar(ctx, id)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	return s.mudarCom(ctx, perm, id, EventoAprovacao, domain.AcaoAprovacao, "pedido concluído", texto("conclusão aprovada"), nil, func(p domain.Pedido) (domain.Pedido, error) {
 		return p.Aprovar(s.agora())
 	})
+}
+
+// permissaoDeAprovar devolve a permissão a conferir na unidade, ou vazio quando o aprovador indicado é quem chama.
+func (s *Service) permissaoDeAprovar(ctx context.Context, id uuid.UUID) (auth.Permission, error) {
+	p, err := s.repo.BuscarPedido(ctx, s.db, id)
+	if err != nil {
+		return "", err
+	}
+	serv, err := s.repo.BuscarServico(ctx, s.db, p.ServicoID)
+	if err != nil {
+		return "", err
+	}
+	if serv.AprovadorID == nil {
+		return auth.PermProtocolosGerir, nil
+	}
+	quem, _ := auth.IdentityFromContext(ctx)
+	if quem.UserID != *serv.AprovadorID {
+		return "", apperrors.Forbidden("a aprovação deste serviço é de outra pessoa")
+	}
+	return "", nil
 }
 
 // Devolver recusa a conclusão; o pedido volta ao andamento. Pede protocolos:gerir na unidade.
@@ -151,18 +182,22 @@ func (s *Service) Devolver(ctx context.Context, id uuid.UUID, motivo string) (do
 	if err != nil {
 		return domain.Pedido{}, err
 	}
-	return s.mudarCom(ctx, auth.PermProtocolosGerir, id, EventoDevolucao, domain.AcaoDevolucao, "conclusão em revisão", texto(motivo), func(p domain.Pedido) (domain.Pedido, error) {
+	perm, err := s.permissaoDeAprovar(ctx, id)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	return s.mudarCom(ctx, perm, id, EventoDevolucao, domain.AcaoDevolucao, "conclusão em revisão", texto(motivo), nil, func(p domain.Pedido) (domain.Pedido, error) {
 		return p.Devolver(s.agora())
 	})
 }
 
-func (s *Service) avisarResponsavel(ctx context.Context, usuario uuid.UUID, p domain.Pedido, mensagem string) {
+func (s *Service) avisarResponsavel(ctx context.Context, usuario uuid.UUID, p domain.Pedido, mensagem, chave string) {
 	if s.sino == nil {
 		return
 	}
 	n := notificacoes.Nova{
 		Modulo: "protocolos", Titulo: "Pedido " + p.Numero, Mensagem: mensagem,
-		Link: "/protocolos/" + p.ID.String(), Chave: "protocolos:responsavel:" + p.ID.String() + ":" + usuario.String(),
+		Link: "/protocolos/" + p.ID.String(), Chave: chave,
 	}
 	if _, err := s.sino.Enviar(ctx, []uuid.UUID{usuario}, n); err != nil {
 		s.logger.Warn("protocolos: aviso ao responsável não entregue", slog.String("erro", err.Error()))

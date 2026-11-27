@@ -12,6 +12,7 @@ import (
 func RegisterPublic(r chi.Router, h *Handlers) {
 	r.Get("/protocolos/carta", h.Carta)
 	r.Get("/protocolos/carta/{id}", h.CartaItem)
+	r.Get("/protocolos/carta/{id}/horarios", h.HorariosLivres)
 	r.Post("/protocolos/carta/{id}/arquivo", h.PedirArquivo)
 	// A abertura fica sob /carta. POST /protocolos/pedidos é a coleção
 	// autenticada; no chi o prefixo montado engole o POST anônimo.
@@ -30,6 +31,10 @@ func RegisterAuthed(r chi.Router, h *Handlers, logger *slog.Logger) {
 	r.With(gerir).Get("/protocolos/formularios", h.ListarFormularios)
 	r.With(gerir).Post("/protocolos/servicos", h.SalvarServico)
 	r.With(gerir).Get("/protocolos/servicos", h.ListarServicos)
+	r.With(gerir).Get("/protocolos/servicos/pessoas", h.PessoasDaUnidade)
+	r.Get("/protocolos/feriados", h.ListarFeriados)
+	r.With(gerir).Post("/protocolos/feriados", h.SalvarFeriado)
+	r.With(gerir).Delete("/protocolos/feriados/{data}", h.RemoverFeriado)
 	r.With(gerir).Get("/protocolos/responsaveis", h.ListarResponsaveis)
 	r.With(gerir).Post("/protocolos/responsaveis", h.Responsavel)
 	r.With(tratar).Post("/protocolos/faltas", h.Falta)
@@ -46,6 +51,7 @@ func RegisterAuthed(r chi.Router, h *Handlers, logger *slog.Logger) {
 		r.With(tratar).Post("/{id}/concluir", h.Concluir)
 		r.With(tratar).Post("/{id}/cancelar", h.Cancelar)
 		r.Get("/{id}/pessoas", h.Pessoas)
+		r.With(tratar).Post("/{id}/anexo", h.PedirAnexoMesa)
 		r.With(tratar).Post("/{id}/aceitar", h.Aceitar)
 		r.With(tratar).Post("/{id}/transferir", h.Transferir)
 		r.With(tratar).Post("/{id}/encaminhar", h.Encaminhar)

@@ -45,4 +45,12 @@ type Repository interface {
 	Pessoa(ctx context.Context, db database.DBTX, id uuid.UUID) (string, error)
 	// Pessoas lista os usuários ativos com escopo na unidade.
 	Pessoas(ctx context.Context, db database.DBTX, unidade uuid.UUID) ([]Pessoa, error)
+	ListarFeriados(ctx context.Context, db database.DBTX) ([]Feriado, error)
+	SalvarFeriado(ctx context.Context, db database.DBTX, f Feriado) error
+	RemoverFeriado(ctx context.Context, db database.DBTX, data string) error
+	// ComplementacoesVencidas são os pedidos em complementação com o prazo já passado.
+	ComplementacoesVencidas(ctx context.Context, db database.DBTX, agora time.Time) ([]Pedido, error)
+	// PrazosVencendo são os pedidos abertos com prazo, ou prazo de complementação, até "ate".
+	PrazosVencendo(ctx context.Context, db database.DBTX, agora, ate time.Time) ([]Pedido, error)
+	MarcarAvisoComplemento(ctx context.Context, db database.DBTX, id uuid.UUID) error
 }

@@ -328,6 +328,8 @@ describe("Ficha do protocolo", () => {
     await screen.findByRole("heading", { name: "Protocolo #PREF202690001" });
 
     await user.click(screen.getByRole("button", { name: "Encaminhar para a próxima etapa" }));
+    const avancar = await screen.findByRole("dialog");
+    await user.click(within(avancar).getByRole("button", { name: "Avançar" }));
     expect(api.to("POST v1/protocolos/pedidos/p1/avancar")).toHaveLength(1);
 
     await user.click(screen.getByRole("button", { name: "Adicionar nota" }));

@@ -128,7 +128,7 @@ func (p Pedido) Encaminhar(destino uuid.UUID, justificativa string, prazoDias in
 }
 
 // ReceberEncaminhamento muda o pedido de unidade. O responsável sai: o destino aceita de novo.
-func (p Pedido) ReceberEncaminhamento(agora time.Time) (Pedido, error) {
+func (p Pedido) ReceberEncaminhamento(agora time.Time, cal ...Calendario) (Pedido, error) {
 	if err := p.aberto(); err != nil {
 		return Pedido{}, err
 	}
@@ -142,7 +142,7 @@ func (p Pedido) ReceberEncaminhamento(agora time.Time) (Pedido, error) {
 	p.ResponsavelID = nil
 	p.ResponsavelNome = ""
 	if e.PrazoDias > 0 {
-		limite := SomarDiasUteis(agora, e.PrazoDias)
+		limite := SomarDiasUteis(agora, e.PrazoDias, cal...)
 		p.PrazoEm = &limite
 	}
 	p.Encaminhamento = nil

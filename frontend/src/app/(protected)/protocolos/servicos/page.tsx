@@ -78,6 +78,8 @@ interface Servico {
   aprova_sozinho: boolean;
   exige_aceite?: boolean;
   exige_aprovacao?: boolean;
+  aprovador_id?: string;
+  detalhes?: Detalhes;
   exige_agendamento: boolean;
   so_responsavel_tecnico: boolean;
   impedir_cpf_aberto: boolean;
@@ -89,7 +91,20 @@ interface Servico {
 }
 
 type Filtro = "todos" | "ativo" | "inativo";
-type Aba = "geral" | "prazos" | "acesso" | "workflow" | "orientacoes";
+interface Detalhes {
+  quem_pode: string;
+  passo_a_passo: string;
+  contato: string;
+  tempo_estimado: string;
+  descricao_taxa: string;
+}
+
+interface PessoaDaUnidade {
+  id: string;
+  nome: string;
+}
+
+type Aba = "geral" | "carta" | "prazos" | "acesso" | "workflow" | "orientacoes";
 
 const ABAS: { value: Aba; label: string }[] = [
   { value: "geral", label: "Informações Gerais" },
@@ -97,6 +112,7 @@ const ABAS: { value: Aba; label: string }[] = [
   { value: "acesso", label: "Acesso e Horário" },
   { value: "workflow", label: "Workflow" },
   { value: "orientacoes", label: "Requisitos e Documentos" },
+  { value: "carta", label: "Carta ao Cidadão" },
 ];
 
 const RESPONSAVEL = [
@@ -248,6 +264,12 @@ export default function ServicosPage() {
                     {(servico.requisitos ?? []).length} requisito(s) ·{" "}
                     {(servico.documentos ?? []).length} documento(s)
                   </Detalhe>
+                  {servico.detalhes?.quem_pode && (
+                    <Detalhe rotulo="Quem pode solicitar">{servico.detalhes.quem_pode}</Detalhe>
+                  )}
+                  {servico.detalhes?.contato && (
+                    <Detalhe rotulo="Contato">{servico.detalhes.contato}</Detalhe>
+                  )}
                 </LinhaExpansivel>
               );
             })}
@@ -374,6 +396,13 @@ function ModalDoServico({
   const { run, pending } = useAction();
   const [aba, setAba] = useState<Aba>("geral");
   const [unidade, setUnidade] = useState(servico?.unidade_id ?? "");
+  const [aprovacao, setAprovacao] = useState(servico?.exige_aprovacao ?? false);
+  const pessoas = useApiQuery<PessoaDaUnidade[]>(
+    aprovacao && unidade
+      ? withQuery("v1/protocolos/servicos/pessoas", { unidade_id: unidade })
+      : null,
+  );
+  const detalhes = servico?.detalhes;
   const [exige, setExige] = useState(servico?.exige_agendamento ?? false);
   const [fluxo, setFluxo] = useState(servico?.workflow?.ligado ?? false);
   const [dias, setDias] = useState<number[]>(
@@ -407,7 +436,16 @@ function ModalDoServico({
           destaque: dados.get("destaque") === "on",
           aprova_sozinho: dados.get("aprova_sozinho") === "on",
           exige_aceite: dados.get("exige_aceite") === "on",
-          exige_aprovacao: dados.get("exige_aprovacao") === "on",
+          exige_aprovacao: aprovacao,
+          aprovador_id:
+            aprovacao && dados.get("aprovador_id") ? String(dados.get("aprovador_id")) : null,
+          detalhes: {
+            quem_pode: String(dados.get("quem_pode") ?? "").trim(),
+            passo_a_passo: String(dados.get("passo_a_passo") ?? "").trim(),
+            contato: String(dados.get("contato") ?? "").trim(),
+            tempo_estimado: String(dados.get("tempo_estimado") ?? "").trim(),
+            descricao_taxa: String(dados.get("descricao_taxa") ?? "").trim(),
+          },
           exige_agendamento: exige,
           so_responsavel_tecnico: dados.get("so_responsavel_tecnico") === "on",
           impedir_cpf_aberto: dados.get("impedir_cpf_aberto") === "on",
@@ -631,11 +669,29 @@ function ModalDoServico({
               defaultChecked={servico?.exige_aceite}
             />
             <Marcar
-              name="exige_aprovacao"
               texto="Conclusão passa por aprovação"
-              defaultChecked={servico?.exige_aprovacao}
+              checked={aprovacao}
+              onChange={setAprovacao}
             />
           </div>
+          {aprovacao && (
+            <Rotulado id="aprovador_id" rotulo="Quem aprova">
+              <select
+                id="aprovador_id"
+                name="aprovador_id"
+                key={`${unidade}-${(pessoas.data ?? []).length}`}
+                defaultValue={servico?.aprovador_id ?? ""}
+                className={CAMPO}
+              >
+                <option value="">Quem gere a unidade</option>
+                {(pessoas.data ?? []).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+            </Rotulado>
+          )}
           <p className={`text-sm ${TEXTO_FRACO}`}>
             Com aceite, ninguém trata o protocolo até alguém assumir. Com aprovação, a conclusão
             espera quem gere a unidade aprovar ou devolver.
@@ -648,6 +704,63 @@ function ModalDoServico({
               Sem workflow, o pedido não passa por etapas: a mesa trata e conclui direto.
             </p>
           )}
+        </div>
+
+        <div data-aba="carta" hidden={aba !== "carta"} className="grid gap-4 sm:grid-cols-2">
+          <Rotulado id="quem_pode" rotulo="Quem pode solicitar" className="sm:col-span-2">
+            <textarea
+              id="quem_pode"
+              name="quem_pode"
+              rows={3}
+              maxLength={4000}
+              defaultValue={detalhes?.quem_pode}
+              className={`${CAMPO} resize-y`}
+            />
+          </Rotulado>
+          <Rotulado id="passo_a_passo" rotulo="Passo a passo" className="sm:col-span-2">
+            <textarea
+              id="passo_a_passo"
+              name="passo_a_passo"
+              rows={4}
+              maxLength={4000}
+              defaultValue={detalhes?.passo_a_passo}
+              className={`${CAMPO} resize-y`}
+            />
+          </Rotulado>
+          <Rotulado id="tempo_estimado" rotulo="Tempo estimado de atendimento">
+            <input
+              id="tempo_estimado"
+              name="tempo_estimado"
+              maxLength={120}
+              placeholder="Ex.: 5 a 10 dias úteis"
+              defaultValue={detalhes?.tempo_estimado}
+              className={CAMPO}
+            />
+          </Rotulado>
+          <Rotulado id="contato" rotulo="Contato">
+            <input
+              id="contato"
+              name="contato"
+              maxLength={500}
+              placeholder="Telefone, e-mail ou endereço"
+              defaultValue={detalhes?.contato}
+              className={CAMPO}
+            />
+          </Rotulado>
+          <Rotulado id="descricao_taxa" rotulo="Sobre a taxa" className="sm:col-span-2">
+            <input
+              id="descricao_taxa"
+              name="descricao_taxa"
+              maxLength={500}
+              placeholder="Como e quando a taxa é paga"
+              defaultValue={detalhes?.descricao_taxa}
+              className={CAMPO}
+            />
+          </Rotulado>
+          <p className={`text-sm sm:col-span-2 ${TEXTO_FRACO}`}>
+            O prazo máximo é o da aba Taxas e Prazos. Estes textos aparecem na página do serviço na
+            carta pública.
+          </p>
         </div>
 
         <div data-aba="orientacoes" hidden={aba !== "orientacoes"} className="flex flex-col gap-6">

@@ -21,6 +21,7 @@ const Key = "protocolos"
 // Module é o plugin.
 type Module struct {
 	deps     modkit.Deps
+	service  *application.Service
 	handlers *transport.Handlers
 }
 
@@ -38,7 +39,12 @@ func New(deps modkit.Deps) *Module {
 	}
 	svc := application.NewService(deps.Pool, infrastructure.NewPostgresRepository(), deps.Outbox, logger).
 		ComSino(deps.Notificacoes).ComArquivos(arq)
-	return &Module{deps: deps, handlers: transport.NewHandlers(svc, logger)}
+	return &Module{deps: deps, service: svc, handlers: transport.NewHandlers(svc, logger)}
+}
+
+// Workers cancela a complementação vencida e avisa os prazos que vencem em 24 horas.
+func (m *Module) Workers() []kernel.Worker {
+	return []kernel.Worker{{Name: "prazos-de-protocolos", Process: kernel.ProcessWorker, Run: m.service.RunPrazos}}
 }
 
 // Manifest implementa kernel.Plugin.

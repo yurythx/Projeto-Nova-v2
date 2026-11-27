@@ -5767,6 +5767,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/protocolos/carta/{id}/horarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Listar/consultar /protocolos/carta/{id}/horarios */
+        get: operations["getProtocolosCartaIdHorarios"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/protocolos/carta/{id}/pedido": {
         parameters: {
             query?: never;
@@ -5858,6 +5875,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/protocolos/feriados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos — Listar/consultar /protocolos/feriados */
+        get: operations["getProtocolosFeriados"];
+        put?: never;
+        /**
+         * Protocolos — Criar /protocolos/feriados
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosFeriados"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/feriados/{data}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Protocolos — Excluir /protocolos/feriados/{data}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        delete: operations["deleteProtocolosFeriadosData"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/protocolos/formularios": {
         parameters: {
             query?: never;
@@ -5930,6 +5988,26 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         post: operations["postProtocolosPedidosIdAceitar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/pedidos/{id}/anexo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Protocolos — Executar ação /protocolos/pedidos/{id}/anexo
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postProtocolosPedidosIdAnexo"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6272,6 +6350,26 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         post: operations["postProtocolosServicos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/protocolos/servicos/pessoas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protocolos — Listar/consultar /protocolos/servicos/pessoas
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getProtocolosServicosPessoas"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -10737,6 +10835,9 @@ export interface components {
             servico_id: string;
             status: string;
         };
+        ProtocolosAnexosBody: {
+            anexos?: string[];
+        };
         ProtocolosArquivoBody: {
             content_type?: string;
             nome?: string;
@@ -10769,12 +10870,16 @@ export interface components {
             servico: components["schemas"]["ProtocolosServico"];
         };
         ProtocolosConclusaoBody: {
+            anexos?: string[];
             decisao?: string;
             justificativa?: string;
+            processo_sei?: string | null;
         };
         ProtocolosConsulta: {
             agendamento?: components["schemas"]["ProtocolosAgendamento"];
             complemento?: string;
+            /** Format: date-time */
+            complemento_prazo?: string;
             /** Format: date-time */
             criado_em: string;
             historico: components["schemas"]["ProtocolosHistorico"][];
@@ -10783,15 +10888,31 @@ export interface components {
             /** Format: date-time */
             prazo_em?: string;
             prioridade: string;
+            processo_sei?: string;
             servico: string;
             status: string;
             status_rotulo: string;
             unidade: string;
         };
+        ProtocolosDetalhesServico: {
+            contato: string;
+            descricao_taxa: string;
+            passo_a_passo: string;
+            quem_pode: string;
+            tempo_estimado: string;
+        };
+        ProtocolosDetalhesServicoInput: {
+            contato?: string;
+            descricao_taxa?: string;
+            passo_a_passo?: string;
+            quem_pode?: string;
+            tempo_estimado?: string;
+        };
         ProtocolosEditarBody: {
             justificativa?: string;
             prazo?: string;
             prioridade?: string;
+            processo_sei?: string | null;
             respostas?: {
                 [key: string]: unknown;
             };
@@ -10826,6 +10947,14 @@ export interface components {
         ProtocolosFaltaBody: {
             /** Format: uuid */
             pedido_id?: string;
+        };
+        ProtocolosFeriado: {
+            data: string;
+            nome: string;
+        };
+        ProtocolosFeriadoBody: {
+            data?: string;
+            nome?: string;
         };
         ProtocolosFicha: {
             agendamento?: components["schemas"]["ProtocolosAgendamento"];
@@ -10884,8 +11013,12 @@ export interface components {
             titulo?: string;
         };
         ProtocolosPedido: {
+            /** Format: uuid */
+            aprovador_id?: string;
             campos?: components["schemas"]["ProtocolosCampo"][];
             complemento: string;
+            /** Format: date-time */
+            complemento_prazo?: string;
             cpf?: string;
             /** Format: date-time */
             created_at: string;
@@ -10906,6 +11039,7 @@ export interface components {
             /** Format: date-time */
             prazo_em?: string;
             prioridade: string;
+            processo_sei: string;
             /** Format: uuid */
             responsavel_id?: string;
             responsavel_nome?: string;
@@ -10952,6 +11086,8 @@ export interface components {
         ProtocolosServico: {
             agenda: components["schemas"]["ProtocolosAgenda"];
             aprova_sozinho: boolean;
+            /** Format: uuid */
+            aprovador_id?: string;
             ativo: boolean;
             campo_anonimo: string;
             categoria: string;
@@ -10959,6 +11095,7 @@ export interface components {
             created_at: string;
             descricao: string;
             destaque: boolean;
+            detalhes: components["schemas"]["ProtocolosDetalhesServico"];
             documentos: components["schemas"]["ProtocolosOrientacao"][];
             exige_aceite: boolean;
             exige_agendamento: boolean;
@@ -10983,6 +11120,8 @@ export interface components {
         ProtocolosServicoInput: {
             agenda?: components["schemas"]["ProtocolosAgendaInput"];
             aprova_sozinho?: boolean;
+            /** Format: uuid */
+            aprovador_id?: string;
             ativo?: boolean;
             campo_anonimo?: string;
             categoria?: string;
@@ -10990,6 +11129,7 @@ export interface components {
             created_at?: string;
             descricao?: string;
             destaque?: boolean;
+            detalhes?: components["schemas"]["ProtocolosDetalhesServicoInput"];
             documentos?: components["schemas"]["ProtocolosOrientacaoInput"][];
             exige_aceite?: boolean;
             exige_agendamento?: boolean;
@@ -11012,7 +11152,9 @@ export interface components {
             workflow?: components["schemas"]["ProtocolosWorkflowInput"];
         };
         ProtocolosTextoBody: {
+            anexos?: string[];
             mensagem?: string;
+            prazo_dias?: number;
         };
         ProtocolosWorkflow: {
             etapas: components["schemas"]["ProtocolosEtapa"][];
@@ -24260,6 +24402,35 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getProtocolosCartaIdHorarios: {
+        parameters: {
+            query?: {
+                data?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: string[];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postProtocolosCartaIdPedido: {
         parameters: {
             query?: never;
@@ -24455,6 +24626,94 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getProtocolosFeriados: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosFeriado"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postProtocolosFeriados: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosFeriadoBody"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosFeriado"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteProtocolosFeriadosData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                data: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sem conteúdo. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getProtocolosFormularios: {
         parameters: {
             query?: never;
@@ -24612,6 +24871,45 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    postProtocolosPedidosIdAnexo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": unknown;
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ModkitUploadTicket"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postProtocolosPedidosIdAprovar: {
         parameters: {
             query?: never;
@@ -24694,7 +24992,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolosAnexosBody"];
+            };
+        };
         responses: {
             /** @description Sucesso — payload em `data`. */
             200: {
@@ -25281,6 +25583,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["ProtocolosServico"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getProtocolosServicosPessoas: {
+        parameters: {
+            query?: {
+                unidade_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["ProtocolosPessoa"][];
                     };
                 };
             };

@@ -23,6 +23,7 @@ import {
   diaDoPrazo,
   ModalDeAcao,
   MOTIVO_TRAVADO,
+  podeAprovar,
   situacaoDoPedido,
   type AcaoAberta,
 } from "@/components/protocolos/AcoesDoPedido";
@@ -49,7 +50,7 @@ import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 
 const POR_PAGINA = 10;
 
-type Dono = "todos" | "meus" | "sem" | "encaminhados";
+type Dono = "todos" | "meus" | "sem" | "encaminhados" | "aprovacao";
 
 const ABAS_PRAZO = [
   { value: "todos", label: "Todos" },
@@ -89,6 +90,7 @@ function PainelDeProtocolos() {
   const [servico, setServico] = useState("");
   const [status, setStatus] = useState("");
   const [prioridade, setPrioridade] = useState("");
+  const [sei, setSei] = useState("");
   const [pagina, setPagina] = useState(1);
   const [menu, setMenu] = useState<string | null>(null);
   const [acao, setAcao] = useState<AcaoAberta | null>(null);
@@ -100,6 +102,7 @@ function PainelDeProtocolos() {
       meus: pedidos.filter((p) => meuId && p.responsavel_id === meuId).length,
       sem: pedidos.filter((p) => !p.responsavel_id && !FINAIS.has(p.status)).length,
       encaminhados: pedidos.filter((p) => p.encaminhamento).length,
+      aprovacao: pedidos.filter((p) => situacaoDoPedido(p).aguardando).length,
     }),
     [pedidos, meuId],
   );
@@ -108,10 +111,13 @@ function PainelDeProtocolos() {
       pedidos.filter((p) => {
         if (dono === "meus") return Boolean(meuId) && p.responsavel_id === meuId;
         if (dono === "sem") return !p.responsavel_id && !FINAIS.has(p.status);
+        if (sei === "com" && !p.processo_sei) return false;
+        if (sei === "sem" && p.processo_sei) return false;
         if (dono === "encaminhados") return Boolean(p.encaminhamento);
+        if (dono === "aprovacao") return situacaoDoPedido(p).aguardando;
         return true;
       }),
-    [pedidos, dono, meuId],
+    [pedidos, dono, meuId, sei],
   );
 
   const servicos = useMemo(() => {
@@ -176,6 +182,7 @@ function PainelDeProtocolos() {
       unidadeId: p.unidade_id,
       prioridade: p.prioridade,
       prazo: diaDoPrazo(p.prazo_em),
+      processoSei: p.processo_sei ?? "",
     });
   }
 
@@ -202,6 +209,9 @@ function PainelDeProtocolos() {
               </Link>
               <Link href="/protocolos/responsaveis" className={BOTAO_SECUNDARIO}>
                 Responsáveis
+              </Link>
+              <Link href="/protocolos/feriados" className={BOTAO_SECUNDARIO}>
+                Feriados
               </Link>
             </>
           )}
@@ -292,6 +302,11 @@ function PainelDeProtocolos() {
               { value: "meus", label: "Meus protocolos", total: contagemDono.meus },
               { value: "sem", label: "Sem responsável", total: contagemDono.sem },
               { value: "encaminhados", label: "Encaminhamentos", total: contagemDono.encaminhados },
+              {
+                value: "aprovacao",
+                label: "Aguardando aprovação",
+                total: contagemDono.aprovacao,
+              },
             ]}
           />
         </div>
@@ -334,8 +349,8 @@ function PainelDeProtocolos() {
 
         {/* Filtros */}
         <div className="mb-8 rounded-xl border border-gray-200 bg-surface p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:border-slate-700">
-          <div className="grid items-center gap-4 md:grid-cols-[1fr_1fr_1fr_auto]">
-            <div className="relative md:col-span-4">
+          <div className="grid items-center gap-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+            <div className="relative md:col-span-5">
               <Search
                 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 dark:text-slate-400"
                 aria-hidden
@@ -387,6 +402,16 @@ function PainelDeProtocolos() {
               <option value="alta">Alta</option>
               <option value="urgente">Urgente</option>
             </select>
+            <select
+              aria-label="Processo SEI"
+              value={sei}
+              onChange={(e) => filtrar(() => setSei(e.target.value))}
+              className={CAMPO}
+            >
+              <option value="">Processo SEI: todos</option>
+              <option value="com">Com processo SEI</option>
+              <option value="sem">Sem processo SEI</option>
+            </select>
             <button
               type="button"
               onClick={() =>
@@ -395,6 +420,7 @@ function PainelDeProtocolos() {
                   setServico("");
                   setStatus("");
                   setPrioridade("");
+                  setSei("");
                   setPrazo("todos");
                 })
               }
@@ -470,6 +496,16 @@ function PainelDeProtocolos() {
                               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
                                 ⏳ Encaminhamento para{" "}
                                 {p.encaminhamento.unidade_nome || "outra unidade"}
+                              </span>
+                            )}
+                            {p.processo_sei && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-0.5 font-mono text-xs font-medium text-sky-800 dark:bg-sky-400/15 dark:text-sky-200">
+                                SEI {p.processo_sei}
+                              </span>
+                            )}
+                            {p.status === "em_complementacao" && p.complemento_prazo && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-800 dark:bg-violet-500/15 dark:text-violet-200">
+                                Resposta até {dataCurta(p.complemento_prazo)}
                               </span>
                             )}
                           </div>
@@ -561,7 +597,7 @@ function PainelDeProtocolos() {
                                       </ItemMenu>
                                     </>
                                   ) : estado.aguardando ? (
-                                    gere && (
+                                    podeAprovar(p, meuId, gere) && (
                                       <>
                                         <ItemMenu
                                           cor="text-emerald-600 dark:text-emerald-400"

@@ -72,6 +72,8 @@ interface Consulta {
   criado_em: string;
   prazo_em?: string;
   complemento?: string;
+  complemento_prazo?: string;
+  processo_sei?: string;
   historico: Historico[];
   agendamento?: { data: string; hora: string; status: string };
 }
@@ -469,6 +471,11 @@ function ResultadoConsulta({
         <Info rotulo="Secretaria">{consulta.unidade}</Info>
         <Info rotulo="Aberto em">{fmtDateTime(consulta.criado_em)}</Info>
         {consulta.prazo_em && <Info rotulo="Prazo">{fmtDateTime(consulta.prazo_em)}</Info>}
+        {consulta.processo_sei && (
+          <Info rotulo="Processo SEI">
+            <span className="font-mono">{consulta.processo_sei}</span>
+          </Info>
+        )}
         {consulta.agendamento && (
           <Info rotulo="Atendimento">
             <span className="inline-flex items-center gap-1.5">
@@ -491,6 +498,12 @@ function ResultadoConsulta({
               Complementação solicitada
             </p>
             <p className="text-gray-700 dark:text-slate-200">{consulta.complemento}</p>
+            {consulta.complemento_prazo && (
+              <p className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                Responda até {fmtDateTime(consulta.complemento_prazo)}. Sem resposta no prazo, o
+                protocolo é cancelado.
+              </p>
+            )}
           </div>
         </div>
       )}

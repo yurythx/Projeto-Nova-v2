@@ -68,22 +68,22 @@ func (f falso) ListarPedidos(context.Context) ([]domain.Pedido, error) {
 func (f falso) BuscarPedido(context.Context, uuid.UUID) (application.Ficha, error) {
 	return application.Ficha{Pedido: domain.Pedido{Numero: "SEMA202600001"}}, f.erro
 }
-func (f falso) Complementar(context.Context, uuid.UUID, string) (domain.Pedido, error) {
+func (f falso) ComplementarCom(context.Context, uuid.UUID, application.Complementacao) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusComplementacao}, f.erro
 }
 func (f falso) Responder(context.Context, uuid.UUID, string) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
-func (f falso) Anotar(context.Context, uuid.UUID, string) (domain.Pedido, error) {
+func (f falso) AnotarCom(context.Context, uuid.UUID, string, []string) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
 func (f falso) Editar(context.Context, uuid.UUID, application.Edicao) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
 }
-func (f falso) Avancar(context.Context, uuid.UUID) (domain.Pedido, error) {
+func (f falso) AvancarCom(context.Context, uuid.UUID, []string) (domain.Pedido, error) {
 	return domain.Pedido{EtapaID: "b"}, f.erro
 }
-func (f falso) Concluir(context.Context, uuid.UUID, string, string) (domain.Pedido, error) {
+func (f falso) ConcluirCom(context.Context, uuid.UUID, application.Conclusao) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusConcluido}, f.erro
 }
 func (f falso) Cancelar(context.Context, uuid.UUID) (domain.Pedido, error) {
@@ -109,6 +109,22 @@ func (f falso) Aprovar(context.Context, uuid.UUID) (domain.Pedido, error) {
 }
 func (f falso) Devolver(context.Context, uuid.UUID, string) (domain.Pedido, error) {
 	return domain.Pedido{Status: domain.StatusAndamento}, f.erro
+}
+func (f falso) PedirAnexoMesa(context.Context, uuid.UUID, string, string) (modkit.UploadTicket, error) {
+	return modkit.UploadTicket{ObjectKey: "protocolos/mesa/a.pdf", Method: "PUT"}, f.erro
+}
+func (f falso) ListarFeriados(context.Context) ([]domain.Feriado, error) {
+	return []domain.Feriado{{Data: "2026-12-25", Nome: "Natal"}}, f.erro
+}
+func (f falso) SalvarFeriado(context.Context, string, string) (domain.Feriado, error) {
+	return domain.Feriado{Data: "2026-12-25", Nome: "Natal"}, f.erro
+}
+func (f falso) RemoverFeriado(context.Context, string) error { return f.erro }
+func (f falso) HorariosLivres(context.Context, uuid.UUID, string) ([]string, error) {
+	return []string{"08:00"}, f.erro
+}
+func (f falso) PessoasDaUnidade(context.Context, uuid.UUID) ([]domain.Pessoa, error) {
+	return []domain.Pessoa{{Nome: "Ana"}}, f.erro
 }
 
 func pedido(method, alvo, body, id string) *http.Request {
@@ -165,6 +181,15 @@ func TestRotas(t *testing.T) {
 		{h.RecusarEncaminhamento, http.MethodPost, `{"mensagem":"não é nosso"}`, id},
 		{h.Aprovar, http.MethodPost, "", id},
 		{h.Devolver, http.MethodPost, `{"mensagem":"refazer o parecer"}`, id},
+		{h.Avancar, http.MethodPost, `{"anexos":["protocolos/mesa/a.pdf"]}`, id},
+		{h.Complementar, http.MethodPost, `{"mensagem":"envie","prazo_dias":5,"anexos":[]}`, id},
+		{h.Concluir, http.MethodPost, `{"decisao":"favoravel","justificativa":"ok","processo_sei":"12345.000001/2026-11"}`, id},
+		{h.Editar, http.MethodPost, `{"justificativa":"vínculo","processo_sei":""}`, id},
+		{h.PedirAnexoMesa, http.MethodPost, `{"nome":"parecer.pdf","content_type":"application/pdf"}`, id},
+		{h.ListarFeriados, http.MethodGet, "", ""},
+		{h.SalvarFeriado, http.MethodPost, `{"data":"2026-12-25","nome":"Natal"}`, ""},
+		{h.RemoverFeriado, http.MethodDelete, "", ""},
+		{h.HorariosLivres, http.MethodGet, "", id},
 	}
 	for _, c := range ok {
 		rec := httptest.NewRecorder()
@@ -234,6 +259,11 @@ func TestRotas(t *testing.T) {
 		{ruim.RecusarEncaminhamento, http.MethodPost, `{"mensagem":"x"}`, id},
 		{ruim.Aprovar, http.MethodPost, "", id},
 		{ruim.Devolver, http.MethodPost, `{"mensagem":"x"}`, id},
+		{ruim.PedirAnexoMesa, http.MethodPost, `{"nome":"a.pdf","content_type":"application/pdf"}`, id},
+		{ruim.ListarFeriados, http.MethodGet, "", ""},
+		{ruim.SalvarFeriado, http.MethodPost, `{"data":"2026-12-25","nome":"Natal"}`, ""},
+		{ruim.RemoverFeriado, http.MethodDelete, "", ""},
+		{ruim.HorariosLivres, http.MethodGet, "", id},
 	}
 	for _, c := range falhas {
 		rec = httptest.NewRecorder()
@@ -282,12 +312,33 @@ func TestRotas(t *testing.T) {
 		{h.RecusarEncaminhamento, "{", id},
 		{h.Aprovar, "", "nao"},
 		{h.Devolver, `{"mensagem":"x"}`, "nao"},
+		{h.Avancar, "{", id},
+		{h.PedirAnexoMesa, "{", id},
+		{h.SalvarFeriado, "{", ""},
+		{h.HorariosLivres, "", "nao"},
 	} {
 		rec = httptest.NewRecorder()
 		c.fn(rec, pedido(http.MethodPost, "/", c.body, c.param))
 		if rec.Code < 400 {
 			t.Fatal("entrada")
 		}
+	}
+	rec = httptest.NewRecorder()
+	h.PessoasDaUnidade(rec, httptest.NewRequest(http.MethodGet, "/?unidade_id="+un, nil))
+	if rec.Code != http.StatusOK {
+		t.Fatal(rec.Code)
+	}
+	for _, alvo := range []*Handlers{h, ruim} {
+		rec = httptest.NewRecorder()
+		alvo.PessoasDaUnidade(rec, httptest.NewRequest(http.MethodGet, "/?unidade_id=nao", nil))
+		if rec.Code < 400 {
+			t.Fatal("unidade")
+		}
+	}
+	rec = httptest.NewRecorder()
+	ruim.PessoasDaUnidade(rec, httptest.NewRequest(http.MethodGet, "/?unidade_id="+un, nil))
+	if rec.Code < 400 {
+		t.Fatal("pessoas")
 	}
 	r := chi.NewRouter()
 	RegisterPublic(r, h)

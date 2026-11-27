@@ -9,6 +9,7 @@ import (
 
 	apperrors "github.com/yurythx/projeto-nova-v2/internal/domain/errors"
 	"github.com/yurythx/projeto-nova-v2/internal/modules/protocolos/domain"
+	"github.com/yurythx/projeto-nova-v2/internal/platform/auth"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/modkit"
 	"github.com/yurythx/projeto-nova-v2/internal/platform/storage"
 )
@@ -74,6 +75,24 @@ func (s *Service) LinkArquivo(ctx context.Context, pedido uuid.UUID, campo strin
 	return "", domain.ErrInvalido
 }
 
+// PedirAnexoMesa entrega o ticket do anexo que a mesa junta ao pedido aberto.
+func (s *Service) PedirAnexoMesa(ctx context.Context, pedido uuid.UUID, nome, contentType string) (modkit.UploadTicket, error) {
+	if s.arquivos.Store == nil {
+		return modkit.UploadTicket{}, apperrors.DependencyUnavailable("armazenamento de arquivos desligado")
+	}
+	p, err := s.repo.BuscarPedido(ctx, s.db, pedido)
+	if err != nil {
+		return modkit.UploadTicket{}, err
+	}
+	if err := s.exigir(ctx, auth.PermProtocolosTratar, p.UnidadeID); err != nil {
+		return modkit.UploadTicket{}, err
+	}
+	if domain.EstadoFinal(p.Status) {
+		return modkit.UploadTicket{}, domain.ErrEstadoFinal
+	}
+	return modkit.NewUpload(ctx, s.arquivos.Store, s.arquivos.Bucket, prefixoMesa(p.ID), nome, contentType, modkit.DocumentTypes, s.arquivos.Expiry)
+}
+
 // PedirArquivoComplemento entrega o ticket da resposta do cidadão. Só vale em complementação e com o CPF do pedido.
 func (s *Service) PedirArquivoComplemento(ctx context.Context, numero, cpf, nome, contentType string) (modkit.UploadTicket, error) {
 	if s.arquivos.Store == nil {
@@ -98,11 +117,19 @@ func (s *Service) assinar(ctx context.Context, chave string) (string, error) {
 }
 
 func (s *Service) confirmarComplemento(ctx context.Context, pedido uuid.UUID, arquivos []string) ([]string, error) {
+	return s.confirmarAnexos(ctx, prefixoComplemento(pedido), arquivos)
+}
+
+// confirmarMesa confere os anexos que a mesa enviou ao prefixo do pedido.
+func (s *Service) confirmarMesa(ctx context.Context, pedido uuid.UUID, arquivos []string) ([]string, error) {
+	return s.confirmarAnexos(ctx, prefixoMesa(pedido), arquivos)
+}
+
+func (s *Service) confirmarAnexos(ctx context.Context, prefixo string, arquivos []string) ([]string, error) {
 	if len(arquivos) > 5 {
 		return nil, domain.ErrInvalido
 	}
 	out := make([]string, 0, len(arquivos))
-	prefixo := prefixoComplemento(pedido)
 	for _, chave := range arquivos {
 		chave = strings.TrimSpace(chave)
 		if chave == "" {
@@ -146,9 +173,12 @@ func prefixoComplemento(pedido uuid.UUID) string {
 	return "protocolos/complemento/" + pedido.String()
 }
 
+func prefixoMesa(pedido uuid.UUID) string {
+	return "protocolos/mesa/" + pedido.String()
+}
+
 func anexoDaFicha(ficha Ficha, chave string) bool {
-	prefixo := prefixoComplemento(ficha.Pedido.ID) + "/"
-	if !strings.HasPrefix(chave, prefixo) {
+	if !strings.HasPrefix(chave, prefixoComplemento(ficha.Pedido.ID)+"/") && !strings.HasPrefix(chave, prefixoMesa(ficha.Pedido.ID)+"/") {
 		return false
 	}
 	for _, item := range ficha.Historico {

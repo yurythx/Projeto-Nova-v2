@@ -9,6 +9,7 @@ import { useApiQuery } from "@/lib/api/swr";
 import { usePlataforma } from "@/lib/plataforma/PlataformaProvider";
 import type { OrgTree } from "@/lib/plataforma/types";
 
+import { CampoAnexos, type Anexo } from "./Anexos";
 import { FINAIS } from "./estilo";
 import { BOTAO_PERIGO, BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO, ROTULO } from "./ui";
 
@@ -23,7 +24,8 @@ export type TipoAcao =
   | "encaminhar"
   | "recusar_encaminhamento"
   | "devolver"
-  | "editar";
+  | "editar"
+  | "avancar";
 
 export interface AcaoAberta {
   tipo: TipoAcao;
@@ -34,6 +36,8 @@ export interface AcaoAberta {
   /** Valores atuais para a edição rápida. */
   prioridade?: string;
   prazo?: string;
+  /** Processo SEI atual, para a edição e a conclusão. */
+  processoSei?: string;
 }
 
 /** O que a mesa precisa saber do pedido para escolher as ações. */
@@ -42,7 +46,13 @@ export interface EstadoDoPedido {
   decisao?: string;
   responsavel_id?: string;
   exige_aceite?: boolean;
+  aprovador_id?: string;
   encaminhamento?: { unidade_id: string; unidade_nome?: string } | null;
+}
+
+/** Aprova a conclusão o aprovador indicado no serviço; sem indicação, quem gere a unidade. */
+export function podeAprovar(p: EstadoDoPedido, meuId: string | undefined, gere: boolean): boolean {
+  return p.aprovador_id ? Boolean(meuId) && p.aprovador_id === meuId : gere;
 }
 
 /** Situação do pedido na mesa: encerrado, encaminhado, aguardando aprovação ou travado sem dono. */
@@ -72,6 +82,7 @@ const TITULO: Record<TipoAcao, string> = {
   recusar_encaminhamento: "Recusar Encaminhamento",
   devolver: "Devolver a Conclusão",
   editar: "Editar Protocolo",
+  avancar: "Encaminhar para a Próxima Etapa",
 };
 
 const CONFIRMAR: Partial<Record<TipoAcao, string>> = {
@@ -82,6 +93,7 @@ const CONFIRMAR: Partial<Record<TipoAcao, string>> = {
   recusar_encaminhamento: "Recusar encaminhamento",
   devolver: "Devolver",
   editar: "Salvar",
+  avancar: "Avançar",
 };
 
 const ROTULO_TEXTO: Partial<Record<TipoAcao, string>> = {
@@ -114,7 +126,12 @@ export function ModalDeAcao({
   const { run, pending } = useAction();
   const [texto, setTexto] = useState("");
   const [decisao, setDecisao] = useState("");
+  const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const [enviandoAnexo, setEnviandoAnexo] = useState(false);
   const tipo = acao?.tipo;
+  const levaAnexos =
+    tipo === "complemento" || tipo === "nota" || tipo === "concluir" || tipo === "avancar";
+  const levaSei = tipo === "concluir" || tipo === "editar";
   const escolhePessoa = tipo === "transferir" || (tipo === "aceitar" && can("protocolos:gerir"));
   const pessoas = useApiQuery<Pessoa[]>(
     acao && escolhePessoa ? `v1/protocolos/pedidos/${acao.pedidoId}/pessoas` : null,
@@ -129,6 +146,7 @@ export function ModalDeAcao({
   function fechar() {
     setTexto("");
     setDecisao("");
+    setAnexos([]);
     onFechar();
   }
 
@@ -138,13 +156,26 @@ export function ModalDeAcao({
     const dados = new FormData(e.currentTarget);
     const campo = (nome: string) => String(dados.get(nome) ?? "");
     const base = `v1/protocolos/pedidos/${acao.pedidoId}`;
+    // Só vai o que mudou: sem anexo, sem prazo e com o mesmo SEI, o corpo fica o de sempre.
+    const extras: Record<string, unknown> = {};
+    if (levaAnexos && anexos.length > 0) extras.anexos = anexos.map((a) => a.chave);
+    if (levaSei && campo("processo_sei").trim() !== (acao.processoSei ?? "")) {
+      extras.processo_sei = campo("processo_sei").trim();
+    }
+    if (tipo === "complemento" && Number(campo("prazo_dias") || 0) > 0) {
+      extras.prazo_dias = Number(campo("prazo_dias"));
+    }
     const pedidos: Record<TipoAcao, () => [string, unknown, string]> = {
-      complemento: () => [`${base}/complemento`, { mensagem: texto }, "Complementação solicitada"],
+      complemento: () => [
+        `${base}/complemento`,
+        { mensagem: texto, ...extras },
+        "Complementação solicitada",
+      ],
       resposta: () => [`${base}/resposta`, { mensagem: texto }, "Resposta registrada"],
-      nota: () => [`${base}/nota`, { mensagem: texto }, "Nota adicionada"],
+      nota: () => [`${base}/nota`, { mensagem: texto, ...extras }, "Nota adicionada"],
       concluir: () => [
         `${base}/concluir`,
-        { decisao, justificativa: texto },
+        { decisao, justificativa: texto, ...extras },
         "Protocolo concluído",
       ],
       cancelar: () => [`${base}/cancelar`, {}, "Protocolo cancelado"],
@@ -175,9 +206,15 @@ export function ModalDeAcao({
       devolver: () => [`${base}/devolver`, { mensagem: texto }, "Conclusão devolvida"],
       editar: () => [
         `${base}/editar`,
-        { justificativa: texto, prioridade: campo("prioridade"), prazo: campo("prazo") },
+        {
+          justificativa: texto,
+          prioridade: campo("prioridade"),
+          prazo: campo("prazo"),
+          ...extras,
+        },
         "Protocolo atualizado",
       ],
+      avancar: () => [`${base}/avancar`, { ...extras }, "Protocolo avançou de etapa"],
     };
     const [caminho, corpo, aviso] = pedidos[acao.tipo]();
     const ok = await run(() => apiClient.post(caminho, corpo), aviso);
@@ -298,6 +335,52 @@ export function ModalDeAcao({
             </div>
           </div>
         )}
+        {tipo === "avancar" && (
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            O protocolo segue para a próxima etapa do fluxo. Junte, se quiser, o parecer ou o
+            documento desta etapa.
+          </p>
+        )}
+        {tipo === "complemento" && (
+          <div>
+            <label htmlFor="acao-prazo-complemento" className={ROTULO}>
+              Prazo para o cidadão responder (dias úteis)
+            </label>
+            <input
+              id="acao-prazo-complemento"
+              name="prazo_dias"
+              type="number"
+              min={0}
+              max={90}
+              defaultValue={0}
+              className={CAMPO}
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Zero deixa sem prazo. Vencido sem resposta, o protocolo é cancelado e o cidadão é
+              lembrado na véspera.
+            </p>
+          </div>
+        )}
+        {levaSei && (
+          <div>
+            <label htmlFor="acao-sei" className={ROTULO}>
+              Processo SEI
+            </label>
+            <input
+              id="acao-sei"
+              name="processo_sei"
+              defaultValue={acao?.processoSei ?? ""}
+              placeholder="00000.000000/2026-00"
+              maxLength={40}
+              className={CAMPO}
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              {tipo === "concluir"
+                ? "Se a decisão saiu no SEI, informe o processo e cite o documento na justificativa."
+                : "O processo que corre em paralelo no SEI. Vazio desfaz o vínculo."}
+            </p>
+          </div>
+        )}
         {tipo === "concluir" && (
           <div>
             <label htmlFor="acao-decisao" className={ROTULO}>
@@ -332,13 +415,21 @@ export function ModalDeAcao({
             />
           </div>
         )}
+        {acao && levaAnexos && (
+          <CampoAnexos
+            pedidoId={acao.pedidoId}
+            valor={anexos}
+            onChange={setAnexos}
+            onEnviando={setEnviandoAnexo}
+          />
+        )}
         <div className="flex justify-end gap-3">
           <button type="button" onClick={fechar} className={BOTAO_SECUNDARIO}>
             Cancelar
           </button>
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || enviandoAnexo}
             className={
               tipo === "cancelar" || tipo === "recusar_encaminhamento"
                 ? BOTAO_PERIGO

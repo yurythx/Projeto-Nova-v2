@@ -30,6 +30,8 @@ type mem struct {
 	falha       string
 	numeros     map[string]bool
 	pessoas     map[uuid.UUID]string
+	feriados    map[string]string
+	avisados    []uuid.UUID
 }
 
 func novoMem() *mem {
@@ -37,7 +39,7 @@ func novoMem() *mem {
 		sigla: "SEMA", nome: "Meio Ambiente",
 		forms: map[uuid.UUID]domain.Formulario{}, servs: map[uuid.UUID]domain.Servico{},
 		pedidos: map[uuid.UUID]domain.Pedido{}, resp: map[string]bool{}, numeros: map[string]bool{},
-		pessoas: map[uuid.UUID]string{},
+		pessoas: map[uuid.UUID]string{}, feriados: map[string]string{},
 	}
 }
 
@@ -413,4 +415,69 @@ func (m *mem) Pessoas(context.Context, database.DBTX, uuid.UUID) ([]domain.Pesso
 		out = append(out, domain.Pessoa{ID: id, Nome: nome})
 	}
 	return out, nil
+}
+
+func (m *mem) ListarFeriados(context.Context, database.DBTX) ([]domain.Feriado, error) {
+	if m.falha == "nulo" {
+		return nil, nil
+	}
+	if err := m.erra("feriados"); err != nil {
+		return nil, err
+	}
+	out := []domain.Feriado{}
+	for data, nome := range m.feriados {
+		out = append(out, domain.Feriado{Data: data, Nome: nome})
+	}
+	return out, nil
+}
+func (m *mem) SalvarFeriado(_ context.Context, _ database.DBTX, f domain.Feriado) error {
+	if err := m.erra("salvar-feriado"); err != nil {
+		return err
+	}
+	m.feriados[f.Data] = f.Nome
+	return nil
+}
+func (m *mem) RemoverFeriado(_ context.Context, _ database.DBTX, data string) error {
+	if err := m.erra("remover-feriado"); err != nil {
+		return err
+	}
+	if _, ok := m.feriados[data]; !ok {
+		return domain.ErrNaoEncontrado
+	}
+	delete(m.feriados, data)
+	return nil
+}
+func (m *mem) ComplementacoesVencidas(_ context.Context, _ database.DBTX, agora time.Time) ([]domain.Pedido, error) {
+	if err := m.erra("vencidas"); err != nil {
+		return nil, err
+	}
+	out := []domain.Pedido{}
+	for _, p := range m.pedidos {
+		if p.Status == domain.StatusComplementacao && p.ComplementoPrazo != nil && (p.ComplementoPrazo.Before(agora) || m.falha == "vencida-falsa") {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+func (m *mem) PrazosVencendo(_ context.Context, _ database.DBTX, _, _ time.Time) ([]domain.Pedido, error) {
+	if err := m.erra("vencendo"); err != nil {
+		return nil, err
+	}
+	out := []domain.Pedido{}
+	for _, p := range m.pedidos {
+		if !domain.EstadoFinal(p.Status) {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+func (m *mem) MarcarAvisoComplemento(_ context.Context, _ database.DBTX, id uuid.UUID) error {
+	if err := m.erra("marcar"); err != nil {
+		return err
+	}
+	p := m.pedidos[id]
+	p.ComplementoAvisado = true
+	m.pedidos[id] = p
+	m.avisados = append(m.avisados, id)
+	return nil
 }

@@ -28,6 +28,7 @@ import {
   diaDoPrazo,
   ModalDeAcao,
   MOTIVO_TRAVADO,
+  podeAprovar,
   situacaoDoPedido,
   type AcaoAberta,
 } from "@/components/protocolos/AcoesDoPedido";
@@ -73,6 +74,9 @@ interface Pedido {
   prazo_em?: string;
   responsavel_id?: string;
   responsavel_nome?: string;
+  aprovador_id?: string;
+  processo_sei?: string;
+  complemento_prazo?: string;
   exige_aceite?: boolean;
   encaminhamento?: {
     unidade_id: string;
@@ -167,7 +171,7 @@ export default function FichaPage() {
 export function FichaConteudo() {
   const id = useIdDaRota();
   const router = useRouter();
-  const { can } = usePlataforma();
+  const { can, me } = usePlataforma();
   const ficha = useApiQuery<Ficha>(id ? `v1/protocolos/pedidos/${id}` : null);
   const arvore = useApiQuery<OrgTree[]>(id ? "v1/iam/org-tree" : null);
   const { run, pending } = useAction();
@@ -192,6 +196,7 @@ export function FichaConteudo() {
       unidadeId: pedido.unidade_id,
       prioridade: pedido.prioridade,
       prazo: diaDoPrazo(pedido.prazo_em),
+      processoSei: pedido.processo_sei ?? "",
     });
   }
 
@@ -226,6 +231,9 @@ export function FichaConteudo() {
         prioridade: String(dados.get("prioridade") ?? ""),
         prazo: String(dados.get("prazo") ?? ""),
         ...(editaveis.length > 0 ? { respostas } : {}),
+        ...(String(dados.get("processo_sei") ?? "").trim() !== (pedido.processo_sei ?? "")
+          ? { processo_sei: String(dados.get("processo_sei") ?? "").trim() }
+          : {}),
       },
       "Dados do protocolo atualizados",
     );
@@ -322,6 +330,12 @@ export function FichaConteudo() {
                         Complementação Solicitada
                       </p>
                       <p className="text-gray-700 dark:text-slate-100">{pedido.complemento}</p>
+                      {pedido.complemento_prazo && (
+                        <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                          Prazo para o cidadão responder: até {dataCurta(pedido.complemento_prazo)}.
+                          Sem resposta, o protocolo é cancelado.
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -392,7 +406,7 @@ export function FichaConteudo() {
                         <p className="text-gray-700 dark:text-slate-100">{pedido.justificativa}</p>
                       </div>
                     </div>
-                    {gere ? (
+                    {podeAprovar(pedido, me?.id, gere) ? (
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -504,6 +518,13 @@ export function FichaConteudo() {
                         {pedido.prazo_em ? `${dataCurta(pedido.prazo_em)} · ` : ""}
                         {textoDoPrazo(pedido)}
                       </span>
+                    </Info>
+                    <Info rotulo="Processo SEI">
+                      {pedido.processo_sei ? (
+                        <span className="font-mono">{pedido.processo_sei}</span>
+                      ) : (
+                        "Não vinculado"
+                      )}
                     </Info>
                   </GradeInfo>
                 </Cartao>
@@ -638,13 +659,7 @@ export function FichaConteudo() {
                           type="button"
                           disabled={pending || travado}
                           className={BOTAO_PRIMARIO}
-                          onClick={() =>
-                            void postar(
-                              `v1/protocolos/pedidos/${pedido.id}/avancar`,
-                              {},
-                              "Protocolo avançou de etapa",
-                            )
-                          }
+                          onClick={() => abrirAcao("avancar")}
                         >
                           Encaminhar para a próxima etapa
                         </button>
@@ -845,6 +860,22 @@ export function FichaConteudo() {
                       className={CAMPO}
                     />
                   </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="edicao-sei"
+                    className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-400"
+                  >
+                    Processo SEI
+                  </label>
+                  <input
+                    id="edicao-sei"
+                    name="processo_sei"
+                    defaultValue={pedido.processo_sei ?? ""}
+                    placeholder="00000.000000/2026-00"
+                    maxLength={40}
+                    className={CAMPO}
+                  />
                 </div>
                 {(pedido.campos ?? [])
                   .filter((campo) => CAMPO_EDITAVEL.has(campo.tipo))

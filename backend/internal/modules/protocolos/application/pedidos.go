@@ -71,7 +71,11 @@ func (s *Service) Abrir(ctx context.Context, in Abertura, balcao bool) (domain.P
 		return domain.Pedido{}, err
 	}
 	agora := s.agora()
-	agenda, err := s.horario(ctx, serv, in, agora)
+	cal, err := s.calendario(ctx)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
+	agenda, err := s.horario(ctx, serv, in, agora, cal)
 	if err != nil {
 		return domain.Pedido{}, err
 	}
@@ -82,7 +86,7 @@ func (s *Service) Abrir(ctx context.Context, in Abertura, balcao bool) (domain.P
 		if err != nil {
 			return domain.Pedido{}, err
 		}
-		candidato, err := domain.Abrir(serv, form, numero, in.Nome, cpf, in.Email, in.Telefone, in.Prioridade, in.Respostas, usuario, agora)
+		candidato, err := domain.Abrir(serv, form, numero, in.Nome, cpf, in.Email, in.Telefone, in.Prioridade, in.Respostas, usuario, agora, cal)
 		if err != nil {
 			return domain.Pedido{}, err
 		}
@@ -135,7 +139,7 @@ func (s *Service) Abrir(ctx context.Context, in Abertura, balcao bool) (domain.P
 	return pedido, nil
 }
 
-func (s *Service) horario(ctx context.Context, serv domain.Servico, in Abertura, agora time.Time) (*domain.Agendamento, error) {
+func (s *Service) horario(ctx context.Context, serv domain.Servico, in Abertura, agora time.Time, cal domain.Calendario) (*domain.Agendamento, error) {
 	if !serv.ExigeAgendamento {
 		return nil, nil
 	}
@@ -151,13 +155,13 @@ func (s *Service) horario(ctx context.Context, serv domain.Servico, in Abertura,
 	if in.Data == "" || in.Hora == "" {
 		data, hora, err = domain.ProcurarVaga(serv.Agenda, agora, func(dia string) ([]string, error) {
 			return s.repo.ListarHoras(ctx, s.db, serv.ID, dia)
-		})
+		}, cal)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		dia, err := time.ParseInLocation("2006-01-02", data, domain.Cuiaba)
-		if err != nil || !serv.Agenda.Cabe(dia) || !serv.Agenda.HoraNaGrade(hora) {
+		if err != nil || !serv.Agenda.Cabe(dia) || cal.Feriado(dia) || !serv.Agenda.HoraNaGrade(hora) {
 			return nil, domain.ErrInvalido
 		}
 		tomadas, err := s.repo.ListarHoras(ctx, s.db, serv.ID, data)
@@ -219,7 +223,11 @@ func (s *Service) ListarPedidos(ctx context.Context) ([]domain.Pedido, error) {
 		lista = []domain.Pedido{}
 	}
 	if err == nil {
-		s.marcarPrazos(lista)
+		cal, err := s.calendario(ctx)
+		if err != nil {
+			return nil, err
+		}
+		s.marcarPrazos(lista, cal)
 		for i := range lista {
 			lista[i].Respostas = nil
 			lista[i].Campos = nil
@@ -230,10 +238,10 @@ func (s *Service) ListarPedidos(ctx context.Context) ([]domain.Pedido, error) {
 	return lista, err
 }
 
-func (s *Service) marcarPrazos(lista []domain.Pedido) {
+func (s *Service) marcarPrazos(lista []domain.Pedido, cal domain.Calendario) {
 	agora := s.agora()
 	for i := range lista {
-		lista[i].SituacaoPrazo = domain.SituacaoPrazo(lista[i].Status, lista[i].CreatedAt, lista[i].PrazoEm, agora)
+		lista[i].SituacaoPrazo = domain.SituacaoPrazo(lista[i].Status, lista[i].CreatedAt, lista[i].PrazoEm, agora, cal)
 	}
 }
 
@@ -246,7 +254,11 @@ func (s *Service) BuscarPedido(ctx context.Context, id uuid.UUID) (Ficha, error)
 	if err := s.verPedido(ctx, p); err != nil {
 		return Ficha{}, err
 	}
-	p.SituacaoPrazo = domain.SituacaoPrazo(p.Status, p.CreatedAt, p.PrazoEm, s.agora())
+	cal, err := s.calendario(ctx)
+	if err != nil {
+		return Ficha{}, err
+	}
+	p.SituacaoPrazo = domain.SituacaoPrazo(p.Status, p.CreatedAt, p.PrazoEm, s.agora(), cal)
 	hist, err := s.repo.ListarHistorico(ctx, s.db, p.ID)
 	if err != nil {
 		return Ficha{}, err
@@ -295,7 +307,7 @@ func (s *Service) ver(ctx context.Context, unidade uuid.UUID) error {
 var acoesComDono = map[string]bool{"complemento": true, "avanco": true, "conclusao": true, domain.AcaoAguardaAprovacao: true}
 
 func (s *Service) mudar(ctx context.Context, id uuid.UUID, evento, acao, fato, descricao string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
-	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, evento, acao, fato, texto(descricao), fn)
+	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, evento, acao, fato, texto(descricao), nil, fn)
 }
 
 // texto adia uma descrição já conhecida.
@@ -304,13 +316,17 @@ func texto(t string) func() string { return func() string { return t } }
 // mudarCom confere a permissão na unidade, recusa o pedido com encaminhamento
 // pendente e o pedido sem dono quando o serviço exige aceite. A descrição é
 // lida depois de fn, que pode descobrir o nome de quem assume.
-func (s *Service) mudarCom(ctx context.Context, perm auth.Permission, id uuid.UUID, evento, acao, fato string, descricao func() string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
+// Os anexos são lidos depois de fn, que os confirma no armazenamento.
+// Permissão vazia: quem chama já conferiu (o aprovador indicado no serviço).
+func (s *Service) mudarCom(ctx context.Context, perm auth.Permission, id uuid.UUID, evento, acao, fato string, descricao func() string, anexos *[]string, fn func(domain.Pedido) (domain.Pedido, error)) (domain.Pedido, error) {
 	atual, err := s.repo.BuscarPedido(ctx, s.db, id)
 	if err != nil {
 		return domain.Pedido{}, err
 	}
-	if err := s.exigir(ctx, perm, atual.UnidadeID); err != nil {
-		return domain.Pedido{}, err
+	if perm != "" {
+		if err := s.exigir(ctx, perm, atual.UnidadeID); err != nil {
+			return domain.Pedido{}, err
+		}
 	}
 	if atual.Encaminhamento != nil {
 		return domain.Pedido{}, domain.ErrEncaminhamento
@@ -324,7 +340,11 @@ func (s *Service) mudarCom(ctx context.Context, perm auth.Permission, id uuid.UU
 	if err != nil {
 		return domain.Pedido{}, err
 	}
-	return s.persistir(ctx, atual, prox, evento, acao, fato, descricao())
+	var chaves []string
+	if anexos != nil {
+		chaves = *anexos
+	}
+	return s.persistir(ctx, atual, prox, evento, acao, fato, descricao(), chaves)
 }
 
 // exigirDono recusa o pedido sem responsável quando o serviço exige aceite.
@@ -343,13 +363,14 @@ func (s *Service) exigirDono(ctx context.Context, p domain.Pedido) error {
 }
 
 // persistir grava o pedido, a linha da trilha, o evento e a auditoria, e avisa.
-func (s *Service) persistir(ctx context.Context, atual, prox domain.Pedido, evento, acao, fato, descricao string) (domain.Pedido, error) {
+// Sem sessão (a rotina de prazos), a linha da trilha fica sem usuário.
+func (s *Service) persistir(ctx context.Context, atual, prox domain.Pedido, evento, acao, fato, descricao string, anexos []string) (domain.Pedido, error) {
 	if _, nome, err := s.repo.Unidade(ctx, s.db, prox.UnidadeID); err == nil {
 		prox.UnidadeNome = nome
 	} else if !errors.Is(err, domain.ErrNaoEncontrado) {
 		return domain.Pedido{}, err
 	}
-	quem, _ := auth.IdentityFromContext(ctx)
+	usuario := quemAge(ctx)
 	if strings.TrimSpace(descricao) == "" {
 		descricao = fato
 	}
@@ -359,7 +380,7 @@ func (s *Service) persistir(ctx context.Context, atual, prox domain.Pedido, even
 		}
 		if err := s.repo.InserirHistorico(ctx, tx, domain.Historico{
 			ID: uuid.New(), PedidoID: prox.ID, Acao: acao, Descricao: descricao,
-			Status: prox.Status, UsuarioID: &quem.UserID, CreatedAt: s.agora(),
+			Status: prox.Status, Anexos: anexos, UsuarioID: usuario, CreatedAt: s.agora(),
 		}); err != nil {
 			return err
 		}
@@ -378,10 +399,34 @@ func (s *Service) persistir(ctx context.Context, atual, prox domain.Pedido, even
 	return prox, nil
 }
 
+// Complementacao é o pedido de informação ao cidadão, com prazo e anexos da mesa.
+type Complementacao struct {
+	Mensagem  string
+	PrazoDias int
+	Anexos    []string
+}
+
 // Complementar pede informação e trava o avanço.
 func (s *Service) Complementar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoComplemento, "complemento", "há complementação", strings.TrimSpace(mensagem), func(p domain.Pedido) (domain.Pedido, error) {
-		return p.Complementar(mensagem, s.agora())
+	return s.ComplementarCom(ctx, id, Complementacao{Mensagem: mensagem})
+}
+
+// ComplementarCom pede informação com prazo em dias úteis. Vencido sem resposta, o pedido é cancelado.
+func (s *Service) ComplementarCom(ctx context.Context, id uuid.UUID, in Complementacao) (domain.Pedido, error) {
+	var chaves []string
+	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, EventoComplemento, "complemento", "há complementação", texto(strings.TrimSpace(in.Mensagem)), &chaves, func(p domain.Pedido) (domain.Pedido, error) {
+		var err error
+		if chaves, err = s.confirmarMesa(ctx, p.ID, in.Anexos); err != nil {
+			return domain.Pedido{}, err
+		}
+		cal, err := s.calendario(ctx)
+		if err != nil {
+			return domain.Pedido{}, err
+		}
+		if p, err = p.Complementar(in.Mensagem, s.agora()); err != nil {
+			return domain.Pedido{}, err
+		}
+		return p.PrazoDaComplementacao(in.PrazoDias, s.agora(), cal)
 	})
 }
 
@@ -461,6 +506,11 @@ func (s *Service) Responder(ctx context.Context, id uuid.UUID, mensagem string) 
 
 // Anotar grava um texto que a consulta pública não mostra.
 func (s *Service) Anotar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error) {
+	return s.AnotarCom(ctx, id, mensagem, nil)
+}
+
+// AnotarCom grava a nota interna com anexos da mesa.
+func (s *Service) AnotarCom(ctx context.Context, id uuid.UUID, mensagem string, anexos []string) (domain.Pedido, error) {
 	mensagem, err := domain.TextoInterno(mensagem, 2000)
 	if err != nil {
 		return domain.Pedido{}, err
@@ -478,11 +528,15 @@ func (s *Service) Anotar(ctx context.Context, id uuid.UUID, mensagem string) (do
 	if err := s.exigirDono(ctx, atual); err != nil {
 		return domain.Pedido{}, err
 	}
+	chaves, err := s.confirmarMesa(ctx, atual.ID, anexos)
+	if err != nil {
+		return domain.Pedido{}, err
+	}
 	quem, _ := auth.IdentityFromContext(ctx)
 	err = s.run(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		if err := s.repo.InserirHistorico(ctx, tx, domain.Historico{
 			ID: uuid.New(), PedidoID: atual.ID, Acao: domain.AcaoNota, Descricao: mensagem,
-			Status: atual.Status, UsuarioID: &quem.UserID, CreatedAt: s.agora(),
+			Status: atual.Status, Anexos: chaves, UsuarioID: &quem.UserID, CreatedAt: s.agora(),
 		}); err != nil {
 			return err
 		}
@@ -499,6 +553,8 @@ type Edicao struct {
 	Respostas     map[string]any
 	Prioridade    string
 	Prazo         string
+	// ProcessoSEI nulo mantém; vazio desfaz o vínculo.
+	ProcessoSEI *string
 }
 
 // Editar troca as respostas, a prioridade e o prazo, e guarda a justificativa só na mesa.
@@ -511,6 +567,12 @@ func (s *Service) Editar(ctx context.Context, id uuid.UUID, in Edicao) (domain.P
 		if in.Respostas != nil {
 			var err error
 			if p, err = p.Editar(preservarArquivos(p, in.Respostas), s.agora()); err != nil {
+				return domain.Pedido{}, err
+			}
+		}
+		if in.ProcessoSEI != nil {
+			var err error
+			if p, err = p.VincularSEI(*in.ProcessoSEI, s.agora()); err != nil {
 				return domain.Pedido{}, err
 			}
 		}
@@ -535,17 +597,46 @@ func preservarArquivos(p domain.Pedido, respostas map[string]any) map[string]any
 
 // Avancar passa à etapa seguinte do serviço.
 func (s *Service) Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, error) {
-	return s.mudar(ctx, id, EventoAvanco, "avanco", "pedido avançou de etapa", "", func(p domain.Pedido) (domain.Pedido, error) {
+	return s.AvancarCom(ctx, id, nil)
+}
+
+// AvancarCom passa à etapa seguinte com os anexos da mesa.
+func (s *Service) AvancarCom(ctx context.Context, id uuid.UUID, anexos []string) (domain.Pedido, error) {
+	var chaves []string
+	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, EventoAvanco, "avanco", "pedido avançou de etapa", texto(""), &chaves, func(p domain.Pedido) (domain.Pedido, error) {
+		var err error
+		if chaves, err = s.confirmarMesa(ctx, p.ID, anexos); err != nil {
+			return domain.Pedido{}, err
+		}
 		serv, err := s.repo.BuscarServico(ctx, s.db, p.ServicoID)
 		if err != nil {
 			return domain.Pedido{}, err
 		}
-		return p.Avancar(serv.Workflow, s.agora())
+		cal, err := s.calendario(ctx)
+		if err != nil {
+			return domain.Pedido{}, err
+		}
+		return p.Avancar(serv.Workflow, s.agora(), cal)
 	})
+}
+
+// Conclusao é a decisão, com o processo SEI e os anexos da mesa.
+type Conclusao struct {
+	Decisao       string
+	Justificativa string
+	// ProcessoSEI nulo mantém o vínculo atual.
+	ProcessoSEI *string
+	Anexos      []string
 }
 
 // Concluir grava a decisão. Se o serviço exige aprovação, a conclusão espera quem gere a unidade.
 func (s *Service) Concluir(ctx context.Context, id uuid.UUID, decisao, justificativa string) (domain.Pedido, error) {
+	return s.ConcluirCom(ctx, id, Conclusao{Decisao: decisao, Justificativa: justificativa})
+}
+
+// ConcluirCom grava a decisão, o processo SEI e os anexos.
+func (s *Service) ConcluirCom(ctx context.Context, id uuid.UUID, in Conclusao) (domain.Pedido, error) {
+	decisao, justificativa := in.Decisao, in.Justificativa
 	atual, err := s.repo.BuscarPedido(ctx, s.db, id)
 	if err != nil {
 		return domain.Pedido{}, err
@@ -554,13 +645,26 @@ func (s *Service) Concluir(ctx context.Context, id uuid.UUID, decisao, justifica
 	if err != nil {
 		return domain.Pedido{}, err
 	}
+	evento, acao, fato := EventoConclusao, "conclusao", "pedido concluído"
+	concluir := func(p domain.Pedido) (domain.Pedido, error) { return p.Concluir(decisao, justificativa, s.agora()) }
 	if serv.ExigeAprovacao {
-		return s.mudar(ctx, id, EventoAguardaAprovacao, domain.AcaoAguardaAprovacao, "conclusão enviada para aprovação", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
+		evento, acao, fato = EventoAguardaAprovacao, domain.AcaoAguardaAprovacao, "conclusão enviada para aprovação"
+		concluir = func(p domain.Pedido) (domain.Pedido, error) {
 			return p.PedirAprovacao(decisao, justificativa, s.agora())
-		})
+		}
 	}
-	return s.mudar(ctx, id, EventoConclusao, "conclusao", "pedido concluído", justificativa, func(p domain.Pedido) (domain.Pedido, error) {
-		return p.Concluir(decisao, justificativa, s.agora())
+	var chaves []string
+	return s.mudarCom(ctx, auth.PermProtocolosTratar, id, evento, acao, fato, texto(justificativa), &chaves, func(p domain.Pedido) (domain.Pedido, error) {
+		var err error
+		if chaves, err = s.confirmarMesa(ctx, p.ID, in.Anexos); err != nil {
+			return domain.Pedido{}, err
+		}
+		if in.ProcessoSEI != nil {
+			if p, err = p.VincularSEI(*in.ProcessoSEI, s.agora()); err != nil {
+				return domain.Pedido{}, err
+			}
+		}
+		return concluir(p)
 	})
 }
 

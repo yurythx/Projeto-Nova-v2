@@ -566,7 +566,7 @@ func TestDiaUtilMapaEConsulta(t *testing.T) {
 	if _, err := comCampo.Editar(map[string]any{"nome": "  "}, sexta); err == nil {
 		t.Fatal("resposta")
 	}
-	if diasUteisFechado(sexta, sexta.AddDate(0, 0, -1)) != 0 {
+	if diasUteisFechado(sexta, sexta.AddDate(0, 0, -1), nil) != 0 {
 		t.Fatal("intervalo invertido")
 	}
 	antes := sexta.AddDate(0, 0, -3)

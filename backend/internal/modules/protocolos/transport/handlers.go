@@ -35,12 +35,12 @@ type Casos interface {
 	ResponderPublico(ctx context.Context, numero, cpf, mensagem string, arquivos []string) (domain.Consulta, error)
 	ListarPedidos(ctx context.Context) ([]domain.Pedido, error)
 	BuscarPedido(ctx context.Context, id uuid.UUID) (application.Ficha, error)
-	Complementar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
+	ComplementarCom(ctx context.Context, id uuid.UUID, in application.Complementacao) (domain.Pedido, error)
 	Responder(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
-	Anotar(ctx context.Context, id uuid.UUID, mensagem string) (domain.Pedido, error)
+	AnotarCom(ctx context.Context, id uuid.UUID, mensagem string, anexos []string) (domain.Pedido, error)
 	Editar(ctx context.Context, id uuid.UUID, in application.Edicao) (domain.Pedido, error)
-	Avancar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
-	Concluir(ctx context.Context, id uuid.UUID, decisao, justificativa string) (domain.Pedido, error)
+	AvancarCom(ctx context.Context, id uuid.UUID, anexos []string) (domain.Pedido, error)
+	ConcluirCom(ctx context.Context, id uuid.UUID, in application.Conclusao) (domain.Pedido, error)
 	Cancelar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
 	Pessoas(ctx context.Context, id uuid.UUID) ([]domain.Pessoa, error)
 	Aceitar(ctx context.Context, id uuid.UUID, responsavel *uuid.UUID) (domain.Pedido, error)
@@ -49,6 +49,12 @@ type Casos interface {
 	DecidirEncaminhamento(ctx context.Context, id uuid.UUID, aceitar bool, motivo string) (domain.Pedido, error)
 	Aprovar(ctx context.Context, id uuid.UUID) (domain.Pedido, error)
 	Devolver(ctx context.Context, id uuid.UUID, motivo string) (domain.Pedido, error)
+	PedirAnexoMesa(ctx context.Context, pedido uuid.UUID, nome, contentType string) (modkit.UploadTicket, error)
+	ListarFeriados(ctx context.Context) ([]domain.Feriado, error)
+	SalvarFeriado(ctx context.Context, data, nome string) (domain.Feriado, error)
+	RemoverFeriado(ctx context.Context, data string) error
+	HorariosLivres(ctx context.Context, servico uuid.UUID, dia string) ([]string, error)
+	PessoasDaUnidade(ctx context.Context, unidade uuid.UUID) ([]domain.Pessoa, error)
 }
 
 // Handlers agrupa as rotas.
@@ -367,6 +373,13 @@ func (h *Handlers) BuscarPedido(w http.ResponseWriter, r *http.Request) {
 
 type textoBody struct {
 	Mensagem string `json:"mensagem"`
+	// PrazoDias vale na complementação: dias úteis para o cidadão responder.
+	PrazoDias int      `json:"prazo_dias"`
+	Anexos    []string `json:"anexos"`
+}
+
+type anexosBody struct {
+	Anexos []string `json:"anexos"`
 }
 
 func (h *Handlers) Complementar(w http.ResponseWriter, r *http.Request) {
@@ -380,7 +393,9 @@ func (h *Handlers) Complementar(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	p, err := h.casos.Complementar(r.Context(), id, body.Mensagem)
+	p, err := h.casos.ComplementarCom(r.Context(), id, application.Complementacao{
+		Mensagem: body.Mensagem, PrazoDias: body.PrazoDias, Anexos: body.Anexos,
+	})
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -418,7 +433,7 @@ func (h *Handlers) Anotar(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	p, err := h.casos.Anotar(r.Context(), id, body.Mensagem)
+	p, err := h.casos.AnotarCom(r.Context(), id, body.Mensagem, body.Anexos)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -429,6 +444,8 @@ func (h *Handlers) Anotar(w http.ResponseWriter, r *http.Request) {
 type editarBody struct {
 	Justificativa string         `json:"justificativa"`
 	Respostas     map[string]any `json:"respostas"`
+	// ProcessoSEI ausente mantém; vazio desfaz o vínculo.
+	ProcessoSEI *string `json:"processo_sei"`
 	// Prioridade e prazo (AAAA-MM-DD) vazios mantêm o valor atual.
 	Prioridade string `json:"prioridade"`
 	Prazo      string `json:"prazo"`
@@ -447,6 +464,7 @@ func (h *Handlers) Editar(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := h.casos.Editar(r.Context(), id, application.Edicao{
 		Justificativa: body.Justificativa, Respostas: body.Respostas, Prioridade: body.Prioridade, Prazo: body.Prazo,
+		ProcessoSEI: body.ProcessoSEI,
 	})
 	if err != nil {
 		h.fail(w, r, err)
@@ -454,7 +472,24 @@ func (h *Handlers) Editar(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteOK(w, p)
 }
-func (h *Handlers) Avancar(w http.ResponseWriter, r *http.Request) { h.simples(w, r, h.casos.Avancar) }
+
+// Avancar passa à etapa seguinte. O corpo, opcional, traz os anexos da mesa.
+func (h *Handlers) Avancar(w http.ResponseWriter, r *http.Request) {
+	id, err := idDoPedido(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var body anexosBody
+	if r.ContentLength != 0 {
+		if err := httputil.Bind(w, r, &body); err != nil {
+			h.fail(w, r, err)
+			return
+		}
+	}
+	p, err := h.casos.AvancarCom(r.Context(), id, body.Anexos)
+	h.responder(w, r, p, err)
+}
 func (h *Handlers) Cancelar(w http.ResponseWriter, r *http.Request) {
 	h.simples(w, r, h.casos.Cancelar)
 }
@@ -474,8 +509,10 @@ func (h *Handlers) simples(w http.ResponseWriter, r *http.Request, fn func(conte
 }
 
 type conclusaoBody struct {
-	Decisao       string `json:"decisao"`
-	Justificativa string `json:"justificativa"`
+	Decisao       string   `json:"decisao"`
+	Justificativa string   `json:"justificativa"`
+	ProcessoSEI   *string  `json:"processo_sei"`
+	Anexos        []string `json:"anexos"`
 }
 
 func (h *Handlers) Concluir(w http.ResponseWriter, r *http.Request) {
@@ -489,7 +526,9 @@ func (h *Handlers) Concluir(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	p, err := h.casos.Concluir(r.Context(), id, body.Decisao, body.Justificativa)
+	p, err := h.casos.ConcluirCom(r.Context(), id, application.Conclusao{
+		Decisao: body.Decisao, Justificativa: body.Justificativa, ProcessoSEI: body.ProcessoSEI, Anexos: body.Anexos,
+	})
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -619,4 +658,87 @@ func (h *Handlers) Devolver(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := h.casos.Devolver(r.Context(), id, body.Mensagem)
 	h.responder(w, r, p, err)
+}
+
+// PedirAnexoMesa entrega o ticket do anexo da mesa.
+func (h *Handlers) PedirAnexoMesa(w http.ResponseWriter, r *http.Request) {
+	id, body, ok := corpo[arquivoBody](h, w, r)
+	if !ok {
+		return
+	}
+	ticket, err := h.casos.PedirAnexoMesa(r.Context(), id, body.Nome, body.ContentType)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, ticket)
+}
+
+// ListarFeriados devolve o calendário municipal.
+func (h *Handlers) ListarFeriados(w http.ResponseWriter, r *http.Request) {
+	lista, err := h.casos.ListarFeriados(r.Context())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+type feriadoBody struct {
+	Data string `json:"data"`
+	Nome string `json:"nome"`
+}
+
+// SalvarFeriado grava o feriado da data.
+func (h *Handlers) SalvarFeriado(w http.ResponseWriter, r *http.Request) {
+	var body feriadoBody
+	if err := httputil.Bind(w, r, &body); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	f, err := h.casos.SalvarFeriado(r.Context(), body.Data, body.Nome)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteCreated(w, f)
+}
+
+// RemoverFeriado tira a data do calendário.
+func (h *Handlers) RemoverFeriado(w http.ResponseWriter, r *http.Request) {
+	if err := h.casos.RemoverFeriado(r.Context(), chi.URLParam(r, "data")); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// HorariosLivres lista os horários livres do serviço no dia (?data=AAAA-MM-DD).
+func (h *Handlers) HorariosLivres(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		h.fail(w, r, apperrors.BadRequest("serviço inválido"))
+		return
+	}
+	lista, err := h.casos.HorariosLivres(r.Context(), id, r.URL.Query().Get("data"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
+}
+
+// PessoasDaUnidade lista quem pode aprovar a conclusão do serviço da unidade (?unidade_id=).
+func (h *Handlers) PessoasDaUnidade(w http.ResponseWriter, r *http.Request) {
+	un, err := uuid.Parse(r.URL.Query().Get("unidade_id"))
+	if err != nil {
+		h.fail(w, r, apperrors.BadRequest("unidade inválida"))
+		return
+	}
+	lista, err := h.casos.PessoasDaUnidade(r.Context(), un)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, lista)
 }
